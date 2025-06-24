@@ -137,7 +137,7 @@ const GridView = () => {
 
   const onQuickFilterChanged = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (gridApi) {
-      gridApi.setQuickFilter(event.target.value);
+      gridApi.setGridOption('quickFilterText', event.target.value);
     }
   };
 
