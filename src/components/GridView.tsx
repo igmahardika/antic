@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { AgGridReact } from 'ag-grid-react';
-import { ColDef, GridReadyEvent } from 'ag-grid-community';
+import { ColDef, GridReadyEvent, GridApi } from 'ag-grid-community';
 import 'ag-grid-community/styles/ag-grid.css';
 import 'ag-grid-community/styles/ag-theme-quartz.css';
 
@@ -18,7 +18,7 @@ interface TicketData {
 
 const GridView = () => {
   const [rowData, setRowData] = useState<TicketData[]>([]);
-  const [gridApi, setGridApi] = useState<any>(null);
+  const [gridApi, setGridApi] = useState<GridApi | null>(null);
 
   // Sample data - in real app this would come from API
   useEffect(() => {
@@ -120,8 +120,8 @@ const GridView = () => {
     
     // Load column state from localStorage
     const savedColumnState = localStorage.getItem('ag-grid-column-state');
-    if (savedColumnState) {
-      params.columnApi?.applyColumnState({
+    if (savedColumnState && params.api) {
+      params.api.applyColumnState({
         state: JSON.parse(savedColumnState),
         applyOrder: true,
       });
