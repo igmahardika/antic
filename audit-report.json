@@ -1,0 +1,24 @@
+{
+  "timestamp": "2025-06-29T19:24:33.811Z",
+  "lighthouse": {
+    "performance": 0,
+    "accessibility": 100,
+    "bestPractices": 96,
+    "seo": 100,
+    "metrics": {
+      "firstContentfulPaint": 3660.1021,
+      "cumulativeLayoutShift": 0
+    }
+  },
+  "interactive": {
+    "consoleErrors": [],
+    "networkErrors": [],
+    "accessibilityIssues": []
+  },
+  "summary": {
+    "performance": "❌ Poor",
+    "accessibility": "✅ Excellent",
+    "bestPractices": "✅ Excellent",
+    "seo": "✅ Excellent"
+  }
+}

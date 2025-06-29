@@ -23,16 +23,27 @@ TabsList.displayName = TabsPrimitive.List.displayName
 const TabsTrigger = React.forwardRef<
   React.ElementRef<typeof TabsPrimitive.Trigger>,
   React.ComponentPropsWithoutRef<typeof TabsPrimitive.Trigger>
->(({ className, ...props }, ref) => (
+>(({ className, style, ...props }, ref) => {
+  // Paksa style inline jika tab aktif
+  const isActive = props['data-state'] === 'active';
+  const forcedStyle = isActive ? { background: '#5271ff', color: '#fff', boxShadow: '0 8px 32px 0 rgba(82,113,255,0.25)', backdropFilter: 'blur(8px)', ...style } : style;
+  return (
   <TabsPrimitive.Trigger
     ref={ref}
     className={cn(
-      "inline-flex items-center justify-center whitespace-nowrap rounded-sm px-3 py-1.5 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm",
+        `inline-flex items-center justify-center whitespace-nowrap rounded-md px-4 py-2 text-base font-semibold transition-all
+        focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5271ff] focus-visible:ring-offset-2
+        disabled:pointer-events-none disabled:opacity-50
+        data-[state=active]:shadow-2xl data-[state=active]:backdrop-blur-md
+        data-[state=inactive]:bg-[rgba(82,113,255,0.10)] data-[state=inactive]:text-[#5271ff] data-[state=inactive]:border data-[state=inactive]:border-white/20 data-[state=inactive]:backdrop-blur-md data-[state=inactive]:shadow
+        hover:bg-[#5271ff] hover:text-white`,
       className
     )}
+      style={forcedStyle}
     {...props}
   />
-))
+  );
+})
 TabsTrigger.displayName = TabsPrimitive.Trigger.displayName
 
 const TabsContent = React.forwardRef<

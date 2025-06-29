@@ -1,373 +1,107 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { AgGridReact } from 'ag-grid-react';
-import { ColDef, GridReadyEvent, GridApi } from 'ag-grid-community';
-import 'ag-grid-community/styles/ag-grid.css';
-import 'ag-grid-community/styles/ag-theme-quartz.css';
+import React, { useMemo, useState } from 'react';
+import { ITicket } from '@/lib/db';
+import { formatDateTimeDDMMYYYY } from '@/lib/utils';
 
-interface TicketData {
-  customerId: string;
-  name: string;
-  category: string;
-  description: string;
-  cause: string;
-  handling: string;
-  openTime: string;
-  closeTime: string;
-  duration: number;
-  closeHandling: string;
-  handlingDuration: number;
-  classification: string;
-  subClassification: string;
-  status: string;
-  handling1: string;
-  closeHandling1: string;
-  handlingDuration1: number;
-  handling2: string;
-  closeHandling2: string;
-  handlingDuration2: number;
-  handling3: string;
-  closeHandling3: string;
-  handlingDuration3: number;
-  handling4: string;
-  closeHandling4: string;
-  handlingDuration4: number;
-  handling5: string;
-  closeHandling5: string;
-  handlingDuration5: number;
-  openBy: string;
-}
+const PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
 
-const GridView = () => {
-  const [rowData, setRowData] = useState<TicketData[]>([]);
-  const [gridApi, setGridApi] = useState<GridApi | null>(null);
+const columns = [
+  { key: 'customerId', label: 'Customer ID' },
+  { key: 'name', label: 'Name' },
+  { key: 'category', label: 'Category' },
+  { key: 'description', label: 'Description' },
+  { key: 'cause', label: 'Cause' },
+  { key: 'handling', label: 'Handling' },
+  { key: 'openTime', label: 'Open Time', render: v => formatDateTimeDDMMYYYY(v) },
+  { key: 'closeTime', label: 'Close Time', render: v => formatDateTimeDDMMYYYY(v) },
+  { key: 'duration', label: 'Duration', render: (v, row) => row.duration?.formatted || '-' },
+  { key: 'openBy', label: 'Agent' },
+];
 
-  // Sample data dengan struktur lengkap
-  useEffect(() => {
-    const sampleData: TicketData[] = [
-      {
-        customerId: 'CUST001',
-        name: 'John Doe',
-        category: 'Technical',
-        description: 'Login issue with mobile app',
-        cause: 'Server timeout',
-        handling: 'Restart server service',
-        openTime: '2024-06-24 09:00',
-        closeTime: '2024-06-24 11:30',
-        duration: 2.5,
-        closeHandling: '2024-06-24 10:15',
-        handlingDuration: 1.25,
-        classification: 'Technical Issue',
-        subClassification: 'Authentication',
-        status: 'Closed',
-        handling1: 'Initial diagnosis',
-        closeHandling1: '2024-06-24 09:30',
-        handlingDuration1: 0.5,
-        handling2: 'Server restart',
-        closeHandling2: '2024-06-24 10:15',
-        handlingDuration2: 0.75,
-        handling3: '',
-        closeHandling3: '',
-        handlingDuration3: 0,
-        handling4: '',
-        closeHandling4: '',
-        handlingDuration4: 0,
-        handling5: '',
-        closeHandling5: '',
-        handlingDuration5: 0,
-        openBy: 'Agent Smith'
-      },
-      {
-        customerId: 'CUST002',
-        name: 'Jane Smith',
-        category: 'Billing',
-        description: 'Payment not processed',
-        cause: 'Payment gateway error',
-        handling: 'Manual payment processing',
-        openTime: '2024-06-24 10:15',
-        closeTime: '2024-06-24 12:00',
-        duration: 1.75,
-        closeHandling: '2024-06-24 11:45',
-        handlingDuration: 1.5,
-        classification: 'Billing Issue',
-        subClassification: 'Payment Processing',
-        status: 'Closed',
-        handling1: 'Check payment logs',
-        closeHandling1: '2024-06-24 10:45',
-        handlingDuration1: 0.5,
-        handling2: 'Process manual payment',
-        closeHandling2: '2024-06-24 11:45',
-        handlingDuration2: 1.0,
-        handling3: '',
-        closeHandling3: '',
-        handlingDuration3: 0,
-        handling4: '',
-        closeHandling4: '',
-        handlingDuration4: 0,
-        handling5: '',
-        closeHandling5: '',
-        handlingDuration5: 0,
-        openBy: 'Agent Johnson'
-      }
-    ];
-    setRowData(sampleData);
-  }, []);
+const GridView = ({ data }: { data?: ITicket[] }) => {
+  const [search, setSearch] = useState('');
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
-  const columnDefs: ColDef[] = useMemo(() => [
-    { 
-      field: 'customerId', 
-      headerName: 'Customer ID', 
-      width: 120,
-      pinned: 'left',
-      filter: true
-    },
-    { 
-      field: 'name', 
-      headerName: 'Nama', 
-      width: 150,
-      filter: true
-    },
-    { 
-      field: 'category', 
-      headerName: 'Kategori', 
-      width: 120,
-      filter: true
-    },
-    { 
-      field: 'description', 
-      headerName: 'Deskripsi', 
-      width: 200,
-      filter: true
-    },
-    { 
-      field: 'cause', 
-      headerName: 'Penyebab', 
-      width: 150,
-      filter: true
-    },
-    { 
-      field: 'handling', 
-      headerName: 'Penanganan', 
-      width: 180,
-      filter: true
-    },
-    { 
-      field: 'openTime', 
-      headerName: 'Waktu Open', 
-      width: 150,
-      filter: 'agDateColumnFilter'
-    },
-    { 
-      field: 'closeTime', 
-      headerName: 'Waktu Close Tiket', 
-      width: 150,
-      filter: 'agDateColumnFilter'
-    },
-    { 
-      field: 'duration', 
-      headerName: 'Durasi', 
-      width: 100,
-      filter: 'agNumberColumnFilter',
-      cellRenderer: (params: any) => `${params.value}h`
-    },
-    { 
-      field: 'closeHandling', 
-      headerName: 'Close Penanganan', 
-      width: 150,
-      filter: 'agDateColumnFilter'
-    },
-    { 
-      field: 'handlingDuration', 
-      headerName: 'Durasi Penanganan', 
-      width: 130,
-      filter: 'agNumberColumnFilter',
-      cellRenderer: (params: any) => `${params.value}h`
-    },
-    { 
-      field: 'classification', 
-      headerName: 'Klasifikasi', 
-      width: 150,
-      filter: true
-    },
-    { 
-      field: 'subClassification', 
-      headerName: 'Sub Klasifikasi', 
-      width: 150,
-      filter: true
-    },
-    { 
-      field: 'status', 
-      headerName: 'Status', 
-      width: 100,
-      filter: true,
-      cellRenderer: (params: any) => {
-        const status = params.value;
-        const className = status === 'Closed' ? 'bg-green-100 text-green-800 px-2 py-1 rounded text-xs' : 'bg-yellow-100 text-yellow-800 px-2 py-1 rounded text-xs';
-        return `<span class="${className}">${status}</span>`;
-      }
-    },
-    { 
-      field: 'handling1', 
-      headerName: 'Penanganan 1', 
-      width: 150,
-      filter: true
-    },
-    { 
-      field: 'closeHandling1', 
-      headerName: 'Close Penanganan 1', 
-      width: 150,
-      filter: 'agDateColumnFilter'
-    },
-    { 
-      field: 'handlingDuration1', 
-      headerName: 'Durasi Penanganan 1', 
-      width: 130,
-      filter: 'agNumberColumnFilter',
-      cellRenderer: (params: any) => params.value ? `${params.value}h` : ''
-    },
-    { 
-      field: 'handling2', 
-      headerName: 'Penanganan 2', 
-      width: 150,
-      filter: true
-    },
-    { 
-      field: 'closeHandling2', 
-      headerName: 'Close Penanganan 2', 
-      width: 150,
-      filter: 'agDateColumnFilter'
-    },
-    { 
-      field: 'handlingDuration2', 
-      headerName: 'Durasi Penanganan 2', 
-      width: 130,
-      filter: 'agNumberColumnFilter',
-      cellRenderer: (params: any) => params.value ? `${params.value}h` : ''
-    },
-    { 
-      field: 'handling3', 
-      headerName: 'Penanganan 3', 
-      width: 150,
-      filter: true
-    },
-    { 
-      field: 'closeHandling3', 
-      headerName: 'Close Penanganan 3', 
-      width: 150,
-      filter: 'agDateColumnFilter'
-    },
-    { 
-      field: 'handlingDuration3', 
-      headerName: 'Durasi Penanganan 3', 
-      width: 130,
-      filter: 'agNumberColumnFilter',
-      cellRenderer: (params: any) => params.value ? `${params.value}h` : ''
-    },
-    { 
-      field: 'handling4', 
-      headerName: 'Penanganan 4', 
-      width: 150,
-      filter: true
-    },
-    { 
-      field: 'closeHandling4', 
-      headerName: 'Close Penanganan 4', 
-      width: 150,
-      filter: 'agDateColumnFilter'
-    },
-    { 
-      field: 'handlingDuration4', 
-      headerName: 'Durasi Penanganan 4', 
-      width: 130,
-      filter: 'agNumberColumnFilter',
-      cellRenderer: (params: any) => params.value ? `${params.value}h` : ''
-    },
-    { 
-      field: 'handling5', 
-      headerName: 'Penanganan 5', 
-      width: 150,
-      filter: true
-    },
-    { 
-      field: 'closeHandling5', 
-      headerName: 'Close Penanganan 5', 
-      width: 150,
-      filter: 'agDateColumnFilter'
-    },
-    { 
-      field: 'handlingDuration5', 
-      headerName: 'Durasi Penanganan 5', 
-      width: 130,
-      filter: 'agNumberColumnFilter',
-      cellRenderer: (params: any) => params.value ? `${params.value}h` : ''
-    },
-    { 
-      field: 'openBy', 
-      headerName: 'Open By', 
-      width: 140,
-      filter: true
-    }
-  ], []);
+  const filtered = useMemo(() => {
+    if (!data) return [];
+    if (!search) return data;
+    const s = search.toLowerCase();
+    return data.filter(row =>
+      columns.some(col => {
+        const val = row[col.key];
+        return val && String(val).toLowerCase().includes(s);
+      })
+    );
+  }, [data, search]);
 
-  const defaultColDef = useMemo(() => ({
-    sortable: true,
-    resizable: true,
-    filter: true,
-  }), []);
-
-  const onGridReady = (params: GridReadyEvent) => {
-    setGridApi(params.api);
-    
-    // Load column state from localStorage
-    const savedColumnState = localStorage.getItem('ag-grid-column-state');
-    if (savedColumnState && params.api) {
-      params.api.applyColumnState({
-        state: JSON.parse(savedColumnState),
-        applyOrder: true,
-      });
-    }
-  };
-
-  const onColumnMoved = () => {
-    if (gridApi) {
-      const columnState = gridApi.getColumnState();
-      localStorage.setItem('ag-grid-column-state', JSON.stringify(columnState));
-    }
-  };
-
-  const onQuickFilterChanged = (event: React.ChangeEvent<HTMLInputElement>) => {
-    if (gridApi) {
-      gridApi.setGridOption('quickFilterText', event.target.value);
-    }
-  };
+  const totalPages = Math.ceil(filtered.length / pageSize);
+  const paged = useMemo(() => filtered.slice((page - 1) * pageSize, page * pageSize), [filtered, page, pageSize]);
 
   return (
-    <div className="space-y-4 p-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-          Detail Data Tiket
-        </h2>
-        <div className="flex items-center space-x-4">
+    <div className="overflow-x-auto space-y-8">
+      <div className="min-w-full inline-block align-middle">
+        <div className="border rounded-lg p-6 divide-y divide-gray-200 dark:border-gray-700 dark:divide-gray-700">
+          {/* Search bar */}
+          <div className="py-5 px-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
+            <div className="text-2xl font-bold text-gray-900 dark:text-white mb-1">Ticket Data Details</div>
+            <div className="relative max-w-xs w-full">
           <input
             type="text"
-            placeholder="Cari data tiket..."
-            onChange={onQuickFilterChanged}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-          />
-        </div>
+                className="form-input ps-10 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white w-full text-sm"
+                placeholder="Quick search..."
+                value={search}
+                onChange={e => { setSearch(e.target.value); setPage(1); }}
+              />
+              <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                <svg className="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>
+              </div>
+            </div>
+          </div>
+          {/* Table */}
+          <div className="overflow-hidden">
+            <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+              <thead className="bg-gray-50 dark:bg-gray-700">
+                <tr>
+                  {columns.map(col => (
+                    <th key={col.key} className="px-5 py-3 text-left text-xs font-bold text-gray-500 uppercase whitespace-nowrap">{col.label}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                {paged.length === 0 ? (
+                  <tr><td colSpan={columns.length} className="text-center py-8 text-gray-400">No data found</td></tr>
+                ) : (
+                  paged.map((row, i) => (
+                    <tr key={i} className={i % 2 === 0 ? 'bg-white dark:bg-gray-900' : 'bg-gray-50 dark:bg-gray-800'}>
+                      {columns.map(col => (
+                        <td key={col.key} className="px-5 py-3 whitespace-pre-line text-sm text-gray-800 dark:text-gray-200 align-top">
+                          {col.render ? col.render(row[col.key], row) : row[col.key] || '-'}
+                        </td>
+                      ))}
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+          {/* Pagination */}
+          <div className="py-5 px-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <span className="text-sm">Page Size:</span>
+              <select value={pageSize} onChange={e => { setPageSize(Number(e.target.value)); setPage(1); }} className="border rounded px-2 py-1 text-sm">
+                {PAGE_SIZE_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+              </select>
+            </div>
+            <div className="flex items-center space-x-2">
+              <button onClick={() => setPage(1)} disabled={page === 1} className="text-gray-400 hover:text-primary p-2 inline-flex items-center gap-2 font-medium rounded-md disabled:opacity-50">«</button>
+              <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} className="text-gray-400 hover:text-primary p-2 inline-flex items-center gap-2 font-medium rounded-md disabled:opacity-50">‹</button>
+              <span className="w-10 h-10 bg-primary text-white p-2 inline-flex items-center justify-center text-sm font-medium rounded-full">{page}</span>
+              <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages} className="text-gray-400 hover:text-primary p-2 inline-flex items-center gap-2 font-medium rounded-md disabled:opacity-50">›</button>
+              <button onClick={() => setPage(totalPages)} disabled={page === totalPages} className="text-gray-400 hover:text-primary p-2 inline-flex items-center gap-2 font-medium rounded-md disabled:opacity-50">»</button>
+              <span className="text-sm">{`Page ${page} of ${totalPages}`}</span>
+            </div>
+          </div>
       </div>
-
-      <div className="ag-theme-quartz dark:ag-theme-quartz-dark" style={{ height: '70vh' }}>
-        <AgGridReact
-          rowData={rowData}
-          columnDefs={columnDefs}
-          defaultColDef={defaultColDef}
-          pagination={true}
-          paginationPageSize={20}
-          onGridReady={onGridReady}
-          onColumnMoved={onColumnMoved}
-          enableRangeSelection={true}
-          rowSelection="multiple"
-        />
       </div>
     </div>
   );

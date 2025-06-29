@@ -41,25 +41,36 @@ NavigationMenuList.displayName = NavigationMenuPrimitive.List.displayName
 const NavigationMenuItem = NavigationMenuPrimitive.Item
 
 const navigationMenuTriggerStyle = cva(
-  "group inline-flex h-10 w-max items-center justify-center rounded-md bg-background px-4 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground focus:outline-none disabled:pointer-events-none disabled:opacity-50 data-[active]:bg-accent/50 data-[state=open]:bg-accent/50"
+  `group inline-flex h-10 w-max items-center justify-center rounded-md px-4 py-2 text-base font-semibold transition-colors
+  focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5271ff] focus-visible:ring-offset-2
+  disabled:pointer-events-none disabled:opacity-50
+  data-[active]:bg-[#5271ff] data-[active]:text-white data-[active]:shadow-2xl data-[active]:backdrop-blur-md
+  data-[inactive]:bg-[rgba(82,113,255,0.10)] data-[inactive]:text-[#5271ff] data-[inactive]:border data-[inactive]:border-white/20 data-[inactive]:backdrop-blur-md data-[inactive]:shadow
+  hover:bg-[#5271ff] hover:text-white`
 )
 
 const NavigationMenuTrigger = React.forwardRef<
   React.ElementRef<typeof NavigationMenuPrimitive.Trigger>,
   React.ComponentPropsWithoutRef<typeof NavigationMenuPrimitive.Trigger>
->(({ className, children, ...props }, ref) => (
+>(({ className, style, ...props }, ref) => {
+  // Paksa style inline jika tab aktif
+  const isActive = props['data-state'] === 'active';
+  const forcedStyle = isActive ? { background: '#5271ff', color: '#fff', boxShadow: '0 8px 32px 0 rgba(82,113,255,0.25)', backdropFilter: 'blur(8px)', ...style } : style;
+  return (
   <NavigationMenuPrimitive.Trigger
     ref={ref}
-    className={cn(navigationMenuTriggerStyle(), "group", className)}
+      className={cn(navigationMenuTriggerStyle(), 'group', className)}
+      style={forcedStyle}
     {...props}
   >
-    {children}{" "}
+      {props.children} {" "}
     <ChevronDown
       className="relative top-[1px] ml-1 h-3 w-3 transition duration-200 group-data-[state=open]:rotate-180"
       aria-hidden="true"
     />
   </NavigationMenuPrimitive.Trigger>
-))
+  );
+})
 NavigationMenuTrigger.displayName = NavigationMenuPrimitive.Trigger.displayName
 
 const NavigationMenuContent = React.forwardRef<
