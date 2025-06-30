@@ -1,112 +1,342 @@
-import React, { useState, useMemo, useEffect } from 'react';
-import { DragDropContext, Droppable, Draggable, DropResult } from 'react-beautiful-dnd';
-import useDataStore from '@/store/dataStore';
-import { ITicket } from '@/lib/db';
+import React, { useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { TicketIcon } from 'lucide-react';
+import { ITicket } from '@/lib/db';
+import { formatDateTime, formatDurationDHM, formatDateTimeDDMMYYYY } from '@/lib/utils';
+import { format } from 'date-fns';
 
-type TicketStatus = 'Open' | 'In Progress' | 'Closed';
+// Define the structure of the kanban data object
+interface KanbanCustomer {
+  id: string;
+  name: string;
+  customerId: string;
+  ticketCount: number;
+  totalHandlingDurationFormatted: string;
+  allTickets: ITicket[];
+  fullTicketHistory: ITicket[];
+  analysis: {
+    description: string[];
+    cause: string[];
+    handling: string[];
+    conclusion: string;
+  };
+  repClass: string | null;
+}
 
-const columnTitles: Record<TicketStatus, string> = {
-    'Open': 'Open',
-    'In Progress': 'In Progress',
-    'Closed': 'Closed',
-};
+// Main Kanban Board Component
+interface KanbanBoardProps {
+  data?: KanbanCustomer[];
+  cutoffStart: Date;
+  cutoffEnd: Date;
+}
+const KanbanBoard = ({ data, cutoffStart, cutoffEnd }: KanbanBoardProps) => {
+  // --- All state and ref hooks must be at the top ---
+  const [page, setPage] = useState(1);
+  const pageSize = 20;
+  const [openDialogId, setOpenDialogId] = useState<string | null>(null);
+  const [repClassFilter, setRepClassFilter] = useState<string>('Total');
+  const [openClassDialog, setOpenClassDialog] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState('All');
 
-const KanbanBoard = () => {
-    const { allTickets, updateTicketStatus } = useDataStore();
-    const [columns, setColumns] = useState<Record<TicketStatus, ITicket[]>>({
-        'Open': [],
-        'In Progress': [],
-        'Closed': [],
+  // --- All derived state and memoized calculations after state hooks ---
+  const processedData = useMemo(() => {
+    if (!data) {
+      return {
+        repClassSummary: [],
+        totalCustomers: 0,
+      };
+    }
+    
+    const summaryMap: Record<string, { key: string; label: string; count: number; }> = {
+      'Normal': { key: 'Normal', label: 'Normal', count: 0 },
+      'Persisten': { key: 'Persisten', label: 'Persisten', count: 0 },
+      'Kronis': { key: 'Kronis', label: 'Kronis', count: 0 },
+      'Ekstrem': { key: 'Ekstrem', label: 'Ekstrem', count: 0 },
+    };
+
+    data.forEach(customer => {
+      const customerClass = customer.repClass || 'Normal';
+      if (summaryMap[customerClass]) {
+        summaryMap[customerClass].count++;
+      }
     });
 
-    useEffect(() => {
-        if (allTickets) {
-            const newColumns: Record<TicketStatus, ITicket[]> = {
-                'Open': [],
-                'In Progress': [],
-                'Closed': [],
-            };
-            allTickets.forEach(ticket => {
-                const status = ticket.status as TicketStatus || 'Open';
-                if (newColumns[status]) {
-                    newColumns[status].push(ticket);
-                }
-            });
-            setColumns(newColumns);
-        }
-    }, [allTickets]);
-
-    const onDragEnd = (result: DropResult) => {
-        const { source, destination, draggableId } = result;
-        if (!destination) return;
-
-        const sourceColId = source.droppableId as TicketStatus;
-        const destColId = destination.droppableId as TicketStatus;
-        const sourceCol = columns[sourceColId];
-        const destCol = columns[destColId];
-        
-        const sourceItems = [...sourceCol];
-        const destItems = [...destCol];
-        const [removed] = sourceItems.splice(source.index, 1);
-
-        if (sourceColId === destColId) {
-            sourceItems.splice(destination.index, 0, removed);
-            setColumns({ ...columns, [sourceColId]: sourceItems });
-        } else {
-            destItems.splice(destination.index, 0, removed);
-            setColumns({
-                ...columns,
-                [sourceColId]: sourceItems,
-                [destColId]: destItems,
-            });
-            updateTicketStatus(draggableId, destColId);
-        }
+    return { 
+      repClassSummary: Object.values(summaryMap),
+      totalCustomers: data.length,
     };
-    
-    return (
-        <div className="space-y-4">
-            <h1 className="text-3xl font-bold">Ticket Kanban Board</h1>
-            <DragDropContext onDragEnd={onDragEnd}>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-                    {Object.entries(columns).map(([columnId, tickets]) => (
-                        <Droppable key={columnId} droppableId={columnId}>
-                            {(provided, snapshot) => (
-                                <Card className={`flex flex-col ${snapshot.isDraggingOver ? 'bg-blue-50 dark:bg-zinc-800' : 'bg-gray-50 dark:bg-zinc-900'}`}>
-                                    <CardHeader>
-                                        <CardTitle className="flex justify-between items-center">
-                                            {columnTitles[columnId as TicketStatus]}
-                                            <Badge variant="secondary">{tickets.length}</Badge>
-                                        </CardTitle>
-                                    </CardHeader>
-                                    <CardContent ref={provided.innerRef} {...provided.droppableProps} className="flex-grow p-2 min-h-[500px]">
-                                        {tickets.map((ticket, index) => (
-                                            <Draggable key={ticket.id} draggableId={ticket.id} index={index}>
-                                                {(provided, snapshot) => (
-                                                    <div
-                                                        ref={provided.innerRef}
-                                                        {...provided.draggableProps}
-                                                        {...provided.dragHandleProps}
-                                                        className={`p-3 mb-3 rounded-lg shadow-sm border ${snapshot.isDragging ? 'bg-white shadow-lg' : 'bg-white/80'}`}
-                                                    >
-                                                        <p className="font-semibold text-sm">{ticket.category}</p>
-                                                        <p className="text-xs text-muted-foreground mt-1">{ticket.name}</p>
-                                                        <p className="text-xs text-muted-foreground">ID: {ticket.id.substring(0,8)}...</p>
-                                                    </div>
-                                                )}
-                                            </Draggable>
-                                        ))}
-                                        {provided.placeholder}
-                                    </CardContent>
-                                </Card>
-                            )}
-                        </Droppable>
-                    ))}
+  }, [data]);
+
+  const { repClassSummary, totalCustomers } = processedData;
+
+  const filteredCustomers = useMemo(() => {
+     if (!data) return [];
+     let filtered = data;
+     if (repClassFilter && repClassFilter !== 'Total') {
+       filtered = data.filter(c => c.repClass === repClassFilter);
+     }
+     
+     return filtered.slice().sort((a, b) => {
+       const aTickets = a.ticketCount || 0;
+       const bTickets = b.ticketCount || 0;
+       return bTickets - aTickets;
+     });
+   }, [data, repClassFilter]);
+  
+  const customerHistory = useMemo(() => {
+    if (!data) return {};
+    const isInCutoffRange = (openTime: string | null | undefined): boolean => {
+      if (!openTime) return false;
+      const d = new Date(openTime);
+      return d >= cutoffStart && d <= cutoffEnd;
+    }
+    const history: Record<string, ITicket[]> = {};
+    data.forEach(customer => {
+      const key = customer.customerId || 'Unknown';
+      history[key] = (customer.allTickets || []).filter(t => isInCutoffRange(t.openTime));
+    });
+    return history;
+  }, [data, cutoffStart, cutoffEnd]);
+
+  const customerInsight = useMemo(() => {
+    if (!data) return {};
+    const isInCutoffRange = (openTime: string | null | undefined): boolean => {
+      if (!openTime) return false;
+      const d = new Date(openTime);
+      return d >= cutoffStart && d <= cutoffEnd;
+    }
+    const insights: Record<string, { masalah: string; penyebab: string; solusi: string; rekomendasi: string; }> = {};
+    data.forEach(customer => {
+      const key = customer.customerId || 'Unknown';
+      const ticketsInPeriod = (customer.allTickets || []).filter(t => isInCutoffRange(t.openTime));
+      insights[key] = generateInsight(ticketsInPeriod);
+    });
+    return insights;
+  }, [data, cutoffStart, cutoffEnd]);
+
+  // --- Early return check after all hooks have been called ---
+  if (!data || data.length === 0) {
+  return (
+      <div className="flex items-center justify-center h-full text-gray-500">
+        <p>Upload file untuk melihat data Kanban.</p>
+    </div>
+  );
+  }
+
+  // --- Component Logic & Render ---
+  const totalPages = Math.ceil(filteredCustomers.length / pageSize);
+
+  const repClassOptions = [
+    { label: 'Total', value: 'Total' },
+    { label: 'Normal', value: 'Normal' },
+    { label: 'Persisten', value: 'Persisten' },
+    { label: 'Kronis', value: 'Kronis' },
+    { label: 'Ekstrem', value: 'Ekstrem' },
+  ];
+
+  const customerRiskLabel: Record<string, { risk: string, color: string, desc: string }> = {
+    Normal: { risk: 'Normal Risk', color: 'text-green-700', desc: 'Customer dengan jumlah komplain < 3 dalam periode. Risiko sangat rendah.' },
+    Persisten: { risk: 'Medium Risk', color: 'text-yellow-700', desc: 'Customer dengan 3–9 komplain dalam periode. Risiko sedang, perlu perhatian.' },
+    Kronis: { risk: 'High Risk', color: 'text-red-700', desc: 'Customer dengan 10–18 komplain dalam periode. Risiko tinggi, perlu intervensi.' },
+    Ekstrem: { risk: 'Extreme Risk', color: 'text-blue-700', desc: 'Customer dengan >18 komplain dalam periode. Risiko sangat tinggi, perlu tindakan khusus.' },
+  };
+
+  function top(items: string[]) {
+    if (!items || items.length === 0) return '-';
+    const counts: Record<string, number> = {};
+    items.forEach(item => { counts[item] = (counts[item] || 0) + 1; });
+    return Object.keys(counts).reduce((a, b) => counts[a] > counts[b] ? a : b);
+  }
+
+  function generateInsight(tickets: ITicket[]) {
+    if (!tickets || tickets.length === 0) return { masalah: '-', penyebab: '-', solusi: '-', rekomendasi: 'Data tidak cukup untuk insight.' };
+    const analysis = {
+      description: tickets.map(t => t.description).filter(Boolean) as string[],
+      cause: tickets.map(t => t.cause).filter(Boolean) as string[],
+      handling: tickets.map(t => t.handling).filter(Boolean) as string[],
+    };
+    const masalah = top(analysis.description);
+    const penyebab = top(analysis.cause);
+    const solusi = top(analysis.handling);
+    let rekomendasi = '';
+    if (masalah !== '-' && penyebab !== '-' && solusi !== '-') {
+      rekomendasi = `Pelanggan ini paling sering mengalami masalah ${masalah}, yang umumnya dipicu oleh ${penyebab}. Solusi yang terbukti efektif adalah ${solusi}. Disarankan untuk memperkuat edukasi dan SOP terkait ${solusi}, serta meningkatkan kemampuan deteksi dini pada ${penyebab}, agar penanganan masalah ${masalah} dapat dilakukan lebih cepat dan efisien.`;
+    } else {
+      rekomendasi = 'Perbanyak data agar insight lebih akurat.';
+    }
+    return { masalah, penyebab, solusi, rekomendasi };
+  }
+
+  const totalSummary = {
+    key: 'Total',
+    label: 'Total Customers',
+    color: 'bg-gray-100 text-gray-800',
+    count: totalCustomers,
+  };
+
+  const finalSummary = [totalSummary, ...repClassSummary];
+
+  return (
+    <>
+      {/* Summary Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6 mb-6">
+        {finalSummary.map((item) => {
+          const riskInfo = item.key !== 'Total' ? customerRiskLabel[item.key] : null;
+          const accentColor = {
+            Normal: '#22c55e',
+            Persisten: '#fbbf24',
+            Kronis: '#f97316',
+            Ekstrem: '#5271ff',
+            Total: '#3b82f6',
+          }[item.key] || '#e5e7eb';
+          const badgeColor = {
+            Normal: 'bg-green-100 text-green-700',
+            Persisten: 'bg-yellow-100 text-yellow-800',
+            Kronis: 'bg-orange-100 text-orange-800',
+            Ekstrem: 'bg-blue-100 text-blue-800',
+            Total: 'bg-blue-50 text-blue-700',
+          }[item.key] || 'bg-gray-100 text-gray-800';
+          const icon = {
+            Normal: <svg className="w-6 h-6 text-green-500" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>,
+            Persisten: <svg className="w-6 h-6 text-yellow-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3" /><circle cx="12" cy="12" r="10" /></svg>,
+            Kronis: <svg className="w-6 h-6 text-orange-500" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3" /><circle cx="12" cy="12" r="10" /></svg>,
+            Ekstrem: <svg className="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M18.364 5.636l-1.414 1.414A9 9 0 105.636 18.364l1.414-1.414" /></svg>,
+            Total: <svg className="w-6 h-6 text-blue-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /></svg>,
+          }[item.key];
+          const percent = totalCustomers > 0 ? ((item.count / totalCustomers) * 100).toFixed(1) : '0.0';
+          return (
+            <div
+              key={item.key}
+              onClick={() => setRepClassFilter(item.key)}
+              className={`relative cursor-pointer transition-all duration-300 flex flex-col justify-between bg-white/90 dark:bg-zinc-900/90 border border-gray-100 dark:border-zinc-800 rounded-2xl shadow-lg p-8 min-h-[200px] group hover:scale-[1.025] hover:shadow-2xl ${repClassFilter === item.key ? 'ring-2 ring-blue-500' : ''}`}
+              style={{overflow:'hidden'}}
+            >
+              {/* Badge risiko */}
+              {item.key !== 'Total' && riskInfo && (
+                <span className={`absolute top-5 right-6 px-4 py-1 rounded-full text-sm font-bold shadow-sm bg-gradient-to-r from-blue-400 to-blue-600 text-white`}>{riskInfo.risk}</span>
+              )}
+              {/* Ikon risiko dan label */}
+              <div className="flex items-center gap-3 mb-3 z-10">
+                {icon}
+                <span className="text-xl font-bold text-gray-900 dark:text-white">{item.label}</span>
+              </div>
+              {/* Angka besar */}
+              <div className="flex items-center gap-2 mb-2 z-10">
+                <span className="text-5xl font-extrabold text-gray-900 dark:text-white">{item.count}</span>
+                {item.key !== 'Total' && <span className="text-base text-gray-500 font-medium">({percent}% of total)</span>}
+              </div>
+              {/* Progress bar */}
+              {item.key !== 'Total' && (
+                <div className="w-full h-3 bg-gray-100 dark:bg-zinc-800 rounded-full overflow-hidden mb-2">
+                  <div style={{width: `${percent}%`, background: accentColor, opacity: 0.7}} className="h-full rounded-full transition-all duration-300" />
                 </div>
-            </DragDropContext>
+              )}
+              {/* Deskripsi singkat */}
+              {item.key !== 'Total' && riskInfo && (
+                <div className="text-sm text-gray-500 dark:text-gray-400 mt-1 z-10">
+                  {riskInfo.desc}
+                </div>
+              )}
+              {item.key === 'Total' && (
+                <div className="text-sm text-gray-500 dark:text-gray-400 mt-1 z-10">Total unique customers in the selected period.</div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      <div className="flex-grow pr-4 -mr-4">
+        {filteredCustomers.length > 0 ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            {filteredCustomers.slice((page - 1) * pageSize, page * pageSize).map((customer) => {
+              const key = customer.customerId || 'Unknown';
+              const ticketsInRange = customerHistory[key] || [];
+              const countInRange = ticketsInRange.length;
+              const insightData = customerInsight[key] || { masalah: '-', penyebab: '-', solusi: '-', rekomendasi: '-' };
+              const closed = ticketsInRange.filter(t => t.status === 'Closed').length;
+              const percentClosed = ticketsInRange.length > 0 ? Math.round((closed / ticketsInRange.length) * 100) : 0;
+              const isAllClosed = percentClosed === 100;
+              const statusIcon = isAllClosed
+                ? <svg className="w-5 h-5 text-green-500" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                : <svg className="w-5 h-5 text-yellow-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3" /><circle cx="12" cy="12" r="10" /></svg>;
+              return (
+                <div key={customer.id} onClick={() => setOpenDialogId(customer.id)}>
+                  <div className="relative bg-white/90 dark:bg-zinc-900/90 border border-gray-100 dark:border-zinc-800 rounded-2xl shadow-lg p-7 flex flex-col min-h-[200px] transition-all duration-300 hover:scale-[1.025] hover:shadow-2xl group cursor-pointer" style={{overflow:'hidden'}}>
+                    {/* Header: Nama customer dan badge jumlah tiket */}
+                    <div className="flex justify-between items-center mb-4 z-10">
+                      <div className="flex items-center gap-3 min-w-0">
+                        {statusIcon}
+                        <h3 className="text-lg font-bold text-blue-900 dark:text-blue-200 truncate max-w-[180px] sm:max-w-[160px] md:max-w-[200px] lg:max-w-[240px]">{customer.name}</h3>
+                      </div>
+                      <span className="bg-gradient-to-r from-blue-500 to-blue-400 text-white text-sm font-bold rounded-full px-4 py-1 shadow">{customer.ticketCount} Tickets</span>
+                    </div>
+                    {/* Info closed, avg. handling, agent terbanyak */}
+                    <div className="flex flex-wrap gap-3 mb-3 z-10 items-center">
+                      <span className="flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-green-50 text-green-700 border border-green-200 shadow-sm">
+                        <svg className="w-4 h-4 text-green-500" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                        Closed: {closed} of {ticketsInRange.length} ({percentClosed}%)
+                      </span>
+                      <span className="flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200 shadow-sm">
+                        <svg className="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3" /><circle cx="12" cy="12" r="10" /></svg>
+                        Avg. Handling: {customer.totalHandlingDurationFormatted}
+                      </span>
+                      {/* Agent terbanyak handle */}
+                      {(() => {
+                        const agentCount: Record<string, number> = {};
+                        ticketsInRange.forEach(t => {
+                          if (t.openBy) agentCount[t.openBy] = (agentCount[t.openBy] || 0) + 1;
+                        });
+                        const topAgent = Object.entries(agentCount).sort((a, b) => b[1] - a[1])[0];
+                        if (topAgent) {
+                          return (
+                            <span className="flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-purple-50 text-purple-700 border border-purple-200 shadow-sm">
+                              <svg className="w-4 h-4 text-purple-500" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4" /><path d="M6 20v-2a4 4 0 014-4h0a4 4 0 014 4v2" /></svg>
+                              {topAgent[0]} <span className="ml-1">({topAgent[1]} tickets)</span>
+                            </span>
+                          );
+                        }
+                        return null;
+                      })()}
+                    </div>
+                    {/* Badge insight utama */}
+                    <div className="mt-auto">
+                      <span className="bg-rose-50 text-rose-700 dark:bg-rose-900/20 dark:text-rose-200 rounded-full px-4 py-1 text-base font-medium shadow">{insightData.masalah}</span>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="flex items-center justify-center h-full text-gray-500">
+            <p>No customers match the selected filter.</p>
+          </div>
+        )}
+      </div>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex justify-center items-center mt-4 space-x-2">
+          <button
+            onClick={() => setPage(p => Math.max(1, p - 1))}
+            disabled={page === 1}
+            className="px-3 py-1 text-sm bg-gray-200 dark:bg-gray-700 rounded disabled:opacity-50"
+          >
+            Previous
+          </button>
+          <span className="text-sm">Page {page} of {totalPages}</span>
+          <button
+            onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+            disabled={page === totalPages}
+            className="px-3 py-1 text-sm bg-gray-200 dark:bg-gray-700 rounded disabled:opacity-50"
+          >
+            Next
+          </button>
         </div>
-    );
+      )}
+    </>
+  );
 };
 
-export default KanbanBoard; 
+export default KanbanBoard;

@@ -37,7 +37,6 @@ export interface ITicket {
   // Properti tambahan untuk mempermudah query
   uploadTimestamp: number; // Timestamp kapan data diupload
   repClass?: string; // Repeat-complainer class (Normal, Persisten, Kronis, Ekstrem)
-  fcr: 'Yes' | 'No';
 }
 
 export class TicketDB extends Dexie {

@@ -1,22 +1,18 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { DocumentArrowUpIcon, TableCellsIcon, TrashIcon, CheckCircleIcon, XCircleIcon, ClockIcon, ExclamationTriangleIcon, ServerIcon, PaperClipIcon, ArrowDownTrayIcon } from '@heroicons/react/24/outline';
-import { useToast } from '@/hooks/use-toast';
+import { Button } from './ui/button';
+import { Label } from './ui/label';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from './ui/card';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './ui/accordion';
+import { Badge } from './ui/badge';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 import { db, ITicket } from '@/lib/db';
-import { Button } from './ui/button';
-import { Progress } from './ui/progress';
-import { Switch } from './ui/switch';
-import { Label } from './ui/label';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from './ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table';
 import { formatDurationDHM } from '@/lib/utils';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './ui/accordion';
-import { Badge } from './ui/badge';
 
-interface UploadProcessProps {
-  onUploadComplete?: () => void;
-}
+type UploadProcessProps = {
+  onUploadComplete: () => void;
+};
 
 interface IErrorLog {
   row: number;
@@ -43,10 +39,9 @@ const EXPECTED_HEADERS = [
   "Open By"
 ];
 
-const UploadProcess: React.FC<UploadProcessProps> = ({ onUploadComplete }) => {
+const UploadProcess = ({ onUploadComplete }: UploadProcessProps) => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [progress, setProgress] = useState(0);
-  const { toast } = useToast();
   
   const [uploadSummary, setUploadSummary] = useState<IUploadSummary | null>(null);
   const [errorLog, setErrorLog] = useState<IErrorLog[]>([]);
@@ -105,12 +100,7 @@ const UploadProcess: React.FC<UploadProcessProps> = ({ onUploadComplete }) => {
 
         const missingHeaders = EXPECTED_HEADERS.filter(h => !fileHeaders.includes(h));
         if(missingHeaders.length > 0) {
-      toast({
-                title: "Header Tidak Sesuai",
-                description: `File Anda tidak memiliki kolom berikut: ${missingHeaders.join(', ')}. Silakan unduh dan gunakan template yang disediakan.`,
-                variant: "destructive",
-                duration: 10000,
-            });
+            console.error("Header Tidak Sesuai", { missingHeaders });
             setIsProcessing(false);
             return;
         }
@@ -131,36 +121,17 @@ const UploadProcess: React.FC<UploadProcessProps> = ({ onUploadComplete }) => {
         setUploadSummary(summary);
         setErrorLog(errorRows);
 
-        toast({
-            title: "Proses Selesai!",
-            description: `Berhasil mengimpor ${successCount} dari ${totalRowsInFile} baris.`,
-        });
-
         if (errorCount > 0) {
-            toast({
-                title: `Terdapat ${errorCount} Kegagalan`,
-                description: "Beberapa baris gagal diimpor. Lihat log untuk detail.",
-                variant: "default",
-            });
+            console.warn(`Terdapat ${errorCount} Kegagalan`, { errorRows });
         }
         if (zeroDurationCount > 0) {
-             toast({
-                title: "Peringatan Durasi 0",
-                description: `${zeroDurationCount} tiket memiliki durasi 0 jam. Periksa kembali kolom waktu di file Excel.`,
-                variant: "default",
-                duration: 9000
-            });
+             console.warn(`${zeroDurationCount} tiket memiliki durasi 0 jam. Periksa kembali kolom waktu di file Excel.`);
         }
 
         onUploadComplete();
 
     } catch (error) {
       console.error("Error processing file:", error);
-      toast({
-        title: "Upload gagal",
-        description: "Terjadi kesalahan saat memproses file. Pastikan formatnya benar.",
-        variant: "destructive",
-      });
     } finally {
       setIsProcessing(false);
       setProgress(100);
@@ -172,18 +143,10 @@ const UploadProcess: React.FC<UploadProcessProps> = ({ onUploadComplete }) => {
       await db.tickets.clear();
       setUploadSummary(null);
       setErrorLog([]);
-      toast({
-        title: "Cache & Database Dihapus",
-        description: "Semua data tiket dan hasil unggahan telah dihapus.",
-      });
+      console.info("Cache & Database Dihapus");
       onUploadComplete();
     } catch (error) {
       console.error("Error clearing database:", error);
-      toast({
-        title: "Gagal Membersihkan",
-        description: "Terjadi kesalahan saat mencoba menghapus data.",
-        variant: "destructive",
-      });
     }
   };
 
@@ -196,10 +159,7 @@ const UploadProcess: React.FC<UploadProcessProps> = ({ onUploadComplete }) => {
     const blob = new Blob([wbout], { type: 'application/octet-stream' });
     saveAs(blob, 'Template_Upload_Tiket.xlsx');
 
-    toast({
-        title: "Template Diunduh",
-        description: "Gunakan file ini untuk memastikan format data Anda benar.",
-    });
+    console.info("Template Diunduh");
   };
 
   return (
@@ -216,11 +176,7 @@ const UploadProcess: React.FC<UploadProcessProps> = ({ onUploadComplete }) => {
                     <ServerIcon className="h-6 w-6 text-blue-500" />
                     <Label htmlFor="backend-parser" className="font-semibold text-blue-800 dark:text-blue-300 text-base">Automatic Parser</Label>
                 </div>
-                <Switch 
-                id="backend-parser" 
-                checked={useBackendParser} 
-                onCheckedChange={setUseBackendParser}
-                />
+                <input type="checkbox" id="backend-parser" checked={useBackendParser} onChange={e => setUseBackendParser(e.target.checked)} />
             </div>
             <FileDropZone 
               onFileUpload={handleFileUpload} 
@@ -285,7 +241,7 @@ const FileDropZone = ({ onFileUpload, isProcessing, progress }: { onFileUpload: 
         <>
           <div className="loader ease-linear rounded-full border-4 border-t-4 border-gray-200 h-12 w-12 mb-4 animate-spin" style={{borderTopColor: '#3b82f6'}}></div>
           <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300">Processing File...</h3>
-          <Progress value={progress} className="w-full max-w-xs mt-4" />
+          <progress value={progress} max="100" className="w-full max-w-xs mt-4" />
         </>
       ) : (
         <>
@@ -372,22 +328,22 @@ const ErrorLogTable = ({ errors }: { errors: IErrorLog[] }) => {
               </AccordionTrigger>
               <AccordionContent>
                 <div className="max-h-48 overflow-y-auto pr-4 border-t pt-2 mt-2">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead className="w-[100px] text-left text-xs font-semibold">Row #</TableHead>
-                        <TableHead className="text-left text-xs font-semibold">Full Detail</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
+                  <table>
+                    <thead>
+                      <tr>
+                        <th className="w-[100px] text-left text-xs font-semibold">Row #</th>
+                        <th className="text-left text-xs font-semibold">Full Detail</th>
+                      </tr>
+                    </thead>
+                    <tbody>
                       {errs.map((err) => (
-                        <TableRow key={err.row}>
-                          <TableCell className="font-medium text-left text-xs">{err.row}</TableCell>
-                          <TableCell className="text-xs text-left break-words whitespace-normal">{err.reason}</TableCell>
-                        </TableRow>
+                        <tr key={err.row}>
+                          <td className="font-medium text-left text-xs">{err.row}</td>
+                          <td className="text-xs text-left break-words whitespace-normal">{err.reason}</td>
+                        </tr>
                       ))}
-                    </TableBody>
-                  </Table>
+                    </tbody>
+                  </table>
                 </div>
               </AccordionContent>
             </AccordionItem>
