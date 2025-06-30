@@ -87,9 +87,10 @@ const AgentAnalytics = ({ data }) => {
   const { agentList, summary, agentMonthlyChart } = data;
 
   const summaryCards = [
-    { title: 'Total Active Agents', value: summary.totalAgents, icon: Users },
-    { title: 'Most Active Agent', value: summary.busiestAgentName, icon: Trophy },
-    { title: 'Most Efficient Agent', value: summary.mostEfficientAgentName, icon: Zap },
+    { title: 'Total Active Agents', value: summary.totalAgents, icon: Users, description: 'Agents handling tickets' },
+    { title: 'Most Active Agent', value: summary.busiestAgentName, icon: Trophy, description: 'Highest ticket volume' },
+    { title: 'Most Efficient Agent', value: summary.mostEfficientAgentName, icon: Zap, description: 'Lowest avg. handling time' },
+    { title: 'Highest Resolution Rate', value: summary.highestResolutionAgentName, icon: Award, description: 'Best ticket closing rate' },
   ];
 
   // Prepare per-agent monthly data for trendline
@@ -108,229 +109,122 @@ const AgentAnalytics = ({ data }) => {
   }, [agentMonthlyChart]);
 
   return (
-    <div className="space-y-8">
+    <>
       <h2 className="text-3xl font-extrabold text-gray-900 text-center mb-6 font-sans">Agent Performance Analysis</h2>
       {/* Global KPI Summary Cards */}
-      {summaryKpi && (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-2">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-6">
         {summaryCards.map((card, index) => (
-            <Card key={index} className="rounded-xl shadow-sm border bg-white dark:bg-zinc-900">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-base font-semibold font-sans">{card.title}</CardTitle>
-                <card.icon className={`h-6 w-6 ${AGENT_COLORS[index % AGENT_COLORS.length]}`} />
+            <Card key={index} className="rounded-2xl shadow-lg p-6 border border-gray-100 dark:border-zinc-800 bg-white/90 dark:bg-zinc-900/80">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-0">
+                <CardTitle className="text-sm font-semibold font-sans text-gray-500 dark:text-gray-400">{card.title}</CardTitle>
+                <card.icon className={`h-5 w-5 ${AGENT_COLORS[index % AGENT_COLORS.length]}`} />
             </CardHeader>
-              <CardContent className="py-5 px-5">
-                <div className="text-3xl font-extrabold text-gray-900 font-sans">{card.value}</div>
+              <CardContent className="p-0">
+                <div className="text-2xl font-extrabold text-gray-900 dark:text-white font-sans truncate" title={card.value}>{card.value}</div>
+                <p className="text-xs text-gray-400 dark:text-gray-500">{card.description}</p>
             </CardContent>
           </Card>
         ))}
       </div>
-      )}
       {/* Per-Agent Cards with Trendline */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         {agentList.map((agent, index) => {
           // Find metric for this agent
           const metric = agentMetrics.find(m => m.agent === agent.agentName);
+          const trendData = agentTrends[agent.agentName];
+
+          const durationMetrics = [
+            { label: 'Total', value: agent.totalDurationFormatted, description: 'Total Handling Duration' },
+            { label: 'Rata-rata', value: agent.avgDurationFormatted, description: 'Average Handling Duration' },
+            { label: 'Tercepat', value: agent.minDurationFormatted, description: 'Fastest Handling Duration' },
+            { label: 'Terlama', value: agent.maxDurationFormatted, description: 'Longest Handling Duration' },
+          ];
+
+          const kpiMetrics = metric ? [
+            { label: 'FRT', value: metric.frt.toFixed(1), icon: Clock },
+            { label: 'ART', value: metric.art.toFixed(1), icon: Clock },
+            { label: 'FCR', value: `${metric.fcr.toFixed(1)}%`, icon: Award },
+            { label: 'SLA', value: `${metric.sla.toFixed(1)}%`, icon: Award },
+            { label: 'Volume', value: metric.vol, icon: BarChart },
+            { label: 'Backlog', value: metric.backlog, icon: Inbox, isRed: true },
+          ] : [];
+
           return (
-            <Card key={index} className="rounded-xl shadow-sm border bg-white dark:bg-zinc-900 flex flex-col py-5 px-5 transition-transform duration-200 hover:scale-[1.025] hover:shadow-2xl relative">
-              {/* KPI Badge */}
-              {metric && (
-                <span
-                  className={`absolute top-3 right-3 px-2 py-0.5 rounded-full text-xs font-bold bg-primary text-primary-foreground shadow-lg border-2 border-white drop-shadow-lg font-sans`}
-                  title={`Composite Efficiency Score ${metric.score.toFixed(1)}`}
-                  style={{letterSpacing: 1}}
-                >
-                  {metric.rank}
-                </span>
-              )}
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-xl font-extrabold font-sans" style={{color: TREND_COLORS[index % TREND_COLORS.length]}}>{agent.agentName}</span>
-                {/* Badge rank simple & keren */}
+            <div key={index} className="bg-white/95 dark:bg-zinc-900/95 rounded-2xl shadow-lg p-6 border border-gray-100 dark:border-zinc-800 flex flex-col gap-6 transition-all duration-300">
+              {/* Agent Header */}
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex items-center gap-4">
+                  <h3 className="text-xl font-extrabold text-blue-600 dark:text-blue-400">{agent.agentName}</h3>
+                  <span className="rounded-md px-3 py-1 text-sm font-bold bg-blue-100 text-blue-600 dark:bg-blue-900/50 dark:text-blue-300">{metric ? metric.vol : 0} Tickets</span>
+                </div>
+                {/* Restored Rank Badge */}
                 {metric && (
                   <span
-                    className={`absolute top-3 right-3 w-8 h-8 flex items-center justify-center rounded-full font-bold text-lg shadow-sm
-                      ${metric.rank === 'A' ? 'bg-green-500 text-white' :
-                        metric.rank === 'B' ? 'bg-blue-500 text-white' :
-                        metric.rank === 'C' ? 'bg-yellow-400 text-white' :
-                        'bg-red-500 text-white'}
-                      transition-transform duration-150 hover:scale-110 cursor-default`}
+                    className={`w-10 h-10 flex items-center justify-center rounded-full font-bold text-xl shadow-inner
+                      ${metric.rank === 'A' ? 'bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-300 border-2 border-green-200 dark:border-green-700' :
+                        metric.rank === 'B' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300 border-2 border-blue-200 dark:border-blue-700' :
+                        metric.rank === 'C' ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/50 dark:text-yellow-300 border-2 border-yellow-200 dark:border-yellow-700' :
+                        'bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-300 border-2 border-red-200 dark:border-red-700'}
+                      `}
                     title={
-                      metric.rank === 'A' ? 'Excellent' :
-                      metric.rank === 'B' ? 'Good' :
-                      metric.rank === 'C' ? 'Average' :
-                      'Needs Improvement'
+                      metric.rank === 'A' ? `Excellent (Score: ${metric.score.toFixed(1)})` :
+                      metric.rank === 'B' ? `Good (Score: ${metric.score.toFixed(1)})` :
+                      metric.rank === 'C' ? `Average (Score: ${metric.score.toFixed(1)})` :
+                      `Needs Improvement (Score: ${metric.score.toFixed(1)})`
                     }
                   >
                     {metric.rank}
                   </span>
                 )}
               </div>
-              <div className="flex items-center gap-2 mb-2">
-                <span className="rounded px-3 py-1 text-sm font-bold font-sans shadow" style={{background:'#5271ff',color:'#fff'}}>{agent.ticketCount} Tickets</span>
+              
+              {/* Duration Metrics */}
+              <div className="grid grid-cols-4 gap-4">
+                {durationMetrics.map(m => (
+                  <div key={m.label} className="bg-white dark:bg-zinc-900 rounded-xl shadow-md p-4 flex flex-col items-center text-center border border-gray-100 dark:border-zinc-800">
+                    <Clock className="w-5 h-5 text-gray-400 mb-2"/>
+                    <p className="text-xs text-gray-500 font-semibold">{m.label}</p>
+                    <p className="text-lg font-bold text-gray-800 dark:text-gray-100 font-mono">{m.value}</p>
+                    <p className="text-[10px] text-gray-400 mt-1">{m.description}</p>
+                  </div>
+                ))}
               </div>
-              {/* Redesain statistik durasi clean */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
-                <div className="bg-white dark:bg-zinc-900 rounded-xl shadow p-3 flex flex-col items-center border border-gray-200 dark:border-zinc-800 hover:shadow-lg transition-all">
-                  <Clock className="text-blue-500 w-5 h-5 mb-1" />
-                  <span className="text-[11px] text-gray-500 font-semibold">Total</span>
-                  <span className="font-mono font-extrabold text-neutral-900 dark:text-white text-lg">{agent.totalDurationFormatted}</span>
-                  <span className="text-[10px] text-gray-400 mt-1">Total Handling Duration</span>
-                </div>
-                <div className="bg-white dark:bg-zinc-900 rounded-xl shadow p-3 flex flex-col items-center border border-gray-200 dark:border-zinc-800 hover:shadow-lg transition-all">
-                  <Clock className="text-blue-500 w-5 h-5 mb-1" />
-                  <span className="text-[11px] text-gray-500 font-semibold">Rata-rata</span>
-                  <span className="font-mono font-extrabold text-neutral-900 dark:text-white text-lg">{agent.avgDurationFormatted}</span>
-                  <span className="text-[10px] text-gray-400 mt-1">Average Handling Duration</span>
-                </div>
-                <div className="bg-white dark:bg-zinc-900 rounded-xl shadow p-3 flex flex-col items-center border border-gray-200 dark:border-zinc-800 hover:shadow-lg transition-all">
-                  <Clock className="text-blue-500 w-5 h-5 mb-1" />
-                  <span className="text-[11px] text-gray-500 font-semibold">Tercepat</span>
-                  <span className="font-mono font-extrabold text-neutral-900 dark:text-white text-lg">{agent.minDurationFormatted}</span>
-                  <span className="text-[10px] text-gray-400 mt-1">Fastest Handling Duration</span>
-                </div>
-                <div className="bg-white dark:bg-zinc-900 rounded-xl shadow p-3 flex flex-col items-center border border-gray-200 dark:border-zinc-800 hover:shadow-lg transition-all">
-                  <Clock className="text-blue-500 w-5 h-5 mb-1" />
-                  <span className="text-[11px] text-gray-500 font-semibold">Terlama</span>
-                  <span className="font-mono font-extrabold text-neutral-900 dark:text-white text-lg">{agent.maxDurationFormatted}</span>
-                  <span className="text-[10px] text-gray-400 mt-1">Longest Handling Duration</span>
-                </div>
-              </div>
-              {/* Detail Penilaian KPI clean */}
+
+              {/* KPI Metrics */}
               {metric && (
-                <div className="grid grid-cols-3 gap-3 mb-3">
-                  {/* FRT */}
-                  <div className="bg-white dark:bg-zinc-900 rounded-lg shadow p-2 flex flex-col items-center border border-gray-200 dark:border-zinc-800">
-                    <Clock className="text-blue-500 w-5 h-5 mb-1" />
-                    <span className="sr-only">First Response Time</span>
-                    <span className="font-mono font-bold text-neutral-900 dark:text-white text-base">{metric.frt.toFixed(1)}</span>
-                    <span className="text-[10px] text-gray-500 font-semibold mt-1">FRT</span>
-                  </div>
-                  {/* ART */}
-                  <div className="bg-white dark:bg-zinc-900 rounded-lg shadow p-2 flex flex-col items-center border border-gray-200 dark:border-zinc-800">
-                    <Clock className="text-blue-500 w-5 h-5 mb-1" />
-                    <span className="sr-only">Average Resolution Time</span>
-                    <span className="font-mono font-bold text-neutral-900 dark:text-white text-base">{metric.art.toFixed(1)}</span>
-                    <span className="text-[10px] text-gray-500 font-semibold mt-1">ART</span>
-                  </div>
-                  {/* FCR */}
-                  <div className="bg-white dark:bg-zinc-900 rounded-lg shadow p-2 flex flex-col items-center border border-gray-200 dark:border-zinc-800">
-                    <Award className="text-blue-500 w-5 h-5 mb-1" />
-                    <span className="sr-only">First Contact Resolution</span>
-                    <span className="font-mono font-bold text-neutral-900 dark:text-white text-base">{metric.fcr.toFixed(1)}%</span>
-                    <span className="text-[10px] text-gray-500 font-semibold mt-1">FCR</span>
-                  </div>
-                  {/* SLA */}
-                  <div className="bg-white dark:bg-zinc-900 rounded-lg shadow p-2 flex flex-col items-center border border-gray-200 dark:border-zinc-800">
-                    <Award className="text-blue-500 w-5 h-5 mb-1" />
-                    <span className="sr-only">SLA</span>
-                    <span className="font-mono font-bold text-neutral-900 dark:text-white text-base">{metric.sla.toFixed(1)}%</span>
-                    <span className="text-[10px] text-gray-500 font-semibold mt-1">SLA</span>
-                  </div>
-                  {/* Volume */}
-                  <div className="bg-white dark:bg-zinc-900 rounded-lg shadow p-2 flex flex-col items-center border border-gray-200 dark:border-zinc-800">
-                    <BarChart className="text-blue-500 w-5 h-5 mb-1" />
-                    <span className="sr-only">Volume</span>
-                    <span className="font-mono font-bold text-neutral-900 dark:text-white text-base">{metric.vol}</span>
-                    <span className="text-[10px] text-gray-500 font-semibold mt-1">Volume</span>
-                  </div>
-                  {/* Backlog */}
-                  <div className="bg-white dark:bg-zinc-900 rounded-lg shadow p-2 flex flex-col items-center border border-gray-200 dark:border-zinc-800">
-                    <Inbox className="text-red-500 w-5 h-5 mb-1" />
-                    <span className="sr-only">Backlog</span>
-                    <span className="font-mono font-bold text-red-600 dark:text-red-400 text-base">{metric.backlog}</span>
-                    <span className="text-[10px] text-gray-500 font-semibold mt-1">Backlog</span>
-                  </div>
+                <div className="grid grid-cols-6 gap-3">
+                  {kpiMetrics.map(kpi => (
+                    <div key={kpi.label} className="bg-white dark:bg-zinc-900 rounded-xl shadow-md p-3 flex flex-col items-center text-center border border-gray-100 dark:border-zinc-800">
+                      <kpi.icon className={`w-5 h-5 mb-2 ${kpi.isRed ? 'text-red-500' : 'text-blue-500'}`} />
+                      <p className={`text-lg font-bold font-mono ${kpi.isRed ? 'text-red-500' : 'text-gray-800 dark:text-gray-100'}`}>{kpi.value}</p>
+                      <p className="text-[10px] text-gray-500 font-semibold mt-1">{kpi.label}</p>
+                      {/* Penjelasan KPI */}
+                      <p className="text-[10px] text-gray-400 mt-0.5">
+                        {kpi.label === 'FRT' && 'Rata-rata waktu respons pertama (menit)'}
+                        {kpi.label === 'ART' && 'Rata-rata waktu tiket selesai (menit)'}
+                        {kpi.label === 'FCR' && 'Persentase tiket selesai di penanganan pertama'}
+                        {kpi.label === 'SLA' && 'Persentase tiket selesai ≤ 24 jam'}
+                        {kpi.label === 'Volume' && 'Jumlah tiket yang ditangani'}
+                        {kpi.label === 'Backlog' && 'Tiket yang belum selesai'}
+                      </p>
+                    </div>
+                  ))}
                 </div>
               )}
-              {/* Progress Bar Score */}
-              {metric && (
-                <div className="w-full h-2 bg-gray-200 rounded-full mb-2">
-                  <div className={`h-2 rounded-full transition-all duration-500 ${metric.score >= 60 ? 'bg-green-500' : metric.score >= 50 ? 'bg-blue-500' : metric.score >= 40 ? 'bg-yellow-500' : 'bg-red-500'}`} style={{width: `${Math.round(metric.score)}%`}}></div>
+              
+              {/* Score Progress Bar */}
+              {metric ? (
+                <div className="w-full bg-gray-200 dark:bg-zinc-700 rounded-full h-2.5">
+                  <div className="bg-gradient-to-r from-green-400 to-blue-500 h-2.5 rounded-full" style={{ width: `${metric.score}%` }}></div>
                 </div>
+              ) : (
+                <div className="w-full bg-gray-100 dark:bg-zinc-800 rounded-full h-2.5" />
               )}
-              {/* Trendline per month */}
-              {agentTrends[agent.agentName] && (
-                <div className="mt-2">
-                  <Line
-                    data={{
-                      labels: agentTrends[agent.agentName].labels.map(label => {
-                        const [month, year] = label.split('/');
-                        const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-                        return monthNames[Number(month)-1] + ' ' + year;
-                      }),
-                      datasets: [
-                        {
-                          label: 'Tickets per Month',
-                          data: agentTrends[agent.agentName].data,
-                          borderColor: TREND_COLORS[index % TREND_COLORS.length],
-                          backgroundColor: (ctx) => TREND_COLORS[index % TREND_COLORS.length] + '22', // 13% opacity
-                          fill: true,
-                          tension: 0.5,
-                          pointRadius: 0,
-                          pointBackgroundColor: TREND_COLORS[index % TREND_COLORS.length],
-                          borderWidth: 3,
-                          pointHoverRadius: 0,
-                          pointBorderWidth: 2,
-                        },
-                      ],
-                    }}
-                    options={{
-                      responsive: true,
-                      maintainAspectRatio: false,
-                      plugins: {
-                        legend: { display: false },
-                        tooltip: {
-                          enabled: true,
-                          backgroundColor: (ctx) => ctx.chart.canvas.classList.contains('dark') ? '#1e293b' : '#fff',
-                          borderColor: TREND_COLORS[index % TREND_COLORS.length],
-                          borderWidth: 2,
-                          titleColor: (ctx) => ctx.chart.canvas.classList.contains('dark') ? '#fff' : '#1e293b',
-                          bodyColor: (ctx) => ctx.chart.canvas.classList.contains('dark') ? '#e5e7eb' : '#334155',
-                          titleFont: { weight: 'bold', size: 15, family: 'Poppins, Arial, sans-serif' },
-                          bodyFont: { weight: 'bold', size: 14, family: 'Poppins, Arial, sans-serif' },
-                          padding: 14,
-                          displayColors: true,
-                          cornerRadius: 10,
-                          caretSize: 10,
-                        },
-                        datalabels: {
-                          display: true,
-                          align: 'top',
-                          anchor: 'end',
-                          font: { weight: 'bold', family: 'Poppins, Arial, sans-serif' },
-                          color: TREND_COLORS[index % TREND_COLORS.length],
-                          backgroundColor: 'rgba(255,255,255,0.8)',
-                          borderRadius: 4,
-                          padding: 4,
-                          formatter: Math.round,
-                        },
-                      },
-                      scales: {
-                        x: {
-                          grid: { color: '#F3F4F6' },
-                          ticks: { color: '#6B7280', font: { size: 13, weight: 'bold', family: 'Poppins, Arial, sans-serif' } },
-                        },
-                        y: {
-                          grid: { color: '#F3F4F6' },
-                          ticks: { color: '#6B7280', font: { size: 13, weight: 'bold', family: 'Poppins, Arial, sans-serif' } },
-                          beginAtZero: true,
-                        },
-                      },
-                      animation: {
-                        duration: 1000,
-                        easing: 'easeInOutQuart',
-                      },
-                    }}
-                    height={180}
-                    aria-label={`Trendline for ${agent.agentName}`}
-                  />
-                </div>
-              )}
-            </Card>
+            </div>
           );
         })}
       </div>
-    </div>
+    </>
   );
 };
 

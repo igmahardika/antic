@@ -105,11 +105,11 @@ const SummaryDashboard = ({ ticketAnalyticsData }: any) => {
   }, [yearlyStatsData]);
 
   return (
-    <div className="space-y-8">
+    <>
       <h2 className="text-2xl font-bold text-gray-900 mb-4">Summary Trendlines</h2>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         {/* Monthly Trendline by Year */}
-        <Card className="bg-white dark:bg-zinc-900 shadow-sm rounded-xl border p-2">
+        <Card className="bg-white/90 dark:bg-zinc-900/80 shadow-lg rounded-xl border p-2">
           <CardHeader className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 pb-1">
             <div className="flex flex-col gap-1">
               <CardTitle className="font-extrabold text-xl text-zinc-900 dark:text-zinc-100">Tickets per Month</CardTitle>
@@ -218,7 +218,7 @@ const SummaryDashboard = ({ ticketAnalyticsData }: any) => {
           </CardContent>
         </Card>
         {/* Yearly Trendline */}
-        <Card className="bg-white dark:bg-zinc-900 shadow-sm rounded-xl border p-2">
+        <Card className="bg-white/90 dark:bg-zinc-900/80 shadow-lg rounded-xl border p-2">
           <CardHeader className="flex flex-col gap-1 pb-1">
             <CardTitle className="font-extrabold text-xl text-zinc-900 dark:text-zinc-100">Tickets per Year</CardTitle>
             {latestYearlyValue !== null && (
@@ -317,7 +317,7 @@ const SummaryDashboard = ({ ticketAnalyticsData }: any) => {
           </CardContent>
         </Card>
       </div>
-    </div>
+    </>
   );
 };
 

@@ -6,18 +6,17 @@ import { ModeToggle } from './mode-toggle';
 
 const ModernHeader = () => {
   return (
-    <header className="bg-white dark:bg-gray-900 border-b-0 sticky top-0 z-50 backdrop-blur-sm bg-white/95 dark:bg-gray-900/95 shadow-md">
-      <div className="absolute left-0 right-0 h-1 bg-primary opacity-60" style={{bottom:0}} />
-      <div className="max-w-7xl mx-auto px-6 sm:px-10 lg:px-16">
-        <div className="flex items-center justify-between h-20">
+    <header className="bg-white dark:bg-gray-900 border-b-0 sticky top-0 z-50 backdrop-blur-sm bg-white/95 dark:bg-gray-900/95 shadow-lg rounded-b-2xl p-4 md:p-6">
+      <div className="absolute left-0 right-0 h-1 bg-primary opacity-60 rounded-b-2xl" style={{bottom:0}} />
+      <div className="max-w-7xl mx-auto px-4 sm:px-8 lg:px-16">
+        <div className="flex flex-col md:flex-row items-center justify-between h-auto md:h-20 gap-4 md:gap-6">
           {/* Logo & Brand */}
-          <div className="flex items-center gap-3">
-            <img src="/logo-a.png" alt="Antic Logo" className="h-12 w-auto drop-shadow-lg" />
+          <div className="flex items-center gap-4 md:gap-6">
+            <img src="/logo-a.png" alt="Antic Logo" className="h-12 w-auto drop-shadow-lg rounded-xl" />
             <span className="text-2xl font-extrabold text-primary tracking-tight">Insight Dashboard</span>
           </div>
-
           {/* Search Bar */}
-          <div className="hidden md:flex flex-1 max-w-lg mx-8">
+          <div className="w-full md:flex-1 max-w-lg mx-0 md:mx-8 hidden md:block">
             <div className="relative w-full">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" aria-label="Search" />
               <Input
@@ -27,9 +26,8 @@ const ModernHeader = () => {
               />
             </div>
           </div>
-
           {/* Actions */}
-          <div className="flex items-center space-x-3">
+          <div className="flex items-center space-x-3 md:space-x-4">
             <ModeToggle />
             <Button variant="ghost" size="icon" className="relative hover:bg-muted transition shadow-md">
               <Bell className="w-5 h-5" aria-label="Notifications" />

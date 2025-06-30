@@ -33,6 +33,7 @@ export interface ITicket {
   closeHandling5?: string;
   handlingDuration5: { rawHours: number; formatted: string };
   openBy?: string;
+  cabang?: string;
   // Properti tambahan untuk mempermudah query
   uploadTimestamp: number; // Timestamp kapan data diupload
   repClass?: string; // Repeat-complainer class (Normal, Persisten, Kronis, Ekstrem)
@@ -48,6 +49,9 @@ export class TicketDB extends Dexie {
       // Karena kita pakai UUID, kita hanya definisikan 'id' sebagai primary key.
       // Kolom setelahnya adalah indeks untuk query cepat.
       tickets: 'id, openTime, name, uploadTimestamp'
+    });
+    this.version(2).stores({
+        tickets: 'id, openTime, name, uploadTimestamp, cabang'
     });
   }
 }

@@ -81,8 +81,8 @@ export function calcMetrics(agentTickets: Ticket[]): AgentMetric {
     }
     // FCR: only 1 handling step (Penanganan2 is empty/null/undefined)
     if (!t.Penanganan2) fcrCount++;
-    // SLA: ART <= 240 min (4 hours)
-    if (close && open && (close.getTime() - open.getTime()) / 60000 <= 240) slaCount++;
+    // SLA: ART <= 1440 min (24 hours)
+    if (close && open && (close.getTime() - open.getTime()) / 60000 <= 1440) slaCount++;
   });
   const frt = frtCount ? frtSum / frtCount : 0;
   const art = artCount ? artSum / artCount : 0;

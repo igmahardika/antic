@@ -7,6 +7,18 @@ import { analyzeKeywords, generateAnalysisConclusion, formatDurationDHM } from '
 import { Button } from '@/components/ui/button';
 import { ModeToggle } from './mode-toggle';
 import { useAgentStore } from '@/store/agentStore';
+import { useNavigate } from 'react-router-dom';
+
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { Moon, Sun, LogOut } from "lucide-react"
 
 import UploadProcess from './UploadProcess';
 import GridView from './GridView';
@@ -14,14 +26,16 @@ import KanbanBoard from './KanbanBoard';
 import TicketAnalytics from './TicketAnalytics';
 import AgentAnalytics from './AgentAnalytics';
 import SummaryDashboard from './SummaryDashboard';
+import AdminPanel from '../pages/AdminPanel';
 
-const tabs = [
+const allTabs = [
   { name: 'Dashboard', component: SummaryDashboard, icon: BarChart2 },
   { name: 'Grid View', component: GridView, icon: Grid },
   { name: 'Customer Analysis', component: KanbanBoard, icon: Users },
   { name: 'Ticket Analysis', component: TicketAnalytics, icon: BarChart2 },
   { name: 'Agent Analysis', component: AgentAnalytics, icon: UserCheck },
   { name: 'Upload Data', component: UploadProcess, icon: Upload },
+  { name: 'Admin Panel', component: AdminPanel, icon: Users },
 ];
 
 const timeFilters = [
@@ -80,18 +94,18 @@ const FilterWaktu: React.FC<{
   allYearsInData: string[];
   onRefresh: () => void;
 }> = ({ startMonth, setStartMonth, endMonth, setEndMonth, selectedYear, setSelectedYear, monthOptions, allYearsInData, onRefresh }) => (
-  <div className="flex flex-wrap items-center gap-1 mb-2">
-    <Calendar className="h-4 w-4 text-gray-400 mr-1"/>
-    <span className="text-xs font-medium text-gray-500 dark:text-gray-400 mr-1">Time Filter:</span>
+  <div className="flex flex-wrap items-center gap-3 p-4 bg-white/80 dark:bg-zinc-900/80 rounded-2xl shadow-lg border border-gray-200 dark:border-zinc-800 mb-6">
+    <Calendar className="h-5 w-5 text-blue-500 mr-2" />
+    <span className="text-sm font-semibold text-gray-700 dark:text-gray-200 mr-2">Time Filter:</span>
     {/* Dropdown Start Month */}
     <Listbox value={startMonth} onChange={setStartMonth}>
-      <div className="relative ml-1">
-        <Listbox.Button className="text-xs h-7 px-2 py-1 border rounded-md bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 min-w-[80px]">
+      <div className="relative">
+        <Listbox.Button className="text-sm h-9 px-4 py-2 border border-blue-200 rounded-lg bg-white dark:bg-zinc-800 text-gray-700 dark:text-gray-200 shadow-sm focus:ring-2 focus:ring-blue-400 min-w-[100px] transition-all">
           {startMonth ? monthOptions.find(m => m.value === startMonth)?.label : 'Start Month'}
         </Listbox.Button>
-        <Listbox.Options className="absolute z-10 mt-1 w-28 bg-white dark:bg-gray-800 border rounded shadow-lg max-h-60 overflow-auto text-xs">
+        <Listbox.Options className="absolute z-10 mt-1 w-32 bg-white dark:bg-zinc-800 border rounded-lg shadow-lg max-h-60 overflow-auto text-sm">
           {monthOptions.map(month => (
-            <Listbox.Option key={month.value} value={month.value} className="px-2 py-1 cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900/30">
+            <Listbox.Option key={month.value} value={month.value} className="px-3 py-2 cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900/30 rounded">
               {month.label}
             </Listbox.Option>
     ))}
@@ -100,13 +114,13 @@ const FilterWaktu: React.FC<{
     </Listbox>
     {/* Dropdown End Month */}
     <Listbox value={endMonth} onChange={setEndMonth}>
-      <div className="relative ml-1">
-        <Listbox.Button className="text-xs h-7 px-2 py-1 border rounded-md bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 min-w-[80px]">
+      <div className="relative">
+        <Listbox.Button className="text-sm h-9 px-4 py-2 border border-blue-200 rounded-lg bg-white dark:bg-zinc-800 text-gray-700 dark:text-gray-200 shadow-sm focus:ring-2 focus:ring-blue-400 min-w-[100px] transition-all">
           {endMonth ? monthOptions.find(m => m.value === endMonth)?.label : 'End Month'}
         </Listbox.Button>
-        <Listbox.Options className="absolute z-10 mt-1 w-28 bg-white dark:bg-gray-800 border rounded shadow-lg max-h-60 overflow-auto text-xs">
+        <Listbox.Options className="absolute z-10 mt-1 w-32 bg-white dark:bg-zinc-800 border rounded-lg shadow-lg max-h-60 overflow-auto text-sm">
           {monthOptions.map(month => (
-            <Listbox.Option key={month.value} value={month.value} className="px-2 py-1 cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900/30">
+            <Listbox.Option key={month.value} value={month.value} className="px-3 py-2 cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900/30 rounded">
               {month.label}
             </Listbox.Option>
           ))}
@@ -115,13 +129,13 @@ const FilterWaktu: React.FC<{
     </Listbox>
     {/* Dropdown Year */}
     <Listbox value={selectedYear} onChange={setSelectedYear}>
-      <div className="relative ml-1">
-        <Listbox.Button className="text-xs h-7 px-2 py-1 border rounded-md bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 min-w-[80px]">
+      <div className="relative">
+        <Listbox.Button className="text-sm h-9 px-4 py-2 border border-blue-200 rounded-lg bg-white dark:bg-zinc-800 text-gray-700 dark:text-gray-200 shadow-sm focus:ring-2 focus:ring-blue-400 min-w-[100px] transition-all">
           {selectedYear || 'Year'}
         </Listbox.Button>
-        <Listbox.Options className="absolute z-10 mt-1 w-24 bg-white dark:bg-gray-800 border rounded shadow-lg max-h-60 overflow-auto text-xs">
+        <Listbox.Options className="absolute z-10 mt-1 w-28 bg-white dark:bg-zinc-800 border rounded-lg shadow-lg max-h-60 overflow-auto text-sm">
           {allYearsInData.map(year => (
-            <Listbox.Option key={year} value={year} className="px-2 py-1 cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900/30">
+            <Listbox.Option key={year} value={year} className="px-3 py-2 cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900/30 rounded">
               {year}
             </Listbox.Option>
           ))}
@@ -129,7 +143,7 @@ const FilterWaktu: React.FC<{
       </div>
     </Listbox>
     {/* Tombol Refresh */}
-    <Button size="sm" className="ml-2 text-xs h-7 px-3 py-1 rounded-md" onClick={onRefresh} variant="secondary">Refresh</Button>
+    <Button size="sm" className="ml-3 h-9 px-5 rounded-lg bg-blue-500 hover:bg-blue-600 text-white font-bold shadow transition-all" onClick={onRefresh} variant="secondary">Refresh</Button>
   </div>
 );
 
@@ -146,6 +160,8 @@ const Dashboard = () => {
   });
   const [startMonth, setStartMonth] = useState<string | null>(null);
   const [endMonth, setEndMonth] = useState<string | null>(null);
+
+  const navigate = useNavigate();
 
   // Saat user memilih preset, reset bulan/tahun di pendingFilter
   const handlePendingTimeFilter = (val: string) => {
@@ -294,9 +310,9 @@ const Dashboard = () => {
     ];
 
     // Initialize performance object with all agents from the master list.
-    const agentPerformance: { [key: string]: { durations: number[] } } = {};
+    const agentPerformance: { [key: string]: { durations: number[], closed: number } } = {};
     masterAgentList.forEach(agent => {
-      agentPerformance[agent] = { durations: [] };
+      agentPerformance[agent] = { durations: [], closed: 0 };
     });
 
     gridData.forEach(t => {
@@ -305,14 +321,18 @@ const Dashboard = () => {
         const agentName = t.openBy || 'Unassigned';
         // If an agent from the file is not in the master list, add them.
         if (!agentPerformance[agentName]) {
-          agentPerformance[agentName] = { durations: [] };
+          agentPerformance[agentName] = { durations: [], closed: 0 };
         }
         agentPerformance[agentName].durations.push(t.handlingDuration.rawHours);
+        if (t.status === 'Closed') {
+          agentPerformance[agentName].closed++;
+        }
       }
     });
 
     let busiestAgent = { name: 'N/A', count: 0 };
     let mostEfficientAgent = { name: 'N/A', avg: Infinity };
+    let highestResolutionAgent = { name: 'N/A', rate: 0 };
 
     const agentAnalyticsData = Object.entries(agentPerformance).map(([agentName, data]) => {
       const ticketCount = data.durations.length;
@@ -322,6 +342,8 @@ const Dashboard = () => {
       const avgDuration = totalDuration / ticketCount;
       const minDuration = Math.min(...data.durations);
       const maxDuration = Math.max(...data.durations);
+      const closedCount = data.closed;
+      const resolutionRate = ticketCount > 0 ? (closedCount / ticketCount) * 100 : 0;
 
       // Check for busiest agent
       if (ticketCount > busiestAgent.count) {
@@ -331,6 +353,10 @@ const Dashboard = () => {
       if (avgDuration < mostEfficientAgent.avg) {
         mostEfficientAgent = { name: agentName, avg: avgDuration };
       }
+      // Check for highest resolution rate
+      if (resolutionRate > highestResolutionAgent.rate) {
+        highestResolutionAgent = { name: agentName, rate: resolutionRate };
+      }
 
       return {
         agentName,
@@ -339,6 +365,7 @@ const Dashboard = () => {
         avgDurationFormatted: formatDurationDHM(avgDuration),
         minDurationFormatted: formatDurationDHM(minDuration),
         maxDurationFormatted: formatDurationDHM(maxDuration),
+        resolutionRate: resolutionRate.toFixed(1) + '%',
       };
     }).filter(Boolean).sort((a, b) => (b?.ticketCount || 0) - (a?.ticketCount || 0));
 
@@ -392,6 +419,7 @@ const Dashboard = () => {
         totalAgents: agentAnalyticsData.length,
         busiestAgentName: busiestAgent.name,
         mostEfficientAgentName: mostEfficientAgent.avg === Infinity ? 'N/A' : mostEfficientAgent.name,
+        highestResolutionAgentName: highestResolutionAgent.name,
       },
       agentMonthlyChart: agentMonthlyChartData
     };
@@ -489,7 +517,7 @@ const Dashboard = () => {
       delete ca.trendlineRaw;
     });
 
-    // --- Reworked: Monthly Ticket Statistics ---
+    // --- Rewritten: Monthly Ticket Statistics ---
     const monthlyStats: { [key: string]: { incoming: number, closed: number } } = {};
     gridData.forEach(ticket => {
         try {
@@ -563,27 +591,42 @@ const Dashboard = () => {
     }
 
     // Data for Top Complaints Table
-    const categoryDetails: { [key: string]: { tickets: ITicket[] } } = {};
+    const categoryDetails: { [key: string]: { tickets: ITicket[], subCategories: { [key: string]: number } } } = {};
     gridData.forEach(t => {
       const category = t.category || 'Lainnya';
       if (!categoryDetails[category]) {
-        categoryDetails[category] = { tickets: [] };
+        categoryDetails[category] = { tickets: [], subCategories: {} };
       }
       categoryDetails[category].tickets.push(t);
+
+      const subCategory = t.subClassification || 'Lainnya';
+      categoryDetails[category].subCategories[subCategory] = (categoryDetails[category].subCategories[subCategory] || 0) + 1;
     });
 
     const topComplaintsTableData = Object.entries(categoryDetails)
       .map(([category, data]) => {
         const totalDuration = data.tickets.reduce((acc, t) => acc + (t.duration?.rawHours || 0), 0);
         const avgDuration = data.tickets.length > 0 ? totalDuration / data.tickets.length : 0;
+        const impactScore = data.tickets.length * avgDuration;
+
+        const topSubCategory = Object.keys(data.subCategories).length > 0
+          ? Object.entries(data.subCategories).sort(([,a],[,b]) => b-a)[0][0]
+          : '-';
+
         return {
           category,
           count: data.tickets.length,
+          avgDuration,
           avgDurationFormatted: formatDurationDHM(avgDuration),
+          impactScore,
+          topSubCategory,
         };
       })
-      .sort((a, b) => b.count - a.count)
+      .sort((a, b) => b.impactScore - a.impactScore) // Sort by the new impact score
       .slice(0, 10);
+
+    const allDescriptions = gridData.map(t => t.description).filter(Boolean);
+    const keywordAnalysis = analyzeKeywords(allDescriptions, 20);
 
     // --- Repeat-Complainer Class Calculation ---
     // 1. Agregasi jumlah tiket per customer
@@ -633,6 +676,7 @@ const Dashboard = () => {
           topComplaint,
         },
         topComplaintsTable: topComplaintsTableData,
+        keywordAnalysis,
     };
 
     return {
@@ -681,11 +725,16 @@ const Dashboard = () => {
     });
 
     return Object.values(customerMap).map(customer => {
+        const descriptionKeywords = analyzeKeywords(customer.descriptions);
+        const causeKeywords = analyzeKeywords(customer.causes);
+        const handlingKeywords = analyzeKeywords(customer.handlings);
+
         const analysisKeywords = {
-          description: analyzeKeywords(customer.descriptions),
-          cause: analyzeKeywords(customer.causes),
-          handling: analyzeKeywords(customer.handlings)
+          description: descriptionKeywords.map(item => item[0]),
+          cause: causeKeywords.map(item => item[0]),
+          handling: handlingKeywords.map(item => item[0]),
         };
+
         const repClass = classMap[customer.customerId] || 'Normal';
         
         return {
@@ -696,80 +745,159 @@ const Dashboard = () => {
           totalHandlingDurationFormatted: formatDurationDHM(customer.totalHandlingDuration),
           allTickets: customer.tickets,
           fullTicketHistory: masterMap.get(customer.customerId) || [],
-          analysis: { ...analysisKeywords, conclusion: generateAnalysisConclusion(analysisKeywords) },
+          analysis: { 
+            description: descriptionKeywords,
+            cause: causeKeywords,
+            handling: handlingKeywords,
+            conclusion: generateAnalysisConclusion(analysisKeywords) 
+          },
           repClass,
         }
     }).sort((a, b) => b.ticketCount - a.ticketCount);
   }
 
+  const user = JSON.parse(localStorage.getItem('user') || '{"role":"user"}');
+  const role = user.role || 'user';
+  
+  const tabs = useMemo(() => {
+    try {
+      const savedPermissions = localStorage.getItem('menuPermissions');
+      if (savedPermissions) {
+        const permissions = JSON.parse(savedPermissions);
+        const allowedMenus = permissions[role] || [];
+        return allTabs.filter(tab => allowedMenus.includes(tab.name));
+      }
+    } catch (e) {
+      console.error("Failed to parse permissions from localStorage", e);
+    }
+    // Fallback to original logic if permissions are not set
+    const defaultPermissions = {
+      admin: allTabs.map(t => t.name),
+      user: allTabs.filter(t => t.name !== 'Admin Panel').map(t => t.name)
+    };
+    const allowedMenus = defaultPermissions[role as 'admin' | 'user'] || [];
+    return allTabs.filter(tab => allowedMenus.includes(tab.name));
+  }, [role]);
+
   useEffect(() => {
+    // Tambahkan pengecekan untuk memastikan tabs[selectedIndex] tidak undefined
+    if (tabs.length > 0 && selectedIndex < tabs.length) {
     document.title = `AN-TIC | ${tabs[selectedIndex].name}`;
-  }, [selectedIndex]);
+    } else if (tabs.length > 0) {
+      document.title = `AN-TIC | ${tabs[0].name}`;
+    } else {
+      document.title = 'AN-TIC';
+    }
+  }, [selectedIndex, tabs]);
+
+  const handleLogout = () => {
+    localStorage.removeItem('user');
+    navigate('/');
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
         <Tab.Group selectedIndex={selectedIndex} onChange={setSelectedIndex}>
-        {/* Header Baris Modern */}
-        <div className="w-full flex flex-wrap items-center justify-between gap-4 px-6 py-4 bg-white dark:bg-gray-900 shadow border-b border-gray-200 dark:border-gray-800">
-          {/* Judul Branding ANTIC */}
-          <div className="flex items-center mr-4">
-            <img src="/logo-a.png" alt="Antic Logo" className="h-20 w-auto" />
+        {/* New Redesigned Header */}
+        <header className="sticky top-0 z-30 w-full px-6 py-3 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm shadow-sm border-b border-gray-200 dark:border-gray-800">
+          <div className="flex items-center justify-between">
+            {/* Left side: Logo and Navigation */}
+            <div className="flex items-center gap-6">
+              <div className="flex items-center">
+                <img src="/logo-a.png" alt="Antic Logo" className="h-10 w-auto" />
           </div>
-          {/* Tab Menu */}
-          <Tab.List className="flex flex-row gap-2 bg-transparent rounded-xl p-0 m-0 border-none ring-0 outline-none shadow-none">
+              <Tab.List className="flex items-center gap-1">
               {tabs.map((tab) => (
-              <Tab key={tab.name}>
+                  <Tab key={tab.name} className="focus:outline-none">
                 {({ selected }) => (
                   <button
-                    className={
-                      `flex items-center gap-1.5 px-4 py-1.5 text-sm font-semibold rounded-lg transition-all duration-200 ease-in-out focus:outline-none border-none ring-0 outline-none shadow-none` +
-                      (selected
-                        ? ' bg-[#5271ff] text-white'
-                        : ' text-gray-600 dark:text-gray-400 hover:text-blue-700 dark:hover:text-blue-200 hover:bg-blue-50 dark:hover:bg-gray-800')
-                    }
-                    style={selected
-                      ? {background:'#5271ff',color:'#fff',border:'none',outline:'none',boxShadow:'none',padding: '0.5rem 1rem'}
-                      : {outline:'none',boxShadow:'none',border:'none',padding: '0.5rem 1rem'}
-                    }
+                        className={`
+                          flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-md transition-colors duration-200
+                          ${selected
+                            ? 'bg-blue-600 text-white shadow-md'
+                            : 'text-gray-600 dark:text-gray-300 hover:bg-gray-200/50 dark:hover:bg-gray-800/50 hover:text-gray-900 dark:hover:text-white'
+                          }
+                        `}
                   >
-                    <tab.icon className={`w-4 h-4 ${selected ? 'text-white' : 'text-blue-500 dark:text-blue-400'}`} />
+                        <tab.icon className="w-4 h-4" />
                   <span>{tab.name}</span>
                   </button>
                 )}
                 </Tab>
               ))}
             </Tab.List>
-          {/* Statistik Ringkas TicketAnalytics */}
-          {ticketAnalyticsData && ticketAnalyticsData.stats && (
-            <div className="flex flex-wrap gap-4 ml-auto justify-end">
-              <div className="flex flex-col items-start bg-blue-100 rounded-lg px-4 py-2 min-w-[120px]">
-                <span className="text-xs text-gray-500">Total Tickets</span>
-                <span className="text-lg font-bold text-gray-900">{ticketAnalyticsData.stats[0]?.value}</span>
               </div>
-              <div className="flex flex-col items-start bg-green-100 rounded-lg px-4 py-2 min-w-[120px]">
-                <span className="text-xs text-gray-500">Average Duration</span>
-                <span className="text-lg font-bold text-gray-900">{ticketAnalyticsData.stats[1]?.value}</span>
+            
+            {/* Center: Compact Stats Cards */}
+            <div className="hidden lg:flex items-center gap-4">
+              {ticketAnalyticsData?.stats?.map((stat, index) => (
+                <div key={index} className="text-center">
+                  <p className="text-xs text-gray-500 dark:text-gray-400">{stat.title}</p>
+                  <p className="text-lg font-bold text-gray-900 dark:text-white">{stat.value}</p>
               </div>
-              <div className="flex flex-col items-start bg-yellow-100 rounded-lg px-4 py-2 min-w-[120px]">
-                <span className="text-xs text-gray-500">Closed Tickets</span>
-                <span className="text-lg font-bold text-gray-900">{ticketAnalyticsData.stats[2]?.value}</span>
+              ))}
               </div>
-              <div className="flex flex-col items-start bg-purple-100 rounded-lg px-4 py-2 min-w-[120px]">
-                <span className="text-xs text-gray-500">Active Agents</span>
-                <span className="text-lg font-bold text-gray-900">{ticketAnalyticsData.stats[3]?.value}</span>
+
+            {/* Right side: Actions */}
+            <div className="flex items-center gap-4">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button className="focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 rounded-full">
+                    <Avatar className="h-9 w-9 border-2 border-transparent hover:border-blue-500 transition-colors">
+                      <AvatarFallback className="bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300 font-semibold">
+                        {user.username ? user.username.charAt(0).toUpperCase() : 'U'}
+                      </AvatarFallback>
+                    </Avatar>
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-56" align="end">
+                  <DropdownMenuLabel>
+                    <p className="text-sm font-medium">{user.username}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 capitalize">{user.role} Role</p>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={() => document.documentElement.classList.toggle('dark')}
+                    className="cursor-pointer"
+                  >
+                    <Sun className="mr-2 h-4 w-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+                    <Moon className="absolute mr-2 h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+                    <span>Toggle Theme</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-red-500 focus:bg-red-50 focus:text-red-600 dark:focus:bg-red-900/50 dark:focus:text-red-400">
+                    <LogOut className="mr-2 h-4 w-4" />
+                    <span>Logout</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
                 </div>
             </div>
-          )}
-          {/* Toggle Theme */}
-          <div className="ml-auto"><ModeToggle /></div>
-          </div>
-        {/* Konten utama dashboard */}
-        <div className="w-full px-[10px] py-8">
+        </header>
+
+        {/* Main Content */}
+        <main className="p-4 sm:p-6 lg:p-8">
           <Tab.Panels>
-            {tabs.map((tab, idx) => (
+            {tabs.map((tab) => (
               <Tab.Panel key={tab.name} className="focus:outline-none">
-                {/* Tampilkan filter waktu di atas konten panel, kecuali untuk Upload Data */}
-                {tab.name !== 'Upload Data' && (
+                {(() => {
+                  const CurrentComponent = tab.component;
+                  const showFilter = tab.name !== 'Upload Data' && tab.name !== 'Admin Panel';
+
+                  // Map specific components to their required props
+                  const componentProps: { [key: string]: any } = {
+                    'Upload Data': { onUploadComplete: handleUploadComplete },
+                    'Grid View': { data: gridData },
+                    'Customer Analysis': { data: kanbanData, cutoffStart: cutoffStart || new Date(), cutoffEnd: cutoffEnd || new Date() },
+                    'Ticket Analysis': { data: ticketAnalyticsData },
+                    'Agent Analysis': { data: agentAnalyticsData },
+                    'Dashboard': { ticketAnalyticsData, agentAnalyticsData, kanbanData },
+                    'Admin Panel': {}
+                  };
+
+                  return (
+                    <>
+                      {showFilter && (
                   <FilterWaktu
                     startMonth={startMonth}
                     setStartMonth={setStartMonth}
@@ -782,24 +910,15 @@ const Dashboard = () => {
                     onRefresh={handleApplyFilter}
                   />
                 )}
-                {tab.name === 'Upload Data' ? (
-                  <UploadProcess onUploadComplete={handleUploadComplete} />
-                ) : tab.name === 'Grid View' ? (
-                  <GridView data={gridData} />
-                ) : tab.name === 'Customer Analysis' ? (
-                  <KanbanBoard data={kanbanData} cutoffStart={cutoffStart || new Date()} cutoffEnd={cutoffEnd || new Date()} />
-                ) : tab.name === 'Ticket Analysis' ? (
-                  <TicketAnalytics data={ticketAnalyticsData} />
-                ) : tab.name === 'Agent Analysis' ? (
-                  <AgentAnalytics data={agentAnalyticsData} />
-                ) : tab.name === 'Dashboard' ? (
-                  // @ts-ignore
-                  <SummaryDashboard ticketAnalyticsData={ticketAnalyticsData} agentAnalyticsData={agentAnalyticsData} kanbanData={kanbanData} />
-                ) : null}
+                      {/* @ts-ignore */}
+                      <CurrentComponent {...(componentProps[tab.name] || {})} />
+                    </>
+                  );
+                })()}
               </Tab.Panel>
             ))}
           </Tab.Panels>
-        </div>
+        </main>
         </Tab.Group>
     </div>
   );

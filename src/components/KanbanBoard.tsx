@@ -180,7 +180,7 @@ const KanbanBoard = ({ data, cutoffStart, cutoffEnd }: KanbanBoardProps) => {
   const finalSummary = [totalSummary, ...repClassSummary];
 
   return (
-    <div className="flex flex-col h-full">
+    <>
       {/* Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6 mb-6">
         {finalSummary.map((item) => {
@@ -211,41 +211,39 @@ const KanbanBoard = ({ data, cutoffStart, cutoffEnd }: KanbanBoardProps) => {
             <div
               key={item.key}
               onClick={() => setRepClassFilter(item.key)}
-              className={`relative cursor-pointer transition-all duration-200 flex flex-col justify-between bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl shadow-md p-7 min-h-[180px] group hover:shadow-lg ${repClassFilter === item.key ? 'ring-2 ring-blue-500' : ''}`}
+              className={`relative cursor-pointer transition-all duration-300 flex flex-col justify-between bg-white/90 dark:bg-zinc-900/90 border border-gray-100 dark:border-zinc-800 rounded-2xl shadow-lg p-8 min-h-[200px] group hover:scale-[1.025] hover:shadow-2xl ${repClassFilter === item.key ? 'ring-2 ring-blue-500' : ''}`}
               style={{overflow:'hidden'}}
             >
-              {/* Accent bar */}
-              <div style={{background: accentColor, width: 6, height: '100%', position: 'absolute', left: 0, top: 0, borderTopLeftRadius: 12, borderBottomLeftRadius: 12}} />
               {/* Badge risiko */}
               {item.key !== 'Total' && riskInfo && (
-                <span className={`absolute top-5 right-6 px-3 py-1 rounded-full text-xs font-bold shadow-sm ${badgeColor}`}>{riskInfo.risk}</span>
+                <span className={`absolute top-5 right-6 px-4 py-1 rounded-full text-sm font-bold shadow-sm bg-gradient-to-r from-blue-400 to-blue-600 text-white`}>{riskInfo.risk}</span>
               )}
-              {/* Ikon risiko */}
-              <div className="flex items-center gap-2 mb-2 z-10">
+              {/* Ikon risiko dan label */}
+              <div className="flex items-center gap-3 mb-3 z-10">
                 {icon}
-                <span className="text-lg font-bold text-gray-900 dark:text-white">{item.label}</span>
+                <span className="text-xl font-bold text-gray-900 dark:text-white">{item.label}</span>
               </div>
               {/* Angka besar */}
-              <div className="flex items-center gap-2 mb-1 z-10">
-                <span className="text-4xl font-extrabold text-gray-900 dark:text-white">{item.count}</span>
-                {item.key !== 'Total' && <span className="text-sm text-gray-500 font-medium">({percent}% of total)</span>}
+              <div className="flex items-center gap-2 mb-2 z-10">
+                <span className="text-5xl font-extrabold text-gray-900 dark:text-white">{item.count}</span>
+                {item.key !== 'Total' && <span className="text-base text-gray-500 font-medium">({percent}% of total)</span>}
               </div>
               {/* Progress bar */}
               {item.key !== 'Total' && (
-                <div className="w-full h-2 bg-gray-100 dark:bg-zinc-800 rounded-full overflow-hidden mb-2">
-                  <div style={{width: `${percent}%`, background: accentColor}} className="h-full rounded-full transition-all duration-300" />
+                <div className="w-full h-3 bg-gray-100 dark:bg-zinc-800 rounded-full overflow-hidden mb-2">
+                  <div style={{width: `${percent}%`, background: accentColor, opacity: 0.7}} className="h-full rounded-full transition-all duration-300" />
                 </div>
               )}
               {/* Deskripsi singkat */}
-                {item.key !== 'Total' && riskInfo && (
-                <div className="text-xs text-gray-500 dark:text-gray-400 mt-1 z-10">
+              {item.key !== 'Total' && riskInfo && (
+                <div className="text-sm text-gray-500 dark:text-gray-400 mt-1 z-10">
                   {riskInfo.desc}
-                  </div>
-                )}
-              {item.key === 'Total' && (
-                <div className="text-xs text-gray-500 dark:text-gray-400 mt-1 z-10">Total unique customers in the selected period.</div>
+                </div>
               )}
-              </div>
+              {item.key === 'Total' && (
+                <div className="text-sm text-gray-500 dark:text-gray-400 mt-1 z-10">Total unique customers in the selected period.</div>
+              )}
+            </div>
           );
         })}
       </div>
@@ -267,25 +265,46 @@ const KanbanBoard = ({ data, cutoffStart, cutoffEnd }: KanbanBoardProps) => {
               return (
                 <Dialog key={customer.id} open={openDialogId === customer.id} onOpenChange={open => setOpenDialogId(open ? customer.id : null)}>
             <DialogTrigger asChild>
-                    <div className="relative bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl py-7 px-7 flex flex-col min-h-[180px] shadow-md cursor-pointer transition hover:shadow-lg hover:ring-2 hover:ring-blue-500 group" style={{overflow:'hidden'}}>
-                      {/* Accent bar */}
-                      <div style={{background:'#5271ff', width: 5, height: '100%', position: 'absolute', left: 0, top: 0, borderTopLeftRadius: 12, borderBottomLeftRadius: 12}} />
+                    <div className="relative bg-white/90 dark:bg-zinc-900/90 border border-gray-100 dark:border-zinc-800 rounded-2xl shadow-lg p-7 flex flex-col min-h-[200px] transition-all duration-300 hover:scale-[1.025] hover:shadow-2xl group cursor-pointer" style={{overflow:'hidden'}}>
                       {/* Header: Nama customer dan badge jumlah tiket */}
-                      <div className="flex justify-between items-center mb-3 z-10">
-                        <div className="flex items-center gap-2 min-w-0">
+                      <div className="flex justify-between items-center mb-4 z-10">
+                        <div className="flex items-center gap-3 min-w-0">
                           {statusIcon}
                           <h3 className="text-lg font-bold text-blue-900 dark:text-blue-200 truncate max-w-[180px] sm:max-w-[160px] md:max-w-[200px] lg:max-w-[240px]">{customer.name}</h3>
                         </div>
-                        <span className="bg-[#5271ff] text-white text-xs font-bold rounded-full px-3 py-0.5 shadow ml-2 whitespace-nowrap">{customer.ticketCount} Tickets</span>
+                        <span className="bg-gradient-to-r from-blue-500 to-blue-400 text-white text-sm font-bold rounded-full px-4 py-1 shadow">{customer.ticketCount} Tickets</span>
                       </div>
-                      {/* Info closed & avg. handling */}
-                      <div className="flex flex-wrap gap-2 mb-2 z-10">
-                        <span className={`px-3 py-1 rounded-full text-xs font-semibold ${isAllClosed ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-800'}`}>Closed: {closed} of {ticketsInRange.length} ({percentClosed}%)</span>
-                        <span className="px-3 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-700">Avg. Handling: {customer.totalHandlingDurationFormatted}</span>
+                      {/* Info closed, avg. handling, agent terbanyak */}
+                      <div className="flex flex-wrap gap-3 mb-3 z-10 items-center">
+                        <span className="flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-green-50 text-green-700 border border-green-200 shadow-sm">
+                          <svg className="w-4 h-4 text-green-500" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                          Closed: {closed} of {ticketsInRange.length} ({percentClosed}%)
+                        </span>
+                        <span className="flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200 shadow-sm">
+                          <svg className="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3" /><circle cx="12" cy="12" r="10" /></svg>
+                          Avg. Handling: {customer.totalHandlingDurationFormatted}
+                        </span>
+                        {/* Agent terbanyak handle */}
+                        {(() => {
+                          const agentCount: Record<string, number> = {};
+                          ticketsInRange.forEach(t => {
+                            if (t.openBy) agentCount[t.openBy] = (agentCount[t.openBy] || 0) + 1;
+                          });
+                          const topAgent = Object.entries(agentCount).sort((a, b) => b[1] - a[1])[0];
+                          if (topAgent) {
+                            return (
+                              <span className="flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-purple-50 text-purple-700 border border-purple-200 shadow-sm">
+                                <svg className="w-4 h-4 text-purple-500" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4" /><path d="M6 20v-2a4 4 0 014-4h0a4 4 0 014 4v2" /></svg>
+                                {topAgent[0]} <span className="ml-1">({topAgent[1]} tickets)</span>
+                              </span>
+                            );
+                          }
+                          return null;
+                        })()}
                       </div>
                       {/* Badge insight utama */}
                       <div className="mt-auto">
-                        <span className="bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-200 rounded-full px-3 py-1 text-sm font-medium shadow-sm">{insightData.masalah}</span>
+                        <span className="bg-rose-50 text-rose-700 dark:bg-rose-900/20 dark:text-rose-200 rounded-full px-4 py-1 text-base font-medium shadow">{insightData.masalah}</span>
                           </div>
         </div>
             </DialogTrigger>
@@ -320,23 +339,75 @@ const KanbanBoard = ({ data, cutoffStart, cutoffEnd }: KanbanBoardProps) => {
                             <h3 className="font-semibold text-gray-800 dark:text-gray-200 text-base">Historical Ticket Count</h3>
                           </div>
                     {(() => {
-                            const now = new Date();
-                            const oneMonthAgo = new Date(new Date().setMonth(now.getMonth() - 1));
-                            const threeMonthsAgo = new Date(new Date().setMonth(now.getMonth() - 3));
-                            const sixMonthsAgo = new Date(new Date().setMonth(now.getMonth() - 6));
-                            const count1M = customer.fullTicketHistory.filter(t => new Date(t.openTime) >= oneMonthAgo).length;
-                            const count3M = customer.fullTicketHistory.filter(t => new Date(t.openTime) >= threeMonthsAgo).length;
-                            const count6M = customer.fullTicketHistory.filter(t => new Date(t.openTime) >= sixMonthsAgo).length;
-                      return (
+                            // Ambil range filter dari props
+                            const filterStart = cutoffStart;
+                            const filterEnd = cutoffEnd;
+                            // Ambil semua tiket dalam filter
+                            const ticketsInFilter = customer.fullTicketHistory.filter(t => {
+                              const d = new Date(t.openTime);
+                              return d >= filterStart && d <= filterEnd;
+                            });
+                            // Bulan terakhir dalam filter
+                            const lastMonth = filterEnd.getMonth();
+                            const lastYear = filterEnd.getFullYear();
+                            // Tiket pada bulan terakhir filter
+                            const count1M = ticketsInFilter.filter(t => {
+                              const d = new Date(t.openTime);
+                              return d.getMonth() === lastMonth && d.getFullYear() === lastYear;
+                            }).length;
+                            // Tiket akumulasi 3 bulan terakhir dalam filter
+                            const threeMonthsAgo = new Date(filterEnd);
+                            threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 2); // 2 bulan ke belakang + bulan ini = 3 bulan
+                            const count3M = ticketsInFilter.filter(t => {
+                              const d = new Date(t.openTime);
+                              return d >= threeMonthsAgo && d <= filterEnd;
+                            }).length;
+                            // Tiket akumulasi 6 bulan terakhir dalam filter
+                            const sixMonthsAgo = new Date(filterEnd);
+                            sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 5); // 5 bulan ke belakang + bulan ini = 6 bulan
+                            const count6M = ticketsInFilter.filter(t => {
+                              const d = new Date(t.openTime);
+                              return d >= sixMonthsAgo && d <= filterEnd;
+                            }).length;
+                            // Hitung tiket per bulan dalam filter
+                            const monthNames = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+                            const monthCounts: Record<string, number> = {};
+                            let iter = new Date(filterStart.getFullYear(), filterStart.getMonth(), 1);
+                            const endIter = new Date(filterEnd.getFullYear(), filterEnd.getMonth(), 1);
+                            while (iter <= endIter) {
+                              const y = iter.getFullYear();
+                              const m = iter.getMonth();
+                              const key = `${y}-${m}`;
+                              monthCounts[key] = ticketsInFilter.filter(t => {
+                                const d = new Date(t.openTime);
+                                return d.getFullYear() === y && d.getMonth() === m;
+                              }).length;
+                              iter.setMonth(iter.getMonth() + 1);
+                            }
+                            return (
                               <div className="text-sm space-y-2 mt-2">
-                                <div className="flex justify-between"><span>Last 1 Month:</span><span className="font-bold">{count1M} tickets</span></div>
-                                <div className="flex justify-between"><span>Last 3 Months:</span><span className="font-bold">{count3M} tickets</span></div>
-                                <div className="flex justify-between"><span>Last 6 Months:</span><span className="font-bold">{count6M} tickets</span></div>
-    </div>
-  );
-                    })()}
-                  </div>
-                  </div>
+                                <div className="flex justify-between"><span>Bulan Terakhir:</span><span className="font-bold">{count1M} tickets</span></div>
+                                <div className="flex justify-between"><span>Akumulasi 3 Bulan:</span><span className="font-bold">{count3M} tickets</span></div>
+                                <div className="flex justify-between"><span>Akumulasi 6 Bulan:</span><span className="font-bold">{count6M} tickets</span></div>
+                                <div className="mt-4">
+                                  <div className="font-semibold mb-1">Rincian per Bulan:</div>
+                                  <ul className="space-y-1">
+                                    {Object.entries(monthCounts).map(([key, count]) => {
+                                      const [y, m] = key.split('-');
+                                      return (
+                                        <li key={key} className="flex justify-between">
+                                          <span>{monthNames[parseInt(m)]} {y}:</span>
+                                          <span className="font-bold">{count} tickets</span>
+                                        </li>
+                                      );
+                                    })}
+                                  </ul>
+                                </div>
+                              </div>
+                            );
+                          })()}
+                        </div>
+                      </div>
                       {/* Right Column: Ticket History */}
                       <div className="md:col-span-2 flex flex-col min-h-0">
                         <h3 className="font-bold text-xl text-blue-900 dark:text-blue-200 mb-3">Ticket History (Periode)</h3>
@@ -393,11 +464,11 @@ const KanbanBoard = ({ data, cutoffStart, cutoffEnd }: KanbanBoardProps) => {
                                 ));
                             })()}
                           </div>
-                    </ScrollArea>
-                  </div>
-                </div>
-              </DialogContent>
-          </Dialog>
+                        </ScrollArea>
+                      </div>
+                    </div>
+                  </DialogContent>
+                </Dialog>
               );
             })}
           </div>
@@ -428,7 +499,7 @@ const KanbanBoard = ({ data, cutoffStart, cutoffEnd }: KanbanBoardProps) => {
           </button>
         </div>
       )}
-    </div>
+    </>
   );
 };
 

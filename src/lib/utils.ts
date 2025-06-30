@@ -6,15 +6,15 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 // Simple NLP Helper for keyword extraction
-export function analyzeKeywords(texts: string[], topN: number = 3): string[] {
+export function analyzeKeywords(texts: string[], topN: number = 3): [string, number][] {
   const stopWords = new Set(['dan', 'di', 'ke', 'dari', 'yang', 'dengan', 'untuk', 'pada', 'saat', 'ini', 'itu', 'adalah', 'tidak', 'bisa', 'sudah', 'belum', 'karena', 'oleh', 'sebagai', 'namun', 'akan', 'atau', 'internet', 'layanan', 'pelanggan', 'gangguan', 'melakukan', 'melaporkan', 'bahwa', 'terjadi']);
   const wordCounts: { [key: string]: number } = {};
 
   texts.forEach(text => {
     if (!text) return;
-    const words = text.toString().toLowerCase().match(/\b(\w+)\b/g) || [];
+    const words = text.toLowerCase().split(/[\s,.\-()]+/).filter(Boolean);
     words.forEach(word => {
-      if (!stopWords.has(word) && word.length > 3) { // Increased min word length
+      if (!stopWords.has(word) && word.length > 3) {
         wordCounts[word] = (wordCounts[word] || 0) + 1;
       }
     });
@@ -22,8 +22,7 @@ export function analyzeKeywords(texts: string[], topN: number = 3): string[] {
 
   return Object.entries(wordCounts)
     .sort((a, b) => b[1] - a[1])
-    .slice(0, topN)
-    .map(entry => entry[0]);
+    .slice(0, topN);
 }
 
 // Generates a summary sentence from keywords
