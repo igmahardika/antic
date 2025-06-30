@@ -8,18 +8,21 @@ interface IFilterValues {
 }
 
 interface DataStoreState {
-  allTickets: ITicket[];
+  allTickets: ITicket[] | null;
   isLoading: boolean;
   filters: Record<string, IFilterValues>;
+  error: string | null;
   initialize: () => Promise<void>;
-  setFilter: (page: string, newFilter: IFilterValues) => void;
-  getFilteredTickets: (page: string) => ITicket[];
+  setFilter: (key: string, newFilters: Partial<IFilterValues>) => void;
+  getFilteredTickets: (key: string) => ITicket[];
+  updateTicketStatus: (ticketId: string, newStatus: 'Open' | 'In Progress' | 'Closed') => void;
 }
 
 const useDataStore = create<DataStoreState>((set, get) => ({
-  allTickets: [],
+  allTickets: null,
   isLoading: true,
   filters: {},
+  error: null,
 
   initialize: async () => {
     try {
@@ -31,25 +34,33 @@ const useDataStore = create<DataStoreState>((set, get) => ({
     }
   },
 
-  setFilter: (page, newFilter) => {
-    // Logic to handle single month selection
-    if (newFilter.startMonth && !newFilter.endMonth) {
-      newFilter.endMonth = newFilter.startMonth;
-    }
-    set(state => ({
-      filters: {
-        ...state.filters,
-        [page]: newFilter,
-      },
-    }));
+  setFilter: (key, newFilters) => {
+    set(state => {
+      const existingFilters = state.filters[key] || { startMonth: null, endMonth: null, year: null };
+      const updatedFilters = { ...existingFilters, ...newFilters };
+
+      // Ensure if one month is selected, both start and end are set
+      if (updatedFilters.startMonth && !updatedFilters.endMonth) {
+        updatedFilters.endMonth = updatedFilters.startMonth;
+      } else if (updatedFilters.endMonth && !updatedFilters.startMonth) {
+        updatedFilters.startMonth = updatedFilters.endMonth;
+      }
+
+      return {
+        filters: {
+          ...state.filters,
+          [key]: updatedFilters,
+        }
+      };
+    });
   },
   
-  getFilteredTickets: (page: string) => {
+  getFilteredTickets: (key: string) => {
     const { allTickets, filters } = get();
-    const filter = filters[page];
+    const filter = filters[key];
 
     if (!filter || !filter.startMonth || !filter.endMonth || !filter.year) {
-      return allTickets;
+      return allTickets || [];
     }
 
     const { startMonth, endMonth, year } = filter;
@@ -57,13 +68,23 @@ const useDataStore = create<DataStoreState>((set, get) => ({
     const mStart = Number(startMonth) - 1;
     const mEnd = Number(endMonth) - 1;
 
-    return allTickets.filter(t => {
+    return allTickets?.filter(t => {
       if (!t.openTime) return false;
       const d = new Date(t.openTime);
       if (isNaN(d.getTime())) return false;
       return d >= new Date(y, mStart, 1) && d < new Date(y, mEnd + 1, 1);
-    });
+    }) || [];
   },
+
+  updateTicketStatus: (ticketId, newStatus) => {
+    set(state => ({
+      allTickets: state.allTickets ? state.allTickets.map(ticket => 
+        ticket.id === ticketId ? { ...ticket, status: newStatus } : ticket
+      ) : null
+    }));
+    // Optionally, also update this in the database
+    db.tickets.update(ticketId, { status: newStatus });
+  }
 }));
 
 export default useDataStore;
