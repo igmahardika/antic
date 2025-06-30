@@ -14,6 +14,7 @@ import KanbanBoard from "./components/KanbanBoard";
 import TicketAnalytics from "./components/TicketAnalytics";
 import AgentAnalytics from "./components/AgentAnalytics";
 import UploadProcess from "./components/UploadProcess";
+import CustomerAnalysis from './components/CustomerAnalysis';
 
 const queryClient = new QueryClient();
 
@@ -28,11 +29,13 @@ const App = () => (
             <Route path="/" element={<Login />} />
             
             <Route element={<AppLayout />}>
-              <Route path="/summary" element={<SummaryDashboard />} />
-              <Route path="/grid-view" element={<GridView />} />
-              <Route path="/customer-analysis" element={<KanbanBoard />} />
-              <Route path="/ticket-analysis" element={<TicketAnalytics />} />
-              <Route path="/agent-analysis" element={<AgentAnalytics />} />
+              <Route index element={<Navigate to="/summary" replace />} />
+              <Route path="summary" element={<SummaryDashboard />} />
+              <Route path="grid-view" element={<GridView />} />
+              <Route path="kanban" element={<KanbanBoard />} />
+              <Route path="ticket-analytics" element={<TicketAnalytics />} />
+              <Route path="agent-analytics" element={<AgentAnalytics />} />
+              <Route path="customer-analysis" element={<CustomerAnalysis />} />
               <Route path="/upload" element={<UploadProcess />} />
               {/* Redirect from old dashboard path to the new default */}
               <Route path="/dashboard" element={<Navigate to="/summary" replace />} />

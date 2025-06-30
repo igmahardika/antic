@@ -1,16 +1,16 @@
 import { useEffect } from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
-import { Home, BarChart2, Grid, Users, UserCheck, Upload, LogOut, Settings } from 'lucide-react';
+import { Home, BarChart2, Grid, Users, FileText, HeartPulse, Upload, LogOut, Settings } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import useDataStore from '@/store/dataStore';
 
 const navItems = [
-  { name: 'Summary', href: '/summary', icon: Home },
-  { name: 'Grid View', href: '/grid-view', icon: Grid },
-  { name: 'Customer Analysis', href: '/customer-analysis', icon: Users },
-  { name: 'Ticket Analysis', href: '/ticket-analysis', icon: BarChart2 },
-  { name: 'Agent Analysis', href: '/agent-analysis', icon: UserCheck },
-  { name: 'Upload Data', href: '/upload', icon: Upload },
+  { to: '/summary', icon: <Home size={20} />, text: 'Summary' },
+  { to: '/grid-view', icon: <Grid size={20} />, text: 'Grid View' },
+  { to: '/kanban', icon: <BarChart2 size={20} />, text: 'Kanban' },
+  { to: '/ticket-analytics', icon: <FileText size={20} />, text: 'Ticket Analysis' },
+  { to: '/agent-analytics', icon: <Users size={20} />, text: 'Agent Analytics' },
+  { to: '/customer-analysis', icon: <HeartPulse size={20} />, text: 'Customer Analysis' },
 ];
 
 const AppLayout = () => {
@@ -36,17 +36,17 @@ const AppLayout = () => {
         <nav className="flex-grow px-4 py-4">
           <ul>
             {navItems.map((item) => (
-              <li key={item.name}>
+              <li key={item.text}>
                 <Link
-                  to={item.href}
+                  to={item.to}
                   className={`flex items-center gap-3 px-4 py-2 my-1 rounded-md text-sm font-medium transition-colors ${
-                    location.pathname === item.href
+                    location.pathname === item.to
                       ? 'bg-blue-100 text-blue-600 dark:bg-blue-900/50'
                       : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-zinc-800'
                   }`}
                 >
-                  <item.icon className="w-5 h-5" />
-                  {item.name}
+                  {item.icon}
+                  {item.text}
                 </Link>
               </li>
             ))}

@@ -1,7 +1,8 @@
 import { ITicket } from './db';
 import { formatDurationDHM, analyzeKeywords, generateAnalysisConclusion } from './utils';
-import { calculateAgentKpis, calculateOverallAgentKpis } from '@/utils/agentKpi';
+import { calculateAgentKpis } from '@/utils/agentKpi';
 import { format } from 'date-fns';
+import useAgentStore, { AgentKpi, AgentMetric } from '@/store/agentStore';
 
 // This file contains the data processing functions previously in Dashboard.tsx
 
@@ -238,6 +239,46 @@ export function processAgentAnalytics(tickets: ITicket[]) {
         return calculateAgentKpis(agentTickets);
     }).filter(kpi => kpi); // Filter out potential null/undefined results
 
-    const overallKpis = calculateOverallAgentKpis(kpiTickets);
-    return { agentKpis, overallKpis };
+    return { agentKpis, overallKpis: null };
+}
+
+export function processCustomerAnalysis(tickets: ITicket[]) {
+    if (!tickets || tickets.length === 0) {
+        return {
+            customerData: [],
+            classSummary: { Normal: 0, Persisten: 0, Kronis: 0, Ekstrem: 0 },
+        };
+    }
+
+    const customerTickets: { [key: string]: { tickets: ITicket[], name: string } } = {};
+    tickets.forEach(ticket => {
+        if (!ticket.customerId) return;
+        if (!customerTickets[ticket.customerId]) {
+            customerTickets[ticket.customerId] = { tickets: [], name: ticket.name };
+        }
+        customerTickets[ticket.customerId].tickets.push(ticket);
+    });
+
+    const customerData = Object.entries(customerTickets).map(([customerId, data]) => {
+        const ticketCount = data.tickets.length;
+        let classification = 'Normal';
+        if (ticketCount > 5) classification = 'Ekstrem';
+        else if (ticketCount >= 4) classification = 'Kronis';
+        else if (ticketCount >= 2) classification = 'Persisten';
+
+        return {
+            customerId,
+            customerName: data.name,
+            ticketCount,
+            classification,
+            tickets: data.tickets.map(t => t.id),
+        };
+    });
+    
+    const classSummary = customerData.reduce((acc, customer) => {
+        acc[customer.classification] = (acc[customer.classification] || 0) + 1;
+        return acc;
+    }, { Normal: 0, Persisten: 0, Kronis: 0, Ekstrem: 0 } as { [key: string]: number });
+
+    return { customerData: customerData.sort((a,b) => b.ticketCount - a.ticketCount), classSummary };
 } 
