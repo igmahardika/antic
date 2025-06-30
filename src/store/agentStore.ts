@@ -1,21 +1,36 @@
 import { create } from 'zustand';
-import { AgentMetric, Ticket, sanitizeTickets, calcAllMetrics } from '@/utils/agentKpi';
+import { ITicket } from '@/lib/db';
+import { calculateAgentKpis } from '@/utils/agentKpi';
 
-interface AgentStore {
-  tickets: Ticket[];
-  agentMetrics: AgentMetric[];
-  setTickets: (tickets: Ticket[]) => void;
-  setAgentMetrics: (tickets: Ticket[]) => void;
+export interface AgentMetric {
+    vol: number;
+    frt: number;
+    art: number;
+    fcr: number;
+    sla: number;
+    score: number;
 }
 
-export const useAgentStore = create<AgentStore>((set) => ({
-  tickets: [],
-  agentMetrics: [],
-  setTickets: (tickets) => {
-    set({ tickets });
-    set({ agentMetrics: calcAllMetrics(sanitizeTickets(tickets)) });
-  },
-  setAgentMetrics: (tickets) => {
-    set({ agentMetrics: calcAllMetrics(sanitizeTickets(tickets)) });
-  },
-})); 
+export interface AgentKpi {
+    agent: string;
+    metric: AgentMetric;
+    trends: {
+        frt: number[];
+        art: number[];
+    };
+}
+
+interface AgentStoreState {
+    agentKpis: AgentKpi[];
+    calculateKpis: (tickets: ITicket[]) => void;
+}
+
+const useAgentStore = create<AgentStoreState>((set) => ({
+    agentKpis: [],
+    calculateKpis: (tickets) => {
+        const kpis = calculateAgentKpis(tickets);
+        set({ agentKpis: kpis });
+    },
+}));
+
+export default useAgentStore; 

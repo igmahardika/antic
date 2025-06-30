@@ -14,9 +14,9 @@ import { formatDurationDHM } from '@/lib/utils';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './ui/accordion';
 import { Badge } from './ui/badge';
 
-type UploadProcessProps = {
-  onUploadComplete: () => void;
-};
+interface UploadProcessProps {
+  onUploadComplete?: () => void;
+}
 
 interface IErrorLog {
   row: number;
@@ -43,7 +43,7 @@ const EXPECTED_HEADERS = [
   "Open By"
 ];
 
-const UploadProcess = ({ onUploadComplete }: UploadProcessProps) => {
+const UploadProcess: React.FC<UploadProcessProps> = ({ onUploadComplete }) => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [progress, setProgress] = useState(0);
   const { toast } = useToast();

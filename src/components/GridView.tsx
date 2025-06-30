@@ -1,6 +1,11 @@
 import React, { useMemo, useState } from 'react';
+import { useLocation } from 'react-router-dom';
+import useDataStore from '@/store/dataStore';
+import FilterWaktu from './FilterWaktu';
 import { ITicket } from '@/lib/db';
 import { formatDateTimeDDMMYYYY } from '@/lib/utils';
+import { Search } from 'react-feather';
+import { BarChart2 } from 'lucide-react';
 
 const PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
 
@@ -17,28 +22,71 @@ const columns = [
   { key: 'openBy', label: 'Agent' },
 ];
 
-const GridView = ({ data }: { data?: ITicket[] }) => {
+const GridView = () => {
+  const { pathname } = useLocation();
+  const {
+    isLoading,
+    allTickets,
+    getFilteredTickets,
+    filters,
+    setFilter
+  } = useDataStore();
+
+  const gridData = getFilteredTickets(pathname);
+
+  const allYearsInData = useMemo(() => {
+    if (!allTickets) return [];
+    const yearSet = new Set<string>();
+    allTickets.forEach(t => {
+      if (t.openTime) {
+        const d = new Date(t.openTime);
+        if (!isNaN(d.getTime())) yearSet.add(String(d.getFullYear()));
+      }
+    });
+    return Array.from(yearSet).sort((a,b) => Number(b) - Number(a));
+  }, [allTickets]);
+
+  if (isLoading) {
+    return <div>Loading Grid View...</div>;
+  }
+
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
-
+  
   const filtered = useMemo(() => {
-    if (!data) return [];
-    if (!search) return data;
+    if (!gridData) return [];
+    if (!search) return gridData;
     const s = search.toLowerCase();
-    return data.filter(row =>
+    return gridData.filter(row =>
       columns.some(col => {
         const val = row[col.key];
         return val && String(val).toLowerCase().includes(s);
       })
     );
-  }, [data, search]);
+  }, [gridData, search]);
 
   const totalPages = Math.ceil(filtered.length / pageSize);
   const paged = useMemo(() => filtered.slice((page - 1) * pageSize, page * pageSize), [filtered, page, pageSize]);
+  
+  if (!gridData) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full text-gray-500 p-8">
+        <h3 className="text-xl font-semibold">No Grid Data</h3>
+        <p>Please upload a file or adjust filters.</p>
+      </div>
+    );
+  }
 
   return (
-    <>
+    <div className="space-y-4">
+      <h1 className="text-3xl font-bold">Grid View</h1>
+      <FilterWaktu
+        filters={filters[pathname] || { startMonth: null, endMonth: null, year: null }}
+        setFilters={(newFilters) => setFilter(pathname, newFilters)}
+        allYearsInData={allYearsInData}
+        onRefresh={() => {}}
+      />
       <div className="bg-white/90 dark:bg-zinc-900/90 rounded-2xl shadow-lg p-8 mb-6 flex flex-col gap-6 border border-gray-100 dark:border-zinc-800 transition-all duration-300">
         {/* Search bar */}
         <div className="py-5 px-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
@@ -52,12 +100,12 @@ const GridView = ({ data }: { data?: ITicket[] }) => {
               onChange={e => { setSearch(e.target.value); setPage(1); }}
             />
             <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-              <svg className="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>
+              <Search className="h-4 w-4 text-gray-400" />
             </div>
           </div>
         </div>
         {/* Table */}
-        <div className="overflow-hidden">
+        <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
             <thead className="bg-gray-50 dark:bg-gray-700">
               <tr>
@@ -101,7 +149,8 @@ const GridView = ({ data }: { data?: ITicket[] }) => {
           </div>
         </div>
       </div>
-    </>
+      <p>Displaying {gridData.length} tickets.</p>
+    </div>
   );
 };
 
