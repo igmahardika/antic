@@ -1,16 +1,4 @@
 import React, { useState, useMemo } from 'react';
-import { Doughnut, Line, Bar } from 'react-chartjs-2';
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  ArcElement, // Needed for Doughnut
-  LineElement,
-  PointElement,
-  Title,
-  Tooltip,
-  Legend,
-} from 'chart.js';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Accordion,
@@ -18,20 +6,20 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion"
-import { Download, ArrowUpRight, ArrowDownRight, TicketIcon, ClockIcon, CheckCircleIcon, UserIcon } from 'lucide-react';
-import ChartDataLabels from 'chartjs-plugin-datalabels';
-
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  ArcElement,
-  LineElement,
-  PointElement,
-  Title,
-  Tooltip,
-  Legend,
-  ChartDataLabels
-);
+import { Download, ArrowUpRight, ArrowDownRight, TicketIcon, ClockIcon, CheckCircleIcon, UserIcon, Ticket, Clock, CheckCircle2, XCircle, AlertTriangle } from 'lucide-react';
+import { useAnalytics } from './AnalyticsContext';
+import SummaryCard from './ui/SummaryCard';
+import TimeFilter from './TimeFilter';
+import DownloadIcon from '@mui/icons-material/Download';
+import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
+import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
+import ConfirmationNumberIcon from '@mui/icons-material/ConfirmationNumber';
+import AccessTimeIcon from '@mui/icons-material/AccessTime';
+import PersonIcon from '@mui/icons-material/Person';
+import HowToRegIcon from '@mui/icons-material/HowToReg';
+import CloseIcon from '@mui/icons-material/Close';
+import WarningAmberIcon from '@mui/icons-material/WarningAmber';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Legend as RechartsLegend, Tooltip as RechartsTooltip, PieChart, Pie, Sector, Cell, Label as RechartsLabel, BarChart, Bar } from 'recharts';
 
 type ClassificationDetails = {
   count: number;
@@ -44,50 +32,115 @@ type ClassificationData = {
   [key: string]: ClassificationDetails;
 };
 
-const TicketAnalytics = ({ data }: { data?: { 
-  stats: any[], 
-  complaintsData: any, 
-  monthlyStatsData: any, 
-  classificationData: ClassificationData,
-  topComplaintsTable: any[],
-  keywordAnalysis: [string, number][],
-  zeroDurationCount?: number,
-  agentStats?: any[],
-  complaintTrendsData?: any
-} }) => {
-  // Guard clause for when data is not yet available
-  if (!data || !data.stats) {
-    return (
-      <div className="flex flex-col items-center justify-center h-full text-gray-500 p-8">
-        <h3 className="text-xl font-semibold">Data Analisis Tiket</h3>
-        <p>Tidak ada data yang cukup untuk ditampilkan. Unggah file untuk memulai.</p>
-      </div>
-    );
-  }
+type TicketAnalyticsProps = {
+  data?: any;
+};
 
-  const { stats, complaintsData, monthlyStatsData, classificationData, topComplaintsTable, zeroDurationCount, agentStats } = data;
+const MONTH_OPTIONS = [
+  { value: '01', label: 'January' },
+  { value: '02', label: 'February' },
+  { value: '03', label: 'March' },
+  { value: '04', label: 'April' },
+  { value: '05', label: 'May' },
+  { value: '06', label: 'June' },
+  { value: '07', label: 'July' },
+  { value: '08', label: 'August' },
+  { value: '09', label: 'September' },
+  { value: '10', label: 'October' },
+  { value: '11', label: 'November' },
+  { value: '12', label: 'December' },
+];
+
+// Helper: convert chart.js-like data to recharts format
+function toRechartsData(labels: string[], datasets: any[]) {
+  // Assume 2 datasets: [incoming, closed]
+  return labels.map((label, i) => ({
+    label,
+    incoming: datasets[0]?.data[i] ?? 0,
+    closed: datasets[1]?.data[i] ?? 0,
+  }));
+}
+
+// Helper: tentukan shift dari jam
+function getShift(dateStr: string) {
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return 'Unknown';
+  const hour = d.getHours();
+  if (hour >= 9 && hour < 17) return 'Pagi';
+  if (hour >= 17 || hour < 1) return 'Sore';
+  if (hour >= 1 && hour < 9) return 'Malam';
+  return 'Unknown';
+}
+
+const TicketAnalytics = ({ data: propsData }: TicketAnalyticsProps) => {
+  const {
+    ticketAnalyticsData,
+    gridData, // filtered tickets
+    startMonth, setStartMonth,
+    endMonth, setEndMonth,
+    selectedYear, setSelectedYear,
+    allYearsInData,
+    refresh
+  } = useAnalytics();
+
+  // Filter summary card: sembunyikan Average Duration dan Active Agents
+  const stats = useMemo(() => {
+    if (!ticketAnalyticsData || !Array.isArray(ticketAnalyticsData.stats)) return [];
+    return ticketAnalyticsData.stats
+      .filter(s => s.title !== 'Average Duration' && s.title !== 'Active Agents')
+      .map(s => ({
+        title: s.title.replace('Closed Tickets', 'Closed'),
+        value: s.value,
+        description: s.description
+      }));
+  }, [ticketAnalyticsData]);
+
+  // Untuk chart dan analisis lain, gunakan ticketAnalyticsData yang sudah berbasis gridData
+  const monthOptions = MONTH_OPTIONS;
+  // Filtering logic for all years
+  const filteredGridData = useMemo(() => {
+    if (!gridData || !startMonth || !endMonth || !selectedYear) return [];
+    if (selectedYear === 'ALL') {
+      return gridData.filter(t => {
+        if (!t.openTime) return false;
+        if (!startMonth || !endMonth) return true;
+        const d = new Date(t.openTime);
+        const mStart = Number(startMonth) - 1;
+        const mEnd = Number(endMonth) - 1;
+        return d.getMonth() >= mStart && d.getMonth() <= mEnd;
+      });
+    }
+    // Default: filter by year and month
+    return gridData;
+  }, [gridData, startMonth, endMonth, selectedYear]);
+  const complaintsData = ticketAnalyticsData?.complaintsData || { labels: [], datasets: [] };
+  const monthlyStatsData = ticketAnalyticsData?.monthlyStatsChartData || { labels: [], datasets: [] };
+  const classificationData = ticketAnalyticsData?.classificationAnalysis || {};
+  const topComplaintsTable = ticketAnalyticsData?.topComplaintsTableData || [];
+  const zeroDurationCount = useMemo(() => Array.isArray(filteredGridData) ? filteredGridData.filter(t => t.duration?.rawHours === 0).length : 0, [filteredGridData]);
+  const agentStats = ticketAnalyticsData?.agentAnalyticsData || [];
 
   // --- Repeat-Complainer Analysis ---
   // Agregasi per customer
   const customerStats = useMemo(() => {
-    if (!data || !data.stats) return [];
+    if (!Array.isArray(gridData)) return [];
     const map = new Map();
-    data.stats.forEach(t => {
+    gridData.forEach(t => {
       if (!t.customer) return;
       if (!map.has(t.customer)) {
         map.set(t.customer, { customer: t.customer, count: 0, repClass: t.repClass });
       }
-      const obj = map.get(t.customer);
+      const obj = map.get(t.customer) as any;
       obj.count += 1;
       obj.repClass = t.repClass; // asumsikan repClass sudah final per customer
     });
     return Array.from(map.values());
-  }, [data.stats]);
+  }, [gridData]);
 
   // Ringkasan jumlah dan persentase tiap kelas
   const repClassSummary = useMemo(() => {
     const summary = { Normal: 0, Persisten: 0, Kronis: 0, Ekstrem: 0 };
-    customerStats.forEach(c => {
+    (Array.isArray(customerStats) ? customerStats : []).forEach((c: any) => {
       if (summary[c.repClass] !== undefined) summary[c.repClass] += 1;
     });
     const total = customerStats.length;
@@ -96,10 +149,10 @@ const TicketAnalytics = ({ data }: { data?: {
 
   // Export to CSV
   const handleExportCSV = () => {
-    if (!data || !data.stats) return;
+    if (!Array.isArray(gridData)) return;
     const rows = [
       ['Title', 'Value', 'Description'],
-      ...data.stats.map(stat => [stat.title, stat.value, stat.description])
+      ...gridData.map(stat => [stat.title, stat.value, stat.description])
     ];
     const csvContent = rows.map(e => e.join(",")).join("\n");
     const blob = new Blob([csvContent], { type: 'text/csv' });
@@ -111,25 +164,56 @@ const TicketAnalytics = ({ data }: { data?: {
     URL.revokeObjectURL(url);
   };
 
-  return (
-    <div className="space-y-6">
-      {/* Header & Export */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-1">Ticket Analysis</h2>
-          <p className="text-gray-500 dark:text-gray-400">Summary and trends of all tickets</p>
-        </div>
-        <button onClick={handleExportCSV} className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md shadow hover:bg-blue-700 transition text-sm font-semibold">
-          <Download className="h-4 w-4" /> Export CSV
-        </button>
-      </div>
+  // --- Agent Ticket per Shift (Area Chart, agregat semua agent per shift per bulan) ---
+  type ShiftAreaDatum = { month: string; Pagi: number; Sore: number; Malam: number };
+  const agentShiftAreaData: ShiftAreaDatum[] = useMemo(() => {
+    if (!Array.isArray(gridData)) return [];
+    // { [month]: { Pagi: 0, Sore: 0, Malam: 0 } }
+    const map: Record<string, ShiftAreaDatum> = {};
+    gridData.forEach(t => {
+      if (!t.openTime) return;
+      const d = new Date(t.openTime);
+      if (isNaN(d.getTime())) return;
+      const month = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      const shift = getShift(t.openTime);
+      if (!map[month]) map[month] = { month, Pagi: 0, Sore: 0, Malam: 0 };
+      map[month][shift] = (map[month][shift] || 0) + 1;
+    });
+    // Urutkan bulan
+    return (Object.values(map) as ShiftAreaDatum[]).sort((a, b) => a.month.localeCompare(b.month));
+  }, [gridData]);
 
-      {/* Warning for zero duration tickets */}
-      {zeroDurationCount > 0 && (
-        <div className="bg-yellow-50 dark:bg-yellow-900/30 border border-yellow-200 dark:border-yellow-700 rounded-2xl shadow-lg p-4 text-yellow-800 dark:text-yellow-200 text-sm font-medium">
-          ⚠️ <b>{zeroDurationCount}</b> tickets have 0 hour duration. Please check your Excel file for accurate duration analysis.
-        </div>
-      )}
+  // Guard clause for when data is not yet available
+  if (!gridData || gridData.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full text-gray-500 p-8">
+        <h1 className="text-3xl md:text-4xl font-extrabold mb-4 text-gray-900 dark:text-gray-100">Ticket Analytics</h1>
+        <h3 className="text-xl md:text-2xl font-semibold mb-2 text-gray-900 dark:text-gray-100">Data Analisis Tiket</h3>
+        <p>Tidak ada data yang cukup untuk ditampilkan. Unggah file untuk memulai.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="w-full">
+      {/* Page Title & Description */}
+      <div className="mb-6">
+        <h1 className="text-3xl md:text-4xl font-extrabold mb-4 text-gray-900 dark:text-gray-100">Ticket Analytics</h1>
+        <p className="text-gray-500 dark:text-gray-400">Analisis statistik tiket, tren, dan kategori komplain dalam periode terpilih.</p>
+      </div>
+      <div className="flex justify-center mb-6">
+        <TimeFilter
+          startMonth={startMonth}
+          setStartMonth={setStartMonth}
+          endMonth={endMonth}
+          setEndMonth={setEndMonth}
+          selectedYear={selectedYear}
+          setSelectedYear={setSelectedYear}
+          monthOptions={monthOptions}
+          allYearsInData={allYearsInData}
+          onRefresh={refresh}
+        />
+      </div>
 
       {/* Automated Insights */}
       {/* {insights && (
@@ -144,115 +228,100 @@ const TicketAnalytics = ({ data }: { data?: {
         </Card>
       )} */}
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-        {stats.map((stat, index) => (
-          <Card key={index} className="relative rounded-2xl shadow-lg border-gray-100 dark:border-zinc-700 bg-white/90 dark:bg-zinc-900/80">
-            <CardHeader className="pb-0 flex flex-row justify-between items-start gap-0 p-4">
-              <span className="text-xs font-semibold uppercase tracking-wide text-gray-900 dark:text-zinc-200">
-                {stat.title}
-              </span>
-              {/* Icon di kanan atas */}
-              {stat.title === 'Total Tickets' && <TicketIcon className="w-5 h-5 text-sky-500" />}
-              {stat.title === 'Average Duration' && <ClockIcon className="w-5 h-5 text-emerald-500" />}
-              {stat.title === 'Closed Tickets' && <CheckCircleIcon className="w-5 h-5 text-rose-500" />}
-              {stat.title === 'Active Agents' && <UserIcon className="w-5 h-5 text-purple-500" />}
-            </CardHeader>
-            <CardContent className="flex flex-col items-start py-5 px-5 gap-2">
-              <span className="text-3xl font-extrabold text-gray-900 dark:text-zinc-200">
-                {stat.title === 'Average Duration' && (!stat.value || stat.value === '00:00:00' || stat.value === '-' || stat.value === null || stat.value === undefined)
-                  ? <span className="text-gray-400">N/A</span>
-                  : stat.value}
-              </span>
-              <span className="text-xs text-gray-400 dark:text-gray-500 mt-1">{stat.description}</span>
-            </CardContent>
-          </Card>
+      {/* Summary Cards - Enhanced UI */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8 mb-8">
+        {stats.map((s, idx) => (
+          <SummaryCard
+            key={s.title}
+            icon={
+              idx === 0 ? <ConfirmationNumberIcon className="w-7 h-7 text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.10)]" /> :
+              idx === 1 ? <CheckCircleIcon className="w-7 h-7 text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.10)]" /> :
+              idx === 2 ? <AccessTimeIcon className="w-7 h-7 text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.10)]" /> :
+              idx === 3 ? <CloseIcon className="w-7 h-7 text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.10)]" /> :
+              <WarningAmberIcon className="w-7 h-7 text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.10)]" />
+            }
+            label={s.title}
+            value={s.value}
+            description={s.description}
+            bg="bg-white/60 backdrop-blur-md border border-white/30"
+            iconBg={
+              idx === 0 ? "bg-blue-600/90" :
+              idx === 1 ? "bg-green-600/90" :
+              idx === 2 ? "bg-yellow-600/90" :
+              idx === 3 ? "bg-red-600/90" :
+              "bg-orange-600/90"
+            }
+          />
         ))}
       </div>
 
+      {/* --- Agent Ticket per Shift Chart (Area) --- */}
+      <Card className="mb-8 bg-white dark:bg-zinc-900">
+        <CardHeader>
+          <CardTitle className="text-lg font-bold">Agent Ticket per Shift (Area)</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ResponsiveContainer width="100%" height={360}>
+            <AreaChart data={agentShiftAreaData} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
+              <defs>
+                <linearGradient id="colorPagi" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#22c55e" stopOpacity={0.8}/>
+                  <stop offset="95%" stopColor="#22c55e" stopOpacity={0.1}/>
+                </linearGradient>
+                <linearGradient id="colorSore" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.8}/>
+                  <stop offset="95%" stopColor="#3b82f6" stopOpacity={0.1}/>
+                </linearGradient>
+                <linearGradient id="colorMalam" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#ef4444" stopOpacity={0.8}/>
+                  <stop offset="95%" stopColor="#ef4444" stopOpacity={0.1}/>
+                </linearGradient>
+              </defs>
+              <XAxis dataKey="month" />
+              <YAxis />
+              <CartesianGrid strokeDasharray="3 3" vertical={false} />
+              <RechartsTooltip />
+              <RechartsLegend />
+              <Area type="monotone" dataKey="Pagi" stroke="#22c55e" fill="url(#colorPagi)" name="Pagi (09:00-17:00)" strokeWidth={3} />
+              <Area type="monotone" dataKey="Sore" stroke="#3b82f6" fill="url(#colorSore)" name="Sore (17:00-01:00)" strokeWidth={3} />
+              <Area type="monotone" dataKey="Malam" stroke="#ef4444" fill="url(#colorMalam)" name="Malam (01:00-09:00)" strokeWidth={3} />
+            </AreaChart>
+          </ResponsiveContainer>
+          <div className="text-xs text-gray-500 mt-2">* Area chart ini menampilkan jumlah tiket per shift (semua agent) di setiap bulan.</div>
+        </CardContent>
+      </Card>
+
       {/* Charts Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 mb-8">
         {/* Main Charts */}
         <div className="lg:col-span-3 grid grid-cols-1 gap-6">
-          <Card className="rounded-2xl shadow-lg border border-gray-100 dark:border-zinc-700 bg-white/90 dark:bg-zinc-900/80 p-6 flex flex-col justify-between">
+          <Card className="rounded-2xl shadow-lg border border-gray-100 dark:border-zinc-700 bg-white/90 dark:bg-zinc-900/80 p-8 flex flex-col justify-between">
             <CardHeader className="pb-2">
               <CardTitle className="text-2xl font-bold text-blue-800 dark:text-blue-200">Tickets per Month</CardTitle>
             </CardHeader>
             <CardContent className="pt-2 h-[320px]">
               {monthlyStatsData && monthlyStatsData.labels && monthlyStatsData.labels.length > 0 ? (
-                <Line
-                  data={{
-                    ...monthlyStatsData,
-                    datasets: monthlyStatsData.datasets.map((ds, i) => ({
-                      ...ds,
-                      fill: true,
-                      backgroundColor: (ctx) => i === 0 ? 'rgba(99,102,241,0.15)' : 'rgba(236,72,153,0.10)',
-                      borderColor: i === 0 ? '#6366F1' : '#EC4899',
-                      pointBackgroundColor: i === 0 ? '#6366F1' : '#EC4899',
-                      pointRadius: 0,
-                      borderWidth: 3,
-                      tension: 0.5,
-                      pointHoverRadius: 0,
-                      pointBorderWidth: 2,
-                    })),
-                  }}
-                  options={{
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                      legend: {
-                        display: true,
-                        position: 'bottom',
-                        labels: {
-                          font: { size: 15, family: 'Inter, sans-serif', weight: 'bold' },
-                          usePointStyle: true,
-                          pointStyle: 'circle',
-                          color: '#6366F1',
-                          padding: 24,
-                        },
-                      },
-                      tooltip: {
-                        backgroundColor: (ctx) => ctx.chart.canvas.classList.contains('dark') ? '#1e293b' : '#fff',
-                        titleColor: (ctx) => ctx.chart.canvas.classList.contains('dark') ? '#fff' : '#1e293b',
-                        bodyColor: (ctx) => ctx.chart.canvas.classList.contains('dark') ? '#e5e7eb' : '#334155',
-                        borderColor: 'transparent',
-                        borderWidth: 0,
-                        padding: 14,
-                        displayColors: true,
-                        cornerRadius: 10,
-                        caretSize: 10,
-                      },
-                      datalabels: {
-                        display: true,
-                        align: 'top',
-                        anchor: 'end',
-                        font: { weight: 'bold', family: 'Poppins, Arial, sans-serif' },
-                        color: '#6366F1',
-                        backgroundColor: 'rgba(255,255,255,0.8)',
-                        borderRadius: 4,
-                        padding: 4,
-                        formatter: Math.round,
-                      },
-                    },
-                    scales: {
-                      x: {
-                        grid: { color: '#F3F4F6' },
-                        ticks: { color: '#6B7280', font: { size: 13, weight: 'bold' }, maxRotation: 30, minRotation: 0, autoSkip: true, maxTicksLimit: 8 },
-                      },
-                      y: {
-                        grid: { color: '#F3F4F6' },
-                        ticks: { color: '#6B7280', font: { size: 13, weight: 'bold' } },
-                        beginAtZero: true,
-                      },
-                    },
-                    animation: {
-                      duration: 1000,
-                      easing: 'easeInOutQuart',
-                    },
-                  }}
-                  height={320}
-                  aria-label="Tickets per Month Trendline"
-                />
+                <ResponsiveContainer width="100%" height={320}>
+                  <AreaChart data={toRechartsData(monthlyStatsData.labels, monthlyStatsData.datasets)} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
+                    <defs>
+                      <linearGradient id="colorIncoming" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#6366F1" stopOpacity={0.8}/>
+                        <stop offset="95%" stopColor="#6366F1" stopOpacity={0.1}/>
+                      </linearGradient>
+                      <linearGradient id="colorClosed" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#EC4899" stopOpacity={0.8}/>
+                        <stop offset="95%" stopColor="#EC4899" stopOpacity={0.1}/>
+                      </linearGradient>
+                    </defs>
+                    <XAxis dataKey="label" tickLine={false} axisLine={false} tickMargin={8} minTickGap={24} />
+                    <YAxis tickLine={false} axisLine={false} tickMargin={8} minTickGap={24} />
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                    <RechartsTooltip />
+                    <RechartsLegend />
+                    <Area type="monotone" dataKey="incoming" stroke="#6366F1" fill="url(#colorIncoming)" name="Incoming Tickets" strokeWidth={3} />
+                    <Area type="monotone" dataKey="closed" stroke="#EC4899" fill="url(#colorClosed)" name="Closed Tickets" strokeWidth={3} />
+                  </AreaChart>
+                </ResponsiveContainer>
               ) : (
                 <div className="text-center text-gray-400 py-12">No data for this chart</div>
               )}
@@ -262,66 +331,78 @@ const TicketAnalytics = ({ data }: { data?: {
         
         {/* Doughnut Chart */}
         <div className="lg:col-span-2 grid grid-cols-1 gap-6">
-          <Card className="rounded-2xl shadow-lg border border-gray-100 dark:border-zinc-700 bg-white/90 dark:bg-zinc-900/80 p-6 flex flex-col justify-between">
+          <Card className="rounded-2xl shadow-lg border border-gray-100 dark:border-zinc-700 bg-white/90 dark:bg-zinc-900/80 p-8 flex flex-col justify-between">
             <CardHeader className="pb-2">
-              <CardTitle className="text-2xl font-bold text-blue-800 dark:text-blue-200">Complaint Categories</CardTitle>
+              <CardTitle className="text-lg sm:text-xl md:text-2xl font-bold text-blue-800 dark:text-blue-200">Complaint Categories</CardTitle>
             </CardHeader>
             <CardContent className="pt-2 h-[320px] flex flex-col items-center justify-center">
               {complaintsData && complaintsData.labels && complaintsData.labels.length > 0 ? (
                 <div className="relative flex flex-col items-center justify-center w-full h-full">
-                  <Doughnut
-                    data={{
-                      ...complaintsData,
-                      datasets: complaintsData.datasets.map(ds => ({
-                        ...ds,
-                        backgroundColor: [
-                          '#5271ff', '#22c55e', '#f59e42', '#ec4899', '#a855f7', '#fbbf24', '#0ea5e9', '#6366f1', '#84cc16', '#f472b6',
-                        ],
-                        borderWidth: 4,
-                        borderColor: '#fff',
-                        hoverOffset: 16,
-                      }))
-                    }}
-                    options={{
-                      responsive: true,
-                      maintainAspectRatio: false,
-                      cutout: '68%',
-                      plugins: {
-                        legend: { display: false },
-                        tooltip: {
-                          backgroundColor: (ctx) => ctx.chart.canvas.classList.contains('dark') ? '#1e293b' : '#fff',
-                          titleColor: (ctx) => ctx.chart.canvas.classList.contains('dark') ? '#fff' : '#1e293b',
-                          bodyColor: (ctx) => ctx.chart.canvas.classList.contains('dark') ? '#e5e7eb' : '#334155',
-                          borderColor: '#5271ff',
-                          borderWidth: 2,
-                          padding: 16,
-                          displayColors: true,
-                          cornerRadius: 12,
-                          caretSize: 10,
-                          callbacks: {
-                            label: (ctx) => {
-                              const val = ctx.parsed;
-                              const total = ctx.dataset.data.reduce((a,b)=>a+b,0);
-                              const percent = total ? ((val/total)*100).toFixed(1) : '0.0';
-                              return `${ctx.label}: ${val} tickets (${percent}%)`;
+                  <ResponsiveContainer width="100%" height={240}>
+                    <PieChart>
+                      <Pie
+                        data={complaintsData.labels.map((label, idx) => ({
+                          name: label,
+                          value: complaintsData.datasets[0].data[idx],
+                          fill: complaintsData.datasets[0].backgroundColor[idx],
+                        }))}
+                        dataKey="value"
+                        nameKey="name"
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={60}
+                        outerRadius={90}
+                        paddingAngle={2}
+                        stroke="#fff"
+                        strokeWidth={5}
+                        labelLine={false}
+                        isAnimationActive={true}
+                      >
+                        <RechartsLabel
+                          position="center"
+                          content={({ viewBox }) => {
+                            const total = complaintsData.datasets[0].data.reduce((a,b)=>a+b,0);
+                            if (viewBox && "cx" in viewBox && "cy" in viewBox) {
+                              return (
+                                <text
+                                  x={viewBox.cx}
+                                  y={viewBox.cy}
+                                  textAnchor="middle"
+                                  dominantBaseline="middle"
+                                >
+                                  <tspan
+                                    x={viewBox.cx}
+                                    y={viewBox.cy}
+                                    className="fill-blue-800 dark:fill-blue-200 text-3xl font-bold"
+                                  >
+                                    {total}
+                                  </tspan>
+                                  <tspan
+                                    x={viewBox.cx}
+                                    y={(viewBox.cy || 0) + 24}
+                                    className="fill-muted-foreground text-base"
+                                  >
+                                    Total
+                                  </tspan>
+                                </text>
+                              )
                             }
-                          }
-                        },
-                      },
-                      animation: {
-                        animateRotate: true,
-                        duration: 900,
-                        easing: 'easeInOutQuart',
-                      },
-                    }}
-                    height={240}
-                    aria-label="Complaint Categories Pie Chart"
-                  />
-                  {/* Center label */}
-                  <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                    <span className="text-blue-800 dark:text-blue-200 font-bold text-lg">Total</span>
-                    <span className="text-blue-800 dark:text-blue-200 font-extrabold text-3xl drop-shadow-lg">{complaintsData.datasets[0]?.data?.reduce((a,b)=>a+b,0)}</span>
-                  </div>
+                            return null;
+                          }}
+                        />
+                        {complaintsData.labels.map((label, idx) => (
+                          <Cell key={`cell-${idx}`} fill={complaintsData.datasets[0].backgroundColor[idx]} />
+                        ))}
+                      </Pie>
+                      <RechartsTooltip
+                        formatter={(value, name, props) => {
+                          const total = complaintsData.datasets[0].data.reduce((a,b)=>a+b,0);
+                          const percent = total ? ((value as number/total)*100).toFixed(1) : '0.0';
+                          return [`${value} tickets (${percent}%)`, name];
+                        }}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
                   {/* Custom legend */}
                   <div className="flex flex-wrap justify-center gap-x-4 gap-y-2 mt-6 w-full">
                     {complaintsData.labels.map((label, idx) => {
@@ -350,7 +431,7 @@ const TicketAnalytics = ({ data }: { data?: {
       {/* Full-width Hotspot Table */}
       {topComplaintsTable && topComplaintsTable.length > 0 && (
         <div className="mb-6">
-          <Card className="rounded-2xl shadow-lg border border-gray-100 dark:border-zinc-700 bg-white/90 dark:bg-zinc-900/80 p-6">
+          <Card className="rounded-2xl shadow-lg border border-gray-100 dark:border-zinc-700 bg-white/90 dark:bg-zinc-900/80 p-8">
             <CardHeader className="pb-4">
               <CardTitle className="text-2xl font-bold text-blue-800 dark:text-blue-200">Category Hotspot Analysis</CardTitle>
             </CardHeader>
@@ -397,15 +478,16 @@ const TicketAnalytics = ({ data }: { data?: {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Classification Analysis Section */}
         <div className="lg:col-span-1">
-            <Card className="rounded-2xl shadow-lg border border-gray-100 dark:border-zinc-700 bg-white/90 dark:bg-zinc-900/80 p-6">
+            <Card className="rounded-2xl shadow-lg border border-gray-100 dark:border-zinc-700 bg-white/90 dark:bg-zinc-900/80 p-8">
                  <CardHeader className="pb-4">
-              <CardTitle className="text-2xl font-bold text-blue-800 dark:text-blue-200">Classification Analysis</CardTitle>
+              <CardTitle className="text-lg sm:text-xl md:text-2xl font-bold text-blue-800 dark:text-blue-200">Classification Analytics</CardTitle>
             </CardHeader>
             <CardContent className="pt-2 -mx-6 px-0">
             <Accordion type="single" collapsible className="w-full">
               {Object.entries(classificationData)
-                .sort(([, a], [, b]) => b.count - a.count)
+                .sort(([, a], [, b]) => (a as any).count - (b as any).count)
                 .map(([classification, details], index) => {
+                  const d = details as any;
                   return (
                     <AccordionItem value={`item-${index}`} key={index} className="border-b border-gray-100 dark:border-zinc-800 px-6">
                       <AccordionTrigger className="py-4 hover:no-underline text-left">
@@ -419,16 +501,16 @@ const TicketAnalytics = ({ data }: { data?: {
                             </span>
                           </div>
                           <div className="flex items-center gap-2">
-                            <span className="text-2xl font-extrabold text-gray-900 dark:text-zinc-200">{details.count}</span>
+                            <span className="text-2xl font-extrabold text-gray-900 dark:text-zinc-200">{d.count}</span>
                             <span className="text-xs text-gray-400 dark:text-gray-500 mt-1">Total</span>
                           </div>
                         </div>
                       </AccordionTrigger>
                       <AccordionContent className="pt-4 pb-4">
                         <div className="flex flex-row flex-wrap gap-3 pl-12">
-                          {details.trendline?.labels.map((label, i) => {
-                            const count = details.trendline.data[i];
-                            const prevCount = i > 0 ? details.trendline.data[i-1] : 0;
+                          {d.trendline?.labels.map((label, i) => {
+                            const count = d.trendline.data[i] as number;
+                            const prevCount = i > 0 ? d.trendline.data[i-1] as number : 0;
                             let percentChange: number | null = null;
                             if(i > 0 && prevCount > 0) {
                               percentChange = ((count - prevCount) / prevCount) * 100;
@@ -440,7 +522,7 @@ const TicketAnalytics = ({ data }: { data?: {
                                 <span className="text-xl font-bold text-gray-900 dark:text-gray-100 my-1">{count}</span>
                                 {percentChange !== null ? (
                                   <span className={`flex items-center gap-1 text-xs font-semibold ${percentChange >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-                                    {percentChange >= 0 ? <ArrowUpRight className="w-3 h-3"/> : <ArrowDownRight className="w-3 h-3"/>}
+                                    {percentChange >= 0 ? <ArrowUpwardIcon className="w-3 h-3"/> : <ArrowDownwardIcon className="w-3 h-3"/>}
                                     {Math.abs(percentChange).toFixed(1)}%
                                   </span>
                                 ) : (
@@ -461,15 +543,15 @@ const TicketAnalytics = ({ data }: { data?: {
         
         {/* Keyword Analysis Section */}
         <div className="lg:col-span-1">
-          <Card className="rounded-2xl shadow-lg border border-gray-100 dark:border-zinc-700 bg-white/90 dark:bg-zinc-900/80 p-6 h-full">
+          <Card className="rounded-2xl shadow-lg border border-gray-100 dark:border-zinc-700 bg-white/90 dark:bg-zinc-900/80 p-8">
             <CardHeader className="pb-4">
-              <CardTitle className="text-2xl font-bold text-blue-800 dark:text-blue-200">Keyword Analysis</CardTitle>
+              <CardTitle className="text-lg sm:text-xl md:text-2xl font-bold text-blue-800 dark:text-blue-200">Keyword Analytics</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="flex flex-wrap gap-3 items-end justify-center">
-                {data.keywordAnalysis.map(([keyword, count], index) => {
-                  const maxCount = data.keywordAnalysis[0][1];
-                  const minCount = data.keywordAnalysis[data.keywordAnalysis.length - 1][1];
+                {ticketAnalyticsData?.keywordAnalysis.map(([keyword, count], index) => {
+                  const maxCount = ticketAnalyticsData.keywordAnalysis[0][1];
+                  const minCount = ticketAnalyticsData.keywordAnalysis[ticketAnalyticsData.keywordAnalysis.length - 1][1];
                   // Avoid division by zero if all counts are the same
                   const weight = maxCount === minCount ? 0.5 : (count - minCount) / (maxCount - minCount);
                   const fontSize = 0.8 + weight * 1.2; // Font size from 0.8rem to 2.0rem

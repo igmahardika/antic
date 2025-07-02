@@ -1,7 +1,25 @@
 import * as React from "react"
 import * as NavigationMenuPrimitive from "@radix-ui/react-navigation-menu"
 import { cva } from "class-variance-authority"
-import { ChevronDown } from "lucide-react"
+import { ChevronDown, Home, Table, Users, BarChart2, UserCheck, Upload, Shield, ChevronLeft, ChevronRight, Sun, Moon, User, LogOut } from 'lucide-react'
+import { Link, useLocation, NavLink } from 'react-router-dom'
+import HomeIcon from '@mui/icons-material/Home';
+import TableChartIcon from '@mui/icons-material/TableChart';
+import GroupIcon from '@mui/icons-material/Group';
+import BarChartIcon from '@mui/icons-material/BarChart';
+import PersonCheckIcon from '@mui/icons-material/HowToReg';
+import CloudUploadIcon from '@mui/icons-material/CloudUpload';
+import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
+import ShieldIcon from '@mui/icons-material/Security';
+import MenuIcon from '@mui/icons-material/Menu';
+import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
+import ChevronRightIcon from '@mui/icons-material/ChevronRight';
+import Brightness7Icon from '@mui/icons-material/Brightness7';
+import Brightness4Icon from '@mui/icons-material/Brightness4';
+import PersonIcon from '@mui/icons-material/Person';
+import { ModeToggle } from '../mode-toggle';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 import { cn } from "@/lib/utils"
 
@@ -125,6 +143,166 @@ const NavigationMenuIndicator = React.forwardRef<
 ))
 NavigationMenuIndicator.displayName =
   NavigationMenuPrimitive.Indicator.displayName
+
+export function NavigationMenuBar() {
+  const location = useLocation();
+  const menus = [
+    { name: 'Dashboard', path: '/' },
+    { name: 'Data Grid', path: '/grid-view' },
+    { name: 'Customer Analytics', path: '/kanban-board' },
+    { name: 'Ticket Analytics', path: '/ticket-analytics' },
+    { name: 'Agent Analytics', path: '/agent-analytics' },
+    { name: 'Upload Data', path: '/upload' },
+    { name: 'Admin Panel', path: '/admin' },
+  ];
+  return (
+    <nav className="flex gap-2 items-center">
+      {menus.map(menu => (
+        <Link
+          key={menu.path}
+          to={menu.path}
+          className={`px-4 py-2 rounded-md font-semibold transition-colors duration-200 ${location.pathname === menu.path ? 'bg-blue-600 text-white shadow-md' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-200/50 dark:hover:bg-gray-800/50 hover:text-gray-900 dark:hover:text-white'}`}
+        >
+          {menu.name}
+        </Link>
+      ))}
+    </nav>
+  );
+}
+
+export function SidebarNav({ isMobileOpen, setIsMobileOpen, onCollapseChange }) {
+  const menus = [
+    { name: 'Dashboard', path: '/', icon: <HomeIcon fontSize="small" /> },
+    { name: 'Data Grid', path: '/grid-view', icon: <TableChartIcon fontSize="small" /> },
+    { name: 'Customer Analytics', path: '/kanban-board', icon: <GroupIcon fontSize="small" /> },
+    { name: 'Ticket Analytics', path: '/ticket-analytics', icon: <BarChartIcon fontSize="small" /> },
+    { name: 'Agent Analytics', path: '/agent-analytics', icon: <PersonCheckIcon fontSize="small" /> },
+    { name: 'Upload Data', path: '/upload', icon: <CloudUploadIcon fontSize="small" /> },
+    { name: 'Admin Panel', path: '/admin', icon: <AdminPanelSettingsIcon fontSize="small" /> },
+  ];
+  // Responsive/collapse logic (hover only)
+  const [autoCollapsed, setAutoCollapsed] = React.useState(false);
+  const handleMouseEnter = () => {
+    setAutoCollapsed(false);
+    window.dispatchEvent(new CustomEvent('sidebar:collapse', { detail: { collapsed: false } }));
+    if (onCollapseChange) onCollapseChange(false);
+  };
+  const handleMouseLeave = () => {
+    setAutoCollapsed(true);
+    window.dispatchEvent(new CustomEvent('sidebar:collapse', { detail: { collapsed: true } }));
+    if (onCollapseChange) onCollapseChange(true);
+  };
+
+  // Modern sidebar style
+  const sidebarClass = `h-full bg-white dark:bg-zinc-900 shadow-xl border-r border-gray-200 dark:border-zinc-800 flex flex-col top-0 left-0 transition-all duration-300 fixed z-40 md:static md:z-auto md:block`;
+
+  return (
+    <aside
+      className={sidebarClass + ' relative'}
+      style={{
+        minHeight: '100vh',
+        width: autoCollapsed ? '80px !important' : '310px !important',
+        maxWidth: autoCollapsed ? '80px !important' : '310px !important',
+        boxShadow: '0 4px 32px 0 rgba(0,0,0,0.07)',
+        transition: 'width 0.3s cubic-bezier(0.4,0,0.2,1)',
+        zIndex: 40,
+        position: 'fixed',
+        left: 0,
+        top: 0,
+        display: 'flex',
+        flexDirection: 'column',
+      }}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+    >
+      <div>
+        {/* Logo area */}
+        <div className="flex flex-col items-center justify-center pt-6 pb-4 gap-3">
+          <img
+            src="/logo-a.png"
+            alt="Antic Logo"
+            className="max-w-[90%] h-16 object-contain mx-auto"
+            style={{ display: autoCollapsed ? 'none' : 'block' }}
+          />
+        </div>
+        {/* Menu */}
+        <nav className="flex flex-col gap-1 px-2">
+          {menus.map((menu, idx) => (
+            <NavLink
+              key={menu.path}
+              to={menu.path}
+              className={({ isActive }) =>
+                `group flex items-center gap-2 px-4 py-3 my-1 rounded-xl font-medium text-base transition-all duration-200
+                ${isActive ? 'bg-blue-600 text-white shadow-md' : 'text-zinc-700 dark:text-zinc-200 hover:bg-blue-50 dark:hover:bg-zinc-800/60'}
+                ${autoCollapsed ? 'justify-center px-2' : ''}`
+              }
+              title={menu.name}
+            >
+              {menu.icon}
+              <span
+                className={`${autoCollapsed ? 'hidden' : 'block'} transition-all duration-200`}
+                style={{ whiteSpace: 'nowrap' }}
+              >
+                {menu.name}
+              </span>
+              {/* Tooltip for collapsed mode */}
+              {autoCollapsed && (
+                <span className="absolute left-full ml-2 px-2 py-1 rounded bg-zinc-900 text-white text-xs shadow-lg opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity duration-200">
+                  {menu.name}
+                </span>
+              )}
+            </NavLink>
+          ))}
+        </nav>
+      </div>
+      {/* Bottom section: ModeToggle & Avatar, always stick to bottom */}
+      <div className="absolute bottom-6 left-0 w-full flex flex-col items-center gap-3">
+        <ModeToggle />
+        <SidebarProfile autoCollapsed={autoCollapsed} />
+      </div>
+    </aside>
+  );
+}
+
+// Update SidebarProfile to show avatar only when collapsed, avatar+name+role when expanded
+function SidebarProfile({ autoCollapsed }) {
+  const navigate = window.location ? (path) => window.location.href = path : () => {};
+  const user = JSON.parse(localStorage.getItem('user') || '{"role":"user"}');
+  const handleLogout = () => {
+    localStorage.removeItem('user');
+    navigate('/');
+  };
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button className={`flex items-center transition-all duration-200 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm border border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 ${autoCollapsed ? 'w-12 h-12 justify-center' : 'px-2 py-1 hover:bg-gray-100 dark:hover:bg-zinc-800'}`}>
+          <Avatar className="h-10 w-10 border-none">
+            <AvatarFallback className="bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300 font-semibold">
+              {user.username ? user.username.charAt(0).toUpperCase() : 'U'}
+            </AvatarFallback>
+          </Avatar>
+          {!autoCollapsed && (
+            <div className="flex flex-col items-start ml-3">
+              <span className="font-semibold text-gray-800 dark:text-gray-100 text-sm leading-tight">{user.username || 'User'}</span>
+              <span className="text-xs text-gray-500 dark:text-gray-400 capitalize">{user.role} Role</span>
+            </div>
+          )}
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent className="w-56" align="end">
+        <DropdownMenuLabel>
+          <p className="text-sm font-medium">{user.username || 'User'}</p>
+          <p className="text-xs text-gray-500 dark:text-gray-400 capitalize">{user.role} Role</p>
+        </DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-red-500 focus:bg-red-50 focus:text-red-600 dark:focus:bg-red-900/50 dark:focus:text-red-400">
+          <LogOut className="mr-2 h-4 w-4" />
+          <span>Logout</span>
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
 
 export {
   navigationMenuTriggerStyle,

@@ -1,21 +1,7 @@
 import React, { useMemo, useState } from 'react';
-import { Line } from 'react-chartjs-2';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import ChartDataLabels from 'chartjs-plugin-datalabels';
-import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, Filler } from 'chart.js';
-
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Title,
-  Tooltip,
-  Legend,
-  Filler,
-  ChartDataLabels
-);
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Legend as RechartsLegend, Tooltip as RechartsTooltip } from 'recharts';
 
 const SummaryDashboard = ({ ticketAnalyticsData }: any) => {
   // Prepare monthly data
@@ -104,220 +90,104 @@ const SummaryDashboard = ({ ticketAnalyticsData }: any) => {
     return typeof ds.data[lastIdx] === 'number' ? ds.data[lastIdx] : null;
   }, [yearlyStatsData]);
 
+  // Helper: convert chart.js-like data to recharts format
+  function toRechartsData(labels: string[], datasets: any[]) {
+    // Assume 2 datasets: [incoming, closed]
+    return labels.map((label, i) => ({
+      label,
+      incoming: datasets[0]?.data[i] ?? 0,
+      closed: datasets[1]?.data[i] ?? 0,
+    }));
+  }
+
   return (
-    <>
-      <h2 className="text-2xl font-bold text-gray-900 mb-4">Summary Trendlines</h2>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        {/* Monthly Trendline by Year */}
-        <Card className="bg-white/90 dark:bg-zinc-900/80 shadow-lg rounded-xl border p-2">
-          <CardHeader className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 pb-1">
-            <div className="flex flex-col gap-1">
-              <CardTitle className="font-extrabold text-xl text-zinc-900 dark:text-zinc-100">Tickets per Month</CardTitle>
-              {latestMonthlyValue !== null && (
-                <Badge className="bg-blue-600 text-white text-xs px-3 py-1 rounded-full w-fit font-semibold shadow-md">Latest: {latestMonthlyValue}</Badge>
-              )}
-            </div>
-            <div className="mt-2 md:mt-0">
-              <select
-                className="border rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                value={selectedYear as string}
-                onChange={e => setSelectedYear(e.target.value)}
-              >
-                {allYears.map(year => (
-                  <option key={year as string} value={year as string}>{year as string}</option>
-                ))}
-              </select>
-            </div>
-          </CardHeader>
-          <CardContent className="pl-2">
-            {filteredMonthlyStatsData && filteredMonthlyStatsData.labels && filteredMonthlyStatsData.labels.length > 0 ? (
-              <Line
-                data={{
-                  ...filteredMonthlyStatsData,
-                  datasets: filteredMonthlyStatsData.datasets.map((ds, i) => ({
-                    ...ds,
-                    fill: true,
-                    backgroundColor: i === 0 ? 'rgba(99,102,241,0.15)' : 'rgba(34,197,94,0.10)',
-                    borderColor: i === 0 ? '#6366F1' : '#22C55E',
-                    pointBackgroundColor: i === 0 ? '#6366F1' : '#22C55E',
-                    pointRadius: 0,
-                    borderWidth: 3,
-                    tension: 0.5,
-                    pointHoverRadius: 0,
-                    pointBorderWidth: 2,
-                  })),
-                }}
-                options={{
-                  responsive: true,
-                  maintainAspectRatio: false,
-                  plugins: {
-                    legend: {
-                      display: true,
-                      position: 'bottom',
-                      labels: {
-                        font: { size: 15, family: 'Inter, sans-serif', weight: 'bold' },
-                        usePointStyle: true,
-                        pointStyle: 'circle',
-                        color: '#6366F1',
-                        padding: 18,
-                        boxWidth: 16,
-                        boxHeight: 16,
-                        borderRadius: 8,
-                      },
-                    },
-                    tooltip: {
-                      backgroundColor: (ctx) => ctx.chart.canvas.classList.contains('dark') ? '#1e293b' : '#fff',
-                      titleColor: (ctx) => ctx.chart.canvas.classList.contains('dark') ? '#fff' : '#1e293b',
-                      bodyColor: (ctx) => ctx.chart.canvas.classList.contains('dark') ? '#e5e7eb' : '#334155',
-                      borderColor: '#6366F1',
-                      borderWidth: 1,
-                      padding: 14,
-                      displayColors: true,
-                      cornerRadius: 10,
-                      caretSize: 8,
-                      titleFont: { weight: 'bold', size: 15, family: 'Inter, sans-serif' },
-                      bodyFont: { size: 14, family: 'Inter, sans-serif' },
-                      callbacks: {
-                        label: (ctx) => ` ${ctx.dataset.label}: ${ctx.parsed.y}`,
-                      },
-                    },
-                    datalabels: {
-                      display: true,
-                      align: 'top',
-                      anchor: 'end',
-                      font: { weight: 'bold', family: 'Poppins, Arial, sans-serif' },
-                      color: '#6366F1',
-                      backgroundColor: 'rgba(255,255,255,0.8)',
-                      borderRadius: 4,
-                      padding: 4,
-                      formatter: Math.round,
-                    },
-                  },
-                  scales: {
-                    x: {
-                      grid: { color: '#F3F4F6' },
-                      ticks: { color: '#6B7280', font: { size: 13, family: 'Inter, sans-serif' } },
-                    },
-                    y: {
-                      grid: { color: '#F3F4F6' },
-                      ticks: { color: '#6B7280', font: { size: 13, family: 'Inter, sans-serif' } },
-                      beginAtZero: true,
-                    },
-                  },
-                  animation: {
-                    duration: 1000,
-                    easing: 'easeInOutQuart',
-                  },
-                }}
-                height={260}
-                aria-label="Tickets per Month Trendline"
-              />
-            ) : (
-              <div className="text-center text-gray-400 py-12">No data for this chart</div>
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+      {/* Monthly Area Chart */}
+      <Card className="bg-transparent dark:bg-transparent shadow-lg rounded-xl border p-2">
+        <CardHeader className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 pb-1">
+          <div className="flex flex-col gap-1">
+            <CardTitle className="font-extrabold text-xl text-zinc-900 dark:text-zinc-100">Tickets per Month</CardTitle>
+            {latestMonthlyValue !== null && (
+              <Badge className="bg-blue-600 text-white text-xs px-3 py-1 rounded-full w-fit font-semibold shadow-md">Latest: {latestMonthlyValue}</Badge>
             )}
-          </CardContent>
-        </Card>
-        {/* Yearly Trendline */}
-        <Card className="bg-white/90 dark:bg-zinc-900/80 shadow-lg rounded-xl border p-2">
-          <CardHeader className="flex flex-col gap-1 pb-1">
-            <CardTitle className="font-extrabold text-xl text-zinc-900 dark:text-zinc-100">Tickets per Year</CardTitle>
-            {latestYearlyValue !== null && (
-              <Badge className="bg-blue-600 text-white text-xs px-3 py-1 rounded-full w-fit font-semibold shadow-md">Latest: {latestYearlyValue}</Badge>
-            )}
-          </CardHeader>
-          <CardContent className="pl-2">
-            {yearlyStatsData && yearlyStatsData.labels && yearlyStatsData.labels.length > 0 ? (
-              <Line
-                data={{
-                  ...yearlyStatsData,
-                  datasets: yearlyStatsData.datasets.map((ds, i) => ({
-                    ...ds,
-                    fill: true,
-                    backgroundColor: i === 0 ? 'rgba(99,102,241,0.15)' : 'rgba(34,197,94,0.10)',
-                    borderColor: i === 0 ? '#6366F1' : '#22C55E',
-                    pointBackgroundColor: i === 0 ? '#6366F1' : '#22C55E',
-                    pointRadius: 0,
-                    borderWidth: 3,
-                    tension: 0.45,
-                    pointHoverRadius: 0,
-                    pointBorderWidth: 2,
-                    shadowOffsetX: 2,
-                    shadowOffsetY: 2,
-                    shadowBlur: 8,
-                    shadowColor: 'rgba(99,102,241,0.15)',
-                  })),
-                }}
-                options={{
-                  responsive: true,
-                  maintainAspectRatio: false,
-                  plugins: {
-                    legend: {
-                      display: true,
-                      position: 'bottom',
-                      labels: {
-                        font: { size: 13, family: 'Inter, sans-serif' },
-                        usePointStyle: true,
-                        pointStyle: 'circle',
-                        color: '#6366F1',
-                        padding: 18,
-                        boxWidth: 16,
-                        boxHeight: 16,
-                        borderRadius: 8,
-                      },
-                    },
-                    tooltip: {
-                      backgroundColor: (ctx) => ctx.chart.canvas.classList.contains('dark') ? '#1e293b' : '#fff',
-                      titleColor: (ctx) => ctx.chart.canvas.classList.contains('dark') ? '#fff' : '#1e293b',
-                      bodyColor: (ctx) => ctx.chart.canvas.classList.contains('dark') ? '#e5e7eb' : '#334155',
-                      borderColor: '#6366F1',
-                      borderWidth: 1,
-                      padding: 14,
-                      displayColors: true,
-                      cornerRadius: 10,
-                      caretSize: 8,
-                      titleFont: { weight: 'bold', size: 15, family: 'Inter, sans-serif' },
-                      bodyFont: { size: 14, family: 'Inter, sans-serif' },
-                      callbacks: {
-                        label: (ctx) => ` ${ctx.dataset.label}: ${ctx.parsed.y}`,
-                      },
-                    },
-                    datalabels: {
-                      display: true,
-                      align: 'top',
-                      anchor: 'end',
-                      font: { weight: 'bold', family: 'Poppins, Arial, sans-serif' },
-                      color: '#6366F1',
-                      backgroundColor: 'rgba(255,255,255,0.8)',
-                      borderRadius: 4,
-                      padding: 4,
-                      formatter: Math.round,
-                    },
-                  },
-                  scales: {
-                    x: {
-                      grid: { color: '#F3F4F6' },
-                      ticks: { color: '#6B7280', font: { size: 13, family: 'Inter, sans-serif' } },
-                    },
-                    y: {
-                      grid: { color: '#F3F4F6' },
-                      ticks: { color: '#6B7280', font: { size: 13, family: 'Inter, sans-serif' } },
-                      beginAtZero: true,
-                    },
-                  },
-                  animation: {
-                    duration: 900,
-                    easing: 'easeInOutQuart',
-                  },
-                }}
-                height={260}
-              />
-            ) : (
-              <div className="text-center text-gray-400 py-12">No data for this chart</div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-    </>
+          </div>
+          <div className="mt-2 md:mt-0">
+            <select
+              className="border rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              value={selectedYear as string}
+              onChange={e => setSelectedYear(e.target.value)}
+            >
+              {allYears.map(year => (
+                <option key={year as string} value={year as string}>{year as string}</option>
+              ))}
+            </select>
+          </div>
+        </CardHeader>
+        <CardContent className="pl-2">
+          {filteredMonthlyStatsData && filteredMonthlyStatsData.labels && filteredMonthlyStatsData.labels.length > 0 ? (
+            <ResponsiveContainer width="100%" height={260}>
+              <AreaChart data={toRechartsData(filteredMonthlyStatsData.labels, filteredMonthlyStatsData.datasets)} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="colorIncoming" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#6366F1" stopOpacity={0.8}/>
+                    <stop offset="95%" stopColor="#6366F1" stopOpacity={0.1}/>
+                  </linearGradient>
+                  <linearGradient id="colorClosed" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#22C55E" stopOpacity={0.8}/>
+                    <stop offset="95%" stopColor="#22C55E" stopOpacity={0.1}/>
+                  </linearGradient>
+                </defs>
+                <XAxis dataKey="label" tickLine={false} axisLine={false} tickMargin={8} minTickGap={24} />
+                <YAxis tickLine={false} axisLine={false} tickMargin={8} minTickGap={24} />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                <RechartsTooltip />
+                <RechartsLegend />
+                <Area type="monotone" dataKey="incoming" stroke="#6366F1" fill="url(#colorIncoming)" name="Incoming Tickets" strokeWidth={3} />
+                <Area type="monotone" dataKey="closed" stroke="#22C55E" fill="url(#colorClosed)" name="Closed Tickets" strokeWidth={3} />
+              </AreaChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="text-center text-gray-400 py-12">No data for this chart</div>
+          )}
+        </CardContent>
+      </Card>
+      {/* Yearly Area Chart */}
+      <Card className="bg-transparent dark:bg-transparent shadow-lg rounded-xl border p-2">
+        <CardHeader className="flex flex-col gap-1 pb-1">
+          <CardTitle className="font-extrabold text-xl text-zinc-900 dark:text-zinc-100">Tickets per Year</CardTitle>
+          {latestYearlyValue !== null && (
+            <Badge className="bg-blue-600 text-white text-xs px-3 py-1 rounded-full w-fit font-semibold shadow-md">Latest: {latestYearlyValue}</Badge>
+          )}
+        </CardHeader>
+        <CardContent className="pl-2">
+          {yearlyStatsData && yearlyStatsData.labels && yearlyStatsData.labels.length > 0 ? (
+            <ResponsiveContainer width="100%" height={260}>
+              <AreaChart data={toRechartsData(yearlyStatsData.labels, yearlyStatsData.datasets)} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="colorIncomingY" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#6366F1" stopOpacity={0.8}/>
+                    <stop offset="95%" stopColor="#6366F1" stopOpacity={0.1}/>
+                  </linearGradient>
+                  <linearGradient id="colorClosedY" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#22C55E" stopOpacity={0.8}/>
+                    <stop offset="95%" stopColor="#22C55E" stopOpacity={0.1}/>
+                  </linearGradient>
+                </defs>
+                <XAxis dataKey="label" tickLine={false} axisLine={false} tickMargin={8} minTickGap={24} />
+                <YAxis tickLine={false} axisLine={false} tickMargin={8} minTickGap={24} />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                <RechartsTooltip />
+                <RechartsLegend />
+                <Area type="monotone" dataKey="incoming" stroke="#6366F1" fill="url(#colorIncomingY)" name="Incoming Tickets" strokeWidth={3} />
+                <Area type="monotone" dataKey="closed" stroke="#22C55E" fill="url(#colorClosedY)" name="Closed Tickets" strokeWidth={3} />
+              </AreaChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="text-center text-gray-400 py-12">No data for this chart</div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
   );
 };
 

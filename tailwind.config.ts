@@ -49,7 +49,7 @@ export default {
 					foreground: 'hsl(var(--popover-foreground))'
 				},
 				card: {
-					DEFAULT: 'hsl(var(--card))',
+					DEFAULT: 'transparent',
 					foreground: 'hsl(var(--card-foreground))'
 				},
 				sidebar: {

@@ -1,8 +1,12 @@
 import React from 'react';
-import { BarChart3, Bell, Search, Settings, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ModeToggle } from './mode-toggle';
+import BarChartIcon from '@mui/icons-material/BarChart';
+import NotificationsIcon from '@mui/icons-material/Notifications';
+import SearchIcon from '@mui/icons-material/Search';
+import SettingsIcon from '@mui/icons-material/Settings';
+import PersonIcon from '@mui/icons-material/Person';
 
 const ModernHeader = () => {
   return (
@@ -18,7 +22,7 @@ const ModernHeader = () => {
           {/* Search Bar */}
           <div className="w-full md:flex-1 max-w-lg mx-0 md:mx-8 hidden md:block">
             <div className="relative w-full">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" aria-label="Search" />
+              <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" aria-label="Search" />
               <Input
                 type="text"
                 placeholder="Search tickets, customers, or agents..."
@@ -30,15 +34,15 @@ const ModernHeader = () => {
           <div className="flex items-center space-x-3 md:space-x-4">
             <ModeToggle />
             <Button variant="ghost" size="icon" className="relative hover:bg-muted transition shadow-md">
-              <Bell className="w-5 h-5" aria-label="Notifications" />
+              <NotificationsIcon className="w-5 h-5" aria-label="Notifications" />
               <span className="absolute -top-1 -right-1 w-4 h-4 bg-destructive border-2 border-white rounded-full shadow-lg animate-pulse"></span>
             </Button>
             <Button variant="ghost" size="icon" className="hover:bg-muted transition shadow-md">
-              <Settings className="w-5 h-5" aria-label="Settings" />
+              <SettingsIcon className="w-5 h-5" aria-label="Settings" />
             </Button>
             <div className="h-7 w-px bg-gray-300 dark:bg-gray-600 mx-2"></div>
             <Button variant="ghost" size="icon" className="hover:bg-muted transition shadow-md">
-              <User className="w-5 h-5" aria-label="User" />
+              <PersonIcon className="w-5 h-5" aria-label="User" />
             </Button>
           </div>
         </div>

@@ -1,5 +1,4 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { DocumentArrowUpIcon, TableCellsIcon, TrashIcon, CheckCircleIcon, XCircleIcon, ClockIcon, ExclamationTriangleIcon, ServerIcon, PaperClipIcon, ArrowDownTrayIcon } from '@heroicons/react/24/outline';
 import { Button } from './ui/button';
 import { Label } from './ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from './ui/card';
@@ -9,6 +8,19 @@ import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 import { db, ITicket } from '@/lib/db';
 import { formatDurationDHM } from '@/lib/utils';
+import SummaryCard from './ui/SummaryCard';
+import { FileUp, XCircle } from 'lucide-react';
+import { useLiveQuery } from 'dexie-react-hooks';
+import CloudUploadIcon from '@mui/icons-material/CloudUpload';
+import TableChartIcon from '@mui/icons-material/TableChart';
+import DeleteIcon from '@mui/icons-material/Delete';
+import CloseIcon from '@mui/icons-material/Close';
+import AccessTimeIcon from '@mui/icons-material/AccessTime';
+import WarningAmberIcon from '@mui/icons-material/WarningAmber';
+import StorageIcon from '@mui/icons-material/Storage';
+import AttachFileIcon from '@mui/icons-material/AttachFile';
+import DownloadIcon from '@mui/icons-material/Download';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 
 type UploadProcessProps = {
   onUploadComplete: () => void;
@@ -46,6 +58,9 @@ const UploadProcess = ({ onUploadComplete }: UploadProcessProps) => {
   const [uploadSummary, setUploadSummary] = useState<IUploadSummary | null>(null);
   const [errorLog, setErrorLog] = useState<IErrorLog[]>([]);
   const [useBackendParser, setUseBackendParser] = useState(true);
+
+  // Ambil jumlah tiket di database (GridView)
+  const ticketsInDb = useLiveQuery(() => db.tickets.count(), []);
 
   useEffect(() => {
     try {
@@ -165,38 +180,65 @@ const UploadProcess = ({ onUploadComplete }: UploadProcessProps) => {
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
       <div className="flex flex-col gap-8">
-        <Card className="w-full max-w-6xl mx-auto shadow-md border border-gray-200 dark:border-zinc-700 bg-gradient-to-br from-white/70 to-blue-50/70 dark:from-zinc-900/70 dark:to-blue-900/70 p-10 mb-8 backdrop-blur-sm">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg font-bold text-gray-900 dark:text-gray-100 text-left break-words">Upload Control</CardTitle>
-            <CardDescription className="text-base text-zinc-500 dark:text-zinc-400 text-left break-words">Manage your data import process.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6 text-base text-left break-words">
-            <div className="flex items-center justify-between p-4 rounded-lg bg-blue-50 dark:bg-zinc-800/50 border border-blue-200 dark:border-zinc-700">
-                <div className="flex items-center space-x-3">
-                    <ServerIcon className="h-6 w-6 text-blue-500" />
-                    <Label htmlFor="backend-parser" className="font-semibold text-blue-800 dark:text-blue-300 text-base">Automatic Parser</Label>
-                </div>
-                <input type="checkbox" id="backend-parser" checked={useBackendParser} onChange={e => setUseBackendParser(e.target.checked)} />
-            </div>
-            <FileDropZone 
-              onFileUpload={handleFileUpload} 
-              isProcessing={isProcessing}
-              progress={progress}
-            />
-          </CardContent>
-          <CardFooter className="flex flex-col sm:flex-row justify-between items-center gap-3 pt-6">
+        <div className="flex flex-col gap-6">
+          <div className="flex items-center justify-between p-4 rounded-lg bg-blue-50 dark:bg-zinc-800/50 border border-blue-200 dark:border-zinc-700">
+              <div className="flex items-center space-x-3">
+                  <StorageIcon className="h-6 w-6 text-blue-500" />
+                  <Label htmlFor="backend-parser" className="font-semibold text-blue-800 dark:text-blue-300 text-base">Automatic Parser</Label>
+              </div>
+              <input type="checkbox" id="backend-parser" checked={useBackendParser} onChange={e => setUseBackendParser(e.target.checked)} />
+          </div>
+          <FileDropZone 
+            onFileUpload={handleFileUpload} 
+            isProcessing={isProcessing}
+            progress={progress}
+          />
+          <div className="flex flex-col sm:flex-row justify-between items-center gap-3 pt-6">
             <Button onClick={handleDownloadTemplate} variant="outline" className="w-full sm:w-auto text-base">
-              <ArrowDownTrayIcon className="h-4 w-4 mr-2" />
+              <DownloadIcon className="h-4 w-4 mr-2" />
               Download Template
             </Button>
             <Button onClick={handleReset} variant="destructive" className="w-full sm:w-auto text-base">
-              <TrashIcon className="h-4 w-4 mr-2" />
+              <DeleteIcon className="h-4 w-4 mr-2" />
               Reset Database
             </Button>
-          </CardFooter>
-        </Card>
+          </div>
+        </div>
         {uploadSummary ? (
-          <SummaryCard summary={uploadSummary} />
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8 mb-8">
+            <SummaryCard
+              icon={<CloudUploadIcon sx={{ fontSize: 28, color: '#fff', filter: 'drop-shadow(0 2px 8px rgba(0,0,0,0.10))' }} />}
+              label="Total Uploaded"
+              value={uploadSummary.totalRows}
+              description="Total rows in file"
+              bg="bg-white/60 backdrop-blur-md border border-white/30"
+              iconBg="bg-blue-600/90"
+            />
+            <SummaryCard
+              icon={<CheckCircleIcon sx={{ fontSize: 28, color: '#fff', filter: 'drop-shadow(0 2px 8px rgba(0,0,0,0.10))' }} />}
+              label="Success"
+              value={uploadSummary.successCount}
+              description="Valid tickets uploaded"
+              bg="bg-white/60 backdrop-blur-md border border-white/30"
+              iconBg="bg-green-600/90"
+            />
+            <SummaryCard
+              icon={<CloseIcon sx={{ fontSize: 28, color: '#fff', filter: 'drop-shadow(0 2px 8px rgba(0,0,0,0.10))' }} />}
+              label="Failed"
+              value={uploadSummary.errorCount}
+              description="Failed rows"
+              bg="bg-white/60 backdrop-blur-md border border-white/30"
+              iconBg="bg-red-600/90"
+            />
+            <SummaryCard
+              icon={<TableChartIcon sx={{ fontSize: 28, color: '#fff', filter: 'drop-shadow(0 2px 8px rgba(0,0,0,0.10))' }} />}
+              label="Tickets in GridView"
+              value={ticketsInDb ?? '-'}
+              description="Tickets currently in database (GridView)"
+              bg="bg-white/60 backdrop-blur-md border border-white/30"
+              iconBg="bg-purple-600/90"
+            />
+          </div>
         ) : (
           <Card className="w-full max-w-6xl mx-auto shadow-md border border-gray-200 dark:border-zinc-700 bg-gradient-to-br from-white/70 to-blue-50/70 dark:from-zinc-900/70 dark:to-blue-900/70 p-10 mb-8 backdrop-blur-sm flex items-center justify-center min-h-[180px]">
             <CardHeader>
@@ -208,6 +250,13 @@ const UploadProcess = ({ onUploadComplete }: UploadProcessProps) => {
               </p>
             </CardContent>
           </Card>
+        )}
+        {/* Jika jumlah successCount dan ticketsInDb berbeda, tampilkan warning */}
+        {uploadSummary && ticketsInDb !== undefined && uploadSummary.successCount !== ticketsInDb && (
+          <div className="p-4 mb-4 rounded bg-yellow-100 text-yellow-800 border border-yellow-300">
+            <b>Warning:</b> Jumlah tiket yang berhasil di-upload ({uploadSummary.successCount}) berbeda dengan jumlah tiket di GridView ({ticketsInDb}).
+            <br />Pastikan database sudah di-reset sebelum upload baru, atau cek apakah ada filter aktif di GridView.
+          </div>
         )}
         <ErrorLogTable errors={errorLog} />
       </div>
@@ -245,7 +294,7 @@ const FileDropZone = ({ onFileUpload, isProcessing, progress }: { onFileUpload: 
         </>
       ) : (
         <>
-          <DocumentArrowUpIcon className="w-10 h-10 text-gray-400" />
+          <CloudUploadIcon className="w-10 h-10 text-gray-400" />
           <p className="mt-4 text-md text-gray-600 dark:text-gray-400">
             Drop file here, or{' '}
             <label htmlFor="file-upload" className="font-semibold text-blue-600 hover:text-blue-500 cursor-pointer">
@@ -259,48 +308,6 @@ const FileDropZone = ({ onFileUpload, isProcessing, progress }: { onFileUpload: 
     </div>
   );
 };
-
-const SummaryCard = ({ summary }: { summary: IUploadSummary }) => (
-  <Card className="w-full max-w-6xl mx-auto shadow-md border border-gray-200 dark:border-zinc-700 bg-gradient-to-br from-white/70 to-blue-50/70 dark:from-zinc-900/70 dark:to-blue-900/70 p-10 mb-8 backdrop-blur-sm">
-    <CardHeader className="pb-2">
-      <CardTitle className="text-xl font-bold text-gray-900 dark:text-gray-100 text-left">Processing Summary</CardTitle>
-      <CardDescription className="text-base text-zinc-500 dark:text-zinc-400 text-left">Overview of the imported data.</CardDescription>
-    </CardHeader>
-    <CardContent className="pt-2 pb-0">
-      <div className="grid grid-cols-2 gap-x-4 gap-y-3 items-center">
-        <div className="flex items-center gap-2 text-gray-700 dark:text-gray-200 text-base">
-          <PaperClipIcon className="h-5 w-5" />
-          <span>Total Rows in File</span>
-        </div>
-        <div className="text-right font-bold text-gray-900 dark:text-gray-100 text-lg">{summary.totalRows.toLocaleString()}</div>
-
-        <div className="flex items-center gap-2 text-green-700 dark:text-green-400 text-base">
-          <CheckCircleIcon className="h-5 w-5" />
-          <span>Valid Tickets Uploaded</span>
-        </div>
-        <div className="text-right font-bold text-green-700 dark:text-green-400 text-lg">{summary.successCount.toLocaleString()}</div>
-
-        <div className="flex items-center gap-2 text-red-600 dark:text-red-400 text-base">
-          <XCircleIcon className="h-5 w-5" />
-          <span>Failed Rows</span>
-        </div>
-        <div className="text-right font-bold text-red-600 dark:text-red-400 text-lg">{summary.errorCount.toLocaleString()}</div>
-
-        <div className="flex items-center gap-2 text-yellow-700 dark:text-yellow-400 text-base">
-          <ClockIcon className="h-5 w-5" />
-          <span>Tickets with Zero Duration</span>
-        </div>
-        <div className="text-right font-bold text-yellow-700 dark:text-yellow-400 text-lg">{summary.zeroDurationCount.toLocaleString()}</div>
-      </div>
-      {summary.zeroDurationCount > 0 && (
-        <div className="flex items-start p-3 mt-6 rounded-md bg-yellow-50/80 dark:bg-yellow-900/30 border border-yellow-200 dark:border-yellow-800/50">
-          <ExclamationTriangleIcon className="h-5 w-5 mr-3 text-yellow-500 flex-shrink-0" />
-          <p className="text-sm text-yellow-800 dark:text-yellow-300">Please check the time columns in your Excel file to ensure accurate duration analysis.</p>
-        </div>
-      )}
-    </CardContent>
-  </Card>
-);
 
 const ErrorLogTable = ({ errors }: { errors: IErrorLog[] }) => {
   const groupedErrors = errors.reduce((acc, error) => {
@@ -358,24 +365,21 @@ function parseExcelDate(value: any): string | undefined {
   if (value === null || value === undefined) return undefined;
 
   // 1. Handle Excel's numeric date format (most reliable)
-    if (typeof value === 'number') {
-      const date = XLSX.SSF.parse_date_code(value);
-      if (date) {
+  if (typeof value === 'number') {
+    const date = XLSX.SSF.parse_date_code(value);
+    if (date) {
       const d = new Date(Date.UTC(date.y, date.m - 1, date.d, date.H, date.M, date.S));
       if (d.getUTCFullYear() === date.y && d.getUTCMonth() === date.m - 1 && d.getUTCDate() === date.d) {
         return d.toISOString();
       }
-      }
     }
-    
-  // 2. Handle string date format
-    if (typeof value === 'string') {
+  }
+
+  // 2. Strictly handle only DD/MM/YYYY or DD/MM/YYYY HH:MM:SS
+  if (typeof value === 'string') {
     const trimmedValue = value.trim();
-    const standardDate = new Date(trimmedValue);
-    if (!isNaN(standardDate.getTime())) {
-      return standardDate.toISOString();
-    }
-    const parts = trimmedValue.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:\s+(\d{1,2}):(\d{1,2}):(\d{1,2}))?$/);
+    // Regex: DD/MM/YYYY or DD/MM/YYYY HH:MM:SS
+    const parts = trimmedValue.match(/^([0-3]?\d)\/([01]?\d)\/(\d{4})(?:\s+([0-2]?\d):([0-5]?\d):([0-5]?\d))?$/);
     if (parts) {
       const day = parseInt(parts[1], 10);
       const month = parseInt(parts[2], 10);
@@ -383,15 +387,15 @@ function parseExcelDate(value: any): string | undefined {
       const hours = parseInt(parts[4] || '0', 10);
       const minutes = parseInt(parts[5] || '0', 10);
       const seconds = parseInt(parts[6] || '0', 10);
-      
       if (year > 1000 && month > 0 && month <= 12 && day > 0 && day <= 31) {
-          const customDate = new Date(Date.UTC(year, month - 1, day, hours, minutes, seconds));
-          if (!isNaN(customDate.getTime()) && customDate.getUTCMonth() === month - 1) {
-              return customDate.toISOString();
-          }
+        const customDate = new Date(Date.UTC(year, month - 1, day, hours, minutes, seconds));
+        if (!isNaN(customDate.getTime()) && customDate.getUTCMonth() === month - 1) {
+          return customDate.toISOString();
+        }
       }
     }
   }
+  // Tolak semua format lain
   return undefined;
 }
 

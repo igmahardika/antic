@@ -28,14 +28,21 @@ import AgentAnalytics from './AgentAnalytics';
 import SummaryDashboard from './SummaryDashboard';
 import AdminPanel from '../pages/AdminPanel';
 
+import BarChartIcon from '@mui/icons-material/BarChart';
+import GridViewIcon from '@mui/icons-material/GridView';
+import GroupIcon from '@mui/icons-material/Group';
+import UserCheckIcon from '@mui/icons-material/HowToReg';
+import CloudUploadIcon from '@mui/icons-material/CloudUpload';
+import UsersIcon from '@mui/icons-material/People';
+
 const allTabs = [
-  { name: 'Dashboard', component: SummaryDashboard, icon: BarChart2 },
-  { name: 'Grid View', component: GridView, icon: Grid },
-  { name: 'Customer Analysis', component: KanbanBoard, icon: Users },
-  { name: 'Ticket Analysis', component: TicketAnalytics, icon: BarChart2 },
-  { name: 'Agent Analysis', component: AgentAnalytics, icon: UserCheck },
-  { name: 'Upload Data', component: UploadProcess, icon: Upload },
-  { name: 'Admin Panel', component: AdminPanel, icon: Users },
+  { name: 'Dashboard', component: SummaryDashboard, icon: BarChartIcon },
+  { name: 'Data Grid', component: GridView, icon: GridViewIcon },
+  { name: 'Customer Analytics', component: KanbanBoard, icon: GroupIcon },
+  { name: 'Ticket Analytics', component: TicketAnalytics, icon: BarChartIcon },
+  { name: 'Agent Analytics', component: AgentAnalytics, icon: UserCheckIcon },
+  { name: 'Upload Data', component: UploadProcess, icon: CloudUploadIcon },
+  { name: 'Admin Panel', component: AdminPanel, icon: UsersIcon },
 ];
 
 const timeFilters = [
@@ -776,130 +783,13 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
-        <Tab.Group selectedIndex={selectedIndex} onChange={setSelectedIndex}>
-        {/* New Redesigned Header */}
-        <header className="sticky top-0 z-30 w-full px-6 py-3 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm shadow-sm border-b border-gray-200 dark:border-gray-800">
-          <div className="flex items-center justify-between">
-            {/* Left side: Logo and Navigation */}
-            <div className="flex items-center gap-6">
-              <div className="flex items-center">
-                <img src="/logo-a.png" alt="Antic Logo" className="h-10 w-auto" />
-          </div>
-              <Tab.List className="flex items-center gap-1">
-              {tabs.map((tab) => (
-                  <Tab key={tab.name} className="focus:outline-none">
-                {({ selected }) => (
-                  <button
-                        className={`
-                          flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-md transition-colors duration-200
-                          ${selected
-                            ? 'bg-blue-600 text-white shadow-md'
-                            : 'text-gray-600 dark:text-gray-300 hover:bg-gray-200/50 dark:hover:bg-gray-800/50 hover:text-gray-900 dark:hover:text-white'
-                          }
-                        `}
-                  >
-                        <tab.icon className="w-4 h-4" />
-                  <span>{tab.name}</span>
-                  </button>
-                )}
-                </Tab>
-              ))}
-            </Tab.List>
-              </div>
-            
-            {/* Center: Compact Stats Cards */}
-            <div className="hidden lg:flex items-center gap-4">
-              {ticketAnalyticsData?.stats?.map((stat, index) => (
-                <div key={index} className="text-center">
-                  <p className="text-xs text-gray-500 dark:text-gray-400">{stat.title}</p>
-                  <p className="text-lg font-bold text-gray-900 dark:text-white">{stat.value}</p>
-              </div>
-              ))}
-              </div>
-
-            {/* Right side: Actions */}
-            <div className="flex items-center gap-4">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <button className="focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 rounded-full">
-                    <Avatar className="h-9 w-9 border-2 border-transparent hover:border-blue-500 transition-colors">
-                      <AvatarFallback className="bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300 font-semibold">
-                        {user.username ? user.username.charAt(0).toUpperCase() : 'U'}
-                      </AvatarFallback>
-                    </Avatar>
-                  </button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-56" align="end">
-                  <DropdownMenuLabel>
-                    <p className="text-sm font-medium">{user.username}</p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 capitalize">{user.role} Role</p>
-                  </DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem
-                    onClick={() => document.documentElement.classList.toggle('dark')}
-                    className="cursor-pointer"
-                  >
-                    <Sun className="mr-2 h-4 w-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-                    <Moon className="absolute mr-2 h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
-                    <span>Toggle Theme</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-red-500 focus:bg-red-50 focus:text-red-600 dark:focus:bg-red-900/50 dark:focus:text-red-400">
-                    <LogOut className="mr-2 h-4 w-4" />
-                    <span>Logout</span>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-                </div>
-            </div>
-        </header>
-
-        {/* Main Content */}
-        <main className="p-4 sm:p-6 lg:p-8">
-          <Tab.Panels>
-            {tabs.map((tab) => (
-              <Tab.Panel key={tab.name} className="focus:outline-none">
-                {(() => {
-                  const CurrentComponent = tab.component;
-                  const showFilter = tab.name !== 'Upload Data' && tab.name !== 'Admin Panel';
-
-                  // Map specific components to their required props
-                  const componentProps: { [key: string]: any } = {
-                    'Upload Data': { onUploadComplete: handleUploadComplete },
-                    'Grid View': { data: gridData },
-                    'Customer Analysis': { data: kanbanData, cutoffStart: cutoffStart || new Date(), cutoffEnd: cutoffEnd || new Date() },
-                    'Ticket Analysis': { data: ticketAnalyticsData },
-                    'Agent Analysis': { data: agentAnalyticsData },
-                    'Dashboard': { ticketAnalyticsData, agentAnalyticsData, kanbanData },
-                    'Admin Panel': {}
-                  };
-
-                  return (
-                    <>
-                      {showFilter && (
-                  <FilterWaktu
-                    startMonth={startMonth}
-                    setStartMonth={setStartMonth}
-                    endMonth={endMonth}
-                    setEndMonth={setEndMonth}
-                    selectedYear={selectedYear}
-                    setSelectedYear={setSelectedYear}
-                    monthOptions={monthOptions}
-                    allYearsInData={allYearsInData}
-                    onRefresh={handleApplyFilter}
-                  />
-                )}
-                      {/* @ts-ignore */}
-                      <CurrentComponent {...(componentProps[tab.name] || {})} />
-                    </>
-                  );
-                })()}
-              </Tab.Panel>
-            ))}
-          </Tab.Panels>
-        </main>
-        </Tab.Group>
+    <div className="relative min-h-screen">
+      {/* Gradient background layer */}
+      <div className="fixed inset-0 -z-10 bg-gradient-to-br from-blue-50 via-white to-pink-100 dark:from-zinc-900 dark:via-zinc-800 dark:to-blue-900" />
+      <main className="p-4 sm:p-6 lg:p-8">
+        {/* Tampilkan summary dashboard saja */}
+        <SummaryDashboard ticketAnalyticsData={ticketAnalyticsData} />
+      </main>
     </div>
   );
 };

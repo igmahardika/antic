@@ -6,13 +6,13 @@ interface User {
   role: 'admin' | 'user';
 }
 
-type Menu = 'Dashboard' | 'Grid View' | 'Customer Analysis' | 'Ticket Analysis' | 'Agent Analysis' | 'Upload Data' | 'Admin Panel';
+type Menu = 'Dashboard' | 'Data Grid' | 'Customer Analytics' | 'Ticket Analytics' | 'Agent Analytics' | 'Upload Data' | 'Admin Panel';
 type Role = 'admin' | 'user';
 type Permissions = {
   [key in Role]: Menu[];
 };
 
-const allMenus: Menu[] = ['Dashboard', 'Grid View', 'Customer Analysis', 'Ticket Analysis', 'Agent Analysis', 'Upload Data', 'Admin Panel'];
+const allMenus: Menu[] = ['Dashboard', 'Data Grid', 'Customer Analytics', 'Ticket Analytics', 'Agent Analytics', 'Upload Data', 'Admin Panel'];
 
 const AdminPanel: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
@@ -32,8 +32,8 @@ const AdminPanel: React.FC = () => {
     }
     // Default permissions
     return {
-      admin: ['Dashboard', 'Grid View', 'Customer Analysis', 'Ticket Analysis', 'Agent Analysis', 'Upload Data', 'Admin Panel'],
-      user: ['Dashboard', 'Grid View', 'Customer Analysis', 'Ticket Analysis', 'Agent Analysis', 'Upload Data'],
+      admin: ['Dashboard', 'Data Grid', 'Customer Analytics', 'Ticket Analytics', 'Agent Analytics', 'Upload Data', 'Admin Panel'],
+      user: ['Dashboard', 'Data Grid', 'Customer Analytics', 'Ticket Analytics', 'Agent Analytics', 'Upload Data'],
     };
   });
 
@@ -71,7 +71,7 @@ const AdminPanel: React.FC = () => {
 
   return (
     <>
-      <h1 className="text-3xl font-bold text-gray-800 dark:text-white mb-6">Admin Panel</h1>
+      <h1 className="text-3xl md:text-4xl font-extrabold mb-4 text-gray-900 dark:text-gray-100">Admin Panel</h1>
       
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         
@@ -79,7 +79,7 @@ const AdminPanel: React.FC = () => {
         <div className="lg:col-span-1 flex flex-col gap-8">
           {/* Add User Form Card */}
           <div className="bg-white dark:bg-zinc-800 rounded-xl shadow-lg p-6">
-            <h2 className="text-xl font-semibold text-gray-800 dark:text-white mb-4">Add New User</h2>
+            <h2 className="text-2xl md:text-3xl font-bold mb-2 text-gray-900 dark:text-gray-100">Add New User</h2>
             <form className="flex flex-col gap-4" onSubmit={handleAddUser}>
               <div>
                 <label htmlFor="username" className="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-1">Username</label>
@@ -133,7 +133,7 @@ const AdminPanel: React.FC = () => {
         <div className="lg:col-span-2 flex flex-col gap-8">
           {/* Role Management Card */}
           <div className="bg-white dark:bg-zinc-800 rounded-xl shadow-lg p-6">
-            <h2 className="text-xl font-semibold text-gray-800 dark:text-white mb-4">Role Menu Permissions</h2>
+            <h2 className="text-2xl md:text-3xl font-bold mb-2 text-gray-900 dark:text-gray-100">Role Menu Permissions</h2>
             <div className="mb-4">
               <label htmlFor="role-select" className="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-2">Edit permissions for role:</label>
               <select
@@ -166,7 +166,7 @@ const AdminPanel: React.FC = () => {
 
           {/* User List Card */}
           <div className="bg-white dark:bg-zinc-800 rounded-xl shadow-lg p-6">
-            <h2 className="text-xl font-semibold text-gray-800 dark:text-white mb-4">User List</h2>
+            <h2 className="text-2xl md:text-3xl font-bold mb-2 text-gray-900 dark:text-gray-100">User List</h2>
             <div className="overflow-x-auto">
               <table className="w-full text-sm text-left">
                 <thead className="bg-gray-50 dark:bg-zinc-700 text-xs text-gray-600 dark:text-gray-300 uppercase">

@@ -16,9 +16,10 @@ const Login: React.FC = () => {
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-100 dark:bg-zinc-900">
       <div className="p-8 bg-white dark:bg-zinc-800 rounded-2xl shadow-xl w-full max-w-md border border-gray-200 dark:border-zinc-700">
-        <h2 className="text-3xl font-extrabold text-center text-gray-900 dark:text-gray-100 mb-6">
-          Welcome Back
+        <h2 className="text-2xl md:text-3xl font-bold mb-2 text-gray-900 dark:text-gray-100">
+          Login
         </h2>
+        <p className="text-center text-gray-500 dark:text-gray-400 mb-6">Masuk ke dashboard Insight Ticket</p>
         <div className="space-y-4">
           <div>
             <Label htmlFor="email">Email</Label>
