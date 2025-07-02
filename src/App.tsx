@@ -23,6 +23,8 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { SidebarNav } from './components/ui/navigation-menu';
 import { Menu as MenuIcon } from 'lucide-react';
+import { useAgentMetricsPolling } from './hooks/useAgentMetricsPolling';
+import ErrorBoundary from './components/ErrorBoundary';
 
 const queryClient = new QueryClient();
 
@@ -67,6 +69,10 @@ function AppLayout() {
     return () => window.removeEventListener('resize', updateMargin);
   }, [sidebarCollapsed]);
 
+  const hour = new Date().getHours();
+  const isBusyHour = hour >= 8 && hour <= 17;
+  useAgentMetricsPolling('/api/agent-metrics', isBusyHour);
+
   return (
     <div className="relative min-h-screen">
       {/* Gradient background */}
@@ -91,7 +97,7 @@ function AppLayout() {
             <Route path="/" element={<Index />} />
             <Route path="/login" element={<Login />} />
             <Route path="/admin" element={<AdminPanel />} />
-            <Route path="/agent-analytics" element={<AgentAnalytics />} />
+            <Route path="/agent-analytics" element={<ErrorBoundary><AgentAnalytics /></ErrorBoundary>} />
             <Route path="/grid-view" element={<GridView />} />
             <Route path="/kanban-board" element={<KanbanBoard />} />
             <Route path="/ticket-analytics" element={<TicketAnalytics />} />

@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import 'ag-grid-community/styles/ag-theme-quartz.css';
 import { BookUser, Trophy, Zap, Users, ArrowUpRight, ArrowDownRight, Clock, Award, BarChart, Inbox, Star, UserCheck, MessageCircle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -16,6 +16,12 @@ import WorkspacePremiumIcon from '@mui/icons-material/WorkspacePremium';
 import BarChartIcon from '@mui/icons-material/BarChart';
 import MoveToInboxIcon from '@mui/icons-material/MoveToInbox';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, Legend as RechartsLegend } from 'recharts';
+import { shallow } from 'zustand/shallow';
+import type { AgentMetric } from '@/utils/agentKpi';
+import * as XLSX from 'xlsx';
+import dayjs from 'dayjs';
+import duration from 'dayjs/plugin/duration';
+dayjs.extend(duration);
 
 // Define the structure of the data this component will receive
 export interface AgentAnalyticsData {
@@ -73,7 +79,7 @@ function toRechartsAgentTrend(labels: string[], datasets: { label: string, data:
 }
 
 // Custom Tooltip for AreaChart
-const CustomTooltip = ({ active, payload, label }) => {
+const CustomTooltip = ({ active = false, payload = [], label = '' } = {}) => {
   if (!active || !payload || !payload.length) return null;
   return (
     <div className="bg-white dark:bg-zinc-900/95 rounded-xl shadow-lg border border-gray-200 dark:border-zinc-700 p-4 max-h-52 overflow-y-auto min-w-[180px] text-xs" style={{ fontSize: '12px', lineHeight: '1.5' }}>
@@ -100,7 +106,11 @@ const AgentAnalytics = () => {
     allYearsInData
   } = useAnalytics();
   const data = agentAnalyticsData;
-  const agentMetrics = useAgentStore(state => state.agentMetrics);
+  const agentMetrics = useAgentStore((state) => state.agentMetrics) as AgentMetric[];
+
+  useEffect(() => {
+    console.log('Agent Metrics DEBUG:', agentMetrics);
+  }, [agentMetrics]);
 
   // Ganti monthOptions agar selalu 12 bulan
   const monthOptions = MONTH_OPTIONS;
@@ -108,12 +118,14 @@ const AgentAnalytics = () => {
   // Calculate global summary metrics
   const summaryKpi = useMemo(() => {
     if (!agentMetrics || agentMetrics.length === 0) return null;
-    const avg = arr => arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : 0;
+    const avg = (arr: number[]) => arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : 0;
     return {
       avgFRT: avg(agentMetrics.map(m => m.frt)),
       avgART: avg(agentMetrics.map(m => m.art)),
       avgFCR: avg(agentMetrics.map(m => m.fcr)),
       avgSLA: avg(agentMetrics.map(m => m.sla)),
+      avgVol: avg(agentMetrics.map(m => m.vol)),
+      avgBacklog: avg(agentMetrics.map(m => m.backlog)),
     };
   }, [agentMetrics]);
 
@@ -122,8 +134,26 @@ const AgentAnalytics = () => {
     if (!data || !data.agentMonthlyChart || !Array.isArray(data.agentMonthlyChart.datasets)) return [];
     return toRechartsAgentTrend(data.agentMonthlyChart.labels, data.agentMonthlyChart.datasets);
   }, [data]);
-  const agentTrendDatasets = data?.agentMonthlyChart?.datasets || [];
-  const agentTrendLabels = data?.agentMonthlyChart?.labels || [];
+  const agentTrendDatasets: { label: string; data: number[]; color?: string }[] = data?.agentMonthlyChart?.datasets || [];
+  const agentTrendLabels: string[] = data?.agentMonthlyChart?.labels || [];
+
+  const [debouncedTrendData, setDebouncedTrendData] = useState<any[]>([]);
+  const [debouncedDatasets, setDebouncedDatasets] = useState<{ label: string; data: number[]; color?: string }[]>([]);
+
+  // Debounce & windowing for trend data
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      // Windowing: hanya render 24 data terakhir (misal: 2 tahun jika bulanan)
+      const windowedLabels = agentTrendLabels.slice(-24);
+      const windowedDatasets = agentTrendDatasets.map(ds => ({
+        ...ds,
+        data: ds.data.slice(-24)
+      }));
+      setDebouncedTrendData(toRechartsAgentTrend(windowedLabels, windowedDatasets));
+      setDebouncedDatasets(windowedDatasets);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [agentTrendLabels, agentTrendDatasets]);
 
   // Filtering logic for all years
   let filteredAgentList = [];
@@ -134,6 +164,7 @@ const AgentAnalytics = () => {
       filteredAgentList = data.agentList; // You can add more granular filtering if needed
     }
   }
+
   const isDataReady = data && data.summary && filteredAgentList.length > 0;
   if (!isDataReady) {
     return (
@@ -155,6 +186,71 @@ const AgentAnalytics = () => {
     { title: 'Most Efficient Agent', value: summary.mostEfficientAgentName, icon: FlashOnIcon, description: 'Lowest avg. handling time' },
     { title: 'Highest Resolution Rate', value: summary.highestResolutionAgentName, icon: MilitaryTechIcon, description: 'Best ticket closing rate' },
   ];
+
+  const safeAgentMetrics = Array.isArray(agentMetrics) ? agentMetrics : [];
+
+  // Helper: validasi angka
+  const safeNum = v => (typeof v === 'number' && !isNaN(v)) ? v : null;
+  const safeFixed = v => safeNum(v) !== null ? v.toFixed(1) : '-';
+
+  const [excelAgentData, setExcelAgentData] = useState<any[]>([]);
+
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const data = new Uint8Array(e.target?.result as ArrayBuffer);
+      const workbook = XLSX.read(data, { type: 'array' });
+      const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+      const jsonData = XLSX.utils.sheet_to_json(worksheet, { raw: false });
+      const processed = transformExcelData(jsonData);
+      setExcelAgentData(processed);
+    };
+    reader.readAsArrayBuffer(file);
+  };
+
+  function formatDurationDHM(minutes: number) {
+    if (!minutes || isNaN(minutes)) return '-';
+    const d = dayjs.duration(minutes, 'minutes');
+    const h = d.hours();
+    const m = d.minutes();
+    return `${h > 0 ? h + 'h ' : ''}${m}m`;
+  }
+
+  function transformExcelData(data: any[]) {
+    // Group by agentName
+    const agentMap: Record<string, any[]> = {};
+    data.forEach(row => {
+      const agentName = row['Agent'] || row['agentName'] || row['Open By'] || row['OPEN BY'] || 'Unknown';
+      if (!agentMap[agentName]) agentMap[agentName] = [];
+      agentMap[agentName].push(row);
+    });
+    return Object.entries(agentMap).map(([agentName, rows]) => {
+      const ticketCount = rows.length;
+      const durations = rows.map(r => {
+        const open = dayjs(r['Waktu Open'] || r['OPEN TIME']);
+        const close = dayjs(r['Waktu Close Ticket'] || r['CLOSE TIME']);
+        return close.isValid() && open.isValid() ? close.diff(open, 'minute') : 0;
+      }).filter(Boolean);
+      const totalDuration = durations.reduce((a, b) => a + b, 0);
+      const avgDuration = durations.length ? totalDuration / durations.length : 0;
+      const minDuration = durations.length ? Math.min(...durations) : 0;
+      const maxDuration = durations.length ? Math.max(...durations) : 0;
+      return {
+        agentName,
+        ticketCount,
+        totalDurationFormatted: formatDurationDHM(totalDuration),
+        avgDurationFormatted: formatDurationDHM(avgDuration),
+        minDurationFormatted: formatDurationDHM(minDuration),
+        maxDurationFormatted: formatDurationDHM(maxDuration),
+        // Tambahkan field lain sesuai kebutuhan
+      };
+    });
+  }
+
+  // Gunakan excelAgentData jika ada, jika tidak gunakan data dari store
+  const dataSource = excelAgentData.length > 0 ? excelAgentData : safeAgentMetrics;
 
   return (
     <div className="w-full">
@@ -221,11 +317,20 @@ const AgentAnalytics = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         {sortedAgentList.map((agent, index) => {
           // Find metric for this agent
-          const metric = agentMetrics.find(m => m.agent === agent.agentName);
-
-          // Helper: validasi angka
-          const safeNum = v => (typeof v === 'number' && !isNaN(v)) ? v : null;
-          const safeFixed = v => safeNum(v) !== null ? v.toFixed(1) : '-';
+          const metric = dataSource.find(m => m.agent === agent.agentName);
+          const rankBadge = metric && metric.rank ? metric.rank : '-';
+          const rankTitle = metric && metric.rank ? (
+            metric.rank === 'A' ? `Excellent (Score: ${safeFixed(metric.score ?? 0)})` :
+            metric.rank === 'B' ? `Good (Score: ${safeFixed(metric.score ?? 0)})` :
+            metric.rank === 'C' ? `Average (Score: ${safeFixed(metric.score ?? 0)})` :
+            `Needs Improvement (Score: ${safeFixed(metric.score ?? 0)})`
+          ) : 'No data';
+          const rankClass = metric && metric.rank ? (
+            metric.rank === 'A' ? 'bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-300 border-2 border-green-200 dark:border-green-700' :
+            metric.rank === 'B' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300 border-2 border-blue-200 dark:border-blue-700' :
+            metric.rank === 'C' ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/50 dark:text-yellow-300 border-2 border-yellow-200 dark:border-yellow-700' :
+            'bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-300 border-2 border-red-200 dark:border-red-700'
+          ) : 'bg-gray-200 text-gray-500 border-2 border-gray-300';
 
           const durationMetrics = [
             { label: 'Total', value: agent.totalDurationFormatted || '-', description: 'Total Handling Duration' },
@@ -234,29 +339,14 @@ const AgentAnalytics = () => {
             { label: 'Terlama', value: agent.maxDurationFormatted || '-', description: 'Longest Handling Duration' },
           ];
 
-          // Rank badge logic
-          const rankBadge = metric ? metric.rank : '-';
-          const rankTitle = metric ? (
-            metric.rank === 'A' ? `Excellent (Score: ${safeFixed(metric.score)})` :
-            metric.rank === 'B' ? `Good (Score: ${safeFixed(metric.score)})` :
-            metric.rank === 'C' ? `Average (Score: ${safeFixed(metric.score)})` :
-            `Needs Improvement (Score: ${safeFixed(metric.score)})`
-          ) : 'No data';
-          const rankClass = metric ? (
-            metric.rank === 'A' ? 'bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-300 border-2 border-green-200 dark:border-green-700' :
-            metric.rank === 'B' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300 border-2 border-blue-200 dark:border-blue-700' :
-            metric.rank === 'C' ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/50 dark:text-yellow-300 border-2 border-yellow-200 dark:border-yellow-700' :
-            'bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-300 border-2 border-red-200 dark:border-red-700'
-          ) : 'bg-gray-200 text-gray-500 border-2 border-gray-300';
-
           // KPI metrics, always show
           const kpiMetrics = [
-            { label: 'FRT', value: safeFixed(metric?.frt), icon: AccessTimeIcon },
-            { label: 'ART', value: safeFixed(metric?.art), icon: AccessTimeIcon },
-            { label: 'FCR', value: metric?.fcr !== undefined && safeNum(metric.fcr) !== null ? `${metric.fcr.toFixed(1)}%` : '-', icon: MilitaryTechIcon },
-            { label: 'SLA', value: metric?.sla !== undefined && safeNum(metric.sla) !== null ? `${metric.sla.toFixed(1)}%` : '-', icon: MilitaryTechIcon },
-            { label: 'Volume', value: metric?.vol ?? '-', icon: BarChartIcon },
-            { label: 'Backlog', value: metric?.backlog ?? '-', icon: MoveToInboxIcon, isRed: true },
+            { label: 'FRT', value: metric?.frt ?? 'N/A', icon: AccessTimeIcon },
+            { label: 'ART', value: metric?.art ?? 'N/A', icon: AccessTimeIcon },
+            { label: 'FCR', value: metric?.fcr !== undefined && safeNum(metric.fcr) !== null ? `${metric.fcr.toFixed(1)}%` : 'N/A', icon: MilitaryTechIcon },
+            { label: 'SLA', value: metric?.sla !== undefined && safeNum(metric.sla) !== null ? `${metric.sla.toFixed(1)}%` : 'N/A', icon: MilitaryTechIcon },
+            { label: 'Volume', value: metric?.vol ?? 'N/A', icon: BarChartIcon },
+            { label: 'Backlog', value: metric?.backlog ?? 'N/A', icon: MoveToInboxIcon, isRed: true },
           ];
 
           return (
@@ -305,7 +395,7 @@ const AgentAnalytics = () => {
                 ))}
               </div>
               {/* Score Progress Bar */}
-              {metric ? (
+              {metric && metric.score !== undefined ? (
                 <div className="w-full bg-gray-200 dark:bg-zinc-700 rounded-full h-2.5">
                   <div className="bg-gradient-to-r from-green-400 to-blue-500 h-2.5 rounded-full" style={{ width: `${safeNum(metric.score) !== null ? metric.score : 0}%` }}></div>
                 </div>
@@ -317,16 +407,16 @@ const AgentAnalytics = () => {
         })}
       </div>
       {/* Trendline Chart for All Agents (pindah ke bawah, solid) */}
-      {rechartsAgentTrendData.length > 0 && (
+      {debouncedTrendData.length > 0 && (
         <Card className="mb-8 mt-16 bg-white dark:bg-zinc-900">
           <CardHeader>
             <CardTitle className="text-lg font-bold">Agent Ticket Trends per Month</CardTitle>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={320}>
-              <AreaChart data={rechartsAgentTrendData} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
+              <AreaChart data={debouncedTrendData} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
                 <defs>
-                  {agentTrendDatasets.map((ds, idx) => (
+                  {debouncedDatasets.map((ds, idx) => (
                     <linearGradient key={ds.label} id={`colorAgent${idx}`} x1="0" y1="0" x2="0" y2="1">
                       <stop offset="5%" stopColor={ds.color || TREND_COLORS[idx % TREND_COLORS.length]} stopOpacity={0.8}/>
                       <stop offset="95%" stopColor={ds.color || TREND_COLORS[idx % TREND_COLORS.length]} stopOpacity={0.1}/>
@@ -338,7 +428,7 @@ const AgentAnalytics = () => {
                 <CartesianGrid strokeDasharray="3 3" vertical={false} />
                 <RechartsTooltip content={<CustomTooltip />} />
                 <RechartsLegend />
-                {agentTrendDatasets.map((ds, idx) => (
+                {debouncedDatasets.map((ds, idx) => (
                   <Area
                     key={ds.label}
                     type="monotone"
@@ -354,6 +444,7 @@ const AgentAnalytics = () => {
           </CardContent>
         </Card>
       )}
+      <input type="file" accept=".xlsx, .xls" onChange={handleFileUpload} className="mb-4" />
     </div>
   );
 };
