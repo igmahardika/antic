@@ -595,42 +595,38 @@ const KanbanBoard = (props: Partial<KanbanBoardProps>) => {
       <RadixDialog.Root open={!!openDialogId} onOpenChange={open => setOpenDialogId(open ? openDialogId : null)}>
         <RadixDialog.Portal>
           <RadixDialog.Overlay className="fixed inset-0 bg-black/50 z-50" />
-          <RadixDialog.Content className="fixed left-1/2 top-1/2 z-50 w-[1500px] h-[700px] max-w-[98vw] -translate-x-1/2 -translate-y-1/2 bg-white rounded-xl shadow-2xl p-0 focus:outline-none overflow-hidden border border-blue-200">
+          <RadixDialog.Content className="fixed left-1/2 top-1/2 z-50 w-[1200px] h-[700px] max-w-[98vw] -translate-x-1/2 -translate-y-1/2 bg-white rounded-xl shadow-2xl p-0 focus:outline-none overflow-hidden border border-blue-200">
             {selectedCustomer && (
               <>
                 <RadixDialog.Title className="text-3xl font-extrabold p-10 pb-2 text-blue-900 tracking-tight border-b border-blue-100">
                   {selectedCustomer.name}
                 </RadixDialog.Title>
-                <div className="px-10 pt-4 pb-10 h-[calc(100%-100px)] overflow-y-auto">
-                  <div className="mb-6 text-lg text-blue-900 font-medium">
+                <div className="px-10 pt-4 pb-10 h-[calc(100%-100px)] overflow-y-auto flex flex-col gap-10">
+                  <div className="mb-2 text-lg text-blue-900 font-medium">
                     Customer ID: <span className="font-mono text-blue-700">{selectedCustomer.customerId}</span>
                   </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-                    <div>
-                      <div className="mb-10">
-                        <div className="text-xl font-bold text-blue-800 mb-3">Automated Insight</div>
-                        <div className="bg-white rounded-xl p-5 shadow border border-blue-100 text-base text-blue-900 space-y-2 divide-y divide-blue-50">
-                          <div className="pb-2"><span className="font-semibold">Main Issue:</span> {generateInsight(selectedCustomer.allTickets).masalah}</div>
-                          <div className="py-2"><span className="font-semibold">Root Cause:</span> {generateInsight(selectedCustomer.allTickets).penyebab}</div>
-                          <div className="pt-2"><span className="font-semibold text-green-700">Solution:</span> {generateInsight(selectedCustomer.allTickets).solusi}</div>
-                        </div>
-                      </div>
-                      <div className="mb-10">
-                        <div className="text-xl font-bold text-blue-800 mb-3">Historical Count</div>
-                        <div className="bg-white rounded-xl p-5 shadow border border-blue-100 text-base text-blue-900">
-                          <HistoricalTicketCount customer={selectedCustomer} />
-                        </div>
-                      </div>
-                    </div>
-                    <div>
-                      <div className="text-xl font-bold text-blue-800 mb-3">Ticket History</div>
-                      <div className="bg-white rounded-xl p-5 shadow border border-blue-100 text-base text-blue-900 min-w-[1200px] w-full overflow-x-auto overflow-y-visible">
-                        {/* Table: horizontal scroll only, no vertical scroll */}
-                        <TicketHistoryTable tickets={selectedCustomer.allTickets} />
-                      </div>
+                  <div>
+                    <div className="text-xl font-bold text-blue-800 mb-3">Automated Insight</div>
+                    <div className="bg-white rounded-xl p-5 shadow border border-blue-100 text-base text-blue-900 space-y-2 divide-y divide-blue-50">
+                      <div className="pb-2"><span className="font-semibold">Main Issue:</span> {generateInsight(selectedCustomer.allTickets).masalah}</div>
+                      <div className="py-2"><span className="font-semibold">Root Cause:</span> {generateInsight(selectedCustomer.allTickets).penyebab}</div>
+                      <div className="pt-2"><span className="font-semibold text-green-700">Solution:</span> {generateInsight(selectedCustomer.allTickets).solusi}</div>
                     </div>
                   </div>
-                  <div className="mt-12 flex flex-wrap gap-12 border-t border-blue-100 pt-8">
+                  <div>
+                    <div className="text-xl font-bold text-blue-800 mb-3">Historical Count</div>
+                    <div className="bg-white rounded-xl p-5 shadow border border-blue-100 text-base text-blue-900">
+                      <HistoricalTicketCount customer={selectedCustomer} />
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-xl font-bold text-blue-800 mb-3">Ticket History</div>
+                    <div className="bg-white rounded-xl p-5 shadow border border-blue-100 text-base text-blue-900 min-w-[1100px] w-full overflow-x-auto overflow-y-visible">
+                      {/* Table: horizontal scroll only, no vertical scroll */}
+                      <TicketHistoryTable tickets={selectedCustomer.allTickets} />
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap gap-12 border-t border-blue-100 pt-8">
                     <div className="text-lg font-semibold text-blue-900"><span className="font-bold">Top Issue:</span> {(() => {
                       const agentCount = {};
                       selectedCustomer.allTickets.forEach(t => { if (t.description) agentCount[t.description] = (agentCount[t.description] || 0) + 1; });
