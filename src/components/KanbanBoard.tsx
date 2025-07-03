@@ -595,56 +595,57 @@ const KanbanBoard = (props: Partial<KanbanBoardProps>) => {
       <RadixDialog.Root open={!!openDialogId} onOpenChange={open => setOpenDialogId(open ? openDialogId : null)}>
         <RadixDialog.Portal>
           <RadixDialog.Overlay className="fixed inset-0 bg-black/50 z-50" />
-          <RadixDialog.Content className="fixed left-1/2 top-1/2 z-50 w-[98vw] max-w-6xl -translate-x-1/2 -translate-y-1/2 bg-white dark:bg-zinc-900 rounded-3xl shadow-2xl p-0 focus:outline-none overflow-auto max-h-[95vh] border border-blue-200 dark:border-blue-300">
+          <RadixDialog.Content className="fixed left-1/2 top-1/2 z-50 w-[1200px] h-[700px] max-w-7xl -translate-x-1/2 -translate-y-1/2 bg-white rounded-xl shadow-2xl p-0 focus:outline-none overflow-hidden border border-blue-200">
             {selectedCustomer && (
               <>
-                <RadixDialog.Title className="text-3xl font-extrabold p-10 pb-2 text-blue-900 dark:text-blue-300 tracking-tight border-b border-blue-100 dark:border-zinc-700">
+                <RadixDialog.Title className="text-3xl font-extrabold p-10 pb-2 text-blue-900 tracking-tight border-b border-blue-100">
                   {selectedCustomer.name}
                 </RadixDialog.Title>
-                <div className="px-10 pt-4 pb-10">
-                  <div className="mb-6 text-lg text-blue-900 dark:text-blue-200 font-medium">
-                    Customer ID: <span className="font-mono text-blue-700 dark:text-blue-300">{selectedCustomer.customerId}</span>
+                <div className="px-10 pt-4 pb-10 h-[calc(100%-100px)] overflow-y-auto">
+                  <div className="mb-6 text-lg text-blue-900 font-medium">
+                    Customer ID: <span className="font-mono text-blue-700">{selectedCustomer.customerId}</span>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
                     <div>
                       <div className="mb-10">
-                        <div className="text-xl font-bold text-blue-800 dark:text-blue-200 mb-3">Automated Insight</div>
-                        <div className="bg-white dark:bg-zinc-900 rounded-xl p-5 shadow border border-blue-100 dark:border-zinc-700 text-base text-blue-900 dark:text-blue-100 space-y-2 divide-y divide-blue-50 dark:divide-zinc-800">
+                        <div className="text-xl font-bold text-blue-800 mb-3">Automated Insight</div>
+                        <div className="bg-white rounded-xl p-5 shadow border border-blue-100 text-base text-blue-900 space-y-2 divide-y divide-blue-50">
                           <div className="pb-2"><span className="font-semibold">Main Issue:</span> {generateInsight(selectedCustomer.allTickets).masalah}</div>
                           <div className="py-2"><span className="font-semibold">Root Cause:</span> {generateInsight(selectedCustomer.allTickets).penyebab}</div>
-                          <div className="pt-2"><span className="font-semibold text-green-700 dark:text-green-400">Solution:</span> {generateInsight(selectedCustomer.allTickets).solusi}</div>
+                          <div className="pt-2"><span className="font-semibold text-green-700">Solution:</span> {generateInsight(selectedCustomer.allTickets).solusi}</div>
                         </div>
                       </div>
                       <div className="mb-10">
-                        <div className="text-xl font-bold text-blue-800 dark:text-blue-200 mb-3">Historical Count</div>
-                        <div className="bg-white dark:bg-zinc-900 rounded-xl p-5 shadow border border-blue-100 dark:border-zinc-700 text-base text-blue-900 dark:text-blue-100">
+                        <div className="text-xl font-bold text-blue-800 mb-3">Historical Count</div>
+                        <div className="bg-white rounded-xl p-5 shadow border border-blue-100 text-base text-blue-900">
                           <HistoricalTicketCount customer={selectedCustomer} />
                         </div>
                       </div>
                     </div>
                     <div>
-                      <div className="text-xl font-bold text-blue-800 dark:text-blue-200 mb-3">Ticket History</div>
-                      <div className="bg-white dark:bg-zinc-900 rounded-xl p-5 shadow border border-blue-100 dark:border-zinc-700 text-base text-blue-900 dark:text-blue-100 max-h-[500px] overflow-x-auto overflow-y-auto min-w-[900px] w-full">
+                      <div className="text-xl font-bold text-blue-800 mb-3">Ticket History</div>
+                      <div className="bg-white rounded-xl p-5 shadow border border-blue-100 text-base text-blue-900 min-w-[900px] w-full overflow-x-auto overflow-y-visible">
+                        {/* Table: horizontal scroll only, no vertical scroll */}
                         <TicketHistoryTable tickets={selectedCustomer.allTickets} />
                       </div>
                     </div>
                   </div>
-                  <div className="mt-12 flex flex-wrap gap-12 border-t border-blue-100 dark:border-zinc-700 pt-8">
-                    <div className="text-lg font-semibold text-blue-900 dark:text-blue-200"><span className="font-bold">Top Issue:</span> {(() => {
+                  <div className="mt-12 flex flex-wrap gap-12 border-t border-blue-100 pt-8">
+                    <div className="text-lg font-semibold text-blue-900"><span className="font-bold">Top Issue:</span> {(() => {
                       const agentCount = {};
                       selectedCustomer.allTickets.forEach(t => { if (t.description) agentCount[t.description] = (agentCount[t.description] || 0) + 1; });
                       return Object.entries(agentCount).sort((a, b) => b[1] - a[1])[0]?.[0] || '-';
                     })()}</div>
-                    <div className="text-lg font-semibold text-blue-900 dark:text-blue-200"><span className="font-bold">Top Agent:</span> {(() => {
+                    <div className="text-lg font-semibold text-blue-900"><span className="font-bold">Top Agent:</span> {(() => {
                       const agentCount = {};
                       selectedCustomer.allTickets.forEach(t => { if (t.openBy) agentCount[t.openBy] = (agentCount[t.openBy] || 0) + 1; });
                       return Object.entries(agentCount).sort((a, b) => b[1] - a[1])[0]?.[0] || '-';
                     })()}</div>
-                    <div className="text-lg font-semibold text-blue-900 dark:text-blue-200"><span className="font-bold">Analysis:</span> {selectedCustomer.analysis?.conclusion || '-'}</div>
+                    <div className="text-lg font-semibold text-blue-900"><span className="font-bold">Analysis:</span> {selectedCustomer.analysis?.conclusion || '-'}</div>
                   </div>
                 </div>
                 <RadixDialog.Close asChild>
-                  <button className="absolute top-8 right-8 text-blue-700 dark:text-blue-300 hover:text-red-500 text-4xl font-extrabold focus:outline-none transition-colors duration-150" aria-label="Close customer detail">&times;</button>
+                  <button className="absolute top-8 right-8 text-blue-700 hover:text-red-500 text-4xl font-extrabold focus:outline-none transition-colors duration-150" aria-label="Close customer detail">&times;</button>
                 </RadixDialog.Close>
               </>
             )}
