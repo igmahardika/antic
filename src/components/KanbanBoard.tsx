@@ -605,17 +605,17 @@ const KanbanBoard = (props: Partial<KanbanBoardProps>) => {
                   <div className="mb-6 text-lg text-blue-900 dark:text-blue-200 font-medium">
                     Customer ID: <span className="font-mono text-blue-700 dark:text-blue-300">{selectedCustomer.customerId}</span>
                   </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
                     <div>
-                      <div className="mb-8">
+                      <div className="mb-10">
                         <div className="text-xl font-bold text-blue-800 dark:text-blue-200 mb-3">Automated Insight</div>
-                        <div className="bg-white dark:bg-zinc-900 rounded-xl p-5 shadow border border-blue-100 dark:border-zinc-700 text-base text-blue-900 dark:text-blue-100 space-y-2">
-                          <div><span className="font-semibold">Main Issue:</span> {generateInsight(selectedCustomer.allTickets).masalah}</div>
-                          <div><span className="font-semibold">Root Cause:</span> {generateInsight(selectedCustomer.allTickets).penyebab}</div>
-                          <div><span className="font-semibold">Solution:</span> {generateInsight(selectedCustomer.allTickets).solusi}</div>
+                        <div className="bg-white dark:bg-zinc-900 rounded-xl p-5 shadow border border-blue-100 dark:border-zinc-700 text-base text-blue-900 dark:text-blue-100 space-y-2 divide-y divide-blue-50 dark:divide-zinc-800">
+                          <div className="pb-2"><span className="font-semibold">Main Issue:</span> {generateInsight(selectedCustomer.allTickets).masalah}</div>
+                          <div className="py-2"><span className="font-semibold">Root Cause:</span> {generateInsight(selectedCustomer.allTickets).penyebab}</div>
+                          <div className="pt-2"><span className="font-semibold text-green-700 dark:text-green-400">Solution:</span> {generateInsight(selectedCustomer.allTickets).solusi}</div>
                         </div>
                       </div>
-                      <div className="mb-8">
+                      <div className="mb-10">
                         <div className="text-xl font-bold text-blue-800 dark:text-blue-200 mb-3">Historical Count</div>
                         <div className="bg-white dark:bg-zinc-900 rounded-xl p-5 shadow border border-blue-100 dark:border-zinc-700 text-base text-blue-900 dark:text-blue-100">
                           <HistoricalTicketCount customer={selectedCustomer} />
@@ -629,7 +629,7 @@ const KanbanBoard = (props: Partial<KanbanBoardProps>) => {
                       </div>
                     </div>
                   </div>
-                  <div className="mt-10 flex flex-wrap gap-10 border-t border-blue-100 dark:border-zinc-700 pt-8">
+                  <div className="mt-12 flex flex-wrap gap-12 border-t border-blue-100 dark:border-zinc-700 pt-8">
                     <div className="text-lg font-semibold text-blue-900 dark:text-blue-200"><span className="font-bold">Top Issue:</span> {(() => {
                       const agentCount = {};
                       selectedCustomer.allTickets.forEach(t => { if (t.description) agentCount[t.description] = (agentCount[t.description] || 0) + 1; });
@@ -644,7 +644,7 @@ const KanbanBoard = (props: Partial<KanbanBoardProps>) => {
                   </div>
                 </div>
                 <RadixDialog.Close asChild>
-                  <button className="absolute top-8 right-8 text-blue-700 dark:text-blue-300 hover:text-red-500 text-4xl font-extrabold focus:outline-none">&times;</button>
+                  <button className="absolute top-8 right-8 text-blue-700 dark:text-blue-300 hover:text-red-500 text-4xl font-extrabold focus:outline-none transition-colors duration-150" aria-label="Close customer detail">&times;</button>
                 </RadixDialog.Close>
               </>
             )}
