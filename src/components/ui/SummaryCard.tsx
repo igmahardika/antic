@@ -62,9 +62,15 @@ const SummaryCard: React.FC<SummaryCardProps> = ({
         )}
       </div>
     </div>
-    <div className="text-base md:text-lg lg:text-xl font-extrabold break-words whitespace-normal min-h-[40px] flex items-center">
-      {value}
-      {subvalue && <span className="text-blue-600 font-bold ml-2">{subvalue}</span>}
+    <div className="flex items-end min-h-[40px]">
+      <span className="text-2xl md:text-3xl lg:text-4xl font-mono font-extrabold tracking-tight">
+        {value}
+      </span>
+      {subvalue && (
+        <span className="text-base md:text-lg font-semibold text-gray-500 dark:text-gray-300 ml-1 mb-0.5 align-bottom">
+          {subvalue}
+        </span>
+      )}
     </div>
     <div className="text-xs sm:text-sm text-gray-700 dark:text-gray-300 mt-1 break-words whitespace-normal">
       {description}
