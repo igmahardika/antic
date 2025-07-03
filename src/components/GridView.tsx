@@ -85,27 +85,24 @@ const GridView = ({ data: propsData }: { data?: ITicket[] }) => {
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mb-6">
         <SummaryCard
           icon={<ConfirmationNumberIcon sx={{ fontSize: 28, color: '#fff', filter: 'drop-shadow(0 2px 8px rgba(0,0,0,0.10))' }} />}
-          label="Total Tickets"
+          title="Total Tickets"
           value={totalTicketsInDb ?? '-'}
           description="Total tiket yang tercatat (tanpa filter)"
-          bg="bg-white/60 backdrop-blur-md border border-white/30"
-          iconBg="bg-blue-600/90"
+          iconBg="bg-blue-700"
         />
         <SummaryCard
           icon={<GroupIcon sx={{ fontSize: 28, color: '#fff', filter: 'drop-shadow(0 2px 8px rgba(0,0,0,0.10))' }} />}
-          label="Unique Customers"
+          title="Unique Customers"
           value={allTicketsInDb ? new Set(allTicketsInDb.map(t => t.customerId)).size : 0}
           description="Jumlah customer unik (tanpa filter)"
-          bg="bg-white/60 backdrop-blur-md border border-white/30"
-          iconBg="bg-green-600/90"
+          iconBg="bg-green-600"
         />
         <SummaryCard
           icon={<HowToRegIcon sx={{ fontSize: 28, color: '#fff', filter: 'drop-shadow(0 2px 8px rgba(0,0,0,0.10))' }} />}
-          label="Unique Agents"
+          title="Unique Agents"
           value={allTicketsInDb ? new Set(allTicketsInDb.map(t => t.openBy)).size : 0}
           description="Jumlah agent unik yang menangani (tanpa filter)"
-          bg="bg-white/60 backdrop-blur-md border border-white/30"
-          iconBg="bg-purple-600/90"
+          iconBg="bg-purple-700"
         />
       </div>
       {/* Search bar */}

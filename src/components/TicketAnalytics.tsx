@@ -19,6 +19,7 @@ import PersonIcon from '@mui/icons-material/Person';
 import HowToRegIcon from '@mui/icons-material/HowToReg';
 import CloseIcon from '@mui/icons-material/Close';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
+import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Legend as RechartsLegend, Tooltip as RechartsTooltip, PieChart, Pie, Sector, Cell, Label as RechartsLabel, BarChart, Bar } from 'recharts';
 
 type ClassificationDetails = {
@@ -228,37 +229,50 @@ const TicketAnalytics = ({ data: propsData }: TicketAnalyticsProps) => {
         </Card>
       )} */}
 
-      {/* Summary Cards - Enhanced UI */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8 mb-8">
-        {stats.map((s, idx) => (
-          <SummaryCard
-            key={s.title}
-            icon={
-              idx === 0 ? <ConfirmationNumberIcon className="w-7 h-7 text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.10)]" /> :
-              idx === 1 ? <CheckCircleIcon className="w-7 h-7 text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.10)]" /> :
-              idx === 2 ? <AccessTimeIcon className="w-7 h-7 text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.10)]" /> :
-              idx === 3 ? <CloseIcon className="w-7 h-7 text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.10)]" /> :
-              <WarningAmberIcon className="w-7 h-7 text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.10)]" />
-            }
-            label={s.title}
-            value={s.value}
-            description={s.description}
-            bg="bg-white/60 backdrop-blur-md border border-white/30"
-            iconBg={
-              idx === 0 ? "bg-blue-600/90" :
-              idx === 1 ? "bg-green-600/90" :
-              idx === 2 ? "bg-yellow-600/90" :
-              idx === 3 ? "bg-red-600/90" :
-              "bg-orange-600/90"
-            }
-          />
-        ))}
+      {/* Summary Cards - Standardized */}
+      <div className="px-2 md:px-4 lg:px-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6 mb-8">
+        {stats.map(s => {
+          // Standardized mapping for icons and backgrounds
+          const titleKey = s.title.trim().toUpperCase();
+          const iconMap: Record<string, { icon: React.ReactNode; iconBg: string }> = {
+            'TOTAL TICKETS': {
+              icon: <ConfirmationNumberIcon className="w-7 h-7 text-white" />, iconBg: "bg-blue-700"
+            },
+            'CLOSED': {
+              icon: <CheckCircleIcon className="w-7 h-7 text-white" />, iconBg: "bg-green-600"
+            },
+            'OPEN': {
+              icon: <ErrorOutlineIcon className="w-7 h-7 text-white" />, iconBg: "bg-orange-500"
+            },
+            'OVERDUE': {
+              icon: <AccessTimeIcon className="w-7 h-7 text-white" />, iconBg: "bg-red-600"
+            },
+            'ESCALATED': {
+              icon: <WarningAmberIcon className="w-7 h-7 text-white" />, iconBg: "bg-yellow-400"
+            },
+          };
+          const { icon, iconBg } = iconMap[titleKey] || {
+            icon: <WarningAmberIcon className="w-7 h-7 text-white" />, iconBg: "bg-gray-500"
+          };
+
+          return (
+            <SummaryCard
+              key={s.title}
+              icon={icon}
+              title={s.title}
+              value={s.value}
+              description={s.description}
+              iconBg={iconBg}
+              className="w-full"
+            />
+          );
+        })}
       </div>
 
       {/* --- Agent Ticket per Shift Chart (Area) --- */}
-      <Card className="mb-8 bg-white dark:bg-zinc-900">
+      <Card className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg p-6">
         <CardHeader>
-          <CardTitle className="text-lg font-bold">Agent Ticket per Shift (Area)</CardTitle>
+          <CardTitle>Agent Tickets per Shift</CardTitle>
         </CardHeader>
         <CardContent>
           <ResponsiveContainer width="100%" height={360}>
@@ -287,17 +301,16 @@ const TicketAnalytics = ({ data: propsData }: TicketAnalyticsProps) => {
               <Area type="monotone" dataKey="Malam" stroke="#ef4444" fill="url(#colorMalam)" name="Malam (01:00-09:00)" strokeWidth={3} />
             </AreaChart>
           </ResponsiveContainer>
-          <div className="text-xs text-gray-500 mt-2">* Area chart ini menampilkan jumlah tiket per shift (semua agent) di setiap bulan.</div>
         </CardContent>
       </Card>
 
       {/* Charts Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 mb-8">
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
         {/* Main Charts */}
         <div className="lg:col-span-3 grid grid-cols-1 gap-6">
-          <Card className="rounded-2xl shadow-lg border border-gray-100 dark:border-zinc-700 bg-white/90 dark:bg-zinc-900/80 p-8 flex flex-col justify-between">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-2xl font-bold text-blue-800 dark:text-blue-200">Tickets per Month</CardTitle>
+          <Card className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg p-6">
+            <CardHeader>
+              <CardTitle>Tickets per Month</CardTitle>
             </CardHeader>
             <CardContent className="pt-2 h-[320px]">
               {monthlyStatsData && monthlyStatsData.labels && monthlyStatsData.labels.length > 0 ? (
@@ -331,9 +344,9 @@ const TicketAnalytics = ({ data: propsData }: TicketAnalyticsProps) => {
         
         {/* Doughnut Chart */}
         <div className="lg:col-span-2 grid grid-cols-1 gap-6">
-          <Card className="rounded-2xl shadow-lg border border-gray-100 dark:border-zinc-700 bg-white/90 dark:bg-zinc-900/80 p-8 flex flex-col justify-between">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-lg sm:text-xl md:text-2xl font-bold text-blue-800 dark:text-blue-200">Complaint Categories</CardTitle>
+          <Card className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg p-6">
+            <CardHeader>
+              <CardTitle>Complaint Categories</CardTitle>
             </CardHeader>
             <CardContent className="pt-2 h-[320px] flex flex-col items-center justify-center">
               {complaintsData && complaintsData.labels && complaintsData.labels.length > 0 ? (
@@ -431,31 +444,31 @@ const TicketAnalytics = ({ data: propsData }: TicketAnalyticsProps) => {
       {/* Full-width Hotspot Table */}
       {topComplaintsTable && topComplaintsTable.length > 0 && (
         <div className="mb-6">
-          <Card className="rounded-2xl shadow-lg border border-gray-100 dark:border-zinc-700 bg-white/90 dark:bg-zinc-900/80 p-8">
+          <Card className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg p-6">
             <CardHeader className="pb-4">
-              <CardTitle className="text-2xl font-bold text-blue-800 dark:text-blue-200">Category Hotspot Analysis</CardTitle>
+              <CardTitle>Category Hotspot Analysis</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="overflow-x-auto">
-                <table className="w-full text-sm text-left border-separate border-spacing-0">
-                  <thead className="text-xs text-gray-500 dark:text-gray-400 sticky top-0 z-10 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-sm">
+                <table className="w-full text-sm text-left">
+                  <thead className="text-xs text-gray-500 dark:text-gray-400 uppercase">
                     <tr>
-                      <th className="px-4 py-3 font-semibold border-b-2 border-gray-200 dark:border-zinc-700 w-1/12 text-center">Rank</th>
-                      <th className="px-4 py-3 font-semibold border-b-2 border-gray-200 dark:border-zinc-700">Category</th>
-                      <th className="px-4 py-3 font-semibold border-b-2 border-gray-200 dark:border-zinc-700 text-center">Tickets</th>
-                      <th className="px-4 py-3 font-semibold border-b-2 border-gray-200 dark:border-zinc-700 text-center">Avg Duration</th>
-                      <th className="px-4 py-3 font-semibold border-b-2 border-gray-200 dark:border-zinc-700">Impact Score</th>
-                      <th className="px-4 py-3 font-semibold border-b-2 border-gray-200 dark:border-zinc-700">Top Sub-Category</th>
+                      <th className="px-4 py-3 font-semibold text-center">Rank</th>
+                      <th className="px-4 py-3 font-semibold">Category</th>
+                      <th className="px-4 py-3 font-semibold text-center">Tickets</th>
+                      <th className="px-4 py-3 font-semibold text-center">Avg Duration</th>
+                      <th className="px-4 py-3 font-semibold">Impact Score</th>
+                      <th className="px-4 py-3 font-semibold">Top Sub-Category</th>
                     </tr>
                   </thead>
                   <tbody>
                     {topComplaintsTable.map((item, index) => (
-                      <tr key={index} className="hover:bg-gray-50 dark:hover:bg-zinc-800/50">
-                        <td className="px-4 py-3 font-bold text-lg text-gray-700 dark:text-gray-200 border-b border-gray-100 dark:border-zinc-800 text-center">#{index + 1}</td>
-                        <td className="px-4 py-3 font-medium text-gray-800 dark:text-gray-100 border-b border-gray-100 dark:border-zinc-800">{item.category}</td>
-                        <td className="px-4 py-3 border-b border-gray-100 dark:border-zinc-800 text-center"><span className="px-2 py-1 rounded text-xs font-semibold bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-200">{item.count}</span></td>
-                        <td className="px-4 py-3 font-mono text-gray-600 dark:text-gray-300 border-b border-gray-100 dark:border-zinc-800 text-center">{item.avgDurationFormatted}</td>
-                        <td className="px-4 py-3 font-mono text-gray-800 dark:text-gray-200 border-b border-gray-100 dark:border-zinc-800">
+                      <tr key={index} className="border-b border-gray-200 dark:border-zinc-800">
+                        <td className="px-4 py-3 font-bold text-lg text-center">#{index + 1}</td>
+                        <td className="px-4 py-3 font-medium">{item.category}</td>
+                        <td className="px-4 py-3 text-center"><span className="px-2 py-1 rounded text-xs font-semibold bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-200">{item.count}</span></td>
+                        <td className="px-4 py-3 font-mono text-center">{item.avgDurationFormatted}</td>
+                        <td className="px-4 py-3 font-mono">
                           <div className="flex items-center gap-2">
                             <span className="font-bold">{item.impactScore.toFixed(2)}</span>
                             <div className="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
@@ -463,7 +476,7 @@ const TicketAnalytics = ({ data: propsData }: TicketAnalyticsProps) => {
                             </div>
                           </div>
                         </td>
-                         <td className="px-4 py-3 font-medium text-gray-700 dark:text-gray-300 border-b border-gray-100 dark:border-zinc-800">{item.topSubCategory}</td>
+                         <td className="px-4 py-3 font-medium">{item.topSubCategory}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -478,56 +491,39 @@ const TicketAnalytics = ({ data: propsData }: TicketAnalyticsProps) => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Classification Analysis Section */}
         <div className="lg:col-span-1">
-            <Card className="rounded-2xl shadow-lg border border-gray-100 dark:border-zinc-700 bg-white/90 dark:bg-zinc-900/80 p-8">
-                 <CardHeader className="pb-4">
-              <CardTitle className="text-lg sm:text-xl md:text-2xl font-bold text-blue-800 dark:text-blue-200">Classification Analytics</CardTitle>
+            <Card className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg p-6">
+                 <CardHeader>
+              <CardTitle>Classification Analytics</CardTitle>
             </CardHeader>
-            <CardContent className="pt-2 -mx-6 px-0">
+            <CardContent>
             <Accordion type="single" collapsible className="w-full">
               {Object.entries(classificationData)
                 .sort(([, a], [, b]) => (a as any).count - (b as any).count)
                 .map(([classification, details], index) => {
                   const d = details as any;
                   return (
-                    <AccordionItem value={`item-${index}`} key={index} className="border-b border-gray-100 dark:border-zinc-800 px-6">
-                      <AccordionTrigger className="py-4 hover:no-underline text-left">
+                    <AccordionItem value={`item-${index}`} key={index}>
+                      <AccordionTrigger>
                         <div className="flex items-center justify-between w-full">
                           <div className="flex items-center gap-4">
-                            <span className="font-bold text-gray-500 dark:text-gray-400 text-lg w-8">
-                              #{index + 1}
-                            </span>
-                             <span className="font-bold text-gray-800 dark:text-gray-100 text-lg">
+                             <span className="font-bold text-gray-800 dark:text-gray-100">
                               {classification}
                             </span>
                           </div>
                           <div className="flex items-center gap-2">
-                            <span className="text-2xl font-extrabold text-gray-900 dark:text-zinc-200">{d.count}</span>
-                            <span className="text-xs text-gray-400 dark:text-gray-500 mt-1">Total</span>
+                            <span className="font-extrabold text-gray-900 dark:text-zinc-200">{d.count}</span>
+                            <span className="text-xs text-gray-400 dark:text-gray-500">Total</span>
                           </div>
                         </div>
                       </AccordionTrigger>
-                      <AccordionContent className="pt-4 pb-4">
-                        <div className="flex flex-row flex-wrap gap-3 pl-12">
+                      <AccordionContent>
+                        <div className="flex flex-row flex-wrap gap-2 pt-2">
                           {d.trendline?.labels.map((label, i) => {
                             const count = d.trendline.data[i] as number;
-                            const prevCount = i > 0 ? d.trendline.data[i-1] as number : 0;
-                            let percentChange: number | null = null;
-                            if(i > 0 && prevCount > 0) {
-                              percentChange = ((count - prevCount) / prevCount) * 100;
-                            }
-
                             return (
-                              <div key={label} className="flex flex-col items-center justify-center p-3 rounded-lg bg-gray-50 dark:bg-zinc-800/70 border border-gray-200 dark:border-zinc-700 w-28 text-center">
+                              <div key={label} className="flex flex-col items-center p-2 rounded-md bg-gray-50 dark:bg-zinc-800/70">
                                 <span className="text-xs font-semibold text-gray-500 dark:text-gray-400">{label}</span>
-                                <span className="text-xl font-bold text-gray-900 dark:text-gray-100 my-1">{count}</span>
-                                {percentChange !== null ? (
-                                  <span className={`flex items-center gap-1 text-xs font-semibold ${percentChange >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-                                    {percentChange >= 0 ? <ArrowUpwardIcon className="w-3 h-3"/> : <ArrowDownwardIcon className="w-3 h-3"/>}
-                                    {Math.abs(percentChange).toFixed(1)}%
-                                  </span>
-                                ) : (
-                                  <span className="text-xs text-gray-400">-</span>
-                                )}
+                                <span className="text-lg font-bold text-gray-900 dark:text-gray-100">{count}</span>
                               </div>
                             )
                           })}
@@ -543,9 +539,9 @@ const TicketAnalytics = ({ data: propsData }: TicketAnalyticsProps) => {
         
         {/* Keyword Analysis Section */}
         <div className="lg:col-span-1">
-          <Card className="rounded-2xl shadow-lg border border-gray-100 dark:border-zinc-700 bg-white/90 dark:bg-zinc-900/80 p-8">
-            <CardHeader className="pb-4">
-              <CardTitle className="text-lg sm:text-xl md:text-2xl font-bold text-blue-800 dark:text-blue-200">Keyword Analytics</CardTitle>
+          <Card className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg p-6">
+            <CardHeader>
+              <CardTitle>Keyword Analytics</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="flex flex-wrap gap-3 items-end justify-center">
@@ -560,7 +556,7 @@ const TicketAnalytics = ({ data: propsData }: TicketAnalyticsProps) => {
                   return (
                     <span 
                       key={index} 
-                      className="font-bold text-gray-700 dark:text-gray-300 transition-all duration-300 p-1"
+                      className="font-bold text-gray-700 dark:text-gray-300 transition-all"
                       style={{ fontSize: `${fontSize}rem`, opacity: opacity, lineHeight: '1.2' }}
                     >
                       {keyword}

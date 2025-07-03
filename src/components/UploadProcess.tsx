@@ -208,35 +208,31 @@ const UploadProcess = ({ onUploadComplete }: UploadProcessProps) => {
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8 mb-8">
             <SummaryCard
               icon={<CloudUploadIcon sx={{ fontSize: 28, color: '#fff', filter: 'drop-shadow(0 2px 8px rgba(0,0,0,0.10))' }} />}
-              label="Total Uploaded"
+              title="Total Uploaded"
               value={uploadSummary.totalRows}
               description="Total rows in file"
-              bg="bg-white/60 backdrop-blur-md border border-white/30"
-              iconBg="bg-blue-600/90"
+              iconBg="bg-blue-700"
             />
             <SummaryCard
               icon={<CheckCircleIcon sx={{ fontSize: 28, color: '#fff', filter: 'drop-shadow(0 2px 8px rgba(0,0,0,0.10))' }} />}
-              label="Success"
+              title="Success"
               value={uploadSummary.successCount}
               description="Valid tickets uploaded"
-              bg="bg-white/60 backdrop-blur-md border border-white/30"
-              iconBg="bg-green-600/90"
+              iconBg="bg-green-600"
             />
             <SummaryCard
               icon={<CloseIcon sx={{ fontSize: 28, color: '#fff', filter: 'drop-shadow(0 2px 8px rgba(0,0,0,0.10))' }} />}
-              label="Failed"
+              title="Failed"
               value={uploadSummary.errorCount}
               description="Failed rows"
-              bg="bg-white/60 backdrop-blur-md border border-white/30"
-              iconBg="bg-red-600/90"
+              iconBg="bg-red-600"
             />
             <SummaryCard
               icon={<TableChartIcon sx={{ fontSize: 28, color: '#fff', filter: 'drop-shadow(0 2px 8px rgba(0,0,0,0.10))' }} />}
-              label="Tickets in GridView"
+              title="Tickets in GridView"
               value={ticketsInDb ?? '-'}
               description="Tickets currently in database (GridView)"
-              bg="bg-white/60 backdrop-blur-md border border-white/30"
-              iconBg="bg-purple-600/90"
+              iconBg="bg-purple-700"
             />
           </div>
         ) : (

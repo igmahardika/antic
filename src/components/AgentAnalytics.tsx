@@ -271,50 +271,29 @@ const AgentAnalytics = () => {
           allYearsInData={allYearsInData}
         />
       </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6 mb-6">
-        <SummaryCard
-          icon={<HowToRegIcon sx={{ fontSize: 28, color: '#fff', filter: 'drop-shadow(0 2px 8px rgba(0,0,0,0.10))' }} />}
-          label="Total Agents"
-          value={summary.totalAgents}
-          description="Jumlah agent terdaftar"
-          bg="bg-white/60 backdrop-blur-md border border-white/30"
-          iconBg="bg-blue-600/90"
-        />
-        <SummaryCard
-          icon={<FlashOnIcon sx={{ fontSize: 28, color: '#fff', filter: 'drop-shadow(0 2px 8px rgba(0,0,0,0.10))' }} />}
-          label="Most Efficient Agent"
-          value={summary.mostEfficientAgentName}
-          description="Agent dengan waktu penanganan tercepat"
-          bg="bg-white/60 backdrop-blur-md border border-white/30"
-          iconBg="bg-green-600/90"
-        />
-        <SummaryCard
-          icon={<MilitaryTechIcon sx={{ fontSize: 28, color: '#fff', filter: 'drop-shadow(0 2px 8px rgba(0,0,0,0.10))' }} />}
-          label="Top Performer"
-          value={summary.topPerformer}
-          description="Agent dengan rank terbaik"
-          bg="bg-white/60 backdrop-blur-md border border-white/30"
-          iconBg="bg-yellow-600/90"
-        />
-        <SummaryCard
-          icon={<EmojiEventsIcon sx={{ fontSize: 28, color: '#fff', filter: 'drop-shadow(0 2px 8px rgba(0,0,0,0.10))' }} />}
-          label="Most Active Agent"
-          value={summary.busiestAgentName}
-          description="Agent dengan volume tiket terbanyak"
-          bg="bg-white/60 backdrop-blur-md border border-white/30"
-          iconBg="bg-purple-600/90"
-        />
-        <SummaryCard
-          icon={<GroupIcon sx={{ fontSize: 28, color: '#fff', filter: 'drop-shadow(0 2px 8px rgba(0,0,0,0.10))' }} />}
-          label="Active Agents"
-          value={summary.activeAgents}
-          description="Agent yang aktif bulan ini"
-          bg="bg-white/60 backdrop-blur-md border border-white/30"
-          iconBg="bg-pink-600/90"
-        />
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 mb-6">
+        {summaryCards.map(s => {
+          let iconBg;
+          if (s.title === 'Total Active Agents') iconBg = "bg-blue-700";
+          else if (s.title === 'Most Active Agent') iconBg = "bg-purple-500";
+          else if (s.title === 'Most Efficient Agent') iconBg = "bg-green-600";
+          else if (s.title === 'Highest Resolution Rate') iconBg = "bg-yellow-400";
+          else iconBg = "bg-gray-500";
+
+          return (
+            <SummaryCard
+              key={s.title}
+              icon={<s.icon className="w-7 h-7 text-white" />}
+              title={s.title}
+              value={s.value}
+              description={s.description}
+              iconBg={iconBg}
+            />
+          );
+        })}
       </div>
       {/* Per-Agent Cards with Trendline */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {sortedAgentList.map((agent, index) => {
           // Find metric for this agent
           const metric = dataSource.find(m => m.agent === agent.agentName);
@@ -350,67 +329,60 @@ const AgentAnalytics = () => {
           ];
 
           return (
-            <div key={index} className="bg-white/95 dark:bg-zinc-900/95 rounded-2xl shadow-lg p-8 border border-gray-100 dark:border-zinc-800 flex flex-col gap-8 transition-all duration-300">
+            <Card key={index} className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg p-6 flex flex-col gap-6">
               {/* Agent Header */}
-              <div className="flex items-center justify-between gap-4">
+              <CardHeader className="flex flex-row items-center justify-between gap-4 p-0">
                 <div className="flex items-center gap-4 min-w-0">
-                  <h3 className="text-lg md:text-xl lg:text-2xl font-extrabold text-blue-600 dark:text-blue-400 truncate max-w-[20ch]">{agent.agentName}</h3>
-                  <span className="rounded-md px-3 py-1 text-xs sm:text-sm md:text-base font-bold bg-blue-100 text-blue-600 dark:bg-blue-900/50 dark:text-blue-300 truncate max-w-[12ch]">{agent.ticketCount} Tickets</span>
+                  <CardTitle className="text-xl font-extrabold text-blue-600 dark:text-blue-400 truncate">{agent.agentName}</CardTitle>
+                  <span className="rounded-md px-3 py-1 text-sm font-bold bg-blue-100 text-blue-600 dark:bg-blue-900/50 dark:text-blue-300">{agent.ticketCount} Tickets</span>
                 </div>
-                {/* Rank Badge (selalu tampil) */}
+                {/* Rank Badge */}
                 <span
                   className={`w-10 h-10 flex items-center justify-center rounded-full font-bold text-xl shadow-inner ${rankClass}`}
                   title={rankTitle}
                 >
                   {rankBadge}
                 </span>
-              </div>
-              {/* Duration Metrics */}
-              <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-6 mb-2">
-                {durationMetrics.map(m => (
-                  <div key={m.label} className="bg-white dark:bg-zinc-900 rounded-xl shadow-md p-4 flex flex-col items-center text-center border border-gray-100 dark:border-zinc-800">
-                    <AccessTimeIcon className="w-5 h-5 text-gray-400 mb-2"/>
-                    <p className="text-xs md:text-sm text-gray-500 font-semibold break-words">{m.label}</p>
-                    <p className="text-base md:text-lg lg:text-xl font-bold text-gray-800 dark:text-gray-100 font-mono truncate max-w-[12ch]">{m.value}</p>
-                    <p className="text-[10px] sm:text-xs text-gray-400 mt-1 break-words whitespace-normal">{m.description}</p>
-                  </div>
-                ))}
-              </div>
-              {/* KPI Metrics (selalu tampil) */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-6 mb-2">
-                {kpiMetrics.map(kpi => (
-                  <div key={kpi.label} className="bg-white dark:bg-zinc-900 rounded-xl shadow-md p-4 flex flex-col items-center text-center border border-gray-100 dark:border-zinc-800 min-w-[140px]">
-                    <kpi.icon className={`w-5 h-5 mb-2 ${kpi.isRed ? 'text-red-500' : 'text-blue-500'}`} />
-                    <p className={`text-base md:text-lg lg:text-xl font-bold font-mono truncate max-w-[10ch] ${kpi.isRed ? 'text-red-500' : 'text-gray-800 dark:text-gray-100'}`}>{kpi.value}</p>
-                    <p className="text-xs text-gray-500 font-semibold mt-1 break-words">{kpi.label}</p>
-                    <p className="text-[10px] sm:text-xs text-gray-400 mt-0.5 break-words whitespace-normal">
-                      {kpi.label === 'FRT' && 'Rata-rata waktu respons pertama (menit)'}
-                      {kpi.label === 'ART' && 'Rata-rata waktu tiket selesai (menit)'}
-                      {kpi.label === 'FCR' && 'Persentase tiket selesai di penanganan pertama'}
-                      {kpi.label === 'SLA' && 'Persentase tiket selesai ≤ 24 jam'}
-                      {kpi.label === 'Volume' && 'Jumlah tiket yang ditangani'}
-                      {kpi.label === 'Backlog' && 'Tiket yang belum selesai'}
-                    </p>
-                  </div>
-                ))}
-              </div>
-              {/* Score Progress Bar */}
-              {metric && metric.score !== undefined ? (
-                <div className="w-full bg-gray-200 dark:bg-zinc-700 rounded-full h-2.5">
-                  <div className="bg-gradient-to-r from-green-400 to-blue-500 h-2.5 rounded-full" style={{ width: `${safeNum(metric.score) !== null ? metric.score : 0}%` }}></div>
+              </CardHeader>
+
+              <CardContent className="p-0 space-y-4">
+                {/* Duration Metrics */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  {durationMetrics.map(m => (
+                    <div key={m.label} className="bg-gray-50 dark:bg-zinc-800/50 rounded-lg p-3 text-center">
+                      <p className="text-xs text-gray-500 font-semibold">{m.label}</p>
+                      <p className="text-lg font-bold font-mono">{m.value}</p>
+                    </div>
+                  ))}
                 </div>
-              ) : (
-                <div className="w-full bg-gray-100 dark:bg-zinc-800 rounded-full h-2.5" />
-              )}
-            </div>
+                {/* KPI Metrics */}
+                <div className="grid grid-cols-3 xl:grid-cols-6 gap-4">
+                  {kpiMetrics.map(kpi => (
+                    <div key={kpi.label} className="bg-gray-50 dark:bg-zinc-800/50 rounded-lg p-3 text-center">
+                      <kpi.icon className={`w-5 h-5 mb-1 mx-auto ${kpi.isRed ? 'text-red-500' : 'text-blue-500'}`} />
+                      <p className={`text-lg font-bold font-mono ${kpi.isRed ? 'text-red-500' : ''}`}>{kpi.value}</p>
+                      <p className="text-xs text-gray-500 font-semibold">{kpi.label}</p>
+                    </div>
+                  ))}
+                </div>
+                {/* Score Progress Bar */}
+                {metric && metric.score !== undefined ? (
+                  <div className="w-full bg-gray-200 dark:bg-zinc-700 rounded-full h-2.5">
+                    <div className="bg-gradient-to-r from-green-400 to-blue-500 h-2.5 rounded-full" style={{ width: `${safeNum(metric.score) !== null ? metric.score : 0}%` }}></div>
+                  </div>
+                ) : (
+                  <div className="w-full bg-gray-100 dark:bg-zinc-800 rounded-full h-2.5" />
+                )}
+              </CardContent>
+            </Card>
           );
         })}
       </div>
-      {/* Trendline Chart for All Agents (pindah ke bawah, solid) */}
+      {/* Trendline Chart for All Agents */}
       {debouncedTrendData.length > 0 && (
-        <Card className="mb-8 mt-16 bg-white dark:bg-zinc-900">
+        <Card className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg p-6 mt-6">
           <CardHeader>
-            <CardTitle className="text-lg font-bold">Agent Ticket Trends per Month</CardTitle>
+            <CardTitle>Agent Ticket Trends per Month</CardTitle>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={320}>
