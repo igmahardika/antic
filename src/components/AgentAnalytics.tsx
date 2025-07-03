@@ -21,6 +21,8 @@ import type { AgentMetric } from '@/utils/agentKpi';
 import * as XLSX from 'xlsx';
 import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import Tooltip from '@/components/ui/tooltip';
 dayjs.extend(duration);
 
 // Define the structure of the data this component will receive
@@ -305,11 +307,25 @@ const AgentAnalytics = () => {
             `Needs Improvement (Score: ${safeFixed(metric.score ?? 0)})`
           ) : 'No data';
           const rankClass = metric && metric.rank ? (
-            metric.rank === 'A' ? 'bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-300 border-2 border-green-200 dark:border-green-700' :
-            metric.rank === 'B' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300 border-2 border-blue-200 dark:border-blue-700' :
-            metric.rank === 'C' ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/50 dark:text-yellow-300 border-2 border-yellow-200 dark:border-yellow-700' :
-            'bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-300 border-2 border-red-200 dark:border-red-700'
+            metric.rank === 'A' ? 'bg-green-100 text-green-700 border-2 border-green-200' :
+            metric.rank === 'B' ? 'bg-blue-100 text-blue-700 border-2 border-blue-200' :
+            metric.rank === 'C' ? 'bg-yellow-100 text-yellow-700 border-2 border-yellow-200' :
+            'bg-red-100 text-red-700 border-2 border-red-200'
           ) : 'bg-gray-200 text-gray-500 border-2 border-gray-300';
+
+          // --- Badge & Insight Logic ---
+          const isTopAgent = index === 0;
+          const isConsistent = metric && metric.sla >= 95 && metric.fcr >= 95;
+          const isNeedsAttention = metric && (metric.backlog > 5 || metric.sla < 80);
+          let agentInsight = '-';
+          if (metric) {
+            if (metric.avgHandling && metric.avgHandling < 10) agentInsight = 'Sangat cepat menangani tiket.';
+            else if (metric.backlog > 5) agentInsight = 'Perlu perhatian pada backlog.';
+            else if (metric.fcr >= 95) agentInsight = 'Penyelesaian langsung sangat baik.';
+            else if (metric.sla >= 95) agentInsight = 'SLA sangat konsisten.';
+          }
+          const rankLabel = rankBadge;
+          const avatarLetter = agent.agentName ? agent.agentName[0] : '?';
 
           const durationMetrics = [
             { label: 'Total', value: agent.totalDurationFormatted || '-', description: 'Total Handling Duration' },
@@ -320,60 +336,61 @@ const AgentAnalytics = () => {
 
           // KPI metrics, always show
           const kpiMetrics = [
-            { label: 'FRT', value: metric?.frt ?? 'N/A', icon: AccessTimeIcon },
-            { label: 'ART', value: metric?.art ?? 'N/A', icon: AccessTimeIcon },
-            { label: 'FCR', value: metric?.fcr !== undefined && safeNum(metric.fcr) !== null ? `${metric.fcr.toFixed(1)}%` : 'N/A', icon: MilitaryTechIcon },
-            { label: 'SLA', value: metric?.sla !== undefined && safeNum(metric.sla) !== null ? `${metric.sla.toFixed(1)}%` : 'N/A', icon: MilitaryTechIcon },
-            { label: 'Volume', value: metric?.vol ?? 'N/A', icon: BarChartIcon },
-            { label: 'Backlog', value: metric?.backlog ?? 'N/A', icon: MoveToInboxIcon, isRed: true },
+            { label: 'FRT', value: metric?.frt ?? 'N/A', icon: AccessTimeIcon, description: 'First Response Time (menit)' },
+            { label: 'ART', value: metric?.art ?? 'N/A', icon: AccessTimeIcon, description: 'Average Response Time (menit)' },
+            { label: 'FCR', value: metric?.fcr !== undefined && safeNum(metric.fcr) !== null ? `${metric.fcr.toFixed(1)}%` : 'N/A', icon: MilitaryTechIcon, description: 'First Contact Resolution (%)' },
+            { label: 'SLA', value: metric?.sla !== undefined && safeNum(metric.sla) !== null ? `${metric.sla.toFixed(1)}%` : 'N/A', icon: MilitaryTechIcon, description: 'Service Level Agreement (%)' },
+            { label: 'Volume', value: metric?.vol ?? 'N/A', icon: BarChartIcon, description: 'Jumlah tiket ditangani' },
+            { label: 'Backlog', value: metric?.backlog ?? 'N/A', icon: MoveToInboxIcon, description: 'Tiket belum selesai', isRed: true },
           ];
 
-          return (
-            <Card key={index} className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg p-6 flex flex-col gap-6">
-              {/* Agent Header */}
-              <CardHeader className="flex flex-row items-center justify-between gap-4 p-0">
-                <div className="flex items-center gap-4 min-w-0">
-                  <CardTitle className="text-xl font-extrabold text-blue-600 dark:text-blue-400 truncate">{agent.agentName}</CardTitle>
-                  <span className="rounded-md px-3 py-1 text-sm font-bold bg-blue-100 text-blue-600 dark:bg-blue-900/50 dark:text-blue-300">{agent.ticketCount} Tickets</span>
-                </div>
-                {/* Rank Badge */}
-                <span
-                  className={`w-10 h-10 flex items-center justify-center rounded-full font-bold text-xl shadow-inner ${rankClass}`}
-                  title={rankTitle}
-                >
-                  {rankBadge}
-                </span>
-              </CardHeader>
+          const score = safeNum(metric?.score) !== null ? metric.score : 0;
 
-              <CardContent className="p-0 space-y-4">
-                {/* Duration Metrics */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  {durationMetrics.map(m => (
-                    <div key={m.label} className="bg-gray-50 dark:bg-zinc-800/50 rounded-lg p-3 text-center">
-                      <p className="text-xs text-gray-500 font-semibold">{m.label}</p>
-                      <p className="text-lg font-bold font-mono">{m.value}</p>
-                    </div>
-                  ))}
-                </div>
-                {/* KPI Metrics */}
-                <div className="grid grid-cols-3 xl:grid-cols-6 gap-4">
-                  {kpiMetrics.map(kpi => (
-                    <div key={kpi.label} className="bg-gray-50 dark:bg-zinc-800/50 rounded-lg p-3 text-center">
-                      <kpi.icon className={`w-5 h-5 mb-1 mx-auto ${kpi.isRed ? 'text-red-500' : 'text-blue-500'}`} />
-                      <p className={`text-lg font-bold font-mono ${kpi.isRed ? 'text-red-500' : ''}`}>{kpi.value}</p>
-                      <p className="text-xs text-gray-500 font-semibold">{kpi.label}</p>
-                    </div>
-                  ))}
-                </div>
-                {/* Score Progress Bar */}
-                {metric && metric.score !== undefined ? (
-                  <div className="w-full bg-gray-200 dark:bg-zinc-700 rounded-full h-2.5">
-                    <div className="bg-gradient-to-r from-green-400 to-blue-500 h-2.5 rounded-full" style={{ width: `${safeNum(metric.score) !== null ? metric.score : 0}%` }}></div>
+          return (
+            <Card key={index} className="bg-white rounded-2xl shadow-lg p-6 flex flex-col gap-4">
+              {/* Agent Header */}
+              <div className="flex items-center gap-4">
+                <Avatar>
+                  <AvatarFallback>{avatarLetter}</AvatarFallback>
+                </Avatar>
+                <div className="flex-1 min-w-0">
+                  <div className="font-bold text-lg truncate">{agent.agentName}</div>
+                  <div className="flex gap-2 mt-1">
+                    {isTopAgent && <span className="bg-green-100 text-green-700 rounded px-2 py-0.5 text-xs font-bold">Top Agent</span>}
+                    {isConsistent && <span className="bg-blue-100 text-blue-700 rounded px-2 py-0.5 text-xs font-bold">Consistent</span>}
+                    {isNeedsAttention && <span className="bg-red-100 text-red-700 rounded px-2 py-0.5 text-xs font-bold">Needs Attention</span>}
                   </div>
-                ) : (
-                  <div className="w-full bg-gray-100 dark:bg-zinc-800 rounded-full h-2.5" />
-                )}
-              </CardContent>
+                </div>
+                <span className={`rounded-full px-3 py-1 text-sm font-bold ${rankClass}`} title={rankTitle}>{rankLabel}</span>
+              </div>
+              <div className="flex gap-6 mt-2 text-sm">
+                <div>
+                  <div className="font-mono text-xl font-bold">{agent.ticketCount}</div>
+                  <div className="text-gray-500">Tiket</div>
+                </div>
+                <div>
+                  <div className="font-mono text-xl font-bold">{agent.closedCount} ({agent.closedPercent}%)</div>
+                  <div className="text-gray-500">Closed</div>
+                </div>
+                <div>
+                  <div className="font-mono text-xl font-bold">{agent.avgDurationFormatted}</div>
+                  <div className="text-gray-500">Avg. Handling</div>
+                </div>
+              </div>
+              <div className="grid grid-cols-3 gap-4 mt-2">
+                {kpiMetrics.map(kpi => (
+                  <div key={kpi.label} className="text-center">
+                    <Tooltip content={kpi.description}>
+                      <span className={`font-mono font-bold ${kpi.isRed ? 'text-red-500' : ''}`}>{kpi.value}</span>
+                    </Tooltip>
+                    <div className="text-xs text-gray-500">{kpi.label}</div>
+                  </div>
+                ))}
+              </div>
+              <div className="w-full bg-gray-200 rounded-full h-2.5 mt-2">
+                <div className="bg-gradient-to-r from-green-400 to-blue-500 h-2.5 rounded-full" style={{ width: `${score}%` }} />
+              </div>
+              <div className="mt-2 text-xs text-gray-600 italic">Insight: {agentInsight}</div>
             </Card>
           );
         })}
