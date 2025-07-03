@@ -595,7 +595,7 @@ const KanbanBoard = (props: Partial<KanbanBoardProps>) => {
       <RadixDialog.Root open={!!openDialogId} onOpenChange={open => setOpenDialogId(open ? openDialogId : null)}>
         <RadixDialog.Portal>
           <RadixDialog.Overlay className="fixed inset-0 bg-black/50 z-50" />
-          <RadixDialog.Content className="fixed left-1/2 top-1/2 z-50 w-[1200px] h-[700px] max-w-7xl -translate-x-1/2 -translate-y-1/2 bg-white rounded-xl shadow-2xl p-0 focus:outline-none overflow-hidden border border-blue-200">
+          <RadixDialog.Content className="fixed left-1/2 top-1/2 z-50 w-[1500px] h-[700px] max-w-[98vw] -translate-x-1/2 -translate-y-1/2 bg-white rounded-xl shadow-2xl p-0 focus:outline-none overflow-hidden border border-blue-200">
             {selectedCustomer && (
               <>
                 <RadixDialog.Title className="text-3xl font-extrabold p-10 pb-2 text-blue-900 tracking-tight border-b border-blue-100">
@@ -624,7 +624,7 @@ const KanbanBoard = (props: Partial<KanbanBoardProps>) => {
                     </div>
                     <div>
                       <div className="text-xl font-bold text-blue-800 mb-3">Ticket History</div>
-                      <div className="bg-white rounded-xl p-5 shadow border border-blue-100 text-base text-blue-900 min-w-[900px] w-full overflow-x-auto overflow-y-visible">
+                      <div className="bg-white rounded-xl p-5 shadow border border-blue-100 text-base text-blue-900 min-w-[1200px] w-full overflow-x-auto overflow-y-visible">
                         {/* Table: horizontal scroll only, no vertical scroll */}
                         <TicketHistoryTable tickets={selectedCustomer.allTickets} />
                       </div>
