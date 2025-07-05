@@ -275,8 +275,8 @@ const AgentAnalytics = () => {
     const slaScore = normalizePositive(agent.sla, 85) * 0.25;
     const frtScore = normalizeNegative(agent.frtMinutes, 15) * 0.15;
     const artScore = normalizeNegative(agent.artMinutes, 30) * 0.15;
-    const backlogScore = scoreBacklog(agent.backlog) * 0.10;
-    const ticketScore = scoreTicket(agent.ticket, maxTicket) * 0.05;
+    const backlogScore = scoreBacklog(agent.backlog) * 0.05;
+    const ticketScore = scoreTicket(agent.ticket, maxTicket) * 0.10;
     return fcrScore + slaScore + frtScore + artScore + backlogScore + ticketScore;
   }
 

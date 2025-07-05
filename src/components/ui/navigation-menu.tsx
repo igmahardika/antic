@@ -22,6 +22,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Tooltip } from '@mui/material';
 import LogoutIcon from '@mui/icons-material/Logout';
+import ScienceIcon from '@mui/icons-material/Science';
 
 import { cn } from "@/lib/utils"
 
@@ -180,6 +181,7 @@ export function SidebarNav({ isMobileOpen, setIsMobileOpen, onCollapseChange }) 
     { name: 'Ticket Analytics', path: '/ticket-analytics', icon: <BarChartIcon fontSize="small" /> },
     { name: 'Agent Analytics', path: '/agent-analytics', icon: <PersonCheckIcon fontSize="small" /> },
     { name: 'Upload Data', path: '/upload', icon: <CloudUploadIcon fontSize="small" /> },
+    { name: 'Rumus Analytics', path: '/admin-rumus', icon: <ScienceIcon fontSize="small" /> },
     { name: 'Admin Panel', path: '/admin', icon: <AdminPanelSettingsIcon fontSize="small" /> },
   ];
   let allowedMenus = allMenus;
@@ -284,7 +286,13 @@ export function SidebarNav({ isMobileOpen, setIsMobileOpen, onCollapseChange }) 
               <div className="text-xs text-gray-500 dark:text-gray-400 capitalize text-center">{user.role} Role</div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => { localStorage.removeItem('user'); window.location.href = '/login'; }} className="cursor-pointer text-red-500 focus:bg-red-50 focus:text-red-600 dark:focus:bg-red-900/50 dark:focus:text-red-400 font-semibold">
+            <DropdownMenuItem onClick={() => { 
+              localStorage.removeItem('token');
+              localStorage.removeItem('role');
+              localStorage.removeItem('username');
+              localStorage.removeItem('user');
+              window.location.href = '/login';
+            }} className="cursor-pointer text-red-500 focus:bg-red-50 focus:text-red-600 dark:focus:bg-red-900/50 dark:focus:text-red-400 font-semibold">
               <LogoutIcon className="mr-2 h-4 w-4" />
               <span>Logout</span>
             </DropdownMenuItem>
@@ -309,6 +317,9 @@ function SidebarProfile({ autoCollapsed }) {
   const [open, setOpen] = React.useState(false);
 
   const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('role');
+    localStorage.removeItem('username');
     localStorage.removeItem('user');
     navigate('/login');
   };

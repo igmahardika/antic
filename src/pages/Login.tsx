@@ -7,25 +7,33 @@ const Login: React.FC = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleLogin = (username: string, password: string) => {
+  const handleLogin = async (username: string, password: string) => {
     setError('');
     setLoading(true);
-    setTimeout(() => {
-      try {
-        const users = JSON.parse(localStorage.getItem('users') || '[]');
-        const user = users.find((u: any) => u.username === username && u.password === password);
-        if (user) {
-          localStorage.setItem('user', JSON.stringify(user));
-          navigate('/summary-dashboard');
+    try {
+      const res = await fetch('http://localhost:3001/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password }),
+      });
+      const data = await res.json();
+      if (res.ok && data.token) {
+        localStorage.setItem('token', data.token);
+        localStorage.setItem('role', data.role);
+        localStorage.setItem('username', data.username);
+        if (data.role === 'admin') {
+          navigate('/admin-panel');
         } else {
-          setError('Username atau password salah');
+          navigate('/summary-dashboard');
         }
-      } catch (err) {
-        setError('Terjadi kesalahan, coba lagi');
-      } finally {
-        setLoading(false);
+      } else {
+        setError(data.error || 'Username atau password salah');
       }
-    }, 500);
+    } catch (err) {
+      setError('Terjadi kesalahan, coba lagi');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
