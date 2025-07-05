@@ -3,12 +3,11 @@ import { ITicket } from '@/lib/db';
 import { db } from '@/lib/db';
 import { formatDateTimeDDMMYYYY } from '@/lib/utils';
 import { useAnalytics } from './AnalyticsContext';
-import { Ticket, Users, UserCheck } from 'lucide-react';
-import SummaryCard from './ui/SummaryCard';
-import { useLiveQuery } from 'dexie-react-hooks';
 import ConfirmationNumberIcon from '@mui/icons-material/ConfirmationNumber';
 import GroupIcon from '@mui/icons-material/Group';
 import HowToRegIcon from '@mui/icons-material/HowToReg';
+import SummaryCard from './ui/SummaryCard';
+import { useLiveQuery } from 'dexie-react-hooks';
 
 const PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
 
@@ -78,30 +77,30 @@ const GridView = ({ data: propsData }: { data?: ITicket[] }) => {
       <div className="mb-6">
         <h1 className="text-3xl md:text-4xl font-extrabold mb-2 text-gray-900 dark:text-gray-100">Data Grid</h1>
         <p className="text-gray-500 dark:text-gray-400">
-          Lihat, cari, dan kelola seluruh data tiket dalam tampilan grid yang mudah digunakan.
+          View, search, and manage all ticket data in an easy-to-use grid view.
         </p>
       </div>
       {/* Summary Cards - Enhanced UI */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mb-6">
         <SummaryCard
           icon={<ConfirmationNumberIcon sx={{ fontSize: 28, color: '#fff', filter: 'drop-shadow(0 2px 8px rgba(0,0,0,0.10))' }} />}
-          title="Total Tickets"
+          title="TOTAL TICKETS"
           value={totalTicketsInDb ?? '-'}
-          description="Total tiket yang tercatat (tanpa filter)"
+          description="Total recorded tickets (no filter applied)"
           iconBg="bg-blue-700"
         />
         <SummaryCard
           icon={<GroupIcon sx={{ fontSize: 28, color: '#fff', filter: 'drop-shadow(0 2px 8px rgba(0,0,0,0.10))' }} />}
-          title="Unique Customers"
+          title="UNIQUE CUSTOMERS"
           value={allTicketsInDb ? new Set(allTicketsInDb.map(t => t.customerId)).size : 0}
-          description="Jumlah customer unik (tanpa filter)"
+          description="Number of unique customers (no filter applied)"
           iconBg="bg-green-600"
         />
         <SummaryCard
           icon={<HowToRegIcon sx={{ fontSize: 28, color: '#fff', filter: 'drop-shadow(0 2px 8px rgba(0,0,0,0.10))' }} />}
-          title="Unique Agents"
+          title="UNIQUE AGENTS"
           value={allTicketsInDb ? new Set(allTicketsInDb.map(t => t.openBy)).size : 0}
-          description="Jumlah agent unik yang menangani (tanpa filter)"
+          description="Number of unique agents handling tickets (no filter applied)"
           iconBg="bg-purple-700"
         />
       </div>

@@ -9,7 +9,6 @@ import { saveAs } from 'file-saver';
 import { db, ITicket } from '@/lib/db';
 import { formatDurationDHM } from '@/lib/utils';
 import SummaryCard from './ui/SummaryCard';
-import { FileUp, XCircle } from 'lucide-react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import TableChartIcon from '@mui/icons-material/TableChart';
@@ -236,7 +235,7 @@ const UploadProcess = ({ onUploadComplete }: UploadProcessProps) => {
             />
           </div>
         ) : (
-          <Card className="w-full max-w-6xl mx-auto shadow-md border border-gray-200 dark:border-zinc-700 bg-gradient-to-br from-white/70 to-blue-50/70 dark:from-zinc-900/70 dark:to-blue-900/70 p-10 mb-8 backdrop-blur-sm flex items-center justify-center min-h-[180px]">
+          <Card className="w-full max-w-6xl mx-auto shadow-md border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-10 mb-8 backdrop-blur-sm flex items-center justify-center min-h-[180px]">
             <CardHeader>
               <CardTitle className="text-gray-700 dark:text-gray-300 text-lg font-bold">No Data Uploaded</CardTitle>
             </CardHeader>
@@ -314,7 +313,7 @@ const ErrorLogTable = ({ errors }: { errors: IErrorLog[] }) => {
   }, {} as Record<string, IErrorLog[]>);
 
   return (
-    <Card className="w-full max-w-6xl mx-auto shadow-md border border-gray-200 dark:border-zinc-700 bg-gradient-to-br from-white/70 to-blue-50/70 dark:from-zinc-900/70 dark:to-blue-900/70 p-10 mb-8 min-h-[180px] backdrop-blur-sm">
+    <Card className="w-full max-w-6xl mx-auto shadow-md border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-10 mb-8 min-h-[180px] backdrop-blur-sm">
       <CardHeader className="pb-2">
         <CardTitle className="text-xl font-bold text-gray-900 dark:text-gray-100 text-left">Failure Log Details</CardTitle>
         <CardDescription className="text-base text-zinc-500 dark:text-zinc-400 text-left">Grouped by error type.</CardDescription>
@@ -421,10 +420,20 @@ const processAndAnalyzeData = (rawData: any[]): { tickets: ITicket[], errorRows:
         return;
       }
       
-      const openTime = parseExcelDate(openTimeValue);
-      if (!openTime) {
+      const openTimeIso = parseExcelDate(openTimeValue);
+      if (!openTimeIso) {
         errorRows.push({ row: index + 2, reason: `Format Waktu Open tidak valid: "${openTimeValue}"`});
         return;
+      }
+      // Normalisasi ke format tanpa timezone (YYYY-MM-DDTHH:mm:ss)
+      const openTime = openTimeIso.slice(0, 19);
+      // Logging validasi waktu dan shift
+      if (typeof window !== 'undefined') {
+        const d = new Date(openTimeIso);
+        const jam = d.getUTCHours();
+        const menit = d.getUTCMinutes();
+        // Gunakan getShift dari TicketAnalytics jika perlu, atau duplikat logika di sini
+        console.log(`[UPLOAD] Row ${index+2} openTime: ${openTimeValue} | parsed: ${openTime} | jam: ${jam} | menit: ${menit}`);
       }
   
       const closeTime = parseExcelDate(row['Waktu Close Tiket']);

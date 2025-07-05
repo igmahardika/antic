@@ -1,8 +1,7 @@
 import * as React from "react"
 import * as NavigationMenuPrimitive from "@radix-ui/react-navigation-menu"
 import { cva } from "class-variance-authority"
-import { ChevronDown, Home, Table, Users, BarChart2, UserCheck, Upload, Shield, ChevronLeft, ChevronRight, Sun, Moon, User, LogOut } from 'lucide-react'
-import { Link, useLocation, NavLink } from 'react-router-dom'
+import { Link, useLocation, NavLink, useNavigate } from 'react-router-dom'
 import HomeIcon from '@mui/icons-material/Home';
 import TableChartIcon from '@mui/icons-material/TableChart';
 import GroupIcon from '@mui/icons-material/Group';
@@ -17,9 +16,12 @@ import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import Brightness7Icon from '@mui/icons-material/Brightness7';
 import Brightness4Icon from '@mui/icons-material/Brightness4';
 import PersonIcon from '@mui/icons-material/Person';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { ModeToggle } from '../mode-toggle';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Tooltip } from '@mui/material';
+import LogoutIcon from '@mui/icons-material/Logout';
 
 import { cn } from "@/lib/utils"
 
@@ -82,7 +84,7 @@ const NavigationMenuTrigger = React.forwardRef<
     {...props}
   >
       {props.children} {" "}
-    <ChevronDown
+    <ExpandMoreIcon
       className="relative top-[1px] ml-1 h-3 w-3 transition duration-200 group-data-[state=open]:rotate-180"
       aria-hidden="true"
     />
@@ -171,7 +173,7 @@ export function NavigationMenuBar() {
 }
 
 export function SidebarNav({ isMobileOpen, setIsMobileOpen, onCollapseChange }) {
-  const menus = [
+  const allMenus = [
     { name: 'Dashboard', path: '/', icon: <HomeIcon fontSize="small" /> },
     { name: 'Data Grid', path: '/grid-view', icon: <TableChartIcon fontSize="small" /> },
     { name: 'Customer Analytics', path: '/kanban-board', icon: <GroupIcon fontSize="small" /> },
@@ -180,6 +182,14 @@ export function SidebarNav({ isMobileOpen, setIsMobileOpen, onCollapseChange }) 
     { name: 'Upload Data', path: '/upload', icon: <CloudUploadIcon fontSize="small" /> },
     { name: 'Admin Panel', path: '/admin', icon: <AdminPanelSettingsIcon fontSize="small" /> },
   ];
+  let allowedMenus = allMenus;
+  let user = { username: '', role: 'user' };
+  try {
+    user = JSON.parse(localStorage.getItem('user') || '{"role":"user"}');
+    const permissions = JSON.parse(localStorage.getItem('menuPermissions') || '{}');
+    const allowed = permissions[user.role] || [];
+    allowedMenus = allMenus.filter(menu => allowed.includes(menu.name));
+  } catch {}
   // Responsive/collapse logic (hover only)
   const [autoCollapsed, setAutoCollapsed] = React.useState(false);
   const handleMouseEnter = () => {
@@ -227,7 +237,7 @@ export function SidebarNav({ isMobileOpen, setIsMobileOpen, onCollapseChange }) 
         </div>
         {/* Menu */}
         <nav className="flex flex-col gap-1 px-2">
-          {menus.map((menu, idx) => (
+          {allowedMenus.map((menu, idx) => (
             <NavLink
               key={menu.path}
               to={menu.path}
@@ -255,10 +265,38 @@ export function SidebarNav({ isMobileOpen, setIsMobileOpen, onCollapseChange }) 
           ))}
         </nav>
       </div>
-      {/* Bottom section: ModeToggle & Avatar, always stick to bottom */}
-      <div className="absolute bottom-6 left-0 w-full flex flex-col items-center gap-3">
-        <ModeToggle />
-        <SidebarProfile autoCollapsed={autoCollapsed} />
+      {/* Bottom section: Avatar/Profile & ModeToggle, modern layout */}
+      <div className="absolute bottom-8 left-0 w-full flex flex-col items-center gap-6">
+        {/* Avatar dengan dropdown profile */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button className="flex items-center justify-center focus:outline-none group">
+              <Avatar className="h-12 w-12">
+                <AvatarFallback className="bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300 text-xl font-bold">
+                  {user.username ? user.username.charAt(0).toUpperCase() : 'U'}
+                </AvatarFallback>
+              </Avatar>
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent className="w-56" align="center">
+            <DropdownMenuLabel>
+              <div className="font-semibold text-gray-900 dark:text-white text-base text-center">{user.username || 'User'}</div>
+              <div className="text-xs text-gray-500 dark:text-gray-400 capitalize text-center">{user.role} Role</div>
+            </DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={() => { localStorage.removeItem('user'); window.location.href = '/login'; }} className="cursor-pointer text-red-500 focus:bg-red-50 focus:text-red-600 dark:focus:bg-red-900/50 dark:focus:text-red-400 font-semibold">
+              <LogoutIcon className="mr-2 h-4 w-4" />
+              <span>Logout</span>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+        {/* Mode Toggle dengan tooltip */}
+        <div className="relative group">
+          <ModeToggle />
+          <span className="absolute left-1/2 -translate-x-1/2 mt-2 px-2 py-1 rounded bg-zinc-900 text-white text-xs opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10">
+            Toggle dark mode
+          </span>
+        </div>
       </div>
     </aside>
   );
@@ -266,41 +304,48 @@ export function SidebarNav({ isMobileOpen, setIsMobileOpen, onCollapseChange }) 
 
 // Update SidebarProfile to show avatar only when collapsed, avatar+name+role when expanded
 function SidebarProfile({ autoCollapsed }) {
-  const navigate = window.location ? (path) => window.location.href = path : () => {};
+  const navigate = useNavigate();
   const user = JSON.parse(localStorage.getItem('user') || '{"role":"user"}');
+  const [open, setOpen] = React.useState(false);
+
   const handleLogout = () => {
     localStorage.removeItem('user');
-    navigate('/');
+    navigate('/login');
   };
+
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <button className={`flex items-center transition-all duration-200 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm border border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 ${autoCollapsed ? 'w-12 h-12 justify-center' : 'px-2 py-1 hover:bg-gray-100 dark:hover:bg-zinc-800'}`}>
-          <Avatar className="h-10 w-10 border-none">
-            <AvatarFallback className="bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300 font-semibold">
-              {user.username ? user.username.charAt(0).toUpperCase() : 'U'}
-            </AvatarFallback>
-          </Avatar>
-          {!autoCollapsed && (
-            <div className="flex flex-col items-start ml-3">
-              <span className="font-semibold text-gray-800 dark:text-gray-100 text-sm leading-tight">{user.username || 'User'}</span>
-              <span className="text-xs text-gray-500 dark:text-gray-400 capitalize">{user.role} Role</span>
-            </div>
-          )}
-        </button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-56" align="end">
-        <DropdownMenuLabel>
-          <p className="text-sm font-medium">{user.username || 'User'}</p>
-          <p className="text-xs text-gray-500 dark:text-gray-400 capitalize">{user.role} Role</p>
-        </DropdownMenuLabel>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-red-500 focus:bg-red-50 focus:text-red-600 dark:focus:bg-red-900/50 dark:focus:text-red-400">
-          <LogOut className="mr-2 h-4 w-4" />
-          <span>Logout</span>
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+    <div className="w-full flex flex-col gap-4 items-start px-4 pb-4">
+      <DropdownMenu open={open} onOpenChange={setOpen}>
+        <DropdownMenuTrigger asChild>
+          <button className="flex items-center gap-3 w-full rounded-xl px-2 py-2 hover:bg-gray-100 dark:hover:bg-zinc-800 transition group focus:outline-none">
+            <Avatar className="h-10 w-10 border-none">
+              <AvatarFallback className="bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300 font-semibold">
+                {user.username ? user.username.charAt(0).toUpperCase() : 'U'}
+              </AvatarFallback>
+            </Avatar>
+            {!autoCollapsed && (
+              <div className="flex flex-col items-start">
+                <span className="font-semibold text-gray-900 dark:text-white text-base leading-tight">{user.username || 'User'}</span>
+                <span className="text-xs text-gray-500 dark:text-gray-400 capitalize">{user.role} Role</span>
+              </div>
+            )}
+            <ExpandMoreIcon className="ml-auto h-4 w-4 text-gray-400 group-hover:text-gray-600 transition" />
+          </button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent className="w-56" align="start">
+          <DropdownMenuLabel>
+            <div className="font-semibold text-gray-900 dark:text-white text-base">{user.username || 'User'}</div>
+            <div className="text-xs text-gray-500 dark:text-gray-400 capitalize">{user.role} Role</div>
+          </DropdownMenuLabel>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-red-500 focus:bg-red-50 focus:text-red-600 dark:focus:bg-red-900/50 dark:focus:text-red-400 font-semibold">
+            <LogoutIcon className="mr-2 h-4 w-4" />
+            <span>Logout</span>
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+      {/* Hanya satu tombol toggle dark/light mode di bawah avatar, tanpa menu popover */}
+    </div>
   );
 }
 

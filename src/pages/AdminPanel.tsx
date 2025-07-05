@@ -15,7 +15,15 @@ type Permissions = {
 const allMenus: Menu[] = ['Dashboard', 'Data Grid', 'Customer Analytics', 'Ticket Analytics', 'Agent Analytics', 'Upload Data', 'Admin Panel'];
 
 const AdminPanel: React.FC = () => {
-  const [users, setUsers] = useState<User[]>([]);
+  const [users, setUsers] = useState<User[]>(() => {
+    try {
+      const savedUsers = localStorage.getItem('users');
+      if (savedUsers) return JSON.parse(savedUsers);
+    } catch (e) {
+      console.error('Failed to parse users from localStorage', e);
+    }
+    return [];
+  });
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [role, setRole] = useState<Role>('user');
@@ -48,6 +56,15 @@ const AdminPanel: React.FC = () => {
     }
   }, [permissions]);
 
+  // Simpan users ke localStorage setiap kali users berubah
+  useEffect(() => {
+    try {
+      localStorage.setItem('users', JSON.stringify(users));
+    } catch (e) {
+      console.error('Failed to save users to localStorage', e);
+    }
+  }, [users]);
+
   const handlePermissionChange = (menu: Menu, role: Role) => {
     setPermissions(prev => {
       const currentPermissions = prev[role];
@@ -67,6 +84,11 @@ const AdminPanel: React.FC = () => {
     setRole('user');
     setSuccess(true);
     setTimeout(() => setSuccess(false), 1500);
+  };
+
+  // Fungsi hapus user
+  const handleDeleteUser = (username: string) => {
+    setUsers(users.filter(user => user.username !== username));
   };
 
   return (
@@ -174,11 +196,12 @@ const AdminPanel: React.FC = () => {
                     <th className="px-6 py-3 font-semibold">Username</th>
                     <th className="px-6 py-3 font-semibold">Password</th>
                     <th className="px-6 py-3 font-semibold">Role</th>
+                    <th className="px-6 py-3 font-semibold text-center">Action</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200 dark:divide-zinc-700">
                   {users.length === 0 ? (
-                    <tr><td colSpan={3} className="text-center text-gray-500 dark:text-gray-400 py-6">No users yet.</td></tr>
+                    <tr><td colSpan={4} className="text-center text-gray-500 dark:text-gray-400 py-6">No users yet.</td></tr>
                   ) : (
                     users.map((user, idx) => (
                       <tr key={idx} className="hover:bg-gray-50 dark:hover:bg-zinc-700/50">
@@ -188,6 +211,14 @@ const AdminPanel: React.FC = () => {
                           <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${user.role === 'admin' ? 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-200' : 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-200'}`}>
                             {user.role}
                           </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-center">
+                          <button
+                            onClick={() => handleDeleteUser(user.username)}
+                            className="bg-red-500 hover:bg-red-600 text-white rounded px-3 py-1 text-xs font-semibold shadow transition-all"
+                          >
+                            Delete
+                          </button>
                         </td>
                       </tr>
                     ))

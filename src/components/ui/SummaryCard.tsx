@@ -45,7 +45,7 @@ const SummaryCard: React.FC<SummaryCardProps> = ({
   >
     <div className="flex items-center gap-4 mb-2">
       <div
-        className={`w-12 h-12 min-w-12 min-h-12 rounded-xl flex items-center justify-center ${iconBg} shadow-lg ring-2 ring-white`}
+        className={`w-12 h-12 min-w-12 min-h-12 rounded-xl flex items-center justify-center ${iconBg} shadow-lg`}
       >
         <span className="text-white" style={{ fontSize: 28 }}>{icon}</span>
       </div>

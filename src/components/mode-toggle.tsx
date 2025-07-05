@@ -1,31 +1,46 @@
 import * as React from "react"
-import { Moon, Sun } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+import Brightness7Icon from '@mui/icons-material/Brightness7';
+import Brightness4Icon from '@mui/icons-material/Brightness4';
 import { useTheme } from "@/components/theme-provider"
 
 export function ModeToggle() {
-  const { setTheme } = useTheme()
+  const { theme, setTheme } = useTheme();
+  const isDark = theme === "dark" || (theme === "system" && window.matchMedia('(prefers-color-scheme: dark)').matches);
+
+  // Untuk SSR/first render, fallback ke localStorage
+  React.useEffect(() => {
+    if (!theme) {
+      const stored = localStorage.getItem('theme');
+      if (stored === 'dark') setTheme('dark');
+      if (stored === 'light') setTheme('light');
+    }
+  }, [theme, setTheme]);
+
+  const handleToggle = () => {
+    setTheme(isDark ? "light" : "dark");
+  };
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="outline" size="icon">
-          <Sun className="h-[1.2rem] w-[1.2rem] scale-100 rotate-0 transition-all dark:scale-0 dark:-rotate-90" />
-          <Moon className="absolute h-[1.2rem] w-[1.2rem] scale-0 rotate-90 transition-all dark:scale-100 dark:rotate-0" />
-          <span className="sr-only">Toggle theme</span>
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
-        <DropdownMenuItem onClick={() => setTheme("light")}>Light</DropdownMenuItem>
-        <DropdownMenuItem onClick={() => setTheme("dark")}>Dark</DropdownMenuItem>
-        <DropdownMenuItem onClick={() => setTheme("system")}>System</DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
-  )
+    <button
+      aria-label="Toggle dark mode"
+      onClick={handleToggle}
+      className="relative w-14 h-8 rounded-full transition-colors duration-300 focus:outline-none flex items-center bg-gray-200 dark:bg-zinc-800"
+      style={{ boxShadow: '0 2px 8px 0 rgba(0,0,0,0.08)' }}
+    >
+      {/* Track */}
+      <span className="sr-only">Toggle theme</span>
+      {/* Knob */}
+      <span
+        className={`absolute top-1 left-1 transition-all duration-300 flex items-center justify-center rounded-full shadow-md"
+          ${isDark ? 'translate-x-6 bg-gradient-to-tr from-blue-500 to-blue-400' : 'translate-x-0 bg-gradient-to-tr from-orange-400 to-orange-500'}`}
+        style={{ width: '24px', height: '24px' }}
+      >
+        {isDark ? (
+          <Brightness7Icon className="w-5 h-5 text-blue-100" />
+        ) : (
+          <Brightness4Icon className="w-5 h-5 text-white" />
+        )}
+      </span>
+    </button>
+  );
 } 

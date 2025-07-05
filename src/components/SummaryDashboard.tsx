@@ -103,7 +103,7 @@ const SummaryDashboard = ({ ticketAnalyticsData }: any) => {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
       {/* Monthly Area Chart */}
-      <Card className="bg-transparent dark:bg-transparent shadow-lg rounded-xl border p-2">
+      <Card className="bg-white dark:bg-zinc-900 shadow-lg rounded-xl border p-2">
         <CardHeader className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 pb-1">
           <div className="flex flex-col gap-1">
             <CardTitle className="font-extrabold text-xl text-zinc-900 dark:text-zinc-100">Tickets per Month</CardTitle>
@@ -152,7 +152,7 @@ const SummaryDashboard = ({ ticketAnalyticsData }: any) => {
         </CardContent>
       </Card>
       {/* Yearly Area Chart */}
-      <Card className="bg-transparent dark:bg-transparent shadow-lg rounded-xl border p-2">
+      <Card className="bg-white dark:bg-zinc-900 shadow-lg rounded-xl border p-2">
         <CardHeader className="flex flex-col gap-1 pb-1">
           <CardTitle className="font-extrabold text-xl text-zinc-900 dark:text-zinc-100">Tickets per Year</CardTitle>
           {latestYearlyValue !== null && (

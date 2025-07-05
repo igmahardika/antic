@@ -25,6 +25,8 @@ import { SidebarNav } from './components/ui/navigation-menu';
 import { Menu as MenuIcon } from 'lucide-react';
 import { useAgentMetricsPolling } from './hooks/useAgentMetricsPolling';
 import ErrorBoundary from './components/ErrorBoundary';
+import { AgentAnalyticsProvider } from './components/AgentAnalyticsContext';
+import { TicketAnalyticsProvider } from './components/TicketAnalyticsContext';
 
 const queryClient = new QueryClient();
 
@@ -73,34 +75,41 @@ function AppLayout() {
   const isBusyHour = hour >= 8 && hour <= 17;
   useAgentMetricsPolling('/api/agent-metrics', isBusyHour);
 
+  // Cek jika halaman login, sembunyikan sidebar dan background
+  const isLoginPage = location.pathname === '/login';
+
   return (
     <div className="relative min-h-screen">
       {/* Gradient background */}
-      <div className="fixed inset-0 -z-10 bg-gradient-to-br from-blue-100 via-white to-pink-100 dark:from-gray-900 dark:via-gray-950 dark:to-blue-900" />
-      <SidebarNav
-        isMobileOpen={isMobileSidebarOpen}
-        setIsMobileOpen={setIsMobileSidebarOpen}
-        onCollapseChange={collapsed => setSidebarCollapsed(collapsed)}
-      />
-      {isMobileSidebarOpen && (
+      {!isLoginPage && (
+        <div className="fixed inset-0 -z-10 bg-gradient-to-br from-blue-100 via-white to-pink-100 dark:from-gray-900 dark:via-gray-950 dark:to-blue-900" />
+      )}
+      {!isLoginPage && (
+        <SidebarNav
+          isMobileOpen={isMobileSidebarOpen}
+          setIsMobileOpen={setIsMobileSidebarOpen}
+          onCollapseChange={collapsed => setSidebarCollapsed(collapsed)}
+        />
+      )}
+      {!isLoginPage && isMobileSidebarOpen && (
         <div
           className="fixed inset-0 z-30 bg-black/40 md:hidden transition-opacity duration-300"
           onClick={() => setIsMobileSidebarOpen(false)}
         />
       )}
       <div
-        className="flex flex-col min-h-screen transition-all duration-300"
-        style={{ marginLeft: responsiveMarginLeft, transition: 'margin-left 0.3s cubic-bezier(0.4,0,0.2,1)' }}
+        className={`flex flex-col min-h-screen transition-all duration-300 ${isLoginPage ? '' : ''}`}
+        style={isLoginPage ? {} : { marginLeft: responsiveMarginLeft, transition: 'margin-left 0.3s cubic-bezier(0.4,0,0.2,1)' }}
       >
-        <main className="p-4 sm:p-6 lg:p-8">
+        <main className={isLoginPage ? 'flex-1 flex items-center justify-center min-h-screen bg-gray-100 dark:bg-zinc-900' : 'p-4 sm:p-6 lg:p-8'}>
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/login" element={<Login />} />
             <Route path="/admin" element={<AdminPanel />} />
-            <Route path="/agent-analytics" element={<ErrorBoundary><AgentAnalytics /></ErrorBoundary>} />
+            <Route path="/agent-analytics" element={<ErrorBoundary><AgentAnalyticsProvider><AgentAnalytics /></AgentAnalyticsProvider></ErrorBoundary>} />
             <Route path="/grid-view" element={<GridView />} />
             <Route path="/kanban-board" element={<KanbanBoard />} />
-            <Route path="/ticket-analytics" element={<TicketAnalytics />} />
+            <Route path="/ticket-analytics" element={<TicketAnalyticsProvider><TicketAnalytics /></TicketAnalyticsProvider>} />
             <Route path="/upload" element={<UploadProcess onUploadComplete={() => {}} />} />
             <Route path="/summary-dashboard" element={<SummaryDashboard />} />
             <Route path="*" element={<NotFound />} />

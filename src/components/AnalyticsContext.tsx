@@ -19,6 +19,9 @@ export const AnalyticsProvider = ({ children }) => {
 
   // Data dari IndexedDB
   const allTickets = useLiveQuery(() => db.tickets.toArray(), [refreshTrigger]);
+  useEffect(() => {
+    console.log('[DEBUG] allTickets from IndexedDB:', allTickets);
+  }, [allTickets]);
 
   // Ambil semua bulan & tahun unik
   const allMonthsInData = useMemo(() => {
