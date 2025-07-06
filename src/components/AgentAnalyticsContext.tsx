@@ -37,14 +37,14 @@ export const AgentAnalyticsProvider = ({ children }) => {
   // Filter tiket sesuai waktu
   const filteredTickets = useMemo(() => {
     if (!allTickets) return [];
-    if (!cutoffStart || !cutoffEnd) return allTickets;
+    if (!cutoffStart || !cutoffEnd || selectedYear === 'ALL') return allTickets;
     return allTickets.filter(t => {
       if (!t.openTime) return false;
       const d = new Date(t.openTime);
       if (isNaN(d.getTime())) return false;
       return d >= cutoffStart && d <= cutoffEnd;
     });
-  }, [allTickets, cutoffStart, cutoffEnd]);
+  }, [allTickets, cutoffStart, cutoffEnd, selectedYear]);
 
   // --- Agent Analytics ---
   const masterAgentList = [

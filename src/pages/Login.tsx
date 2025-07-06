@@ -1,6 +1,14 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { LoginForm } from '@/components/login-form';
+import { db, IUser } from '../lib/db';
+
+async function hashPassword(password: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(password);
+  const hashBuffer = await window.crypto.subtle.digest('SHA-256', data);
+  return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
@@ -11,23 +19,13 @@ const Login: React.FC = () => {
     setError('');
     setLoading(true);
     try {
-      const res = await fetch('http://localhost:3001/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password }),
-      });
-      const data = await res.json();
-      if (res.ok && data.token) {
-        localStorage.setItem('token', data.token);
-        localStorage.setItem('role', data.role);
-        localStorage.setItem('username', data.username);
-        if (data.role === 'admin') {
-          navigate('/admin-panel');
-        } else {
-          navigate('/summary-dashboard');
-        }
+      const hashed = await hashPassword(password);
+      const user = await db.users.where('username').equals(username).and(u => u.password === hashed).first();
+      if (user) {
+        localStorage.setItem('user', JSON.stringify(user));
+        navigate('/summary-dashboard');
       } else {
-        setError(data.error || 'Username atau password salah');
+        setError('Username atau password salah');
       }
     } catch (err) {
       setError('Terjadi kesalahan, coba lagi');

@@ -39,19 +39,36 @@ export interface ITicket {
   repClass?: string; // Repeat-complainer class (Normal, Persisten, Kronis, Ekstrem)
 }
 
+export interface IUser {
+  id?: number;
+  username: string;
+  password: string;
+  role: 'super admin' | 'admin' | 'user';
+}
+
+export interface IMenuPermission {
+  id?: number;
+  role: 'super admin' | 'admin' | 'user';
+  menus: string[];
+}
+
 export class TicketDB extends Dexie {
   tickets!: Table<ITicket>;
+  users!: Table<IUser, number>;
+  menuPermissions!: Table<IMenuPermission, number>;
 
   constructor() {
     super('InsightTicketDatabase');
     this.version(1).stores({
-      // '++id' akan auto-increment jika kita tidak menyediakan id.
-      // Karena kita pakai UUID, kita hanya definisikan 'id' sebagai primary key.
-      // Kolom setelahnya adalah indeks untuk query cepat.
       tickets: 'id, openTime, name, uploadTimestamp'
     });
     this.version(2).stores({
-        tickets: 'id, openTime, name, uploadTimestamp, cabang'
+      tickets: 'id, openTime, name, uploadTimestamp, cabang'
+    });
+    this.version(3).stores({
+      tickets: 'id, openTime, name, uploadTimestamp, cabang',
+      users: '++id, username, role',
+      menuPermissions: '++id, role'
     });
   }
 }

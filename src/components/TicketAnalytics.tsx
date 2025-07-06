@@ -191,10 +191,17 @@ const TicketAnalytics = ({ data: propsData }: TicketAnalyticsProps) => {
   const filteredGridData = useMemo(() => {
     if (!gridData || !startMonth || !endMonth || !selectedYear) return [];
     if (selectedYear === 'ALL') {
-      return gridData; // tampilkan semua data tanpa filter
+      return gridData; // Sudah benar: tampilkan semua data
     }
     // Default: filter by year and month
-    return gridData;
+    return gridData.filter(t => {
+      if (!t.openTime) return false;
+      const d = new Date(t.openTime);
+      const y = Number(selectedYear);
+      const mStart = Number(startMonth) - 1;
+      const mEnd = Number(endMonth) - 1;
+      return d.getFullYear() === y && d.getMonth() >= mStart && d.getMonth() <= mEnd;
+    });
   }, [gridData, startMonth, endMonth, selectedYear]);
   const complaintsData = ticketAnalyticsData?.complaintsData || { labels: [], datasets: [] };
   const monthlyStatsData = ticketAnalyticsData?.monthlyStatsChartData || { labels: [], datasets: [] };
@@ -799,8 +806,8 @@ const TicketAnalytics = ({ data: propsData }: TicketAnalyticsProps) => {
                         innerRadius={60}
                         outerRadius={90}
                         paddingAngle={2}
-                        stroke="#fff"
-                        strokeWidth={5}
+                        stroke="none"
+                        strokeWidth={0}
                         labelLine={false}
                         isAnimationActive={true}
                       >

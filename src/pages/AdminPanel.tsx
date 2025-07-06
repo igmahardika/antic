@@ -1,23 +1,21 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
-import { useNavigate } from 'react-router-dom';
+import { db, IUser, IMenuPermission } from '../lib/db';
 
-
-
-interface User {
-  id: number;
-  username: string;
-  role: 'admin' | 'user';
-}
-
-type Menu = 'Dashboard' | 'Data Grid' | 'Customer Analytics' | 'Ticket Analytics' | 'Agent Analytics' | 'Upload Data' | 'Rumus Analytics' | 'Admin Panel';
-type Role = 'admin' | 'user';
-type Permissions = {
-  [key in Role]: Menu[];
-};
-
-const allMenus: Menu[] = ['Dashboard', 'Data Grid', 'Customer Analytics', 'Ticket Analytics', 'Agent Analytics', 'Upload Data', 'Rumus Analytics', 'Admin Panel'];
+const allRoles = ['super admin', 'admin', 'user'] as const;
+type Role = typeof allRoles[number];
+const allMenus = [
+  'Dashboard',
+  'Data Grid',
+  'Customer Analytics',
+  'Ticket Analytics',
+  'Agent Analytics',
+  'Upload Data',
+  'Master Data Agent',
+  'Rumus Analytics',
+  'Admin Panel',
+];
 
 // Utility hash password
 async function hashPassword(password: string): Promise<string> {
@@ -28,181 +26,152 @@ async function hashPassword(password: string): Promise<string> {
 }
 
 const AdminPanel: React.FC = () => {
-  const navigate = useNavigate();
-  const [users, setUsers] = useState<User[]>([]);
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [role, setRole] = useState<Role>('user');
-  const [success, setSuccess] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
-  const [pendingAdd, setPendingAdd] = useState(false);
-  const [pendingEdit, setPendingEdit] = useState(false);
+  const [users, setUsers] = React.useState<IUser[]>([]);
+  const [username, setUsername] = React.useState('');
+  const [password, setPassword] = React.useState('');
+  const [role, setRole] = React.useState<Role>('user');
+  const [success, setSuccess] = React.useState(false);
+  const [showPassword, setShowPassword] = React.useState(false);
+  const [pendingAdd, setPendingAdd] = React.useState(false);
+  const [pendingEdit, setPendingEdit] = React.useState(false);
+  const [editUserIdx, setEditUserIdx] = React.useState<number | null>(null);
+  const [editUsername, setEditUsername] = React.useState('');
+  const [editPassword, setEditPassword] = React.useState('');
+  const [editRole, setEditRole] = React.useState<Role>('user');
+  const [showEditPassword, setShowEditPassword] = React.useState(false);
+  const [menuPermissions, setMenuPermissions] = React.useState<IMenuPermission[]>([]);
+  const [selectedRoleForEditing, setSelectedRoleForEditing] = React.useState<Role>('user');
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Edit modal state
-  const [editUserId, setEditUserId] = useState<number | null>(null);
-  const [editUsername, setEditUsername] = useState('');
-  const [editPassword, setEditPassword] = useState('');
-  const [editRole, setEditRole] = useState<Role>('user');
-  const [showEditPassword, setShowEditPassword] = useState(false);
-
-  // Helper: get token
-  const getToken = () => localStorage.getItem('token') || '';
-  const getRole = () => localStorage.getItem('role') || '';
-
-  // Fetch users from backend
-  const fetchUsers = async () => {
-    const token = getToken();
-    const res = await fetch('http://localhost:3001/users', {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    if (res.status === 401 || res.status === 403) {
-      navigate('/login');
-      return;
-    }
-    const data = await res.json();
-    setUsers(data);
-  };
-
-  useEffect(() => {
-    // Hanya admin yang boleh akses
-    if (getRole() !== 'admin') {
-      navigate('/summary-dashboard');
-      return;
-    }
-    fetchUsers();
-  }, []);
-
-  const [permissions, setPermissions] = useState<Permissions>(() => {
-    try {
-      const savedPermissions = localStorage.getItem('menuPermissions');
-      if (savedPermissions) {
-        return JSON.parse(savedPermissions);
+  // Load users and permissions from IndexedDB
+  React.useEffect(() => {
+    (async () => {
+      const users = await db.users.toArray();
+      if (users.length === 0) {
+        // Add default admin if not exists
+        const hashed = await hashPassword('k0s0ng-w43');
+        await db.users.add({ username: 'admin', password: hashed, role: 'admin' });
+        setUsers(await db.users.toArray());
+      } else {
+        setUsers(users);
       }
-    } catch (e) {
-      console.error("Failed to parse permissions from localStorage", e);
-    }
-    // Default permissions
-    return {
-      admin: ['Dashboard', 'Data Grid', 'Customer Analytics', 'Ticket Analytics', 'Agent Analytics', 'Upload Data', 'Admin Panel'],
-      user: ['Dashboard', 'Data Grid', 'Customer Analytics', 'Ticket Analytics', 'Agent Analytics', 'Upload Data'],
-    };
-  });
-
-  const [selectedRoleForEditing, setSelectedRoleForEditing] = useState<Role>('user');
-
-  // Open edit modal
-  const openEditModal = (user: User) => {
-    setEditUserId(user.id);
-    setEditUsername(user.username);
-    setEditPassword('');
-    setEditRole(user.role);
-  };
-  const closeEditModal = () => {
-    setEditUserId(null);
-    setEditUsername('');
-    setEditPassword('');
-    setEditRole('user');
-  };
-
-  // Edit user
-  const handleEditUser = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (editUserId === null) return;
-    setPendingEdit(true);
-    const token = getToken();
-    const body: any = { username: editUsername, role: editRole };
-    if (editPassword) body.password = editPassword;
-    const res = await fetch(`http://localhost:3001/users/${editUserId}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-      body: JSON.stringify(body),
-    });
-    if (res.status === 401 || res.status === 403) {
-      navigate('/login');
-      return;
-    }
-    if (res.ok) {
-      fetchUsers();
-      closeEditModal();
-    }
-    setPendingEdit(false);
-  };
-
-  useEffect(() => {
-    // Save permissions to localStorage whenever they change
-    try {
-      localStorage.setItem('menuPermissions', JSON.stringify(permissions));
-    } catch (e) {
-      console.error("Failed to save permissions to localStorage", e);
-    }
-  }, [permissions]);
-
-  // Simpan users ke localStorage setiap kali users berubah
-  useEffect(() => {
-    try {
-      localStorage.setItem('users', JSON.stringify(users));
-    } catch (e) {
-      console.error('Failed to save users to localStorage', e);
-    }
-  }, [users]);
-
-  const handlePermissionChange = (menu: Menu, role: Role) => {
-    setPermissions(prev => {
-      const currentPermissions = prev[role];
-      const newPermissions = currentPermissions.includes(menu)
-        ? currentPermissions.filter(m => m !== menu)
-        : [...currentPermissions, menu];
-      return { ...prev, [role]: newPermissions };
-    });
-  };
+      setMenuPermissions(await db.menuPermissions.toArray());
+    })();
+  }, []);
 
   // Add user
   const handleAddUser = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!username || !password) return;
     setPendingAdd(true);
-    const token = getToken();
-    const res = await fetch('http://localhost:3001/register', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ username, password, role }),
-    });
-    if (res.status === 401 || res.status === 403) {
-      navigate('/login');
-      return;
-    }
-    if (res.ok) {
-      setUsername('');
-      setPassword('');
-      setRole('user');
-      setSuccess(true);
-      fetchUsers();
-      setTimeout(() => setSuccess(false), 1500);
-    }
+    const hashed = await hashPassword(password);
+    await db.users.add({ username, password: hashed, role });
+    setUsers(await db.users.toArray());
+    setUsername('');
+    setPassword('');
+    setRole('user');
+    setSuccess(true);
     setPendingAdd(false);
+    setTimeout(() => setSuccess(false), 1500);
   };
 
+  // Edit user
+  const openEditModal = (idx: number) => {
+    setEditUserIdx(idx);
+    setEditUsername(users[idx].username);
+    setEditPassword('');
+    setEditRole(users[idx].role as Role);
+  };
+  const closeEditModal = () => {
+    setEditUserIdx(null);
+    setEditUsername('');
+    setEditPassword('');
+    setEditRole('user');
+  };
+  const handleEditUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (editUserIdx === null) return;
+    setPendingEdit(true);
+    const user = users[editUserIdx];
+    let newPassword = user.password;
+    if (editPassword) newPassword = await hashPassword(editPassword);
+    await db.users.update(user.id!, { username: editUsername, password: newPassword, role: editRole });
+    setUsers(await db.users.toArray());
+    setPendingEdit(false);
+    closeEditModal();
+  };
   // Delete user
-  const handleDeleteUser = async (id: number) => {
-    if (!window.confirm('Are you sure you want to delete this user?')) return;
-    const token = getToken();
-    const res = await fetch(`http://localhost:3001/users/${id}`, {
-      method: 'DELETE',
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    if (res.status === 401 || res.status === 403) {
-      navigate('/login');
-      return;
+  const handleDeleteUser = async (id?: number) => {
+    if (!id) return;
+    await db.users.delete(id);
+    setUsers(await db.users.toArray());
+  };
+
+  // Menu permissions logic
+  const getMenusForRole = (role: Role) => menuPermissions.find(mp => mp.role === role)?.menus || [];
+  const handlePermissionChange = async (menu: string, role: Role) => {
+    let perm = menuPermissions.find(mp => mp.role === role);
+    if (!perm) {
+      perm = { role, menus: [menu] };
+      await db.menuPermissions.add(perm);
+    } else {
+      const menus = perm.menus.includes(menu)
+        ? perm.menus.filter(m => m !== menu)
+        : [...perm.menus, menu];
+      await db.menuPermissions.update(perm.id!, { menus });
     }
-    fetchUsers();
+    setMenuPermissions(await db.menuPermissions.toArray());
+  };
+
+  // Export users & permissions
+  const handleExport = async () => {
+    const users = await db.users.toArray();
+    const menuPermissions = await db.menuPermissions.toArray();
+    const data = { users, menuPermissions };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'antic-users-export.json';
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  // Import users & permissions
+  const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const text = await file.text();
+    try {
+      const data = JSON.parse(text);
+      if (Array.isArray(data.users) && Array.isArray(data.menuPermissions)) {
+        await db.users.clear();
+        await db.menuPermissions.clear();
+        await db.users.bulkAdd(data.users);
+        await db.menuPermissions.bulkAdd(data.menuPermissions);
+        setUsers(await db.users.toArray());
+        setMenuPermissions(await db.menuPermissions.toArray());
+        alert('Import berhasil!');
+      } else {
+        alert('File tidak valid.');
+      }
+    } catch {
+      alert('File tidak valid.');
+    }
+    if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
   return (
     <>
       <h1 className="text-3xl md:text-4xl font-extrabold mb-4 text-gray-900 dark:text-gray-100">Admin Panel</h1>
-      
+      <div className="flex gap-4 mb-6">
+        <button onClick={handleExport} className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded shadow">Export User Data</button>
+        <label className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded shadow cursor-pointer">
+          Import User Data
+          <input type="file" accept="application/json" ref={fileInputRef} onChange={handleImport} className="hidden" />
+        </label>
+      </div>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        
         {/* Left Column: User Management */}
         <div className="lg:col-span-1 flex flex-col gap-8">
           {/* Add User Form Card */}
@@ -243,17 +212,17 @@ const AdminPanel: React.FC = () => {
                 <select
                   id="role"
                   value={role}
-                  onChange={e => setRole(e.target.value as 'admin' | 'user')}
+                  onChange={e => setRole(e.target.value as Role)}
                   className="w-full rounded-lg bg-gray-50 dark:bg-zinc-700 border border-gray-300 dark:border-zinc-600 px-4 py-2 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
                   required
                 >
-                  <option value="user">User</option>
-                  <option value="admin">Admin</option>
+                  {allRoles.map(r => <option key={r} value={r}>{r}</option>)}
                 </select>
               </div>
               <button
                 type="submit"
                 className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg py-2.5 mt-2 shadow-md hover:shadow-lg transition-all text-sm"
+                disabled={pendingAdd}
               >
                 Add User
               </button>
@@ -261,7 +230,6 @@ const AdminPanel: React.FC = () => {
             </form>
           </div>
         </div>
-
         {/* Right Column: Role and User List */}
         <div className="lg:col-span-2 flex flex-col gap-8">
           {/* Role Management Card */}
@@ -275,8 +243,7 @@ const AdminPanel: React.FC = () => {
                 onChange={e => setSelectedRoleForEditing(e.target.value as Role)}
                 className="w-full sm:w-auto rounded-lg bg-gray-50 dark:bg-zinc-700 border border-gray-300 dark:border-zinc-600 px-4 py-2 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
               >
-                <option value="user">User</option>
-                <option value="admin">Admin</option>
+                {allRoles.map(r => <option key={r} value={r}>{r}</option>)}
               </select>
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
@@ -286,7 +253,7 @@ const AdminPanel: React.FC = () => {
                     type="checkbox"
                     id={`perm-${selectedRoleForEditing}-${menu}`}
                     className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                    checked={permissions[selectedRoleForEditing]?.includes(menu) || false}
+                    checked={getMenusForRole(selectedRoleForEditing).includes(menu)}
                     onChange={() => handlePermissionChange(menu, selectedRoleForEditing)}
                   />
                   <label htmlFor={`perm-${selectedRoleForEditing}-${menu}`} className="ml-2 block text-sm text-gray-900 dark:text-gray-200">
@@ -296,7 +263,6 @@ const AdminPanel: React.FC = () => {
               ))}
             </div>
           </div>
-
           {/* User List Card */}
           <div className="bg-white dark:bg-zinc-800 rounded-xl shadow-lg p-6">
             <h2 className="text-2xl md:text-3xl font-bold mb-2 text-gray-900 dark:text-gray-100">User List</h2>
@@ -319,11 +285,11 @@ const AdminPanel: React.FC = () => {
                         <td className="px-6 py-4 whitespace-nowrap text-gray-800 dark:text-gray-200">{user.username}</td>
                         <td className="px-6 py-4 whitespace-nowrap text-gray-600 dark:text-gray-400">********</td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${user.role === 'admin' ? 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-200' : 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-200'}`}>{user.role}</span>
+                          <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${user.role === 'super admin' ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/50 dark:text-purple-200' : user.role === 'admin' ? 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-200' : 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-200'}`}>{user.role}</span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-center flex gap-2 justify-center">
                           <button
-                            onClick={() => openEditModal(user)}
+                            onClick={() => openEditModal(idx)}
                             className="bg-yellow-400 hover:bg-yellow-500 text-white rounded px-3 py-1 text-xs font-semibold shadow transition-all"
                           >
                             Edit
@@ -345,7 +311,7 @@ const AdminPanel: React.FC = () => {
         </div>
       </div>
       {/* Modal Edit User */}
-      {editUserId !== null && (
+      {editUserIdx !== null && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
           <div className="bg-white dark:bg-zinc-800 rounded-xl shadow-lg p-8 w-full max-w-md">
             <h3 className="text-xl font-bold mb-4 text-gray-900 dark:text-gray-100">Edit User</h3>
@@ -386,8 +352,7 @@ const AdminPanel: React.FC = () => {
                   className="w-full rounded-lg bg-gray-50 dark:bg-zinc-700 border border-gray-300 dark:border-zinc-600 px-4 py-2 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
                   required
                 >
-                  <option value="user">User</option>
-                  <option value="admin">Admin</option>
+                  {allRoles.map(r => <option key={r} value={r}>{r}</option>)}
                 </select>
               </div>
               <div className="flex gap-4 mt-2">

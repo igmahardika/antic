@@ -75,29 +75,29 @@ const TimeFilter: React.FC<TimeFilterProps> = ({
   const debouncedSetEndMonth = useDebouncedCallback(setEndMonth, 300);
   const debouncedSetSelectedYear = useDebouncedCallback(setSelectedYear, 300);
   return (
-    <div className="flex items-center gap-3 p-2 bg-white/70 dark:bg-zinc-900/70 rounded-xl shadow border border-gray-100 dark:border-zinc-800 mb-4">
-      <Calendar className="h-4 w-4 text-blue-400 mr-1" />
-      <span className="text-xs font-semibold text-gray-600 dark:text-gray-200 mr-1">Time:</span>
-      <RadixSelect
-        value={startMonth}
+  <div className="flex items-center gap-3 p-2 bg-white/70 dark:bg-zinc-900/70 rounded-xl shadow border border-gray-100 dark:border-zinc-800 mb-4">
+    <Calendar className="h-4 w-4 text-blue-400 mr-1" />
+    <span className="text-xs font-semibold text-gray-600 dark:text-gray-200 mr-1">Time:</span>
+    <RadixSelect
+      value={startMonth}
         onValueChange={debouncedSetStartMonth}
-        options={normalizeMonthOptions(monthOptions)}
-        placeholder="Start Month"
-      />
-      <RadixSelect
-        value={endMonth}
+      options={normalizeMonthOptions(monthOptions)}
+      placeholder="Start Month"
+    />
+    <RadixSelect
+      value={endMonth}
         onValueChange={debouncedSetEndMonth}
-        options={normalizeMonthOptions(monthOptions)}
-        placeholder="End Month"
-      />
-      <RadixSelect
-        value={selectedYear}
+      options={normalizeMonthOptions(monthOptions)}
+      placeholder="End Month"
+    />
+    <RadixSelect
+      value={selectedYear}
         onValueChange={debouncedSetSelectedYear}
-        options={[{ value: 'ALL', label: 'All Years' }, ...allYearsInData.map(y => ({ value: y, label: y }))]}
-        placeholder="Year"
-      />
-    </div>
-  );
+      options={[{ value: 'ALL', label: 'All Years' }, ...allYearsInData.map(y => ({ value: y, label: y }))]}
+      placeholder="Year"
+    />
+  </div>
+);
 };
 
 export default TimeFilter; 

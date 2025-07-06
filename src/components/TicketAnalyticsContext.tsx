@@ -86,6 +86,7 @@ export const TicketAnalyticsProvider = ({ children }) => {
   // Filter tiket sesuai waktu
   const filteredTickets = useMemo(() => {
     if (!allTickets) return [];
+    if (selectedYear === 'ALL') return allTickets;
     if (!cutoffStart || !cutoffEnd) return allTickets;
     return allTickets.filter(t => {
       if (!t.openTime) return false;
@@ -93,7 +94,7 @@ export const TicketAnalyticsProvider = ({ children }) => {
       if (isNaN(d.getTime())) return false;
       return d >= cutoffStart && d <= cutoffEnd;
     });
-  }, [allTickets, cutoffStart, cutoffEnd]);
+  }, [allTickets, cutoffStart, cutoffEnd, selectedYear]);
 
   // --- Ticket Analytics ---
   const gridData = filteredTickets;

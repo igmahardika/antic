@@ -156,6 +156,7 @@ export function NavigationMenuBar() {
     { name: 'Ticket Analytics', path: '/ticket-analytics' },
     { name: 'Agent Analytics', path: '/agent-analytics' },
     { name: 'Upload Data', path: '/upload' },
+    { name: 'Master Data Agent', path: '/master-agent' },
     { name: 'Admin Panel', path: '/admin' },
   ];
   return (
@@ -181,16 +182,18 @@ export function SidebarNav({ isMobileOpen, setIsMobileOpen, onCollapseChange }) 
     { name: 'Ticket Analytics', path: '/ticket-analytics', icon: <BarChartIcon fontSize="small" /> },
     { name: 'Agent Analytics', path: '/agent-analytics', icon: <PersonCheckIcon fontSize="small" /> },
     { name: 'Upload Data', path: '/upload', icon: <CloudUploadIcon fontSize="small" /> },
+    { name: 'Master Data Agent', path: '/master-agent', icon: <PersonIcon fontSize="small" /> },
     { name: 'Rumus Analytics', path: '/admin-rumus', icon: <ScienceIcon fontSize="small" /> },
     { name: 'Admin Panel', path: '/admin', icon: <AdminPanelSettingsIcon fontSize="small" /> },
   ];
-  let allowedMenus = allMenus;
+  // Selalu tampilkan semua menu, tanpa filter permission/role
+  const allowedMenus = allMenus;
   let user = { username: '', role: 'user' };
   try {
     user = JSON.parse(localStorage.getItem('user') || '{"role":"user"}');
     const permissions = JSON.parse(localStorage.getItem('menuPermissions') || '{}');
     const allowed = permissions[user.role] || [];
-    allowedMenus = allMenus.filter(menu => allowed.includes(menu.name));
+    // allowedMenus = allMenus.filter(menu => allowed.includes(menu.name)); // This line is removed
   } catch {}
   // Responsive/collapse logic (hover only)
   const [autoCollapsed, setAutoCollapsed] = React.useState(false);
@@ -286,13 +289,7 @@ export function SidebarNav({ isMobileOpen, setIsMobileOpen, onCollapseChange }) 
               <div className="text-xs text-gray-500 dark:text-gray-400 capitalize text-center">{user.role} Role</div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => { 
-              localStorage.removeItem('token');
-              localStorage.removeItem('role');
-              localStorage.removeItem('username');
-              localStorage.removeItem('user');
-              window.location.href = '/login';
-            }} className="cursor-pointer text-red-500 focus:bg-red-50 focus:text-red-600 dark:focus:bg-red-900/50 dark:focus:text-red-400 font-semibold">
+            <DropdownMenuItem onClick={() => { localStorage.removeItem('user'); window.location.href = '/login'; }} className="cursor-pointer text-red-500 focus:bg-red-50 focus:text-red-600 dark:focus:bg-red-900/50 dark:focus:text-red-400 font-semibold">
               <LogoutIcon className="mr-2 h-4 w-4" />
               <span>Logout</span>
             </DropdownMenuItem>
@@ -317,9 +314,6 @@ function SidebarProfile({ autoCollapsed }) {
   const [open, setOpen] = React.useState(false);
 
   const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('role');
-    localStorage.removeItem('username');
     localStorage.removeItem('user');
     navigate('/login');
   };

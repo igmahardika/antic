@@ -36,7 +36,7 @@ const SummaryCard: React.FC<SummaryCardProps> = ({
   <div
     className={`bg-white dark:bg-zinc-900 rounded-2xl shadow-lg p-6 flex flex-col min-h-[180px] transition-all duration-300 min-w-0 overflow-hidden
       ${onClick ? 'cursor-pointer hover:shadow-xl hover:scale-[1.02]' : ''}
-      ${active ? 'ring-2 ring-blue-500 shadow-2xl' : ''}
+      ${active ? '' : ''}
       ${className}`}
     onClick={onClick}
     tabIndex={onClick ? 0 : undefined}

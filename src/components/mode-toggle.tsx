@@ -28,7 +28,7 @@ export function ModeToggle() {
       style={{ boxShadow: '0 2px 8px 0 rgba(0,0,0,0.08)' }}
     >
       {/* Track */}
-      <span className="sr-only">Toggle theme</span>
+          <span className="sr-only">Toggle theme</span>
       {/* Knob */}
       <span
         className={`absolute top-1 left-1 transition-all duration-300 flex items-center justify-center rounded-full shadow-md"

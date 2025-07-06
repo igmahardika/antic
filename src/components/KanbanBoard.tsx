@@ -76,37 +76,19 @@ const KanbanBoard = (props: Partial<KanbanBoardProps>) => {
   const filteredTickets = useMemo(() => {
     if (!allTickets || !startMonth || !endMonth || !selectedYear) return [];
     if (selectedYear === 'ALL') {
-      // Show all years' data for selected months, or all data if months are not selected
-      return allTickets.filter(t => {
-        if (!t.openTime) return false;
-        if (!startMonth || !endMonth) return true;
-        const d = new Date(t.openTime);
-        const mStart = Number(startMonth) - 1;
-        const mEnd = Number(endMonth) - 1;
-        // Check if month is in range (ignore year)
-        return d.getMonth() >= mStart && d.getMonth() <= mEnd;
-      });
+      // All Year: tampilkan semua tiket tanpa filter waktu
+      return allTickets;
     }
     const y = Number(selectedYear);
     const mStart = Number(startMonth) - 1;
     const mEnd = Number(endMonth) - 1;
     const cutoffStart = new Date(y, mStart, 1, 0, 0, 0, 0);
     const cutoffEnd = new Date(y, mEnd + 1, 0, 23, 59, 59, 999);
-    const filtered = allTickets.filter(t => {
+    return allTickets.filter(t => {
       if (!t.openTime) return false;
       const d = new Date(t.openTime);
       return d >= cutoffStart && d <= cutoffEnd;
     });
-    // LOGGING: Show filter period and ticket/customer counts
-    const uniqueCustomers = new Set(filtered.map(t => t.customerId || 'Unknown'));
-    console.log('[KanbanBoard] Filter:', {
-      cutoffStart,
-      cutoffEnd,
-      filteredTickets: filtered.length,
-      uniqueCustomers: uniqueCustomers.size,
-      filterRange: `${cutoffStart.toISOString()} - ${cutoffEnd.toISOString()}`
-    });
-    return filtered;
   }, [allTickets, startMonth, endMonth, selectedYear]);
 
   // --- Agregasi customer dari tiket hasil filter ---
@@ -511,7 +493,7 @@ const KanbanBoard = (props: Partial<KanbanBoardProps>) => {
         <Tooltip>
           <TooltipTrigger asChild>
       <div
-        className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg p-6 flex flex-col min-h-[200px] transition-all duration-300 min-w-0 overflow-hidden cursor-pointer hover:ring-2 hover:ring-blue-400"
+        className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg p-6 flex flex-col min-h-[200px] transition-all duration-300 min-w-0 overflow-hidden cursor-pointer hover:shadow-xl hover:scale-[1.02]"
         onClick={() => setOpenDialogId(customer.id)}
       >
         <div className="flex items-center gap-4 mb-2">
@@ -770,6 +752,8 @@ const KanbanBoard = (props: Partial<KanbanBoardProps>) => {
             dataKey="value"
             label={false}
             labelLine={false}
+            stroke="none"
+            strokeWidth={0}
           >
             {chartData.map((entry, i) => (
               <Cell key={`cell-${i}`} fill={COLORS[i % COLORS.length]} />
@@ -845,7 +829,7 @@ const KanbanBoard = (props: Partial<KanbanBoardProps>) => {
               iconBg={riskColors[item.key]?.iconBg || 'bg-gray-500'}
               badgeColor={riskColors[item.key]?.badge || 'bg-blue-600'}
                 badge={item.key !== 'Total' ? riskInfo?.badge : undefined}
-              className={`cursor-pointer transition-all duration-300 ${repClassFilter === item.key ? 'ring-2 ring-blue-500 shadow-lg' : ''}`}
+              className={`cursor-pointer transition-all duration-300 ${repClassFilter === item.key ? '' : ''}`}
               onClick={() => setRepClassFilter(item.key)}
               active={repClassFilter === item.key}
             />

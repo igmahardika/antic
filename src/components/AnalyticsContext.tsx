@@ -23,6 +23,20 @@ export const AnalyticsProvider = ({ children }) => {
     console.log('[DEBUG] allTickets from IndexedDB:', allTickets);
   }, [allTickets]);
 
+  useEffect(() => {
+    if (allTickets && allTickets.length > 0 && (!startMonth || !endMonth || !selectedYear)) {
+      const dates = allTickets.map(t => t.openTime).filter(Boolean).map(d => new Date(d));
+      if (dates.length > 0) {
+        const latest = new Date(Math.max(...dates.map(d => d.getTime())));
+        const month = String(latest.getMonth() + 1).padStart(2, '0');
+        const year = String(latest.getFullYear());
+        setStartMonth(month);
+        setEndMonth(month);
+        setSelectedYear(year);
+      }
+    }
+  }, [allTickets, startMonth, endMonth, selectedYear]);
+
   // Ambil semua bulan & tahun unik
   const allMonthsInData = useMemo(() => {
     if (!allTickets) return [];

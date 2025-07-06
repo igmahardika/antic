@@ -1,7 +1,7 @@
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, useLocation, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import { ThemeProvider } from "@/components/theme-provider"
@@ -28,7 +28,7 @@ import ErrorBoundary from './components/ErrorBoundary';
 import { AgentAnalyticsProvider } from './components/AgentAnalyticsContext';
 import { TicketAnalyticsProvider } from './components/TicketAnalyticsContext';
 import AdminRumus from './pages/AdminRumus';
-import { ProtectedRoute } from './components/ProtectedRoute';
+import MasterDataAgent from './components/MasterDataAgent';
 
 const queryClient = new QueryClient();
 
@@ -80,6 +80,23 @@ function AppLayout() {
   // Cek jika halaman login, sembunyikan sidebar dan background
   const isLoginPage = location.pathname === '/login';
 
+  // Bypass login: jika user ke /login, redirect ke /summary-dashboard
+  React.useEffect(() => {
+    if (location.pathname === '/login') {
+      window.history.replaceState({}, '', '/summary-dashboard');
+    }
+  }, [location.pathname]);
+
+  // Tambahkan logic redirect ke /login jika belum login
+  React.useEffect(() => {
+    const isLoginPage = location.pathname === '/login';
+    const isAdminPage = location.pathname === '/admin';
+    const user = localStorage.getItem('user');
+    if (!isLoginPage && !isAdminPage && !user) {
+      window.location.replace('/login');
+    }
+  }, [location.pathname]);
+
   return (
     <div className="relative min-h-screen">
       {/* Gradient background */}
@@ -105,17 +122,9 @@ function AppLayout() {
       >
         <main className={isLoginPage ? 'flex-1 flex items-center justify-center min-h-screen bg-gray-100 dark:bg-zinc-900' : 'p-4 sm:p-6 lg:p-8'}>
           <Routes>
-            <Route path="/" element={
-              localStorage.getItem('token')
-                ? <SummaryDashboard />
-                : <Navigate to="/login" />
-            } />
+            <Route path="/" element={<Index />} />
+            <Route path="/admin" element={<AdminPanel />} />
             <Route path="/login" element={<Login />} />
-            <Route path="/admin" element={
-              <ProtectedRoute requiredRole="admin">
-                <AdminPanel />
-              </ProtectedRoute>
-            } />
             <Route path="/agent-analytics" element={<ErrorBoundary><AgentAnalyticsProvider><AgentAnalytics /></AgentAnalyticsProvider></ErrorBoundary>} />
             <Route path="/grid-view" element={<GridView />} />
             <Route path="/kanban-board" element={<KanbanBoard />} />
@@ -123,6 +132,7 @@ function AppLayout() {
             <Route path="/upload" element={<UploadProcess onUploadComplete={() => {}} />} />
             <Route path="/summary-dashboard" element={<SummaryDashboard />} />
             <Route path="/admin-rumus" element={<AdminRumus />} />
+            <Route path="/master-agent" element={<MasterDataAgent />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </main>
