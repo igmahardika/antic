@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { ITicket } from '@/lib/db';
-import { db } from '@/lib/db';
+import { db, ICustomer } from '@/lib/db';
 import { formatDateTimeDDMMYYYY } from '@/lib/utils';
 import { useAnalytics } from './AnalyticsContext';
 import ConfirmationNumberIcon from '@mui/icons-material/ConfirmationNumber';
@@ -51,23 +51,40 @@ const GridView = ({ data: propsData }: { data?: ITicket[] }) => {
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+  const [validasiFilter, setValidasiFilter] = useState<'all' | 'valid' | 'invalid'>('all');
+  // Ambil semua customer dari IndexedDB
+  const allCustomers = useLiveQuery(() => db.customers.toArray(), []);
+  const customerNames = useMemo(() => new Set((allCustomers || []).map(c => (c.nama || '').trim().toLowerCase())), [allCustomers]);
 
   // Ambil jumlah total tiket di database (tanpa filter apapun)
   const totalTicketsInDb = useLiveQuery(() => db.tickets.count(), []);
   // Ambil seluruh tiket di database (tanpa filter apapun)
   const allTicketsInDb = useLiveQuery(() => db.tickets.toArray(), []);
 
+  // Filter validasi customer
   const filtered = useMemo(() => {
     if (!data) return [];
-    if (!search) return data;
+    let result = data;
+    if (search) {
     const s = search.toLowerCase();
-    return data.filter(row =>
+      result = result.filter(row =>
       columns.some(col => {
         const val = row[col.key];
         return val && String(val).toLowerCase().includes(s);
       })
     );
-  }, [data, search]);
+    }
+    // Filter hanya untuk tiket tahun 2025
+    if (validasiFilter !== 'all' && customerNames.size > 0) {
+      result = result.filter(row => {
+        const is2025 = row.openTime && row.openTime.startsWith('2025');
+        if (!is2025) return true; // selain 2025, tampilkan semua
+        const isValid = customerNames.has((row.name || '').trim().toLowerCase());
+        return validasiFilter === 'valid' ? isValid : !isValid;
+      });
+    }
+    return result;
+  }, [data, search, validasiFilter, customerNames]);
 
   const totalPages = Math.ceil(filtered.length / pageSize);
   const paged = useMemo(() => filtered.slice((page - 1) * pageSize, page * pageSize), [filtered, page, pageSize]);
@@ -104,7 +121,7 @@ const GridView = ({ data: propsData }: { data?: ITicket[] }) => {
           iconBg="bg-purple-700"
         />
       </div>
-      {/* Search bar */}
+      {/* Search bar & Validasi filter */}
       <div className="py-5 px-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
         <div className="relative max-w-xs w-full">
           <input
@@ -117,6 +134,14 @@ const GridView = ({ data: propsData }: { data?: ITicket[] }) => {
           <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
             <svg className="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>
           </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-sm">Validasi Customer:</span>
+          <select value={validasiFilter} onChange={e => { setValidasiFilter(e.target.value as any); setPage(1); }} className="border rounded px-2 py-1 text-sm">
+            <option value="all">Semua</option>
+            <option value="valid">Valid</option>
+            <option value="invalid">Tidak Valid</option>
+          </select>
         </div>
       </div>
       {/* Table */}
@@ -133,15 +158,22 @@ const GridView = ({ data: propsData }: { data?: ITicket[] }) => {
             {paged.length === 0 ? (
               <tr><td colSpan={columns.length} className="text-center py-8 text-gray-400">No data found</td></tr>
             ) : (
-              paged.map((row, i) => (
-                <tr key={i} className={i % 2 === 0 ? 'bg-white dark:bg-gray-900' : 'bg-gray-50 dark:bg-gray-800'}>
+              paged.map((row, i) => {
+                const is2025 = row.openTime && row.openTime.startsWith('2025');
+                const isValid = customerNames.has((row.name || '').trim().toLowerCase());
+                return (
+                  <tr key={i} className={
+                    (i % 2 === 0 ? 'bg-white dark:bg-gray-900' : 'bg-gray-50 dark:bg-gray-800') +
+                    (is2025 && !isValid ? ' bg-red-50 dark:bg-red-900/30' : '')
+                  }>
                   {columns.map(col => (
                     <td key={col.key} className="px-5 py-3 whitespace-pre-line text-sm text-gray-800 dark:text-gray-200 align-top">
                       {col.render ? col.render(row[col.key], row) : row[col.key] || '-'}
                     </td>
                   ))}
                 </tr>
-              ))
+                );
+              })
             )}
           </tbody>
         </table>

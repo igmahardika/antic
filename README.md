@@ -1,73 +1,68 @@
-# Welcome to your Lovable project
+# AN-TIC Analytics Dashboard
 
-## Project info
+## Overview
+AN-TIC adalah aplikasi dashboard analitik modern untuk monitoring performa agent, tiket, dan customer secara profesional. Dirancang dengan UI/UX modern, clean, dan responsif menggunakan React, Tailwind CSS, dan IndexedDB (Dexie) untuk penyimpanan lokal.
 
-**URL**: https://lovable.dev/projects/c2d72cfd-ed6f-44db-ab9e-3f3ddb51ccbf
+---
 
-## How can I edit this code?
+## Fitur Utama
+- **Autentikasi & Manajemen User**: Login multi-browser, admin panel, role & permission, export/import user.
+- **Routing & Navigasi**: Sidebar modern, semua menu selalu tampil, routing terstruktur.
+- **Dashboard Analitik**: Customer, Ticket, dan Agent Analytics dengan filter waktu canggih.
+- **Master Data Agent**: Tabel agent otomatis dari data tiket, dengan metrik profesional:
+  - Nama, Tahun Aktif (badge), Jumlah Tiket
+  - Masa Aktif Handle (format singkat: `2 thn 10 bln 18 hr`)
+  - Rata-rata Durasi, Jumlah Customer Unik
+  - Jumlah Tiket Selesai di Hari yang Sama
+  - Jumlah Escalation (menggunakan logika escalation konsisten seluruh aplikasi)
+- **UI/UX Modern**: Tabel zebra, header biru bold, hover effect, rounded-xl, shadow, padding airy, responsive.
+- **Filtering & Aggregasi**: Filter waktu unified, default ke data terbaru, semua komponen downstream ikut filter.
+- **Dark Mode**: Dukungan penuh dark mode dengan standar warna konsisten.
 
-There are several ways of editing your application.
+---
 
-**Use Lovable**
+## Highlight Perubahan Terbaru
+- Tabel Master Data Agent dirombak total: urutan kolom lebih logis, metrik lebih relevan, tampilan modern dan profesional.
+- Format masa aktif handle kini singkat dan mudah dibaca (`2 thn 10 bln 18 hr`).
+- Logika escalation kini konsisten dengan halaman analitik lain.
+- Semua style tabel mengikuti best practice 2024: airy, clean, responsif, dan mudah dibaca.
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/c2d72cfd-ed6f-44db-ab9e-3f3ddb51ccbf) and start prompting.
+---
 
-Changes made via Lovable will be committed automatically to this repo.
+## Struktur Proyek
+- `src/components/` — Komponen utama (Dashboard, Analytics, MasterDataAgent, dsb)
+- `src/pages/` — Halaman utama (Login, Admin, NotFound, dsb)
+- `src/lib/` — Utilitas dan koneksi IndexedDB
+- `src/store/` — State management
+- `src/utils/` — Helper dan test
 
-**Use your preferred IDE**
+---
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+## Instalasi & Setup
+1. **Clone repo:**
+   ```bash
+   git clone https://github.com/igmahardika/antic.git
+   cd antic
+   ```
+2. **Install dependencies:**
+   ```bash
+   npm install
+   ```
+3. **Jalankan development server:**
+   ```bash
+   npm run dev
+   ```
+4. **Akses aplikasi:**
+   Buka [http://localhost:5173](http://localhost:5173)
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+---
 
-Follow these steps:
+## Kontribusi
+- Pull request dan issue sangat diterima.
+- Ikuti standar kode, UI/UX, dan penamaan yang sudah ada.
+- Pastikan fitur baru responsif, clean, dan konsisten dengan style dashboard.
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+---
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
-```
-
-**Edit a file directly in GitHub**
-
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
-
-**Use GitHub Codespaces**
-
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
-
-## What technologies are used for this project?
-
-This project is built with:
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/c2d72cfd-ed6f-44db-ab9e-3f3ddb51ccbf) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+## Lisensi
+MIT

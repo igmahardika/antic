@@ -179,6 +179,7 @@ export function SidebarNav({ isMobileOpen, setIsMobileOpen, onCollapseChange }) 
     { name: 'Dashboard', path: '/', icon: <HomeIcon fontSize="small" /> },
     { name: 'Data Grid', path: '/grid-view', icon: <TableChartIcon fontSize="small" /> },
     { name: 'Customer Analytics', path: '/kanban-board', icon: <GroupIcon fontSize="small" /> },
+    { name: 'Customer Data', path: '/customer', icon: <TableChartIcon fontSize="small" /> },
     { name: 'Ticket Analytics', path: '/ticket-analytics', icon: <BarChartIcon fontSize="small" /> },
     { name: 'Agent Analytics', path: '/agent-analytics', icon: <PersonCheckIcon fontSize="small" /> },
     { name: 'Upload Data', path: '/upload', icon: <CloudUploadIcon fontSize="small" /> },

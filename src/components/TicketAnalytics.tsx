@@ -26,6 +26,8 @@ import { PDFDownloadLink, Document, Page, Text, View, StyleSheet } from '@react-
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { formatDurationDHM } from '@/lib/utils';
 import { Badge } from './ui/badge';
+import { db } from '@/lib/db';
+import { useLiveQuery } from 'dexie-react-hooks';
 
 type ClassificationDetails = {
   count: number;
@@ -55,6 +57,17 @@ const MONTH_OPTIONS = [
   { value: '10', label: 'October' },
   { value: '11', label: 'November' },
   { value: '12', label: 'December' },
+];
+
+// Palet warna modern untuk area chart
+const AREA_COLORS = [
+  '#11A69C', // teal/cyan
+  '#0081FE', // biru
+  '#924AF7', // ungu
+  '#FBBF24', // kuning
+  '#FF5383', // merah muda neon
+  '#4ADE80', // hijau segar
+  '#F2681F', // oranye
 ];
 
 // Helper: convert chart.js-like data to recharts format
@@ -156,9 +169,10 @@ const pdfStatusBadge = status => {
 };
 
 const TicketAnalytics = ({ data: propsData }: TicketAnalyticsProps) => {
-  // Pindahkan semua useState ke paling atas komponen
+  // Semua hook harus di awal
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
+  const [viewMode, setViewMode] = useState<'type' | 'category'>('type');
   const {
     ticketAnalyticsData,
     gridData, // filtered tickets
@@ -168,24 +182,84 @@ const TicketAnalytics = ({ data: propsData }: TicketAnalyticsProps) => {
     allYearsInData,
     refresh
   } = useTicketAnalytics() || {};
+  const allCustomers = useLiveQuery(() => db.customers.toArray(), []);
+  const customerJenisKlienMap = useMemo(() => {
+    const map = new Map<string, string>();
+    (allCustomers || []).forEach(c => {
+      map.set((c.nama || '').trim().toLowerCase(), c.jenisKlien);
+    });
+    return map;
+  }, [allCustomers]);
+  const customerMonthMap = useMemo(() => {
+    const map = new Map<string, string[]>();
+    (allCustomers || []).forEach(c => {
+      if (!c.nama) return;
+      let months: string[] = [];
+      const cAny = c as any;
+      if (Array.isArray(cAny.bulan)) {
+        months = cAny.bulan;
+      } else if (Array.isArray(cAny.periode)) {
+        months = cAny.periode;
+      } else {
+        months = Array.from({ length: 12 }, (_, i) => `2025-${String(i + 1).padStart(2, '0')}`);
+      }
+      map.set((c.nama || '').trim().toLowerCase(), months);
+    });
+    return map;
+  }, [allCustomers]);
+  const jenisKlienList = ['Broadband', 'Broadband Business', 'Dedicated'];
+  const allCategories = useMemo(() => Array.from(new Set((allCustomers || []).map(c => c.kategori).filter(Boolean))), [allCustomers]);
+  const customerKategoriMap = useMemo(() => {
+    const map = new Map<string, string>();
+    (allCustomers || []).forEach(c => {
+      map.set((c.nama || '').trim().toLowerCase(), c.kategori);
+    });
+    return map;
+  }, [allCustomers]);
+  const kategoriList = allCategories;
+  const gridData2025 = useMemo(() => (
+    Array.isArray(gridData)
+      ? gridData.filter(t => {
+          const classification = (t.classification || '').trim().toLowerCase();
+          return t.openTime &&
+            t.openTime.startsWith('2025') &&
+            classification !== 'gangguan diluar layanan' &&
+            classification !== 'request';
+        })
+      : []
+  ), [gridData]);
+  const tiketPerJenisKlienPerBulan = useMemo(() => {
+    const result: Record<string, Record<string, number>> = {};
+    gridData2025.forEach(t => {
+      if (!t.openTime || !t.name) return;
+      const d = new Date(t.openTime);
+      if (isNaN(d.getTime())) return;
+      const month = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      const nama = (t.name || '').trim().toLowerCase();
+      const jenisKlien = customerJenisKlienMap.get(nama) || 'Unknown';
+      if (!result[month]) result[month] = { Broadband: 0, 'Broadband Business': 0, Dedicated: 0, Unknown: 0 };
+      if (jenisKlienList.includes(jenisKlien)) result[month][jenisKlien] += 1;
+      else result[month].Unknown += 1;
+    });
+    return result;
+  }, [gridData2025, customerJenisKlienMap]);
+  const tiketPerKategoriPerBulan = useMemo(() => {
+    const result: Record<string, Record<string, number>> = {};
+    gridData2025.forEach(t => {
+      if (!t.openTime || !t.name) return;
+      const d = new Date(t.openTime);
+      if (isNaN(d.getTime())) return;
+      const month = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      const nama = (t.name || '').trim().toLowerCase();
+      const kategori = customerKategoriMap.get(nama) || 'Unknown';
+      if (!result[month]) result[month] = {};
+      if (!result[month][kategori]) result[month][kategori] = 0;
+      result[month][kategori] += 1;
+    });
+    return result;
+  }, [gridData2025, customerKategoriMap]);
 
-  // Filter summary card: sembunyikan Average Duration dan Active Agents
-  const stats = useMemo(() => {
-    if (!ticketAnalyticsData || !Array.isArray(ticketAnalyticsData.stats)) return [];
-    return ticketAnalyticsData.stats
-      .filter(s => s.title !== 'Average Duration' && s.title !== 'Active Agents')
-      .map(s => ({
-        title: s.title.replace('Closed Tickets', 'Closed'),
-        value: s.value,
-        description:
-          s.title === 'Open' ? 'Tickets that are still open' :
-          s.title === 'Overdue' ? 'Tickets that exceeded the time limit' :
-          s.title === 'Escalated' ? 'Escalated tickets' :
-          s.description,
-      }));
-  }, [ticketAnalyticsData]);
-
-  // Untuk chart dan analisis lain, gunakan ticketAnalyticsData yang sudah berbasis gridData
+  // Deklarasi variabel yang dibutuhkan sebelum digunakan
   const monthOptions = MONTH_OPTIONS;
   // Filtering logic for all years
   const filteredGridData = useMemo(() => {
@@ -301,22 +375,6 @@ const TicketAnalytics = ({ data: propsData }: TicketAnalyticsProps) => {
     } catch (e) { console.error('Validasi shift detail error:', e); }
   }
 
-  // Guard clause for when data is not yet available
-  if (!gridData || gridData.length === 0) {
-    return (
-        <div className="flex flex-col items-center justify-center h-full text-gray-500 p-8">
-          <h1 className="text-3xl md:text-4xl font-extrabold mb-4 text-gray-900 dark:text-gray-100">Ticket Analytics</h1>
-          <h3 className="text-xl md:text-2xl font-semibold mb-2 text-gray-900 dark:text-gray-100">Data Analisis Tiket</h3>
-        <p>Tidak ada data yang cukup untuk ditampilkan. Unggah file untuk memulai.</p>
-        </div>
-    );
-  }
-
-  const insights = useInsightFromTicketAnalytics({ monthlyStatsData, classificationData, customerStats });
-  // Pindahkan semua useState ke atas komponen
-  // const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  // const [modalOpen, setModalOpen] = useState(false);
-
   const pdfPageStyle = { padding: 24, fontFamily: 'Helvetica' };
   const pdfSectionTitle = { fontSize: 13, fontWeight: 700, marginBottom: 6, marginTop: 12, fontFamily: 'Helvetica' };
   const pdfTableHeaderStyle = { fontWeight: 700, fontSize: 11, backgroundColor: '#f3f4f6', padding: 4, borderBottom: '1px solid #bbb' };
@@ -425,7 +483,7 @@ const TicketAnalytics = ({ data: propsData }: TicketAnalyticsProps) => {
       badge: 'Anomali',
     });
   }
-  // Prediksi tren volume tiket per bulan
+  // --- Insight tren volume tiket multi-bulan ---
   const monthMap = {};
   (Array.isArray(gridData) ? gridData : []).forEach(t => {
     if (!t.openTime) return;
@@ -437,16 +495,42 @@ const TicketAnalytics = ({ data: propsData }: TicketAnalyticsProps) => {
   });
   const months = Object.keys(monthMap).sort();
   if (months.length >= 2) {
-    const prev = monthMap[months[months.length-2]];
-    const curr = monthMap[months[months.length-1]];
-    const diff = curr - prev;
-    const trend = diff > 0 ? 'naik' : diff < 0 ? 'turun' : 'stabil';
+    let naik = 0, turun = 0, stabil = 0;
+    let maxUp = { month: '', delta: -Infinity };
+    let maxDown = { month: '', delta: Infinity };
+    let prev = null;
+    months.forEach((month, idx) => {
+      const total = monthMap[month];
+      if (idx === 0) {
+        prev = total;
+      } else {
+        const delta = total - prev;
+        if (delta > 0) { naik++; if (delta > maxUp.delta) maxUp = { month, delta }; }
+        else if (delta < 0) { turun++; if (delta < maxDown.delta) maxDown = { month, delta }; }
+        else { stabil++; }
+        prev = total;
+      }
+    });
+    let trendType = 'fluktuatif';
+    if (naik > turun && naik > stabil) trendType = 'naik';
+    else if (turun > naik && turun > stabil) trendType = 'turun';
+    else if (stabil > naik && stabil > turun) trendType = 'stabil';
+    let narasi = '';
+    if (trendType === 'naik') {
+      narasi = 'Volume tiket secara umum menunjukkan tren meningkat sepanjang periode. Terdapat beberapa bulan dengan lonjakan signifikan, menandakan adanya peningkatan kebutuhan atau gangguan layanan.';
+    } else if (trendType === 'turun') {
+      narasi = 'Volume tiket secara umum menunjukkan tren menurun sepanjang periode. Penurunan ini bisa menandakan perbaikan layanan atau penurunan aktivitas pelanggan.';
+    } else {
+      narasi = 'Volume tiket cenderung stabil sepanjang periode, tanpa fluktuasi besar.';
+    }
+    if (maxUp.delta > 0) narasi += ' Kenaikan terbesar terjadi pada salah satu bulan, menandakan adanya faktor pemicu khusus.';
+    if (maxDown.delta < 0) narasi += ' Penurunan terbesar juga tercatat pada periode tertentu, perlu dicermati penyebabnya.';
     insightCards.push({
-      icon: trend === 'naik' ? <span className="text-green-600">⬆️</span> : trend === 'turun' ? <span className="text-blue-600">⬇️</span> : <span className="text-gray-500">●</span>,
-      title: `Tren Volume Tiket: ${trend.charAt(0).toUpperCase()+trend.slice(1)}`,
-      description: `Volume tiket bulan terakhir ${trend} (${curr} tiket, sebelumnya ${prev}).`,
-      type: trend === 'naik' ? 'success' : trend === 'turun' ? 'info' : 'info',
-      badge: trend === 'naik' ? '+Tiket' : trend === 'turun' ? '-Tiket' : 'Stabil',
+      icon: trendType === 'naik' ? <span className="text-green-600">⬆️</span> : trendType === 'turun' ? <span className="text-blue-600">⬇️</span> : <span className="text-gray-500">●</span>,
+      title: `Tren Volume Tiket: ${trendType.charAt(0).toUpperCase()+trendType.slice(1)}`,
+      description: narasi,
+      type: trendType === 'naik' ? 'success' : trendType === 'turun' ? 'info' : 'info',
+      badge: trendType === 'naik' ? '+Tiket' : trendType === 'turun' ? '-Tiket' : 'Stabil',
     });
   }
   // Rekomendasi tindakan
@@ -458,6 +542,118 @@ const TicketAnalytics = ({ data: propsData }: TicketAnalyticsProps) => {
       type: 'info',
       badge: 'Saran',
     });
+  }
+
+  // Deklarasi ulang stats dan insights setelah dependensi tersedia
+  const stats = useMemo(() => {
+    if (!ticketAnalyticsData || !Array.isArray(ticketAnalyticsData.stats)) return [];
+    return ticketAnalyticsData.stats
+      .filter(s => s.title !== 'Average Duration' && s.title !== 'Active Agents')
+      .map(s => ({
+        title: s.title.replace('Closed Tickets', 'Closed'),
+        value: s.value,
+        description:
+          s.title === 'Open' ? 'Tickets that are still open' :
+          s.title === 'Overdue' ? 'Tickets that exceeded the time limit' :
+          s.title === 'Escalated' ? 'Escalated tickets' :
+          s.description,
+      }));
+  }, [ticketAnalyticsData]);
+  const insights = useInsightFromTicketAnalytics({ monthlyStatsData, classificationData, customerStats });
+
+  // --- Penetrasi Komplain Tertinggi per Jenis Klien ---
+  const complaintPenetrationByType = useMemo(() => {
+    if (!tiketPerJenisKlienPerBulan || !jenisKlienList || !allCustomers) return undefined;
+    // Hitung total klien unik per jenis
+    const totalByType: Record<string, number> = {};
+    allCustomers.forEach(c => {
+      if (jenisKlienList.includes(c.jenisKlien)) {
+        totalByType[c.jenisKlien] = (totalByType[c.jenisKlien] || 0) + 1;
+      }
+    });
+    // Hitung klien unik komplain per jenis (akumulasi semua bulan)
+    const uniqueComplainingByType: Record<string, Set<string>> = {};
+    jenisKlienList.forEach(jk => { uniqueComplainingByType[jk] = new Set(); });
+    gridData2025.forEach(t => {
+      const jk = customerJenisKlienMap.get((t.name || '').trim().toLowerCase());
+      if (jenisKlienList.includes(jk)) {
+        uniqueComplainingByType[jk].add((t.name || '').trim().toLowerCase());
+      }
+    });
+    // Hitung rasio penetrasi per jenis
+    let maxType = '';
+    let maxValue = 0;
+    jenisKlienList.forEach(jk => {
+      const total = totalByType[jk] || 1;
+      const value = Math.round((uniqueComplainingByType[jk].size / total) * 100);
+      if (value > maxValue) {
+        maxValue = value;
+        maxType = jk;
+      }
+    });
+    return { maxType, maxValue };
+  }, [tiketPerJenisKlienPerBulan, jenisKlienList, allCustomers, gridData2025, customerJenisKlienMap]);
+
+  // --- Penetrasi Komplain Tertinggi per Kategori Klien ---
+  const complaintPenetrationByCategory = useMemo(() => {
+    if (!tiketPerKategoriPerBulan || !kategoriList || !allCustomers) return undefined;
+    // Hitung total klien unik per kategori
+    const totalByCat: Record<string, number> = {};
+    allCustomers.forEach(c => {
+      if (c.kategori) {
+        totalByCat[c.kategori] = (totalByCat[c.kategori] || 0) + 1;
+      }
+    });
+    // Hitung klien unik komplain per kategori (akumulasi semua bulan)
+    const uniqueComplainingByCat: Record<string, Set<string>> = {};
+    kategoriList.forEach(cat => { uniqueComplainingByCat[cat] = new Set(); });
+    gridData2025.forEach(t => {
+      const cat = customerKategoriMap.get((t.name || '').trim().toLowerCase());
+      if (cat && kategoriList.includes(cat)) {
+        uniqueComplainingByCat[cat].add((t.name || '').trim().toLowerCase());
+      }
+    });
+    // Hitung rasio penetrasi per kategori
+    let maxCategory = '';
+    let maxValue = 0;
+    kategoriList.forEach(cat => {
+      const total = totalByCat[cat] || 1;
+      const value = Math.round((uniqueComplainingByCat[cat].size / total) * 100);
+      if (value > maxValue) {
+        maxValue = value;
+        maxCategory = cat;
+      }
+    });
+    return { maxCategory, maxValue };
+  }, [tiketPerKategoriPerBulan, kategoriList, allCustomers, gridData2025, customerKategoriMap]);
+
+  // Pastikan maxAvg dan maxAvgCat selalu punya formattedAvg
+  const safeMaxAvg: { shift: string; avg: number; median: number; count: number; formattedAvg: string } =
+    maxAvg && typeof maxAvg === 'object' && 'shift' in maxAvg
+      ? { shift: maxAvg.shift || '', avg: maxAvg.avg || 0, median: typeof maxAvg.median === 'number' ? maxAvg.median : 0, count: maxAvg.count || 0, formattedAvg: (maxAvg as any).formattedAvg || formatDurationHMS(maxAvg.avg || 0) || '00:00:00' }
+      : { shift: '', avg: 0, median: 0, count: 0, formattedAvg: '00:00:00' };
+  const safeMaxAvgCat: { cat: string; avg: number; median: number; count: number; formattedAvg: string } =
+    maxAvgCat && typeof maxAvgCat === 'object' && 'cat' in maxAvgCat
+      ? { cat: maxAvgCat.cat || '', avg: maxAvgCat.avg || 0, median: typeof maxAvgCat.median === 'number' ? maxAvgCat.median : 0, count: maxAvgCat.count || 0, formattedAvg: (maxAvgCat as any).formattedAvg || formatDurationHMS(maxAvgCat.avg || 0) || '00:00:00' }
+      : { cat: '', avg: 0, median: 0, count: 0, formattedAvg: '00:00:00' };
+
+  // Guard clause for when data tidak tersedia
+  if (!gridData || gridData.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full text-gray-500 p-8">
+        <h1 className="text-3xl md:text-4xl font-extrabold mb-4 text-gray-900 dark:text-gray-100">Ticket Analytics</h1>
+        <h3 className="text-xl md:text-2xl font-semibold mb-2 text-gray-900 dark:text-gray-100">Data Analisis Tiket</h3>
+        <p>Tidak ada data yang cukup untuk ditampilkan. Unggah file untuk memulai.</p>
+      </div>
+    );
+  }
+
+  // DEBUG LOG untuk validasi data customer dan kategori
+  if (typeof window !== 'undefined') {
+    console.log('allCustomers:', allCustomers);
+    console.log('kategoriList:', kategoriList);
+    console.log('customerKategoriMap:', customerKategoriMap);
+    console.log('gridData2025:', gridData2025.slice(0, 10));
   }
 
   return (
@@ -519,20 +715,44 @@ const TicketAnalytics = ({ data: propsData }: TicketAnalyticsProps) => {
           );
         })}
       </div>
+
       {insights && (
         <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg p-6 mb-8">
           <div className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">Automated Insights</div>
-          <div className="space-y-2 text-gray-700 dark:text-gray-200">
+          <ul className="space-y-2 text-gray-700 dark:text-gray-200 list-disc pl-5">
+            {/* Bulan tersibuk */}
             {insights.busiestMonth && (
-              <p>Bulan tersibuk: <span className="font-bold text-blue-700 dark:text-blue-300">{insights.busiestMonth.label}</span> dengan <span className="font-bold text-blue-700 dark:text-blue-300">{insights.busiestMonth.count}</span> tiket{insights.busiestMonth.trend && <span className="ml-1 text-xs font-semibold text-blue-500 dark:text-blue-300">({insights.busiestMonth.trend > 0 ? '+' : ''}{insights.busiestMonth.trend}% dari bulan sebelumnya)</span>}.</p>
+              <li>Bulan tersibuk: <span className="font-bold text-blue-700 dark:text-blue-300">{insights.busiestMonth.label}</span> dengan <span className="font-bold text-blue-700 dark:text-blue-300">{insights.busiestMonth.count}</span> tiket{insights.busiestMonth.trend && <span className="ml-1 text-xs font-semibold text-blue-500 dark:text-blue-300">({insights.busiestMonth.trend > 0 ? '+' : ''}{insights.busiestMonth.trend}% dari bulan sebelumnya)</span>}.</li>
             )}
+            {/* Kategori dominan */}
             {insights.topCategory && (
-              <p>Kategori dominan: <span className="font-bold text-blue-700 dark:text-blue-300">{insights.topCategory.cat}</span> (<span className="font-bold text-blue-700 dark:text-blue-300">{insights.topCategory.count}</span> tiket){typeof insights.topCategory.trend === 'number' && <span className="ml-1 text-xs font-semibold text-blue-500 dark:text-blue-300">, tren {insights.topCategory.trend > 0 ? 'naik' : 'turun'} {Math.abs(insights.topCategory.trend).toFixed(1)}%</span>}.</p>
+              <li>Kategori dominan: <span className="font-bold text-blue-700 dark:text-blue-300">{insights.topCategory.cat}</span> (<span className="font-bold text-blue-700 dark:text-blue-300">{insights.topCategory.count}</span> tiket){typeof insights.topCategory.trend === 'number' && <span className="ml-1 text-xs font-semibold text-blue-500 dark:text-blue-300">, tren {insights.topCategory.trend > 0 ? 'naik' : 'turun'} {Math.abs(insights.topCategory.trend).toFixed(1)}%</span>}.</li>
             )}
+            {/* Pelanggan kronis/ekstrem */}
             {insights.chronicPercent && (
-              <p><span className="font-bold text-blue-700 dark:text-blue-300">{insights.chronicPercent}%</span> pelanggan termasuk kategori <span className="font-bold text-blue-700 dark:text-blue-300">Kronis/Ekstrem</span> (lebih dari 10 tiket).</p>
+              <li><span className="font-bold text-blue-700 dark:text-blue-300">{insights.chronicPercent}%</span> pelanggan termasuk kategori <span className="font-bold text-blue-700 dark:text-blue-300">Kronis/Ekstrem</span> (lebih dari 10 tiket).</li>
             )}
-          </div>
+            {/* Rasio komplain tertinggi */}
+            {typeof complaintPenetrationByType !== 'undefined' && (
+              <li>Jenis klien dengan rasio komplain tertinggi: <span className="font-bold text-blue-700 dark:text-blue-300">{complaintPenetrationByType.maxType}</span> (<span className="font-bold text-blue-700 dark:text-blue-300">{complaintPenetrationByType.maxValue}%</span>).</li>
+            )}
+            {/* Penetrasi komplain kategori tertinggi */}
+            {typeof complaintPenetrationByCategory !== 'undefined' && (
+              <li>Kategori klien dengan penetrasi komplain tertinggi: <span className="font-bold text-blue-700 dark:text-blue-300">{complaintPenetrationByCategory.maxCategory}</span> (<span className="font-bold text-blue-700 dark:text-blue-300">{complaintPenetrationByCategory.maxValue}%</span>).</li>
+            )}
+            {/* Shift dengan handling time terlama */}
+            {typeof safeMaxAvg !== 'undefined' && safeMaxAvg.shift && (
+              <li>Shift dengan rata-rata handling time terlama: <span className="font-bold text-blue-700 dark:text-blue-300">{safeMaxAvg.shift}</span> (<span className="font-bold text-blue-700 dark:text-blue-300">{safeMaxAvg.formattedAvg}</span>).</li>
+            )}
+            {/* Kategori dengan handling time terlama */}
+            {typeof safeMaxAvgCat !== 'undefined' && safeMaxAvgCat.cat && (
+              <li>Kategori dengan rata-rata handling time terlama: <span className="font-bold text-blue-700 dark:text-blue-300">{safeMaxAvgCat.cat}</span> (<span className="font-bold text-blue-700 dark:text-blue-300">{safeMaxAvgCat.formattedAvg}</span>).</li>
+            )}
+            {/* Rekomendasi otomatis */}
+            {insightCards && insightCards.length > 0 && insightCards.map((card, idx) => (
+              <li key={idx}><span className="font-bold text-orange-500 mr-1">{card.icon}</span>{card.title}: {card.description}</li>
+            ))}
+          </ul>
         </div>
       )}
 
@@ -692,14 +912,81 @@ const TicketAnalytics = ({ data: propsData }: TicketAnalyticsProps) => {
       </div>
 
       {/* --- Agent Ticket per Shift Chart (Area) --- */}
-      <Card className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg p-6 mb-10">
+
+      {/* --- ANALYTICS CARDS GRID --- */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10 w-full">
+        {/* 1. Tickets per Month */}
+        <Card className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg">
+          <CardHeader>
+            <CardTitle>Tickets per Month</CardTitle>
+          </CardHeader>
+          <CardContent className="pt-2 h-auto flex flex-col gap-4 min-w-0">
+            <div className="w-full h-[260px] min-w-0">
+              <ResponsiveContainer width="100%" height={260}>
+                <AreaChart data={toRechartsData(monthlyStatsData.labels, monthlyStatsData.datasets)} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="colorIncoming" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#6366F1" stopOpacity={0.8}/>
+                      <stop offset="95%" stopColor="#6366F1" stopOpacity={0.1}/>
+                    </linearGradient>
+                    <linearGradient id="colorClosed" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#EC4899" stopOpacity={0.8}/>
+                      <stop offset="95%" stopColor="#EC4899" stopOpacity={0.1}/>
+                    </linearGradient>
+                  </defs>
+                  <XAxis dataKey="label" tickLine={false} axisLine={false} tickMargin={8} minTickGap={24} />
+                  <YAxis tickLine={false} axisLine={false} tickMargin={8} minTickGap={24} />
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                  <RechartsTooltip />
+                  <RechartsLegend />
+                  {/* Area harus incoming dulu, lalu closed, dan dataKey case sensitive */}
+                  <Area type="monotone" dataKey="incoming" stroke="#6366F1" fill="url(#colorIncoming)" name="Incoming" strokeWidth={3} />
+                  <Area type="monotone" dataKey="closed" stroke="#EC4899" fill="url(#colorClosed)" name="Closed" strokeWidth={3} />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+            <div className="overflow-x-auto w-full">
+              <table className="min-w-max w-full text-sm text-left mt-6 bg-white dark:bg-zinc-900 rounded-xl overflow-hidden">
+                <thead className="bg-white dark:bg-zinc-900">
+                  <tr>
+                    <th className="px-4 py-2">Tipe</th>
+                    {monthlyStatsData.labels.map((month, idx) => (
+                      <th key={month} className="px-4 py-2 font-bold font-mono text-center">{month}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="bg-white dark:bg-zinc-900">
+                  <tr>
+                    <td className="px-4 py-2 font-bold text-pink-600">Closed</td>
+                    {monthlyStatsData.labels.map((month, idx) => (
+                      <td key={month} className="px-4 py-2 text-center font-mono">{monthlyStatsData.datasets[0]?.data[idx] ?? 0}</td>
+                    ))}
+                  </tr>
+                  <tr>
+                    <td className="px-4 py-2 font-bold text-blue-600">Incoming</td>
+                    {monthlyStatsData.labels.map((month, idx) => (
+                      <td key={month} className="px-4 py-2 text-center font-mono">{monthlyStatsData.datasets[1]?.data[idx] ?? 0}</td>
+                    ))}
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </CardContent>
+        </Card>
+        {/* 2. Agent Tickets per Shift */}
+        <Card className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg">
         <CardHeader>
           <CardTitle>Agent Tickets per Shift</CardTitle>
         </CardHeader>
-        <CardContent>
-          <ResponsiveContainer width="100%" height={360}>
+          <CardContent className="pt-2 h-auto flex flex-col gap-4 min-w-0">
+            <div className="w-full h-[260px] min-w-0">
+              <ResponsiveContainer width="100%" height={260}>
             <AreaChart data={agentShiftAreaData} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
               <defs>
+                        <linearGradient id="colorMalam" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#ef4444" stopOpacity={0.8}/>
+                          <stop offset="95%" stopColor="#ef4444" stopOpacity={0.1}/>
+                        </linearGradient>
                 <linearGradient id="colorPagi" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor="#22c55e" stopOpacity={0.8}/>
                   <stop offset="95%" stopColor="#22c55e" stopOpacity={0.1}/>
@@ -708,177 +995,649 @@ const TicketAnalytics = ({ data: propsData }: TicketAnalyticsProps) => {
                   <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.8}/>
                   <stop offset="95%" stopColor="#3b82f6" stopOpacity={0.1}/>
                 </linearGradient>
-                <linearGradient id="colorMalam" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#ef4444" stopOpacity={0.8}/>
-                  <stop offset="95%" stopColor="#ef4444" stopOpacity={0.1}/>
-                </linearGradient>
               </defs>
-              <XAxis dataKey="month" />
-              <YAxis />
+                      <XAxis dataKey="month" tickLine={false} axisLine={false} tickMargin={8} minTickGap={24} />
+                      <YAxis tickLine={false} axisLine={false} tickMargin={8} minTickGap={24} />
               <CartesianGrid strokeDasharray="3 3" vertical={false} />
-              <RechartsTooltip content={({ active, payload, label }) => {
-                if (!active || !payload) return null;
-                const pagi = payload.find(p => p.dataKey === 'Pagi');
-                const sore = payload.find(p => p.dataKey === 'Sore');
-                const malam = payload.find(p => p.dataKey === 'Malam');
-                return (
-                  <div className="bg-white rounded-lg shadow-lg p-4 text-xs min-w-[180px]">
-                    <div className="font-bold mb-1">{label}</div>
-                    <div className="text-red-600 mb-0.5">Malam (01:00–07:59): <b>{malam ? malam.value : 0}</b></div>
-                    <div className="text-green-600 mb-0.5">Pagi (08:00–16:59): <b>{pagi ? pagi.value : 0}</b></div>
-                    <div className="text-blue-600">Sore (00:00–00:59 & 17:00–23:59): <b>{sore ? sore.value : 0}</b></div>
-                  </div>
-                );
-              }} />
-              <RechartsLegend formatter={(value) => {
-                if (value === 'Malam') return 'Malam (01:00–07:59)';
-                if (value === 'Pagi') return 'Pagi (08:00–16:59)';
-                if (value === 'Sore') return 'Sore (00:00–00:59 & 17:00–23:59)';
-                return value;
-              }} />
+                      <RechartsTooltip />
+                      <RechartsLegend />
               <Area type="monotone" dataKey="Malam" stroke="#ef4444" fill="url(#colorMalam)" name="Malam (01:00–07:59)" strokeWidth={3} />
               <Area type="monotone" dataKey="Pagi" stroke="#22c55e" fill="url(#colorPagi)" name="Pagi (08:00–16:59)" strokeWidth={3} />
               <Area type="monotone" dataKey="Sore" stroke="#3b82f6" fill="url(#colorSore)" name="Sore (00:00–00:59 & 17:00–23:59)" strokeWidth={3} />
             </AreaChart>
           </ResponsiveContainer>
+                </div>
+                <div className="overflow-x-auto w-full">
+                  <table className="min-w-max w-full text-sm text-left mt-6 bg-white dark:bg-zinc-900 rounded-xl overflow-hidden">
+                    <thead className="bg-white dark:bg-zinc-900">
+                      <tr>
+                        <th className="px-4 py-2">Shift</th>
+                        {agentShiftAreaData.map((row, idx) => (
+                          <th key={row.month} className="px-4 py-2 font-bold font-mono text-center">{row.month}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white dark:bg-zinc-900">
+                      <tr>
+                        <td className="px-4 py-2 font-bold text-green-600">Pagi</td>
+                        {agentShiftAreaData.map((row, idx) => (
+                          <td key={row.month} className="px-4 py-2 text-center font-mono">{row.Pagi}</td>
+                        ))}
+                      </tr>
+                      <tr>
+                        <td className="px-4 py-2 font-bold text-blue-600">Sore</td>
+                        {agentShiftAreaData.map((row, idx) => (
+                          <td key={row.month} className="px-4 py-2 text-center font-mono">{row.Sore}</td>
+                        ))}
+                      </tr>
+                      <tr>
+                        <td className="px-4 py-2 font-bold text-red-600">Malam</td>
+                        {agentShiftAreaData.map((row, idx) => (
+                          <td key={row.month} className="px-4 py-2 text-center font-mono">{row.Malam}</td>
+                        ))}
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
         </CardContent>
       </Card>
-
-      {/* Charts Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 gap-y-10 mb-10">
-        {/* Main Charts */}
-        <div className="lg:col-span-3 grid grid-cols-1 gap-6">
-          <Card className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg p-6">
+        {/* 3. Tickets by Client Type (2025) */}
+        <Card className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg">
             <CardHeader>
-              <CardTitle>Tickets per Month</CardTitle>
+            <CardTitle>Tickets by Client Type (2025)</CardTitle>
             </CardHeader>
-            <CardContent className="pt-2 h-[320px]">
-              {monthlyStatsData && monthlyStatsData.labels && monthlyStatsData.labels.length > 0 ? (
-                <ResponsiveContainer width="100%" height={320}>
-                  <AreaChart data={toRechartsData(monthlyStatsData.labels, monthlyStatsData.datasets)} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={260}>
+              <AreaChart
+                data={(() => {
+                  const months = Object.keys(tiketPerJenisKlienPerBulan).sort();
+                  return months.map(month => {
+                    const row: any = { month };
+                    jenisKlienList.forEach(jk => {
+                      row[jk] = tiketPerJenisKlienPerBulan[month][jk] || 0;
+                    });
+                    return row;
+                  });
+                })()}
+                margin={{ top: 20, right: 30, left: 0, bottom: 0 }}
+              >
                     <defs>
-                      <linearGradient id="colorIncoming" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#6366F1" stopOpacity={0.8}/>
-                        <stop offset="95%" stopColor="#6366F1" stopOpacity={0.1}/>
+                  <linearGradient id="colorBroadband" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.8}/>
+                    <stop offset="95%" stopColor="#3b82f6" stopOpacity={0.1}/>
                       </linearGradient>
-                      <linearGradient id="colorClosed" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#EC4899" stopOpacity={0.8}/>
-                        <stop offset="95%" stopColor="#EC4899" stopOpacity={0.1}/>
+                  <linearGradient id="colorBroadbandBusiness" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#22c55e" stopOpacity={0.8}/>
+                    <stop offset="95%" stopColor="#22c55e" stopOpacity={0.1}/>
+                  </linearGradient>
+                  <linearGradient id="colorDedicated" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#f59e42" stopOpacity={0.8}/>
+                    <stop offset="95%" stopColor="#f59e42" stopOpacity={0.1}/>
                       </linearGradient>
                     </defs>
-                    <XAxis dataKey="label" tickLine={false} axisLine={false} tickMargin={8} minTickGap={24} />
-                    <YAxis tickLine={false} axisLine={false} tickMargin={8} minTickGap={24} />
+                <XAxis dataKey="month" tickLine={false} axisLine={false} tickMargin={8} minTickGap={24} />
+                <YAxis tickLine={false} axisLine={false} tickMargin={8} minTickGap={24} allowDecimals={false} />
                     <CartesianGrid strokeDasharray="3 3" vertical={false} />
                     <RechartsTooltip />
                     <RechartsLegend />
-                    <Area type="monotone" dataKey="incoming" stroke="#6366F1" fill="url(#colorIncoming)" name="Incoming Tickets" strokeWidth={3} />
-                    <Area type="monotone" dataKey="closed" stroke="#EC4899" fill="url(#colorClosed)" name="Closed Tickets" strokeWidth={3} />
+                <Area type="monotone" dataKey="Broadband" stroke="#3b82f6" fill="url(#colorBroadband)" name="Broadband" strokeWidth={3} />
+                <Area type="monotone" dataKey="Broadband Business" stroke="#22c55e" fill="url(#colorBroadbandBusiness)" name="Broadband Business" strokeWidth={3} />
+                <Area type="monotone" dataKey="Dedicated" stroke="#f59e42" fill="url(#colorDedicated)" name="Dedicated" strokeWidth={3} />
                   </AreaChart>
                 </ResponsiveContainer>
-              ) : (
-                <div className="text-center text-gray-400 py-12">No data for this chart</div>
-              )}
+            {/* Table */}
+            <table className="min-w-max w-full text-sm text-left mt-6">
+              <thead>
+                <tr>
+                  <th className="px-4 py-2">Client Type</th>
+                  {Object.keys(tiketPerJenisKlienPerBulan).sort().map(month => (
+                    <th key={month} className="px-4 py-2">{month}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {jenisKlienList.map(jk => (
+                  <tr key={jk}>
+                    <td className="px-4 py-2 font-bold text-blue-700 dark:text-blue-300">{jk}</td>
+                    {Object.keys(tiketPerJenisKlienPerBulan).sort().map(month => (
+                      <td key={month} className="px-4 py-2 text-center font-mono">{tiketPerJenisKlienPerBulan[month][jk] || 0}</td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+              <tfoot>
+                <tr>
+                  <td className="px-4 py-2 font-bold">Total</td>
+                  {Object.keys(tiketPerJenisKlienPerBulan).sort().map(month => {
+                    const total = Object.values(tiketPerJenisKlienPerBulan[month]).reduce((a, b) => a + b, 0);
+                    return <td key={month} className="px-4 py-2 text-center font-bold font-mono">{total}</td>;
+                  })}
+                </tr>
+              </tfoot>
+            </table>
             </CardContent>
           </Card>
-        </div>
-        
-        {/* Doughnut Chart */}
-        <div className="lg:col-span-2 grid grid-cols-1 gap-6">
-          <Card className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg p-6">
+        {/* 4. Tickets by Client Category (2025) */}
+        <Card className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg">
             <CardHeader>
-              <CardTitle>Complaint Categories</CardTitle>
+            <CardTitle>Tickets by Client Category (2025)</CardTitle>
             </CardHeader>
-            <CardContent className="pt-2 h-[320px] flex flex-col items-center justify-center">
-              {complaintsData && complaintsData.labels && complaintsData.labels.length > 0 ? (
-                <div className="relative flex flex-col items-center justify-center w-full h-full">
-                  <ResponsiveContainer width="100%" height={240}>
-                    <PieChart>
-                      <Pie
-                        data={complaintsData.labels.map((label, idx) => ({
-                          name: label,
-                          value: complaintsData.datasets[0].data[idx],
-                          fill: complaintsData.datasets[0].backgroundColor[idx],
-                        }))}
-                        dataKey="value"
-                        nameKey="name"
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={60}
-                        outerRadius={90}
-                        paddingAngle={2}
-                        stroke="none"
-                        strokeWidth={0}
-                        labelLine={false}
-                        isAnimationActive={true}
-                      >
-                        <RechartsLabel
-                          position="center"
-                          content={({ viewBox }) => {
-                            const total = complaintsData.datasets[0].data.reduce((a,b)=>a+b,0);
-                            if (viewBox && "cx" in viewBox && "cy" in viewBox) {
+          <CardContent>
+            <ResponsiveContainer width="100%" height={260}>
+              <AreaChart
+                data={(() => {
+                  const months = Object.keys(tiketPerKategoriPerBulan).sort();
+                  return months.map(month => {
+                    const row: any = { month };
+                    kategoriList.forEach(kat => {
+                      row[kat] = tiketPerKategoriPerBulan[month][kat] || 0;
+                    });
+                    return row;
+                  });
+                })()}
+                margin={{ top: 20, right: 30, left: 0, bottom: 0 }}
+              >
+                <defs>
+                  {kategoriList.map((kat, idx) => (
+                    <linearGradient key={kat} id={`colorKategori${kat.replace(/\s/g, '')}`} x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor={AREA_COLORS[idx%AREA_COLORS.length]} stopOpacity={0.8}/>
+                      <stop offset="95%" stopColor={AREA_COLORS[idx%AREA_COLORS.length]} stopOpacity={0.1}/>
+                    </linearGradient>
+                  ))}
+                </defs>
+                <XAxis dataKey="month" tickLine={false} axisLine={false} tickMargin={8} minTickGap={24} />
+                <YAxis tickLine={false} axisLine={false} tickMargin={8} minTickGap={24} allowDecimals={false} />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                <RechartsTooltip />
+                <RechartsLegend />
+                {kategoriList.map((kat, idx) => (
+                  <Area
+                    key={kat}
+                    type="monotone"
+                    dataKey={kat}
+                    stroke={AREA_COLORS[idx%AREA_COLORS.length]}
+                    fill={`url(#colorKategori${kat.replace(/\s/g, '')})`}
+                    name={kat}
+                    strokeWidth={3}
+                  />
+                ))}
+              </AreaChart>
+            </ResponsiveContainer>
+            {/* Table */}
+            <table className="min-w-max w-full text-sm text-left mt-6">
+              <thead>
+                <tr>
+                  <th className="px-4 py-2">Client Category</th>
+                  {Object.keys(tiketPerKategoriPerBulan).sort().map(month => (
+                    <th key={month} className="px-4 py-2">{month}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {kategoriList.map(kat => (
+                  <tr key={kat}>
+                    <td className="px-4 py-2 font-bold text-blue-700 dark:text-blue-300">{kat}</td>
+                    {Object.keys(tiketPerKategoriPerBulan).sort().map(month => (
+                      <td key={month} className="px-4 py-2 text-center font-mono">{tiketPerKategoriPerBulan[month][kat] || 0}</td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+              <tfoot>
+                <tr>
+                  <td className="px-4 py-2 font-bold">Total</td>
+                  {Object.keys(tiketPerKategoriPerBulan).sort().map(month => {
+                    const total = Object.values(tiketPerKategoriPerBulan[month]).reduce((a, b) => a + b, 0);
+                    return <td key={month} className="px-4 py-2 text-center font-bold font-mono">{total}</td>;
+                  })}
+                </tr>
+              </tfoot>
+            </table>
+          </CardContent>
+        </Card>
+        {/* 5. Unique Complaining Clients by Type (2025) */}
+        <Card className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg">
+            <CardHeader>
+            <CardTitle>Unique Complaining Clients by Type (2025)</CardTitle>
+            </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={260}>
+              <AreaChart
+                data={(() => {
+                  const months = Object.keys(tiketPerJenisKlienPerBulan).sort();
+                  return months.map(month => {
+                    const row: any = { month };
+                    jenisKlienList.forEach(jk => {
+                      row[jk] = Array.from(new Set(gridData2025.filter(t => {
+                        const d = new Date(t.openTime);
+                        const m = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+                        const jenis = customerJenisKlienMap.get((t.name || '').trim().toLowerCase()) || 'Unknown';
+                        return m === month && jenis === jk;
+                      }).map(t => (t.name || '').trim().toLowerCase()))).length;
+                    });
+                    return row;
+                  });
+                })()}
+                margin={{ top: 20, right: 30, left: 0, bottom: 0 }}
+              >
+                <defs>
+                  <linearGradient id="colorBroadbandU" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.8}/>
+                    <stop offset="95%" stopColor="#3b82f6" stopOpacity={0.1}/>
+                  </linearGradient>
+                  <linearGradient id="colorBroadbandBusinessU" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#22c55e" stopOpacity={0.8}/>
+                    <stop offset="95%" stopColor="#22c55e" stopOpacity={0.1}/>
+                  </linearGradient>
+                  <linearGradient id="colorDedicatedU" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#f59e42" stopOpacity={0.8}/>
+                    <stop offset="95%" stopColor="#f59e42" stopOpacity={0.1}/>
+                  </linearGradient>
+                </defs>
+                <XAxis dataKey="month" tickLine={false} axisLine={false} tickMargin={8} minTickGap={24} />
+                <YAxis tickLine={false} axisLine={false} tickMargin={8} minTickGap={24} allowDecimals={false} />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                <RechartsTooltip />
+                <RechartsLegend />
+                <Area type="monotone" dataKey="Broadband" stroke="#3b82f6" fill="url(#colorBroadbandU)" name="Broadband" strokeWidth={3} />
+                <Area type="monotone" dataKey="Broadband Business" stroke="#22c55e" fill="url(#colorBroadbandBusinessU)" name="Broadband Business" strokeWidth={3} />
+                <Area type="monotone" dataKey="Dedicated" stroke="#f59e42" fill="url(#colorDedicatedU)" name="Dedicated" strokeWidth={3} />
+              </AreaChart>
+            </ResponsiveContainer>
+            {/* Table */}
+            <table className="min-w-max w-full text-sm text-left mt-6">
+              <thead>
+                <tr>
+                  <th className="px-4 py-2">Client Type</th>
+                  {Object.keys(tiketPerJenisKlienPerBulan).sort().map(month => (
+                    <th key={month} className="px-4 py-2">{month}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {jenisKlienList.map(jk => (
+                  <tr key={jk}>
+                    <td className="px-4 py-2 font-bold text-blue-700 dark:text-blue-300">{jk}</td>
+                    {Object.keys(tiketPerJenisKlienPerBulan).sort().map(month => {
+                      const uniqueClients = Array.from(new Set(gridData2025.filter(t => {
+                        const d = new Date(t.openTime);
+                        const m = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+                        const jenis = customerJenisKlienMap.get((t.name || '').trim().toLowerCase()) || 'Unknown';
+                        return m === month && jenis === jk;
+                      }).map(t => (t.name || '').trim().toLowerCase()))).length;
                               return (
-                                <text
-                                  x={viewBox.cx}
-                                  y={viewBox.cy}
-                                  textAnchor="middle"
-                                  dominantBaseline="middle"
-                                >
-                                  <tspan
-                                    x={viewBox.cx}
-                                    y={viewBox.cy}
-                                    className="fill-blue-800 dark:fill-blue-200 text-3xl font-bold"
-                                  >
-                                    {total}
-                                  </tspan>
-                                  <tspan
-                                    x={viewBox.cx}
-                                    y={(viewBox.cy || 0) + 24}
-                                    className="fill-muted-foreground text-base"
-                                  >
-                                    Total
-                                  </tspan>
-                                </text>
-                              )
-                            }
-                            return null;
-                          }}
-                        />
-                        {complaintsData.labels.map((label, idx) => (
-                          <Cell key={`cell-${idx}`} fill={complaintsData.datasets[0].backgroundColor[idx]} />
-                        ))}
-                      </Pie>
-                      <RechartsTooltip
-                        formatter={(value, name, props) => {
-                          const total = complaintsData.datasets[0].data.reduce((a,b)=>a+b,0);
-                          const percent = total ? ((value as number/total)*100).toFixed(1) : '0.0';
-                          return [`${value} tickets (${percent}%)`, name];
-                        }}
-                      />
-                    </PieChart>
-                  </ResponsiveContainer>
-                  {/* Custom legend */}
-                  <div className="flex flex-wrap justify-center gap-x-4 gap-y-2 mt-6 w-full">
-                    {complaintsData.labels.map((label, idx) => {
-                      const val = complaintsData.datasets[0].data[idx];
-                      const total = complaintsData.datasets[0].data.reduce((a,b)=>a+b,0);
-                      const percent = total ? ((val/total)*100).toFixed(1) : '0.0';
-                      return (
-                        <span key={label} className="flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-gray-200">
-                        <span className="w-3 h-3 rounded-full border-2 border-white shadow" style={{background: complaintsData.datasets[0].backgroundColor[idx]}}></span>
-                          <span>{label}</span>
-                          <span className="font-bold">{val}</span>
-                          <span className="text-xs text-gray-500">({percent}%)</span>
-                        </span>
+                        <td key={month} className="px-4 py-2 text-center font-mono">{uniqueClients}</td>
                       );
                     })}
-                  </div>
-                </div>
-              ) : (
-                <div className="text-center text-gray-400 py-12">No data for this chart</div>
-              )}
+                  </tr>
+                ))}
+              </tbody>
+              <tfoot>
+                <tr>
+                  <td className="px-4 py-2 font-bold">Total</td>
+                  {Object.keys(tiketPerJenisKlienPerBulan).sort().map(month => {
+                    // Jumlah total unique clients semua jenis klien di bulan ini
+                    const total = jenisKlienList.reduce((sum, jk) => {
+                      const uniqueClients = Array.from(new Set(gridData2025.filter(t => {
+                        const d = new Date(t.openTime);
+                        const m = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+                        const jenis = customerJenisKlienMap.get((t.name || '').trim().toLowerCase()) || 'Unknown';
+                        return m === month && jenis === jk;
+                      }).map(t => (t.name || '').trim().toLowerCase()))).length;
+                      return sum + uniqueClients;
+                    }, 0);
+                    return <td key={month} className="px-4 py-2 text-center font-bold font-mono">{total}</td>;
+                  })}
+                </tr>
+              </tfoot>
+            </table>
+          </CardContent>
+        </Card>
+        {/* 6. Unique Complaining Clients by Category (2025) */}
+        <Card className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg">
+          <CardHeader>
+            <CardTitle>Unique Complaining Clients by Category (2025)</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={260}>
+              <AreaChart
+                data={(() => {
+                  const months = Object.keys(tiketPerKategoriPerBulan).sort();
+                  return months.map(month => {
+                    const row: any = { month };
+                    kategoriList.forEach(kat => {
+                      row[kat] = Array.from(new Set(gridData2025.filter(t => {
+                        const d = new Date(t.openTime);
+                        const m = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+                        const kategori = customerKategoriMap.get((t.name || '').trim().toLowerCase()) || 'Unknown';
+                        return m === month && kategori === kat;
+                      }).map(t => (t.name || '').trim().toLowerCase()))).length;
+                    });
+                    return row;
+                  });
+                })()}
+                margin={{ top: 20, right: 30, left: 0, bottom: 0 }}
+              >
+                <defs>
+                  {kategoriList.map((kat, idx) => (
+                    <linearGradient key={kat} id={`colorUKategori${kat.replace(/\s/g, '')}`} x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor={AREA_COLORS[idx%AREA_COLORS.length]} stopOpacity={0.8}/>
+                      <stop offset="95%" stopColor={AREA_COLORS[idx%AREA_COLORS.length]} stopOpacity={0.1}/>
+                    </linearGradient>
+                  ))}
+                </defs>
+                <XAxis dataKey="month" tickLine={false} axisLine={false} tickMargin={8} minTickGap={24} />
+                <YAxis tickLine={false} axisLine={false} tickMargin={8} minTickGap={24} allowDecimals={false} />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                <RechartsTooltip />
+                <RechartsLegend />
+                {kategoriList.map((kat, idx) => (
+                  <Area
+                    key={kat}
+                    type="monotone"
+                    dataKey={kat}
+                    stroke={AREA_COLORS[idx%AREA_COLORS.length]}
+                    fill={`url(#colorUKategori${kat.replace(/\s/g, '')})`}
+                    name={kat}
+                    strokeWidth={3}
+                  />
+                ))}
+              </AreaChart>
+            </ResponsiveContainer>
+            {/* Table */}
+            <table className="min-w-max w-full text-sm text-left mt-6">
+              <thead>
+                <tr>
+                  <th className="px-4 py-2">Client Category</th>
+                  {Object.keys(tiketPerKategoriPerBulan).sort().map(month => (
+                    <th key={month} className="px-4 py-2">{month}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {kategoriList.map(kat => (
+                  <tr key={kat}>
+                    <td className="px-4 py-2 font-bold text-blue-700 dark:text-blue-300">{kat}</td>
+                    {Object.keys(tiketPerKategoriPerBulan).sort().map(month => {
+                      const uniqueClients = Array.from(new Set(gridData2025.filter(t => {
+                        const d = new Date(t.openTime);
+                        const m = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+                        const kategori = customerKategoriMap.get((t.name || '').trim().toLowerCase()) || 'Unknown';
+                        return m === month && kategori === kat;
+                      }).map(t => (t.name || '').trim().toLowerCase()))).length;
+                      return (
+                        <td key={month} className="px-4 py-2 text-center font-mono">{uniqueClients}</td>
+                      );
+                    })}
+                  </tr>
+                ))}
+              </tbody>
+              <tfoot>
+                <tr>
+                  <td className="px-4 py-2 font-bold">Total</td>
+                  {Object.keys(tiketPerKategoriPerBulan).sort().map(month => {
+                    // Jumlah total unique clients semua kategori di bulan ini
+                    const total = kategoriList.reduce((sum, kat) => {
+                      const uniqueClients = Array.from(new Set(gridData2025.filter(t => {
+                        const d = new Date(t.openTime);
+                        const m = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+                        const kategori = customerKategoriMap.get((t.name || '').trim().toLowerCase()) || 'Unknown';
+                        return m === month && kategori === kat;
+                      }).map(t => (t.name || '').trim().toLowerCase()))).length;
+                      return sum + uniqueClients;
+                    }, 0);
+                    return <td key={month} className="px-4 py-2 text-center font-bold font-mono">{total}</td>;
+                  })}
+                </tr>
+              </tfoot>
+            </table>
+          </CardContent>
+        </Card>
+        {/* 7. Complaint Penetration Ratio by Type (2025) */}
+        <Card className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg">
+          <CardHeader>
+            <CardTitle>Complaint Penetration Ratio by Type (2025)</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={260}>
+              <AreaChart
+                data={(() => {
+                  const months = Object.keys(tiketPerJenisKlienPerBulan).sort();
+                  return months.map(month => {
+                    const row: any = { month };
+                    jenisKlienList.forEach(jk => {
+                      // Klien unik yang komplain bulan ini
+                      const uniqueClients = Array.from(new Set(gridData2025.filter(t => {
+                        const d = new Date(t.openTime);
+                        const m = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+                        const jenis = customerJenisKlienMap.get((t.name || '').trim().toLowerCase()) || 'Unknown';
+                        return m === month && jenis === jk;
+                      }).map(t => (t.name || '').trim().toLowerCase()))).length;
+                      // Total klien jenis klien bulan ini (dari data customer, filter bulan)
+                      const totalClients = Array.from(customerJenisKlienMap.entries()).filter(([name, jenis2]) => jenis2 === jk && customerMonthMap.get(name) && customerMonthMap.get(name).includes(month)).length;
+                      row[jk] = totalClients > 0 ? (uniqueClients / totalClients) * 100 : 0;
+                    });
+                    return row;
+                  });
+                })()}
+                margin={{ top: 20, right: 30, left: 0, bottom: 0 }}
+              >
+                <defs>
+                  <linearGradient id="colorBroadbandP" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.8}/>
+                    <stop offset="95%" stopColor="#3b82f6" stopOpacity={0.1}/>
+                  </linearGradient>
+                  <linearGradient id="colorBroadbandBusinessP" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#22c55e" stopOpacity={0.8}/>
+                    <stop offset="95%" stopColor="#22c55e" stopOpacity={0.1}/>
+                  </linearGradient>
+                  <linearGradient id="colorDedicatedP" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#f59e42" stopOpacity={0.8}/>
+                    <stop offset="95%" stopColor="#f59e42" stopOpacity={0.1}/>
+                  </linearGradient>
+                </defs>
+                <XAxis dataKey="month" tickLine={false} axisLine={false} tickMargin={8} minTickGap={24} />
+                <YAxis tickLine={false} axisLine={false} tickMargin={8} minTickGap={24} allowDecimals={true} />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                <RechartsTooltip formatter={v => (typeof v === 'number' ? `${v.toFixed(2)}%` : v)} />
+                <RechartsLegend />
+                <Area type="monotone" dataKey="Broadband" stroke="#3b82f6" fill="url(#colorBroadbandP)" name="Broadband" strokeWidth={3} />
+                <Area type="monotone" dataKey="Broadband Business" stroke="#22c55e" fill="url(#colorBroadbandBusinessP)" name="Broadband Business" strokeWidth={3} />
+                <Area type="monotone" dataKey="Dedicated" stroke="#f59e42" fill="url(#colorDedicatedP)" name="Dedicated" strokeWidth={3} />
+              </AreaChart>
+            </ResponsiveContainer>
+            {/* Table */}
+            <table className="min-w-max w-full text-sm text-left mt-6">
+              <thead>
+                <tr>
+                  <th className="px-4 py-2">Client Type</th>
+                  {Object.keys(tiketPerJenisKlienPerBulan).sort().map(month => (
+                    <th key={month} className="px-4 py-2">{month}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {jenisKlienList.map(jk => (
+                  <tr key={jk}>
+                    <td className="px-4 py-2 font-bold text-blue-700 dark:text-blue-300">{jk}</td>
+                    {Object.keys(tiketPerJenisKlienPerBulan).sort().map(month => {
+                      const uniqueClients = Array.from(new Set(gridData2025.filter(t => {
+                        const d = new Date(t.openTime);
+                        const m = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+                        const jenis = customerJenisKlienMap.get((t.name || '').trim().toLowerCase()) || 'Unknown';
+                        return m === month && jenis === jk;
+                      }).map(t => (t.name || '').trim().toLowerCase()))).length;
+                      const totalClients = Array.from(customerJenisKlienMap.entries()).filter(([name, jenis2]) => jenis2 === jk && customerMonthMap.get(name) && customerMonthMap.get(name).includes(month)).length;
+                      const ratio = totalClients > 0 ? (uniqueClients / totalClients) * 100 : 0;
+                      return (
+                        <td key={month} className="px-4 py-2 text-center font-mono">{ratio.toFixed(2)}%</td>
+                      );
+                    })}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </CardContent>
+        </Card>
+        {/* 8. Complaint Penetration Ratio by Category (2025) */}
+        <Card className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg">
+          <CardHeader>
+            <CardTitle>Complaint Penetration Ratio by Category (2025)</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={260}>
+              <AreaChart
+                data={(() => {
+                  const months = Object.keys(tiketPerKategoriPerBulan).sort();
+                  return months.map(month => {
+                    const row: any = { month };
+                    kategoriList.forEach(kat => {
+                      // Klien unik yang komplain bulan ini
+                      const uniqueClients = Array.from(new Set(gridData2025.filter(t => {
+                        const d = new Date(t.openTime);
+                        const m = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+                        const kategori = customerKategoriMap.get((t.name || '').trim().toLowerCase()) || 'Unknown';
+                        return m === month && kategori === kat;
+                      }).map(t => (t.name || '').trim().toLowerCase()))).length;
+                      // Total klien kategori bulan ini (dari data customer, filter bulan)
+                      const totalClients = Array.from(customerKategoriMap.entries()).filter(([name, kategori2]) => kategori2 === kat && customerMonthMap.get(name) && customerMonthMap.get(name).includes(month)).length;
+                      row[kat] = totalClients > 0 ? (uniqueClients / totalClients) * 100 : 0;
+                    });
+                    return row;
+                  });
+                })()}
+                margin={{ top: 20, right: 30, left: 0, bottom: 0 }}
+              >
+                <defs>
+                  {kategoriList.map((kat, idx) => (
+                    <linearGradient key={kat} id={`colorPKategori${kat.replace(/\s/g, '')}`} x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor={AREA_COLORS[idx%AREA_COLORS.length]} stopOpacity={0.8}/>
+                      <stop offset="95%" stopColor={AREA_COLORS[idx%AREA_COLORS.length]} stopOpacity={0.1}/>
+                    </linearGradient>
+                  ))}
+                </defs>
+                <XAxis dataKey="month" tickLine={false} axisLine={false} tickMargin={8} minTickGap={24} />
+                <YAxis tickLine={false} axisLine={false} tickMargin={8} minTickGap={24} allowDecimals={true} />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                <RechartsTooltip formatter={v => (typeof v === 'number' ? `${v.toFixed(2)}%` : v)} />
+                <RechartsLegend />
+                {kategoriList.map((kat, idx) => (
+                  <Area
+                    key={kat}
+                    type="monotone"
+                    dataKey={kat}
+                    stroke={AREA_COLORS[idx%AREA_COLORS.length]}
+                    fill={`url(#colorPKategori${kat.replace(/\s/g, '')})`}
+                    name={kat}
+                    strokeWidth={3}
+                  />
+                ))}
+              </AreaChart>
+                  </ResponsiveContainer>
+            {/* Table */}
+            <table className="min-w-max w-full text-sm text-left mt-6">
+              <thead>
+                <tr>
+                  <th className="px-4 py-2">Client Category</th>
+                  {Object.keys(tiketPerKategoriPerBulan).sort().map(month => (
+                    <th key={month} className="px-4 py-2">{month}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {kategoriList.map(kat => (
+                  <tr key={kat}>
+                    <td className="px-4 py-2 font-bold text-blue-700 dark:text-blue-300">{kat}</td>
+                    {Object.keys(tiketPerKategoriPerBulan).sort().map(month => {
+                      // Klien unik yang komplain bulan ini
+                      const uniqueClients = Array.from(new Set(gridData2025.filter(t => {
+                        const d = new Date(t.openTime);
+                        const m = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+                        const kategori = customerKategoriMap.get((t.name || '').trim().toLowerCase()) || 'Unknown';
+                        return m === month && kategori === kat;
+                      }).map(t => (t.name || '').trim().toLowerCase()))).length;
+                      // Total klien kategori bulan ini (dari data customer, filter bulan)
+                      const totalClients = Array.from(customerKategoriMap.entries()).filter(([name, kategori2]) => kategori2 === kat && customerMonthMap.get(name) && customerMonthMap.get(name).includes(month)).length;
+                      const ratio = totalClients > 0 ? (uniqueClients / totalClients) * 100 : 0;
+                      return (
+                        <td key={month} className="px-4 py-2 text-center font-mono">{ratio.toFixed(2)}%</td>
+                      );
+                    })}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </CardContent>
+        </Card>
+        {/* 9. Total Complaint Penetration Ratio (2025) */}
+        <Card className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg">
+          <CardHeader>
+            <CardTitle>Total Complaint Penetration Ratio (2025)</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={260}>
+              <AreaChart
+                data={(() => {
+                  const months = Object.keys(tiketPerJenisKlienPerBulan).sort();
+                  return months.map(month => {
+                    const uniqueClients = Array.from(new Set(gridData2025.filter(t => {
+                      const d = new Date(t.openTime);
+                      const m = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+                      return m === month;
+                    }).map(t => (t.name || '').trim().toLowerCase()))).length;
+                    const totalClients = Array.from(customerMonthMap.entries()).filter(([_name, monthsArr]) => monthsArr.includes(month)).length;
+                    return {
+                      month,
+                      'Total Ratio': totalClients > 0 ? (uniqueClients / totalClients) * 100 : 0
+                    };
+                  });
+                })()}
+                margin={{ top: 20, right: 30, left: 0, bottom: 0 }}
+              >
+                <defs>
+                  <linearGradient id="colorTotalRatio" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#6366F1" stopOpacity={0.8}/>
+                    <stop offset="95%" stopColor="#6366F1" stopOpacity={0.1}/>
+                  </linearGradient>
+                </defs>
+                <XAxis dataKey="month" tickLine={false} axisLine={false} tickMargin={8} minTickGap={24} />
+                <YAxis tickLine={false} axisLine={false} tickMargin={8} minTickGap={24} allowDecimals={true} />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                <RechartsTooltip formatter={v => (typeof v === 'number' ? `${v.toFixed(2)}%` : v)} />
+                <RechartsLegend />
+                <Area type="monotone" dataKey="Total Ratio" stroke="#6366F1" fill="url(#colorTotalRatio)" name="Total Ratio" strokeWidth={3} />
+              </AreaChart>
+                  </ResponsiveContainer>
+            {/* Table */}
+            <table className="min-w-max w-full text-sm text-left mt-6">
+              <thead>
+                <tr>
+                  <th className="px-4 py-2">Month</th>
+                  {Object.keys(tiketPerJenisKlienPerBulan).sort().map(month => (
+                    <th key={month} className="px-4 py-2">{month}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td className="px-4 py-2 font-bold text-blue-700 dark:text-blue-300">Total</td>
+                  {Object.keys(tiketPerJenisKlienPerBulan).sort().map(month => {
+                    const uniqueClients = Array.from(new Set(gridData2025.filter(t => {
+                      const d = new Date(t.openTime);
+                      const m = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+                      return m === month;
+                    }).map(t => (t.name || '').trim().toLowerCase()))).length;
+                    const totalClients = Array.from(customerMonthMap.entries()).filter(([_name, monthsArr]) => monthsArr.includes(month)).length;
+                    const ratio = totalClients > 0 ? (uniqueClients / totalClients) * 100 : 0;
+                      return (
+                      <td key={month} className="px-4 py-2 text-center font-mono">{ratio.toFixed(2)}%</td>
+                      );
+                    })}
+                </tr>
+              </tbody>
+            </table>
             </CardContent>
           </Card>
-        </div>
       </div>
 
       {/* Full-width Hotspot Table */}
@@ -1103,7 +1862,7 @@ const TicketAnalytics = ({ data: propsData }: TicketAnalyticsProps) => {
                             <tr key={i} className="border-b border-gray-100 dark:border-zinc-800">
                               <td className="py-1 px-2 text-gray-900 dark:text-gray-100">{t.description && t.description.trim() ? t.description : <span className='italic text-gray-400'>No subject</span>}</td>
                               <td className="py-1 px-2">{t.openBy && t.openBy.trim() ? t.openBy : <span className='italic text-gray-400'>Unknown</span>}</td>
-                              <td className="py-1 px-2">{t.name && t.name.trim() ? t.name : (t.customerId || <span className='italic text-gray-400'>-</span>)}</td>
+                              <td className="py-1 px-2">{t.name && t.name.trim() ? t.name : (t.customerId || '-')}</td>
                               <td className="py-1 px-2">{formatTime(t.openTime)}</td>
                               <td className="py-1 px-2">{statusBadge(t.status)}</td>
                             </tr>
@@ -1126,7 +1885,7 @@ const TicketAnalytics = ({ data: propsData }: TicketAnalyticsProps) => {
           <h2 className="text-2xl font-extrabold mb-8 text-gray-900 dark:text-gray-100">Classification Analytics</h2>
           <div className="divide-y divide-gray-100 dark:divide-zinc-800">
             {Object.entries(classificationData).map(([classification, details], idx) => {
-              const d = details as { count: number, trendline?: { labels: string[], data: number[] } };
+              const d = details as { count: number, sub: { [key: string]: number }, trendline?: { labels: string[], data: number[] } };
               const trend = (d.trendline && d.trendline.data.length > 1)
                 ? d.trendline.data.map((val, i, arr) => {
                     if (i === 0) return null;
@@ -1137,7 +1896,8 @@ const TicketAnalytics = ({ data: propsData }: TicketAnalyticsProps) => {
                   })
                 : [];
                   return (
-                <div key={classification} className="flex items-center py-4 border-b border-gray-100 dark:border-zinc-800 last:border-b-0">
+                <div key={classification} className="flex flex-col py-4 border-b border-gray-100 dark:border-zinc-800 last:border-b-0">
+                  <div className="flex items-center">
                   <span className="font-bold min-w-[180px] text-gray-900 dark:text-gray-100 flex items-center">
                               {classification}
                     <span className="ml-2 bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-200 rounded px-2 py-0.5 text-xs font-bold">{d.count} Total</span>
@@ -1155,6 +1915,20 @@ const TicketAnalytics = ({ data: propsData }: TicketAnalyticsProps) => {
                           )}
                           </div>
                       ))}
+                      </div>
+                    )}
+                  </div>
+                  {/* Sub-classification detail */}
+                  {d.sub && Object.keys(d.sub).length > 0 && (
+                    <div className="mt-2 ml-2">
+                      <div className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Sub-klasifikasi:</div>
+                      <div className="flex flex-wrap gap-2">
+                        {Object.entries(d.sub).sort((a, b) => b[1] - a[1]).map(([sub, count]) => (
+                          <span key={sub} className="bg-gray-100 dark:bg-zinc-800 rounded-full px-3 py-0.5 text-xs font-mono text-gray-800 dark:text-gray-200 border border-gray-200 dark:border-zinc-700">
+                            {sub}: <span className="font-bold">{count}</span>
+                          </span>
+                        ))}
+                      </div>
                           </div>
                   )}
                         </div>

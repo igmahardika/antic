@@ -52,10 +52,19 @@ export interface IMenuPermission {
   menus: string[];
 }
 
+export interface ICustomer {
+  id: string; // UUID unik
+  nama: string;
+  jenisKlien: string;
+  layanan: string;
+  kategori: string;
+}
+
 export class TicketDB extends Dexie {
   tickets!: Table<ITicket>;
   users!: Table<IUser, number>;
   menuPermissions!: Table<IMenuPermission, number>;
+  customers!: Table<ICustomer, string>;
 
   constructor() {
     super('InsightTicketDatabase');
@@ -69,6 +78,12 @@ export class TicketDB extends Dexie {
       tickets: 'id, openTime, name, uploadTimestamp, cabang',
       users: '++id, username, role',
       menuPermissions: '++id, role'
+    });
+    this.version(4).stores({
+      tickets: 'id, openTime, name, uploadTimestamp, cabang',
+      users: '++id, username, role',
+      menuPermissions: '++id, role',
+      customers: 'id, nama, jenisKlien, layanan, kategori'
     });
   }
 }

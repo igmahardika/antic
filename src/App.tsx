@@ -29,6 +29,7 @@ import { AgentAnalyticsProvider } from './components/AgentAnalyticsContext';
 import { TicketAnalyticsProvider } from './components/TicketAnalyticsContext';
 import AdminRumus from './pages/AdminRumus';
 import MasterDataAgent from './components/MasterDataAgent';
+import CustomerData from './pages/CustomerData';
 
 const queryClient = new QueryClient();
 
@@ -133,6 +134,7 @@ function AppLayout() {
             <Route path="/summary-dashboard" element={<SummaryDashboard />} />
             <Route path="/admin-rumus" element={<AdminRumus />} />
             <Route path="/master-agent" element={<MasterDataAgent />} />
+            <Route path="/customer" element={<CustomerData />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </main>
