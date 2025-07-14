@@ -7,6 +7,7 @@ import {
   calcAllMetrics,
   Ticket
 } from './agentKpi';
+import { describe, it, expect } from 'vitest';
 
 describe('agentKpi utilities', () => {
   const raw: Ticket[] = [

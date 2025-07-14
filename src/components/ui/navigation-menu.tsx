@@ -23,6 +23,9 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Tooltip } from '@mui/material';
 import LogoutIcon from '@mui/icons-material/Logout';
 import ScienceIcon from '@mui/icons-material/Science';
+import ConfirmationNumberIcon from '@mui/icons-material/ConfirmationNumber';
+import StorageIcon from '@mui/icons-material/Storage';
+import MenuBookIcon from '@mui/icons-material/MenuBook';
 
 import { cn } from "@/lib/utils"
 
@@ -175,17 +178,79 @@ export function NavigationMenuBar() {
 }
 
 export function SidebarNav({ isMobileOpen, setIsMobileOpen, onCollapseChange }) {
+  // Struktur menu baru: nested
   const allMenus = [
-    { name: 'Dashboard', path: '/', icon: <HomeIcon fontSize="small" /> },
-    { name: 'Data Grid', path: '/grid-view', icon: <TableChartIcon fontSize="small" /> },
-    { name: 'Customer Analytics', path: '/kanban-board', icon: <GroupIcon fontSize="small" /> },
-    { name: 'Customer Data', path: '/customer', icon: <TableChartIcon fontSize="small" /> },
-    { name: 'Ticket Analytics', path: '/ticket-analytics', icon: <BarChartIcon fontSize="small" /> },
-    { name: 'Agent Analytics', path: '/agent-analytics', icon: <PersonCheckIcon fontSize="small" /> },
-    { name: 'Upload Data', path: '/upload', icon: <CloudUploadIcon fontSize="small" /> },
-    { name: 'Master Data Agent', path: '/master-agent', icon: <PersonIcon fontSize="small" /> },
-    { name: 'Rumus Analytics', path: '/admin-rumus', icon: <ScienceIcon fontSize="small" /> },
-    { name: 'Admin Panel', path: '/admin', icon: <AdminPanelSettingsIcon fontSize="small" /> },
+    {
+      name: 'Dashboard',
+      path: '/',
+      icon: <HomeIcon sx={{ fontSize: 18 }} />,
+    },
+    {
+      name: 'Ticket',
+      path: '/ticket',
+      icon: <ConfirmationNumberIcon sx={{ fontSize: 18 }} />,
+      children: [
+        {
+          name: 'Ticket Data',
+          path: '/ticket/grid-view',
+          icon: <TableChartIcon sx={{ fontSize: 18 }} />,
+        },
+        {
+          name: 'Customer Analytics',
+          path: '/ticket/kanban-board',
+          icon: <GroupIcon sx={{ fontSize: 18 }} />,
+        },
+        {
+          name: 'Ticket Analytics',
+          path: '/ticket/ticket-analytics',
+          icon: <BarChartIcon sx={{ fontSize: 18 }} />,
+        },
+        {
+          name: 'Agent Analytics',
+          path: '/ticket/agent-analytics',
+          icon: <PersonCheckIcon sx={{ fontSize: 18 }} />,
+        },
+      ],
+    },
+    {
+      name: 'Master Data',
+      path: '/masterdata',
+      icon: <StorageIcon sx={{ fontSize: 18 }} />,
+      children: [
+        {
+          name: 'Agent Data',
+          path: '/masterdata/data-agent',
+          icon: <PersonIcon sx={{ fontSize: 18 }} />,
+        },
+        {
+          name: 'Customer Data',
+          path: '/masterdata/data-customer',
+          icon: <GroupIcon sx={{ fontSize: 18 }} />,
+        },
+      ],
+    },
+    {
+      name: 'Documentation',
+      path: '/documentation',
+      icon: <MenuBookIcon sx={{ fontSize: 18 }} />,
+      children: [
+        {
+          name: 'Upload Data',
+          path: '/documentation/upload',
+          icon: <CloudUploadIcon sx={{ fontSize: 18 }} />,
+        },
+        {
+          name: 'Formulas',
+          path: '/documentation/admin-rumus',
+          icon: <ScienceIcon sx={{ fontSize: 18 }} />,
+        },
+      ],
+    },
+    {
+      name: 'Admin Panel',
+      path: '/admin',
+      icon: <AdminPanelSettingsIcon sx={{ fontSize: 18 }} />,
+    },
   ];
   // Selalu tampilkan semua menu, tanpa filter permission/role
   const allowedMenus = allMenus;
@@ -211,6 +276,45 @@ export function SidebarNav({ isMobileOpen, setIsMobileOpen, onCollapseChange }) 
 
   // Modern sidebar style
   const sidebarClass = `h-full bg-white dark:bg-zinc-900 shadow-xl border-r border-gray-200 dark:border-zinc-800 flex flex-col top-0 left-0 transition-all duration-300 fixed z-40 md:static md:z-auto md:block`;
+
+  // Fungsi render menu dan submenu
+  const renderMenu = (menu, idx, parent = false) => {
+    if (menu.children && menu.children.length > 0) {
+      return (
+        <div key={menu.path} className={parent ? '' : 'mb-2'}>
+          <div
+            className={`group flex items-center gap-2 px-4 py-3 my-1 rounded-xl font-bold text-[15px] transition-all duration-200 text-zinc-700 dark:text-zinc-200 ${autoCollapsed ? 'justify-center px-2' : ''}`}
+            title={menu.name}
+          >
+            {menu.icon}
+            <span className={`${autoCollapsed ? 'hidden' : 'block'} transition-all duration-200`} style={{ whiteSpace: 'nowrap' }}>{menu.name}</span>
+          </div>
+          <div className={`${autoCollapsed ? 'hidden' : 'block'} ml-6`}> {/* Indent submenu */}
+            {menu.children.map((child, cidx) => renderMenu(child, cidx, true))}
+          </div>
+        </div>
+      );
+    }
+    return (
+      <NavLink
+        key={menu.path}
+        to={menu.path}
+        className={({ isActive }) =>
+          `group flex items-center gap-2 px-4 py-2 my-1 rounded-xl font-medium text-[14px] transition-all duration-200 ${isActive ? 'bg-blue-600 text-white shadow-md' : 'text-zinc-700 dark:text-zinc-200 hover:bg-blue-50 dark:hover:bg-zinc-800/60'} ${autoCollapsed ? 'justify-center px-2' : ''}`
+        }
+        title={menu.name}
+      >
+        {menu.icon}
+        <span className={`${autoCollapsed ? 'hidden' : 'block'} transition-all duration-200`} style={{ whiteSpace: 'nowrap' }}>{menu.name}</span>
+        {/* Tooltip for collapsed mode */}
+        {autoCollapsed && (
+          <span className="absolute left-full ml-2 px-2 py-1 rounded bg-zinc-900 text-white text-xs shadow-lg opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity duration-200">
+            {menu.name}
+          </span>
+        )}
+      </NavLink>
+    );
+  };
 
   return (
     <aside
@@ -243,32 +347,7 @@ export function SidebarNav({ isMobileOpen, setIsMobileOpen, onCollapseChange }) 
         </div>
         {/* Menu */}
         <nav className="flex flex-col gap-1 px-2">
-          {allowedMenus.map((menu, idx) => (
-            <NavLink
-              key={menu.path}
-              to={menu.path}
-              className={({ isActive }) =>
-                `group flex items-center gap-2 px-4 py-3 my-1 rounded-xl font-medium text-base transition-all duration-200
-                ${isActive ? 'bg-blue-600 text-white shadow-md' : 'text-zinc-700 dark:text-zinc-200 hover:bg-blue-50 dark:hover:bg-zinc-800/60'}
-                ${autoCollapsed ? 'justify-center px-2' : ''}`
-              }
-              title={menu.name}
-            >
-              {menu.icon}
-              <span
-                className={`${autoCollapsed ? 'hidden' : 'block'} transition-all duration-200`}
-                style={{ whiteSpace: 'nowrap' }}
-              >
-                {menu.name}
-              </span>
-              {/* Tooltip for collapsed mode */}
-              {autoCollapsed && (
-                <span className="absolute left-full ml-2 px-2 py-1 rounded bg-zinc-900 text-white text-xs shadow-lg opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity duration-200">
-                  {menu.name}
-                </span>
-              )}
-            </NavLink>
-          ))}
+          {allowedMenus.map((menu, idx) => renderMenu(menu, idx))}
         </nav>
       </div>
       {/* Bottom section: Avatar/Profile & ModeToggle, modern layout */}

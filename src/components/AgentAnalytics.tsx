@@ -136,8 +136,8 @@ const CustomMiniTooltip = ({ active, payload, label }: any) => {
 
 // Tambahkan komponen ScoreCircle di atas AgentAnalytics
 function ScoreCircle({ score }: { score: number }) {
-  let color = score >= 80 ? 'bg-green-500' : score >= 60 ? 'bg-yellow-400' : 'bg-red-500';
-  let icon = score >= 80 ? <EmojiEventsIcon className="text-white w-7 h-7 mb-1" /> : score >= 60 ? <StarIcon className="text-white w-7 h-7 mb-1" /> : <EmojiEventsIcon className="text-white w-7 h-7 mb-1" />;
+  const color = score >= 80 ? 'bg-green-500' : score >= 60 ? 'bg-yellow-400' : 'bg-red-500';
+  const icon = score >= 80 ? <EmojiEventsIcon className="text-white w-7 h-7 mb-1" /> : score >= 60 ? <StarIcon className="text-white w-7 h-7 mb-1" /> : <EmojiEventsIcon className="text-white w-7 h-7 mb-1" />;
   return (
     <div className={`flex flex-col items-center justify-center w-20 h-20 rounded-full shadow-lg ${color}`}>
       {icon}

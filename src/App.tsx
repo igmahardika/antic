@@ -126,6 +126,16 @@ function AppLayout() {
             <Route path="/" element={<Index />} />
             <Route path="/admin" element={<AdminPanel />} />
             <Route path="/login" element={<Login />} />
+            {/* Path lama tetap, tambahkan path baru nested sesuai sidebar */}
+            <Route path="/ticket/grid-view" element={<GridView />} />
+            <Route path="/ticket/kanban-board" element={<KanbanBoard />} />
+            <Route path="/ticket/ticket-analytics" element={<TicketAnalyticsProvider><TicketAnalytics /></TicketAnalyticsProvider>} />
+            <Route path="/ticket/agent-analytics" element={<AgentAnalyticsProvider><AgentAnalytics /></AgentAnalyticsProvider>} />
+            <Route path="/masterdata/data-agent" element={<MasterDataAgent />} />
+            <Route path="/masterdata/data-customer" element={<CustomerData />} />
+            <Route path="/documentation/upload" element={<UploadProcess onUploadComplete={() => {}} />} />
+            <Route path="/documentation/admin-rumus" element={<AdminRumus />} />
+            {/* Path lama tetap untuk fallback/compatibility */}
             <Route path="/agent-analytics" element={<ErrorBoundary><AgentAnalyticsProvider><AgentAnalytics /></AgentAnalyticsProvider></ErrorBoundary>} />
             <Route path="/grid-view" element={<GridView />} />
             <Route path="/kanban-board" element={<KanbanBoard />} />

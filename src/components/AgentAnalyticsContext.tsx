@@ -155,8 +155,8 @@ export const AgentAnalyticsProvider = ({ children }) => {
     if (open instanceof Date && close instanceof Date && !isNaN(open.getTime()) && !isNaN(close.getTime()) && close >= open) {
       art = (close.getTime() - open.getTime()) / 60000;
     }
-    let fcr = (!ticket.handling2) ? 100 : 0;
-    let sla = (art > 0 && art <= 1440) ? 100 : 0;
+    const fcr = (!ticket.handling2) ? 100 : 0;
+    const sla = (art > 0 && art <= 1440) ? 100 : 0;
     return { ...ticket, frt, art, fcr, sla };
   }
 
