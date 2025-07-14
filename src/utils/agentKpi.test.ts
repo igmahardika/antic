@@ -60,4 +60,19 @@ describe('agentKpi utilities', () => {
     expect(all[0]).toHaveProperty('score');
     expect(['A', 'B', 'C', 'D']).toContain(all[0].rank);
   });
+});
+
+describe('calcAllMetrics', () => {
+  it('returns empty array for empty input', () => {
+    expect(calcAllMetrics([])).toStrictEqual([]);
+  });
+  it('calculates metrics for single agent', () => {
+    const tickets = [
+      { ticket_id: '1', WaktuOpen: '2025-01-01T08:00:00Z', OpenBy: 'Agen1' },
+      { ticket_id: '2', WaktuOpen: '2025-01-02T08:00:00Z', OpenBy: 'Agen1' }
+    ];
+    const result = calcAllMetrics(tickets as any);
+    expect(result.length).toBe(1);
+    expect(result[0].agent).toBe('Agen1');
+  });
 }); 
