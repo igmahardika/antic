@@ -63,7 +63,32 @@ function computeAgentMetrics(tickets) {
     const ticketsArr = arr as Ticket[];
     // Adaptasi dari calcMetrics
     const vol = ticketsArr.length;
-    const backlog = ticketsArr.filter(t => !t.WaktuCloseTicket).length;
+    
+    // Menentukan backlog berdasarkan kriteria:
+    // 1. WaktuCloseTicket kosong ATAU di bulan berikutnya dari bulan Open
+    const backlog = ticketsArr.filter(t => {
+      // Jika tidak ada WaktuCloseTicket, termasuk backlog
+      if (!t.WaktuCloseTicket) return true;
+      
+      // Cek apakah WaktuCloseTicket di bulan berikutnya dari WaktuOpen
+      const openDate = t.WaktuOpen instanceof Date ? t.WaktuOpen : new Date(t.WaktuOpen);
+      const closeDate = t.WaktuCloseTicket instanceof Date ? t.WaktuCloseTicket : new Date(t.WaktuCloseTicket);
+      
+      if (isNaN(openDate.getTime()) || isNaN(closeDate.getTime())) return true;
+      
+      // Bandingkan bulan dan tahun
+      const openMonth = openDate.getMonth();
+      const openYear = openDate.getFullYear();
+      const closeMonth = closeDate.getMonth();
+      const closeYear = closeDate.getFullYear();
+      
+      // Jika tahun closeTime lebih besar, atau tahun sama tapi bulan lebih besar
+      if (closeYear > openYear || (closeYear === openYear && closeMonth > openMonth)) {
+        return true;
+      }
+      
+      return false;
+    }).length;
     let frtSum = 0, artSum = 0, frtCount = 0, artCount = 0, fcrCount = 0, slaCount = 0;
     ticketsArr.forEach(t => {
       const open = t.WaktuOpen instanceof Date ? t.WaktuOpen : new Date(t.WaktuOpen);
@@ -125,4 +150,4 @@ export const useAgentStore = create<AgentStore>((set) => ({
   setAgentMetrics: (tickets) => {
     set({ agentMetrics: computeAgentMetrics(sanitizeTickets(tickets.map(mapTicketFieldsForAgentKpi))) });
   },
-})); 
+}));

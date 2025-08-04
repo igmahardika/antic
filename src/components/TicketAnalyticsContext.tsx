@@ -100,7 +100,51 @@ export const TicketAnalyticsProvider = ({ children }) => {
   const gridData = filteredTickets;
   const totalTickets = gridData.length;
   const totalDuration = Array.isArray(gridData) ? gridData.map(t => Number(t.duration?.rawHours || 0)).filter(v => !isNaN(v)).reduce((acc, curr) => acc + curr, 0) : 0;
-  const closedTickets = gridData.filter((t) => (t.status || '').trim().toLowerCase() === 'closed').length;
+  
+  // Menentukan tiket closed berdasarkan status 'CLOSE TICKET'
+  const closedTickets = gridData.filter((t) => {
+    const status = (t.status || '').trim().toLowerCase();
+    return status === 'closed' || status === 'close ticket';
+  }).length;
+  
+  // Menentukan tiket open berdasarkan kriteria:
+  // 1. Status adalah 'OPEN TICKET' ATAU
+  // 2. Waktu Close Ticket kosong ATAU
+  // 3. Waktu Close Ticket di bulan berikutnya dari bulan Open
+  const openTicketsArray = gridData.filter(t => {
+    const status = (t.status || '').trim().toLowerCase();
+    
+    // Jika status adalah 'OPEN TICKET', ini adalah tiket open
+    if (status === 'open ticket') return true;
+    
+    // Jika status closed, bukan tiket open
+    if (status === 'closed' || status === 'close ticket') return false;
+    
+    // Jika tidak ada closeTime, termasuk tiket open
+    if (!t.closeTime) return true;
+    
+    // Cek apakah closeTime di bulan berikutnya dari openTime
+    const openDate = new Date(t.openTime);
+    const closeDate = new Date(t.closeTime);
+    
+    if (isNaN(openDate.getTime()) || isNaN(closeDate.getTime())) return true;
+    
+    // Bandingkan bulan dan tahun
+    const openMonth = openDate.getMonth();
+    const openYear = openDate.getFullYear();
+    const closeMonth = closeDate.getMonth();
+    const closeYear = closeDate.getFullYear();
+    
+    // Jika tahun closeTime lebih besar, atau tahun sama tapi bulan lebih besar
+    if (closeYear > openYear || (closeYear === openYear && closeMonth > openMonth)) {
+      return true;
+    }
+    
+    return false;
+  });
+  
+  const openTickets = openTicketsArray.length;
+  
   const overdueTickets = gridData.filter((t) => Number(t.duration?.rawHours) > 24).length;
   const escalatedTickets = gridData.filter((t) => [t.closeHandling2, t.closeHandling3, t.closeHandling4, t.closeHandling5].some(h => h && h.trim() !== '')).length;
 
@@ -186,11 +230,44 @@ export const TicketAnalyticsProvider = ({ children }) => {
         const yyyy = d.getFullYear();
         const monthYear = `${yyyy}-${mm}`;
         if (!monthlyStats[monthYear]) {
-          monthlyStats[monthYear] = { incoming: 0, closed: 0 };
+          monthlyStats[monthYear] = { incoming: 0, closed: 0, open: 0 };
         }
         monthlyStats[monthYear].incoming++;
-        if (ticket.status === 'Closed') {
+        
+        // Cek apakah tiket closed berdasarkan status 'CLOSE TICKET'
+        const status = (ticket.status || '').trim().toLowerCase();
+        if (status === 'closed' || status === 'close ticket') {
           monthlyStats[monthYear].closed++;
+        } 
+        // Cek apakah tiket open berdasarkan kriteria yang sama dengan openTicketsArray
+        else {
+          // Jika status adalah 'OPEN TICKET', ini adalah tiket open
+          if (status === 'open ticket') {
+            monthlyStats[monthYear].open++;
+          }
+          // Jika tidak ada closeTime, termasuk tiket open
+          else if (!ticket.closeTime) {
+            monthlyStats[monthYear].open++;
+          } else {
+            // Cek apakah closeTime di bulan berikutnya dari openTime
+            const openDate = new Date(ticket.openTime);
+            const closeDate = new Date(ticket.closeTime);
+            
+            if (isNaN(openDate.getTime()) || isNaN(closeDate.getTime())) {
+              monthlyStats[monthYear].open++;
+            } else {
+              // Bandingkan bulan dan tahun
+              const openMonth = openDate.getMonth();
+              const openYear = openDate.getFullYear();
+              const closeMonth = closeDate.getMonth();
+              const closeYear = closeDate.getFullYear();
+              
+              // Jika tahun closeTime lebih besar, atau tahun sama tapi bulan lebih besar
+              if (closeYear > openYear || (closeYear === openYear && closeMonth > openMonth)) {
+                monthlyStats[monthYear].open++;
+              }
+            }
+          }
         }
       }
     } catch(e) {}
@@ -215,6 +292,12 @@ export const TicketAnalyticsProvider = ({ children }) => {
         data: sortedMonthlyKeys.map(key => monthlyStats[key].closed),
         borderColor: 'rgb(34, 197, 94)',
         backgroundColor: 'rgba(34, 197, 94, 0.5)',
+      },
+      {
+        label: 'Open Tickets',
+        data: sortedMonthlyKeys.map(key => monthlyStats[key].open),
+        borderColor: 'rgb(239, 68, 68)',
+        backgroundColor: 'rgba(239, 68, 68, 0.5)',
       },
     ],
   };
@@ -287,7 +370,7 @@ export const TicketAnalyticsProvider = ({ children }) => {
       { title: 'Total Tickets', value: totalTickets?.toString?.() ?? '0', description: `in the selected period` },
       { title: 'Average Duration', value: totalTickets ? (formatDurationDHM(totalDuration / totalTickets) || '00:00:00') : '00:00:00', description: 'average ticket resolution time' },
       { title: 'Closed Tickets', value: closedTickets?.toString?.() ?? '0', description: `${((closedTickets/totalTickets || 0) * 100).toFixed(0)}% resolution rate` },
-      { title: 'Open', value: (totalTickets - closedTickets).toString(), description: 'Tiket yang masih terbuka' },
+      { title: 'Open', value: openTickets.toString(), description: 'Tiket yang masih terbuka (status bukan closed dan closeTime kosong atau di bulan berikutnya)' },
       { title: 'Overdue', value: overdueTickets.toString(), description: 'Tiket yang melewati batas waktu' },
       { title: 'Escalated', value: escalatedTickets.toString(), description: 'Tiket yang di-escalate' },
     ],
@@ -325,4 +408,4 @@ export const TicketAnalyticsProvider = ({ children }) => {
       {children}
     </TicketAnalyticsContext.Provider>
   );
-}; 
+};

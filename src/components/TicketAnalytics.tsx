@@ -552,11 +552,7 @@ const TicketAnalytics = ({ data: propsData }: TicketAnalyticsProps) => {
       .map(s => ({
         title: s.title.replace('Closed Tickets', 'Closed'),
         value: s.value,
-        description:
-          s.title === 'Open' ? 'Tickets that are still open' :
-          s.title === 'Overdue' ? 'Tickets that exceeded the time limit' :
-          s.title === 'Escalated' ? 'Escalated tickets' :
-          s.description,
+        description: s.description,
       }));
   }, [ticketAnalyticsData]);
   const insights = useInsightFromTicketAnalytics({ monthlyStatsData, classificationData, customerStats });
