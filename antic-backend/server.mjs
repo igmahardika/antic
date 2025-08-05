@@ -9,6 +9,7 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import session from 'express-session';
 import { createPool } from 'mysql2/promise';
+import fetch from 'node-fetch';
 import redisManager from './config/redis.mjs';
 import {
   securityHeaders,
@@ -32,6 +33,41 @@ const parseOrigins = (raw) =>
     .split(',')
     .map((o) => o.trim())
     .filter(Boolean);
+
+// reCAPTCHA verification function
+const verifyRecaptcha = async (token) => {
+  if (!token) {
+    return { success: false, error: 'No reCAPTCHA token provided' };
+  }
+
+  const secretKey = process.env.RECAPTCHA_SECRET_KEY;
+  if (!secretKey) {
+    console.error('RECAPTCHA_SECRET_KEY not configured');
+    return { success: false, error: 'reCAPTCHA not configured' };
+  }
+
+  try {
+    const response = await fetch('https://www.google.com/recaptcha/api/siteverify', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: `secret=${secretKey}&response=${token}`,
+    });
+
+    const data = await response.json();
+    
+    if (data.success) {
+      return { success: true };
+    } else {
+      console.warn('reCAPTCHA verification failed:', data['error-codes']);
+      return { success: false, error: 'reCAPTCHA verification failed' };
+    }
+  } catch (error) {
+    console.error('reCAPTCHA verification error:', error);
+    return { success: false, error: 'reCAPTCHA verification error' };
+  }
+};
 
 // -----------------------------------------------------------------------------
 // 2. Middleware – Security, CORS, body-parser, session
@@ -144,7 +180,7 @@ const authenticateTokenWithAudit = async (req, res, next) => {
 // 6. Secure Routes with Enhanced Authentication
 // -----------------------------------------------------------------------------
 
-// Secure login endpoint with brute force protection
+// Secure login endpoint with brute force protection and reCAPTCHA
 app.post('/login', 
   rateLimits.auth,
   checkBruteForce,
@@ -153,7 +189,14 @@ app.post('/login',
     const ip = req.ip || req.connection.remoteAddress;
     
     try {
-      const { username, password } = req.body;
+      const { username, password, recaptchaToken } = req.body;
+      
+      // Verify reCAPTCHA first
+      const recaptchaResult = await verifyRecaptcha(recaptchaToken);
+      if (!recaptchaResult.success) {
+        auditLogger('LOGIN_FAILED_RECAPTCHA', req, { username, error: recaptchaResult.error });
+        return res.status(400).json({ error: 'reCAPTCHA verification failed' });
+      }
       
       auditLogger('LOGIN_ATTEMPT', req, { username });
 
@@ -865,7 +908,184 @@ process.on('SIGINT', () => shutdown('SIGINT'));
 process.on('SIGTERM', () => shutdown('SIGTERM'));
 
 // -----------------------------------------------------------------------------
-// 8. Start server
+// 8. Migration API Endpoints (Special Rate Limiting)
+// -----------------------------------------------------------------------------
+
+// Migration-specific bulk insert for customers (higher rate limit)
+app.post('/api/migration/customers/bulk', 
+  rateLimits.migration,
+  authenticateTokenWithAudit,
+  async (req, res) => {
+    try {
+      if (req.user.role !== 'super admin' && req.user.role !== 'admin') {
+        auditLogger('ACCESS_DENIED_MIGRATION', req, { operation: 'customers_bulk' });
+        return res.status(403).json({ error: 'Access denied' });
+      }
+
+      const { customers } = req.body;
+      
+      if (!Array.isArray(customers) || customers.length === 0) {
+        return res.status(400).json({ error: 'Customers array is required' });
+      }
+
+      const values = customers.map(customer => [
+        customer.id,
+        customer.nama,
+        customer.jenisKlien,
+        customer.layanan,
+        customer.kategori
+      ]);
+
+      await db.query(
+        'INSERT INTO customers (id, nama, jenis_klien, layanan, kategori) VALUES ? ON DUPLICATE KEY UPDATE nama = VALUES(nama), jenis_klien = VALUES(jenis_klien), layanan = VALUES(layanan), kategori = VALUES(kategori)',
+        [values]
+      );
+
+      auditLogger('MIGRATION_CUSTOMERS_BULK', req, { count: customers.length });
+      res.json({ success: true, message: `${customers.length} customers migrated successfully` });
+    } catch (err) {
+      console.error('Migration bulk insert customers error:', err);
+      auditLogger('MIGRATION_CUSTOMERS_ERROR', req, { error: err.message });
+      res.status(500).json({ error: 'Failed to migrate customers' });
+    }
+  }
+);
+
+// Migration-specific bulk insert for tickets (higher rate limit)
+app.post('/api/migration/tickets/bulk', 
+  rateLimits.migration,
+  authenticateTokenWithAudit,
+  async (req, res) => {
+    try {
+      if (req.user.role !== 'super admin' && req.user.role !== 'admin') {
+        auditLogger('ACCESS_DENIED_MIGRATION', req, { operation: 'tickets_bulk' });
+        return res.status(403).json({ error: 'Access denied' });
+      }
+
+      const { tickets } = req.body;
+      
+      if (!Array.isArray(tickets) || tickets.length === 0) {
+        return res.status(400).json({ error: 'Tickets array is required' });
+      }
+
+      const insertQuery = `
+        INSERT INTO tickets (
+          id, customer_id, name, category, description, cause, handling,
+          open_time, close_time, duration_raw_hours, duration_formatted,
+          close_handling, handling_duration_raw_hours, handling_duration_formatted,
+          classification, sub_classification, status, handling1, close_handling1,
+          handling_duration1_raw_hours, handling_duration1_formatted,
+          handling2, close_handling2, handling_duration2_raw_hours, handling_duration2_formatted,
+          handling3, close_handling3, handling_duration3_raw_hours, handling_duration3_formatted,
+          handling4, close_handling4, handling_duration4_raw_hours, handling_duration4_formatted,
+          handling5, close_handling5, handling_duration5_raw_hours, handling_duration5_formatted,
+          open_by, cabang, upload_timestamp, rep_class
+        ) VALUES ? ON DUPLICATE KEY UPDATE
+          customer_id = VALUES(customer_id),
+          name = VALUES(name),
+          category = VALUES(category),
+          description = VALUES(description),
+          cause = VALUES(cause),
+          handling = VALUES(handling),
+          open_time = VALUES(open_time),
+          close_time = VALUES(close_time),
+          duration_raw_hours = VALUES(duration_raw_hours),
+          duration_formatted = VALUES(duration_formatted),
+          close_handling = VALUES(close_handling),
+          handling_duration_raw_hours = VALUES(handling_duration_raw_hours),
+          handling_duration_formatted = VALUES(handling_duration_formatted),
+          classification = VALUES(classification),
+          sub_classification = VALUES(sub_classification),
+          status = VALUES(status)
+      `;
+
+      const values = tickets.map(ticket => [
+        ticket.id,
+        ticket.customerId,
+        ticket.name,
+        ticket.category,
+        ticket.description,
+        ticket.cause,
+        ticket.handling,
+        ticket.openTime,
+        ticket.closeTime,
+        ticket.duration,
+        ticket.duration ? `${ticket.duration}h` : null,
+        ticket.closeHandling,
+        ticket.handlingDuration,
+        ticket.handlingDuration ? `${ticket.handlingDuration}h` : null,
+        ticket.classification,
+        ticket.subClassification,
+        ticket.status,
+        ticket.handling1,
+        ticket.closeHandling1,
+        ticket.handlingDuration1,
+        ticket.handlingDuration1 ? `${ticket.handlingDuration1}h` : null,
+        ticket.handling2,
+        ticket.closeHandling2,
+        ticket.handlingDuration2,
+        ticket.handlingDuration2 ? `${ticket.handlingDuration2}h` : null,
+        ticket.handling3,
+        ticket.closeHandling3,
+        ticket.handlingDuration3,
+        ticket.handlingDuration3 ? `${ticket.handlingDuration3}h` : null,
+        ticket.handling4,
+        ticket.closeHandling4,
+        ticket.handlingDuration4,
+        ticket.handlingDuration4 ? `${ticket.handlingDuration4}h` : null,
+        ticket.handling5,
+        ticket.closeHandling5,
+        ticket.handlingDuration5,
+        ticket.handlingDuration5 ? `${ticket.handlingDuration5}h` : null,
+        ticket.openBy,
+        ticket.cabang,
+        ticket.uploadTimestamp,
+        ticket.repClass
+      ]);
+
+      await db.query(insertQuery, [values]);
+
+      auditLogger('MIGRATION_TICKETS_BULK', req, { count: tickets.length });
+      res.json({ success: true, message: `${tickets.length} tickets migrated successfully` });
+    } catch (err) {
+      console.error('Migration bulk insert tickets error:', err);
+      auditLogger('MIGRATION_TICKETS_ERROR', req, { error: err.message });
+      res.status(500).json({ error: 'Failed to migrate tickets' });
+    }
+  }
+);
+
+// Migration status endpoint
+app.get('/api/migration/status',
+  rateLimits.migration,
+  authenticateTokenWithAudit,
+  async (req, res) => {
+    try {
+      if (req.user.role !== 'super admin' && req.user.role !== 'admin') {
+        return res.status(403).json({ error: 'Access denied' });
+      }
+
+      // Check counts in both systems
+      const [ticketsCount] = await db.query('SELECT COUNT(*) as count FROM tickets');
+      const [customersCount] = await db.query('SELECT COUNT(*) as count FROM customers');
+
+      auditLogger('MIGRATION_STATUS_CHECK', req);
+      res.json({
+        success: true,
+        mysql: {
+          tickets: ticketsCount[0].count,
+          customers: customersCount[0].count
+        }
+      });
+    } catch (err) {
+      console.error('Migration status error:', err);
+      res.status(500).json({ error: 'Failed to get migration status' });
+    }
+  }
+);
+
+// -----------------------------------------------------------------------------
+// 9. Start server
 // -----------------------------------------------------------------------------
 const PORT = Number(process.env.PORT) || 3001;
 app.listen(PORT, () => {

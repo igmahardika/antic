@@ -31,6 +31,15 @@ async function apiCall<T>(
 
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
+    
+    // Handle validation errors with details
+    if (errorData.details && Array.isArray(errorData.details)) {
+      const validationMessages = errorData.details.map((detail: any) => 
+        `${detail.field}: ${detail.message}`
+      ).join(', ');
+      throw new Error(`Validation failed: ${validationMessages}`);
+    }
+    
     throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
   }
 

@@ -124,7 +124,7 @@ export class MigrationService {
         this.reportProgress('tickets', i * batchSize, tickets.length, 
           `Migrating batch ${i + 1}/${batches.length} (${batch.length} tickets)`);
         
-        await apiCall('/api/tickets/bulk', {
+        await apiCall('/api/migration/tickets/bulk', {
           method: 'POST',
           body: JSON.stringify({ tickets: batch }),
         });
@@ -174,7 +174,7 @@ export class MigrationService {
         this.reportProgress('customers', i * batchSize, customers.length, 
           `Migrating batch ${i + 1}/${batches.length} (${batch.length} customers)`);
         
-        await apiCall('/api/customers/bulk', {
+        await apiCall('/api/migration/customers/bulk', {
           method: 'POST',
           body: JSON.stringify({ customers: batch }),
         });

@@ -74,6 +74,9 @@ export const rateLimits = {
   
   // Very strict for admin operations
   admin: createRateLimit(60 * 60 * 1000, 10, 'Too many admin operations, please try again later'),
+  
+  // Special rate limit for migration operations (very high limit)
+  migration: createRateLimit(5 * 60 * 1000, 500, 'Too many migration requests, please wait'),
 };
 
 // Input Validation Middleware
