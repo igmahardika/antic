@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Papa from 'papaparse';
+import * as ExcelJS from 'exceljs';
 import PageWrapper from '../components/PageWrapper';
 import SummaryCard from '../components/ui/SummaryCard';
 import TableChartIcon from '@mui/icons-material/TableChart';
@@ -60,11 +61,15 @@ const CustomerData: React.FC = () => {
         const data = evt.target?.result;
         if (!data) return;
         
-        // Parse CSV file with Papa Parse (safer alternative to xlsx)
-        Papa.parse(data as string, {
-          header: true,
-          skipEmptyLines: true,
-          complete: async (results) => {
+        // Check file type and process accordingly
+        const fileExtension = file.name.toLowerCase().split('.').pop();
+        
+        if (fileExtension === 'csv') {
+          // Parse CSV file with Papa Parse
+          Papa.parse(data as string, {
+            header: true,
+            skipEmptyLines: true,
+            complete: async (results) => {
             const dataBulan: { [bulan: string]: any[] } = {};
             let valid = true;
             
@@ -97,6 +102,7 @@ const CustomerData: React.FC = () => {
             setDataPerBulan(dataBulan);
             setBulanList([sheetName]);
             setBulanDipilih(sheetName);
+            
             // SIMPAN KE INDEXEDDB
             const allCustomers: any[] = [];
             [sheetName].forEach(bulan => {
@@ -121,8 +127,86 @@ const CustomerData: React.FC = () => {
             setError('Failed to parse CSV file. Please check file format.');
           }
         });
-      };
-      reader.readAsText(file); // Changed from readAsArrayBuffer to readAsText for CSV
+      } else if (fileExtension === 'xlsx' || fileExtension === 'xls') {
+        // Parse Excel file with ExcelJS (secure alternative)
+        try {
+          const workbook = new ExcelJS.Workbook();
+          await workbook.xlsx.load(data as ArrayBuffer);
+          
+          const dataBulan: { [bulan: string]: any[] } = {};
+          let valid = true;
+          
+          // Process each worksheet
+          for (const worksheet of workbook.worksheets) {
+            const sheetName = worksheet.name;
+            const json: any[] = [];
+            
+            // Convert worksheet to JSON
+            worksheet.eachRow((row, rowNumber) => {
+              if (rowNumber === 1) return; // Skip header row
+              
+              const rowData: any = {};
+              row.eachCell((cell, colNumber) => {
+                const header = CUSTOMER_HEADERS[colNumber - 1];
+                if (header) {
+                  rowData[header] = cell.value?.toString() || '';
+                }
+              });
+              
+              if (Object.values(rowData).some(val => val !== '')) {
+                json.push(rowData);
+              }
+            });
+            
+            // Validasi header
+            const headers = CUSTOMER_HEADERS;
+            const missing = CUSTOMER_HEADERS.filter(h => !headers.includes(h));
+            if (missing.length > 0) {
+              setError(`Sheet '${sheetName}' header tidak sesuai. Kolom wajib: ${CUSTOMER_HEADERS.join(', ')}`);
+              setDataPerBulan({});
+              setBulanList([]);
+              setBulanDipilih('');
+              valid = false;
+              break;
+            }
+            
+            dataBulan[sheetName] = json;
+          }
+          
+          if (valid) {
+            setError(null);
+            setDataPerBulan(dataBulan);
+            setBulanList(Object.keys(dataBulan));
+            setBulanDipilih(Object.keys(dataBulan)[0] || '');
+            
+            // SIMPAN KE INDEXEDDB
+            const allCustomers: any[] = [];
+            Object.keys(dataBulan).forEach(bulan => {
+              dataBulan[bulan].forEach((row: any, idx: number) => {
+                allCustomers.push({
+                  id: `${bulan}-${idx}-${row['Nama']}`,
+                  nama: row['Nama'],
+                  jenisKlien: row['Jenis Klien'],
+                  layanan: row['Layanan'],
+                  kategori: row['Kategori']
+                });
+              });
+            });
+            await db.customers.clear();
+            if (allCustomers.length > 0) {
+              await db.customers.bulkAdd(allCustomers);
+            }
+            alert('Data customer berhasil disimpan ke IndexedDB.');
+          }
+        } catch (error) {
+          console.error('Excel parsing error:', error);
+          setError('Failed to parse Excel file. Please check file format.');
+        }
+      } else {
+        setError('File format tidak didukung. Gunakan file CSV atau Excel (.xlsx, .xls)');
+      }
+    };
+    reader.readAsArrayBuffer(file); // Read as ArrayBuffer for both CSV and Excel
     } else {
       setFileName("");
     }
