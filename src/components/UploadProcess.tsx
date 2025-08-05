@@ -4,12 +4,13 @@ import { Label } from './ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from './ui/card';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './ui/accordion';
 import { Badge } from './ui/badge';
-import * as XLSX from 'xlsx';
+import Papa from 'papaparse';
 import { saveAs } from 'file-saver';
 import { db, ITicket } from '@/lib/db';
 import { formatDurationDHM } from '@/lib/utils';
 import SummaryCard from './ui/SummaryCard';
 import { useLiveQuery } from 'dexie-react-hooks';
+import SecurityNotice from './SecurityNotice';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import TableChartIcon from '@mui/icons-material/TableChart';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -274,13 +275,18 @@ const FileDropZone = ({ onFileUpload, isProcessing, progress }: { onFileUpload: 
     }
   };
   return (
-    <div 
-      onDragEnter={(e) => { e.preventDefault(); setIsDragActive(true); }}
-      onDragLeave={(e) => { e.preventDefault(); setIsDragActive(false); }}
-      onDragOver={(e) => e.preventDefault()}
-      onDrop={onDrop}
-      className={`relative flex flex-col items-center justify-center w-full p-8 border-2 border-dashed rounded-lg transition-colors duration-300 ${isDragActive ? 'border-blue-500 bg-blue-50 dark:bg-zinc-800' : 'border-gray-300 dark:border-zinc-700 hover:border-blue-400'}`}
-    >
+    <>
+      <SecurityNotice 
+        feature="Excel File Upload" 
+        alternative="Please convert your Excel files to CSV format before uploading"
+      />
+      <div 
+        onDragEnter={(e) => { e.preventDefault(); setIsDragActive(true); }}
+        onDragLeave={(e) => { e.preventDefault(); setIsDragActive(false); }}
+        onDragOver={(e) => e.preventDefault()}
+        onDrop={onDrop}
+        className={`relative flex flex-col items-center justify-center w-full p-8 border-2 border-dashed rounded-lg transition-colors duration-300 ${isDragActive ? 'border-blue-500 bg-blue-50 dark:bg-zinc-800' : 'border-gray-300 dark:border-zinc-700 hover:border-blue-400'} opacity-50 pointer-events-none`}
+      >
       {isProcessing ? (
         <>
           <div className="loader ease-linear rounded-full border-4 border-t-4 border-gray-200 h-12 w-12 mb-4 animate-spin" style={{borderTopColor: '#3b82f6'}}></div>
@@ -300,7 +306,8 @@ const FileDropZone = ({ onFileUpload, isProcessing, progress }: { onFileUpload: 
           <p className="mt-1 text-xs text-gray-500 dark:text-gray-500">Supports .xlsx and .xls</p>
         </>
       )}
-    </div>
+      </div>
+    </>
   );
 };
 

@@ -26,7 +26,7 @@ import { formatDurationDHM } from '@/lib/utils';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, Legend as RechartsLegend, Line, LabelList, Tooltip } from 'recharts';
 import { shallow } from 'zustand/shallow';
-import * as XLSX from 'xlsx';
+import Papa from 'papaparse';
 import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration';
 import { Badge } from '@/components/ui/badge';
