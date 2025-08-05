@@ -72,11 +72,11 @@ const AREA_COLORS = [
 
 // Helper: convert chart.js-like data to recharts format
 function toRechartsData(labels: string[], datasets: any[]) {
-  // Assume 2 datasets: [incoming, closed]
+  // Datasets sekarang: [closed, incoming] sesuai urutan baru
   return labels.map((label, i) => ({
     label,
-    incoming: datasets[0]?.data[i] ?? 0,
-    closed: datasets[1]?.data[i] ?? 0,
+    closed: datasets[0]?.data[i] ?? 0,
+    incoming: datasets[1]?.data[i] ?? 0,
   }));
 }
 

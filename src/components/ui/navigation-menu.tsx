@@ -369,7 +369,27 @@ export function SidebarNav({ isMobileOpen, setIsMobileOpen, onCollapseChange }) 
               <div className="text-xs text-gray-500 dark:text-gray-400 capitalize text-center">{user.role} Role</div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => { localStorage.removeItem('user'); window.location.href = '/login'; }} className="cursor-pointer text-red-500 focus:bg-red-50 focus:text-red-600 dark:focus:bg-red-900/50 dark:focus:text-red-400 font-semibold">
+            <DropdownMenuItem onClick={async () => { 
+              try {
+                const authToken = localStorage.getItem('auth_token');
+                if (authToken) {
+                  await fetch('http://localhost:3001/logout', {
+                    method: 'POST',
+                    headers: {
+                      'Authorization': `Bearer ${authToken}`,
+                      'Content-Type': 'application/json',
+                    },
+                  });
+                }
+              } catch (error) {
+                console.error('Logout error:', error);
+              } finally {
+                localStorage.removeItem('auth_token');
+                localStorage.removeItem('user');
+                localStorage.removeItem('session_id');
+                window.location.href = '/login';
+              }
+            }} className="cursor-pointer text-red-500 focus:bg-red-50 focus:text-red-600 dark:focus:bg-red-900/50 dark:focus:text-red-400 font-semibold">
               <LogoutIcon className="mr-2 h-4 w-4" />
               <span>Logout</span>
             </DropdownMenuItem>
@@ -393,9 +413,28 @@ function SidebarProfile({ autoCollapsed }) {
   const user = JSON.parse(localStorage.getItem('user') || '{"role":"user"}');
   const [open, setOpen] = React.useState(false);
 
-  const handleLogout = () => {
-    localStorage.removeItem('user');
-    navigate('/login');
+  const handleLogout = async () => {
+    try {
+      const authToken = localStorage.getItem('auth_token');
+      if (authToken) {
+        // Call logout API
+        await fetch('http://localhost:3001/logout', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${authToken}`,
+            'Content-Type': 'application/json',
+          },
+        });
+      }
+    } catch (error) {
+      console.error('Logout API error:', error);
+    } finally {
+      // Clear local storage regardless of API call result
+      localStorage.removeItem('auth_token');
+      localStorage.removeItem('user');
+      localStorage.removeItem('session_id');
+      navigate('/login');
+    }
   };
 
   return (

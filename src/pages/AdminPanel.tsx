@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
-import { db, IUser, IMenuPermission } from '../lib/db';
+import { userAPI, menuPermissionAPI, User, MenuPermission } from '../lib/api';
+import MigrationPanel from '../components/MigrationPanel';
 
 const allRoles = ['super admin', 'admin', 'user'] as const;
 type Role = typeof allRoles[number];
@@ -17,20 +18,15 @@ const allMenus = [
   'Admin Panel',
 ];
 
-// Utility hash password
-async function hashPassword(password: string): Promise<string> {
-  const encoder = new TextEncoder();
-  const data = encoder.encode(password);
-  const hashBuffer = await window.crypto.subtle.digest('SHA-256', data);
-  return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
-}
+// Note: Password hashing is now handled by the backend API
 
 const AdminPanel: React.FC = () => {
-  const [users, setUsers] = React.useState<IUser[]>([]);
+  const [users, setUsers] = React.useState<User[]>([]);
   const [username, setUsername] = React.useState('');
   const [password, setPassword] = React.useState('');
   const [role, setRole] = React.useState<Role>('user');
   const [success, setSuccess] = React.useState(false);
+  const [error, setError] = React.useState('');
   const [showPassword, setShowPassword] = React.useState(false);
   const [pendingAdd, setPendingAdd] = React.useState(false);
   const [pendingEdit, setPendingEdit] = React.useState(false);
@@ -39,40 +35,51 @@ const AdminPanel: React.FC = () => {
   const [editPassword, setEditPassword] = React.useState('');
   const [editRole, setEditRole] = React.useState<Role>('user');
   const [showEditPassword, setShowEditPassword] = React.useState(false);
-  const [menuPermissions, setMenuPermissions] = React.useState<IMenuPermission[]>([]);
+  const [menuPermissions, setMenuPermissions] = React.useState<MenuPermission[]>([]);
   const [selectedRoleForEditing, setSelectedRoleForEditing] = React.useState<Role>('user');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Load users and permissions from IndexedDB
+  // Load users and permissions from MySQL API
   React.useEffect(() => {
-    (async () => {
-      const users = await db.users.toArray();
-      if (users.length === 0) {
-        // Add default admin if not exists
-        const hashed = await hashPassword('k0s0ng-w43');
-        await db.users.add({ username: 'admin', password: hashed, role: 'admin' });
-        setUsers(await db.users.toArray());
-      } else {
-        setUsers(users);
-      }
-      setMenuPermissions(await db.menuPermissions.toArray());
-    })();
+    loadData();
   }, []);
+
+  const loadData = async () => {
+    try {
+      const [usersData, permissionsData] = await Promise.all([
+        userAPI.getUsers(),
+        menuPermissionAPI.getPermissions()
+      ]);
+      setUsers(usersData);
+      setMenuPermissions(permissionsData);
+    } catch (err) {
+      console.error('Failed to load data:', err);
+      setError('Failed to load data. Please check your connection.');
+    }
+  };
 
   // Add user
   const handleAddUser = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!username || !password) return;
+    
     setPendingAdd(true);
-    const hashed = await hashPassword(password);
-    await db.users.add({ username, password: hashed, role });
-    setUsers(await db.users.toArray());
-    setUsername('');
-    setPassword('');
-    setRole('user');
-    setSuccess(true);
-    setPendingAdd(false);
-    setTimeout(() => setSuccess(false), 1500);
+    setError('');
+    
+    try {
+      await userAPI.addUser({ username, password, role });
+      await loadData(); // Reload data
+      setUsername('');
+      setPassword('');
+      setRole('user');
+      setSuccess(true);
+      setTimeout(() => setSuccess(false), 3000);
+    } catch (err) {
+      console.error('Failed to add user:', err);
+      setError(err instanceof Error ? err.message : 'Failed to add user');
+    } finally {
+      setPendingAdd(false);
+    }
   };
 
   // Edit user
@@ -91,79 +98,111 @@ const AdminPanel: React.FC = () => {
   const handleEditUser = async (e: React.FormEvent) => {
     e.preventDefault();
     if (editUserIdx === null) return;
+    
     setPendingEdit(true);
-    const user = users[editUserIdx];
-    let newPassword = user.password;
-    if (editPassword) newPassword = await hashPassword(editPassword);
-    await db.users.update(user.id!, { username: editUsername, password: newPassword, role: editRole });
-    setUsers(await db.users.toArray());
-    setPendingEdit(false);
-    closeEditModal();
+    setError('');
+    
+    try {
+      const user = users[editUserIdx];
+      const updateData: { username: string; password?: string; role: string } = {
+        username: editUsername,
+        role: editRole
+      };
+      
+      if (editPassword && editPassword.trim()) {
+        updateData.password = editPassword;
+      }
+      
+      await userAPI.updateUser(user.id, updateData);
+      await loadData(); // Reload data
+      closeEditModal();
+    } catch (err) {
+      console.error('Failed to update user:', err);
+      setError(err instanceof Error ? err.message : 'Failed to update user');
+    } finally {
+      setPendingEdit(false);
+    }
   };
   // Delete user
   const handleDeleteUser = async (id?: number) => {
     if (!id) return;
-    await db.users.delete(id);
-    setUsers(await db.users.toArray());
+    
+    if (!confirm('Are you sure you want to delete this user?')) return;
+    
+    try {
+      await userAPI.deleteUser(id);
+      await loadData(); // Reload data
+    } catch (err) {
+      console.error('Failed to delete user:', err);
+      setError(err instanceof Error ? err.message : 'Failed to delete user');
+    }
   };
 
   // Menu permissions logic
   const getMenusForRole = (role: Role) => menuPermissions.find(mp => mp.role === role)?.menus || [];
+  
   const handlePermissionChange = async (menu: string, role: Role) => {
-    let perm = menuPermissions.find(mp => mp.role === role);
-    if (!perm) {
-      perm = { role, menus: [menu] };
-      await db.menuPermissions.add(perm);
-    } else {
-      const menus = perm.menus.includes(menu)
-        ? perm.menus.filter(m => m !== menu)
-        : [...perm.menus, menu];
-      await db.menuPermissions.update(perm.id!, { menus });
+    try {
+      const currentMenus = getMenusForRole(role);
+      const newMenus = currentMenus.includes(menu)
+        ? currentMenus.filter(m => m !== menu)
+        : [...currentMenus, menu];
+      
+      await menuPermissionAPI.updatePermissions(role, newMenus);
+      await loadData(); // Reload data
+    } catch (err) {
+      console.error('Failed to update permissions:', err);
+      setError(err instanceof Error ? err.message : 'Failed to update permissions');
     }
-    setMenuPermissions(await db.menuPermissions.toArray());
   };
 
   // Export users & permissions
   const handleExport = async () => {
-    const users = await db.users.toArray();
-    const menuPermissions = await db.menuPermissions.toArray();
-    const data = { users, menuPermissions };
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'antic-users-export.json';
-    a.click();
-    URL.revokeObjectURL(url);
+    try {
+      const data = { users, menuPermissions };
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'antic-users-export.json';
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('Failed to export data:', err);
+      setError('Failed to export data');
+    }
   };
 
-  // Import users & permissions
+  // Import users & permissions (Note: This feature is disabled for MySQL version)
   const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const text = await file.text();
-    try {
-      const data = JSON.parse(text);
-      if (Array.isArray(data.users) && Array.isArray(data.menuPermissions)) {
-        await db.users.clear();
-        await db.menuPermissions.clear();
-        await db.users.bulkAdd(data.users);
-        await db.menuPermissions.bulkAdd(data.menuPermissions);
-        setUsers(await db.users.toArray());
-        setMenuPermissions(await db.menuPermissions.toArray());
-        alert('Import berhasil!');
-      } else {
-        alert('File tidak valid.');
-      }
-    } catch {
-      alert('File tidak valid.');
-    }
+    
+    // For security reasons, bulk import is disabled in MySQL version
+    alert('Import feature is disabled for security reasons in the MySQL version. Please add users manually through the admin panel.');
+    
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
   return (
     <>
       <h1 className="text-3xl md:text-4xl font-extrabold mb-4 text-gray-900 dark:text-gray-100">Admin Panel</h1>
+      
+      {/* Error Display */}
+      {error && (
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+          <div className="flex justify-between items-center">
+            <span>{error}</span>
+            <button 
+              onClick={() => setError('')} 
+              className="text-red-700 hover:text-red-900 font-bold"
+            >
+              ×
+            </button>
+          </div>
+        </div>
+      )}
+      
       <div className="flex gap-4 mb-6">
         <button onClick={handleExport} className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded shadow">Export User Data</button>
         <label className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded shadow cursor-pointer">
@@ -171,6 +210,11 @@ const AdminPanel: React.FC = () => {
           <input type="file" accept="application/json" ref={fileInputRef} onChange={handleImport} className="hidden" />
         </label>
       </div>
+      {/* Migration Panel */}
+      <div className="mb-8">
+        <MigrationPanel />
+      </div>
+      
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Left Column: User Management */}
         <div className="lg:col-span-1 flex flex-col gap-8">
