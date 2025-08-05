@@ -230,6 +230,9 @@ const AdminPanel: React.FC = () => {
                   className="w-full rounded-lg bg-gray-50 dark:bg-zinc-700 border border-gray-300 dark:border-zinc-600 px-4 py-2 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
                   required
                 />
+                <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  Username must be 3-50 characters, alphanumeric with _ or - only
+                </div>
               </div>
               <div>
                 <label htmlFor="password" className="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-1">Password</label>
@@ -246,6 +249,9 @@ const AdminPanel: React.FC = () => {
                   <button type="button" onClick={() => setShowPassword(v => !v)} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-300 focus:outline-none">
                     {showPassword ? <VisibilityOffIcon /> : <VisibilityIcon />}
                   </button>
+                </div>
+                <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  Password must be 8+ characters with uppercase, lowercase, number, and special character (@$!%*?&)
                 </div>
               </div>
               <div>
@@ -267,6 +273,7 @@ const AdminPanel: React.FC = () => {
               >
                 Add User
               </button>
+              {error && <div className="text-red-500 text-center font-semibold text-sm mt-2">❌ {error}</div>}
               {success && <div className="text-green-500 text-center font-semibold text-sm mt-2">✓ User added successfully!</div>}
             </form>
           </div>

@@ -3,9 +3,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import React from "react";
+import ReCAPTCHA from "react-google-recaptcha";
 
 interface LoginFormProps extends React.ComponentProps<"div"> {
-  onLogin: (username: string, password: string) => void;
+  onLogin: (username: string, password: string, recaptchaToken?: string) => void;
   error?: string;
   loading?: boolean;
   description?: string;
@@ -23,10 +24,18 @@ export function LoginForm({
 }: LoginFormProps) {
   const [username, setUsername] = React.useState("");
   const [password, setPassword] = React.useState("");
+  const [recaptchaToken, setRecaptchaToken] = React.useState<string | null>(null);
+  const recaptchaRef = React.useRef<ReCAPTCHA>(null);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!loading) onLogin(username, password);
+    if (!loading && recaptchaToken) {
+      onLogin(username, password, recaptchaToken);
+    }
+  };
+
+  const handleRecaptchaChange = (token: string | null) => {
+    setRecaptchaToken(token);
   };
 
   return (
@@ -63,11 +72,22 @@ export function LoginForm({
             className="rounded-xl border border-gray-300 px-4 py-3 text-base text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-400 transition shadow-sm bg-white/80 dark:bg-zinc-800/80"
           />
         </div>
+        
+        {/* reCAPTCHA */}
+        <div className="flex justify-center">
+          <ReCAPTCHA
+            ref={recaptchaRef}
+            sitekey={import.meta.env.VITE_RECAPTCHA_SITE_KEY || "6LdKl5srAAAAADEfB7jR18ACypr-lNbKI6cscDY0"}
+            onChange={handleRecaptchaChange}
+            theme="light"
+          />
+        </div>
+        
         {error && <div className="text-red-500 text-center font-semibold text-sm -mt-2">{error}</div>}
         <Button
           type="submit"
           className="w-full mt-2 bg-[#5B7CFA] hover:bg-[#4666d8] text-white font-bold rounded-xl py-3 text-base tracking-wide uppercase shadow-none focus:ring-2 focus:ring-blue-400 focus:outline-none"
-          disabled={loading}
+          disabled={loading || !recaptchaToken}
         >
           {loading ? "Loading..." : "Login"}
         </Button>
