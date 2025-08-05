@@ -88,12 +88,14 @@ function AppLayout() {
     }
   }, [location.pathname]);
 
-  // Tambahkan logic redirect ke /login jika belum login
+  // Authentication check dengan token
   React.useEffect(() => {
     const isLoginPage = location.pathname === '/login';
     const isAdminPage = location.pathname === '/admin';
+    const authToken = localStorage.getItem('auth_token');
     const user = localStorage.getItem('user');
-    if (!isLoginPage && !isAdminPage && !user) {
+    
+    if (!isLoginPage && !isAdminPage && (!authToken || !user)) {
       window.location.replace('/login');
     }
   }, [location.pathname]);

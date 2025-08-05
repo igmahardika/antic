@@ -298,9 +298,9 @@ const AgentAnalytics = () => {
     if (agentObj.sla < 85) insight = 'SLA di bawah target.';
     return { ...m, score, insight };
   });
-  // Urutkan agent dari jumlah ticket (vol) terbanyak ke terkecil
+  // Urutkan agent berdasarkan score dari tertinggi ke terendah
   const sortedAgentWithScore = [...agentWithScore]
-    .sort((a, b) => (b.vol || 0) - (a.vol || 0))
+    .sort((a, b) => (b.score || 0) - (a.score || 0))
     .map((a, i) => ({ ...a, rankNum: i + 1 }));
 
   // Helper: ambil tren score agent per bulan (score bulanan, bukan volume)

@@ -1,14 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { LoginForm } from '@/components/login-form';
-import { db, IUser } from '../lib/db';
-
-async function hashPassword(password: string): Promise<string> {
-  const encoder = new TextEncoder();
-  const data = encoder.encode(password);
-  const hashBuffer = await window.crypto.subtle.digest('SHA-256', data);
-  return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
-}
+import { API_CONFIG } from '@/lib/config';
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
@@ -19,16 +12,29 @@ const Login: React.FC = () => {
     setError('');
     setLoading(true);
     try {
-      const hashed = await hashPassword(password);
-      const user = await db.users.where('username').equals(username).and(u => u.password === hashed).first();
-      if (user) {
-        localStorage.setItem('user', JSON.stringify(user));
+      const response = await fetch(`${API_CONFIG.baseURL}/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ username, password }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        // Store authentication data
+        localStorage.setItem('auth_token', data.token);
+        localStorage.setItem('user', JSON.stringify(data.user));
+        localStorage.setItem('session_id', data.sessionId);
+        
         navigate('/summary-dashboard');
       } else {
-        setError('Username atau password salah');
+        setError(data.error || 'Username atau password salah');
       }
     } catch (err) {
-      setError('Terjadi kesalahan, coba lagi');
+      console.error('Login error:', err);
+      setError('Terjadi kesalahan koneksi, coba lagi');
     } finally {
       setLoading(false);
     }
