@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useRef } from 'react';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
 import { userAPI, menuPermissionAPI, User, MenuPermission } from '../lib/api';
@@ -29,7 +29,7 @@ const AdminPanel: React.FC = () => {
   const [error, setError] = React.useState('');
   const [showPassword, setShowPassword] = React.useState(false);
   const [pendingAdd, setPendingAdd] = React.useState(false);
-  const [pendingEdit, setPendingEdit] = React.useState(false);
+  // const [pendingEdit, setPendingEdit] = React.useState(false); // Removed unused state
   const [editUserIdx, setEditUserIdx] = React.useState<number | null>(null);
   const [editUsername, setEditUsername] = React.useState('');
   const [editPassword, setEditPassword] = React.useState('');
@@ -99,7 +99,6 @@ const AdminPanel: React.FC = () => {
     e.preventDefault();
     if (editUserIdx === null) return;
     
-    setPendingEdit(true);
     setError('');
     
     try {
@@ -119,8 +118,6 @@ const AdminPanel: React.FC = () => {
     } catch (err) {
       console.error('Failed to update user:', err);
       setError(err instanceof Error ? err.message : 'Failed to update user');
-    } finally {
-      setPendingEdit(false);
     }
   };
   // Delete user

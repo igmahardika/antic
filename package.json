@@ -71,6 +71,7 @@
     "dexie-react-hooks": "^1.1.7",
     "dompurify": "^3.2.6",
     "embla-carousel-react": "^8.3.0",
+    "exceljs": "^4.4.0",
     "file-saver": "^2.0.5",
     "flowbite": "^3.1.2",
     "flowbite-react": "^0.11.8",

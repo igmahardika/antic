@@ -1,24 +1,22 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { Button } from './ui/button';
 import { Label } from './ui/label';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from './ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './ui/accordion';
 import { Badge } from './ui/badge';
 import Papa from 'papaparse';
+import * as ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
 import { db, ITicket } from '@/lib/db';
 import { formatDurationDHM } from '@/lib/utils';
 import SummaryCard from './ui/SummaryCard';
 import { useLiveQuery } from 'dexie-react-hooks';
-import SecurityNotice from './SecurityNotice';
+// import SecurityNotice from './SecurityNotice'; // Temporarily disabled for Excel support
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import TableChartIcon from '@mui/icons-material/TableChart';
 import DeleteIcon from '@mui/icons-material/Delete';
 import CloseIcon from '@mui/icons-material/Close';
-import AccessTimeIcon from '@mui/icons-material/AccessTime';
-import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import StorageIcon from '@mui/icons-material/Storage';
-import AttachFileIcon from '@mui/icons-material/AttachFile';
 import DownloadIcon from '@mui/icons-material/Download';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 
@@ -100,57 +98,123 @@ const UploadProcess = ({ onUploadComplete }: UploadProcessProps) => {
     
     try {
         const data = await file.arrayBuffer();
-        const workbook = XLSX.read(data, { type: 'array' });
-      const worksheetName = workbook.SheetNames[0];
-      const worksheet = workbook.Sheets[worksheetName];
+        const fileExtension = file.name.toLowerCase().split('.').pop();
         
-        // Header validation
-        const headerRange = XLSX.utils.decode_range(worksheet['!ref'] as string);
-        const fileHeaders = [];
-        for (let C = headerRange.s.c; C <= headerRange.e.c; ++C) {
-            const cell = worksheet[XLSX.utils.encode_cell({c: C, r: headerRange.s.r})];
-            const hdr = cell && cell.t ? XLSX.utils.format_cell(cell) : `COLUMN_${C+1}`;
-            fileHeaders.push(hdr);
-        }
-
-        const missingHeaders = EXPECTED_HEADERS.filter(h => !fileHeaders.includes(h));
-        if(missingHeaders.length > 0) {
-            console.error("Header Tidak Sesuai", { missingHeaders });
-            setIsProcessing(false);
-            return;
-        }
-
-        const json: any[] = XLSX.utils.sheet_to_json(worksheet, { raw: false });
-        const { tickets: processedTickets, errorRows } = processAndAnalyzeData(json);
+        let json: any[] = [];
+        let fileHeaders: string[] = [];
         
-        if (processedTickets.length > 0) {
-            await db.tickets.bulkPut(processedTickets);
+        if (fileExtension === 'csv') {
+            // Parse CSV with Papa Parse
+            const text = new TextDecoder().decode(data);
+            return new Promise<void>((resolve, reject) => {
+                Papa.parse(text, {
+                    header: true,
+                    skipEmptyLines: true,
+                    complete: async (results) => {
+                        try {
+                            json = results.data as any[];
+                            fileHeaders = Object.keys(json[0] || {});
+                            await processUploadedData(json, fileHeaders);
+                            resolve();
+                        } catch (error) {
+                            reject(error);
+                        }
+                    },
+                    error: (error) => {
+                        reject(new Error(`CSV parsing error: ${error.message}`));
+                    }
+                });
+            });
+        } else if (fileExtension === 'xlsx' || fileExtension === 'xls') {
+            // Parse Excel with ExcelJS
+            const workbook = new ExcelJS.Workbook();
+            await workbook.xlsx.load(data);
+            
+            const worksheet = workbook.getWorksheet(1); // Get first worksheet
+            if (!worksheet) {
+                throw new Error('No worksheet found in Excel file');
+            }
+            
+            // Convert worksheet to JSON
+            const headers: string[] = [];
+            const rows: any[] = [];
+            
+            worksheet.eachRow((row, rowNumber) => {
+                if (rowNumber === 1) {
+                    // Get headers from first row
+                    row.eachCell((cell, colNumber) => {
+                        const headerValue = cell.value?.toString()?.trim() || '';
+                        headers[colNumber - 1] = headerValue;
+                    });
+                } else {
+                    // Get data rows
+                    const rowData: any = {};
+                    row.eachCell((cell, colNumber) => {
+                        const header = headers[colNumber - 1];
+                        if (header) {
+                            rowData[header] = cell.value?.toString() || '';
+                        }
+                    });
+                    if (Object.values(rowData).some(val => val !== '')) {
+                        rows.push(rowData);
+                    }
+                }
+            });
+            
+            json = rows;
+            fileHeaders = headers.filter(h => h !== '');
+            
+            await processUploadedData(json, fileHeaders);
+        } else {
+            throw new Error('Unsupported file format. Please use CSV or Excel files.');
         }
-
-        const successCount = processedTickets.length;
-        const errorCount = errorRows.length;
-        const totalRowsInFile = json.length;
-        const zeroDurationCount = processedTickets.filter(t => (t.duration?.rawHours === 0 || t.handlingDuration?.rawHours === 0)).length;
-
-        const summary: IUploadSummary = { totalRows: totalRowsInFile, successCount, errorCount, zeroDurationCount };
-        setUploadSummary(summary);
-        setErrorLog(errorRows);
-
-        if (errorCount > 0) {
-            console.warn(`Terdapat ${errorCount} Kegagalan`, { errorRows });
-        }
-        if (zeroDurationCount > 0) {
-             console.warn(`${zeroDurationCount} tiket memiliki durasi 0 jam. Periksa kembali kolom waktu di file Excel.`);
-        }
-
-        onUploadComplete();
 
     } catch (error) {
       console.error("Error processing file:", error);
+      alert(`Error processing file: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setIsProcessing(false);
       setProgress(100);
     }
+  };
+
+  const processUploadedData = async (json: any[], fileHeaders: string[]) => {
+    // Debug: Log detected headers
+    console.log("Detected Headers:", fileHeaders);
+    console.log("Expected Headers:", EXPECTED_HEADERS);
+    
+    // Header validation with detailed feedback
+    const missingHeaders = EXPECTED_HEADERS.filter(h => !fileHeaders.includes(h));
+    if(missingHeaders.length > 0) {
+        const errorMessage = `File header tidak sesuai!\n\nKolom yang hilang:\n${missingHeaders.join(', ')}\n\nKolom yang terdeteksi:\n${fileHeaders.join(', ')}\n\nKolom yang diperlukan:\n${EXPECTED_HEADERS.join(', ')}\n\nSilakan download template untuk format yang benar.`;
+        console.error("Header Tidak Sesuai", { missingHeaders, fileHeaders, expectedHeaders: EXPECTED_HEADERS });
+        alert(errorMessage);
+        return;
+    }
+
+    const { tickets: processedTickets, errorRows } = processAndAnalyzeData(json);
+    
+    if (processedTickets.length > 0) {
+        await db.tickets.bulkPut(processedTickets);
+    }
+
+    const successCount = processedTickets.length;
+    const errorCount = errorRows.length;
+    const totalRowsInFile = json.length;
+    const zeroDurationCount = processedTickets.filter(t => (t.duration?.rawHours === 0 || t.handlingDuration?.rawHours === 0)).length;
+
+    const summary: IUploadSummary = { totalRows: totalRowsInFile, successCount, errorCount, zeroDurationCount };
+    setUploadSummary(summary);
+    setErrorLog(errorRows);
+
+    if (errorCount > 0) {
+        console.warn(`Terdapat ${errorCount} Kegagalan`, { errorRows });
+    }
+    if (zeroDurationCount > 0) {
+         console.warn(`${zeroDurationCount} tiket memiliki durasi 0 jam. Periksa kembali kolom waktu di file Excel.`);
+    }
+
+    onUploadComplete();
   };
 
   const handleReset = async () => {
@@ -165,16 +229,40 @@ const UploadProcess = ({ onUploadComplete }: UploadProcessProps) => {
     }
   };
 
-  const handleDownloadTemplate = () => {
-    const ws = XLSX.utils.json_to_sheet([{}], { header: EXPECTED_HEADERS });
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Template Data Tiket");
-    
-    const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
-    const blob = new Blob([wbout], { type: 'application/octet-stream' });
-    saveAs(blob, 'Template_Upload_Tiket.xlsx');
-
-    console.info("Template Diunduh");
+  const handleDownloadTemplate = async () => {
+    try {
+      const workbook = new ExcelJS.Workbook();
+      const worksheet = workbook.addWorksheet('Template Data Tiket');
+      
+      // Add headers with styling
+      const headerRow = worksheet.addRow(EXPECTED_HEADERS);
+      headerRow.font = { bold: true };
+      headerRow.fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FFE0E0E0' }
+      };
+      
+      // Add sample data row (empty for template)
+      const sampleRow = EXPECTED_HEADERS.map(() => '');
+      worksheet.addRow(sampleRow);
+      
+      // Auto-fit columns
+      worksheet.columns.forEach(column => {
+        column.width = 15;
+      });
+      
+      // Generate Excel file
+      const buffer = await workbook.xlsx.writeBuffer();
+      const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      saveAs(blob, 'Template_Upload_Tiket.xlsx');
+      
+      console.info("Template Diunduh dengan headers:", EXPECTED_HEADERS);
+      alert("Template berhasil diunduh! Silakan isi data sesuai format template.");
+    } catch (error) {
+      console.error("Error generating template:", error);
+      alert("Error generating template. Please try again.");
+    }
   };
 
   return (
@@ -276,16 +364,12 @@ const FileDropZone = ({ onFileUpload, isProcessing, progress }: { onFileUpload: 
   };
   return (
     <>
-      <SecurityNotice 
-        feature="Excel File Upload" 
-        alternative="Please convert your Excel files to CSV format before uploading"
-      />
       <div 
         onDragEnter={(e) => { e.preventDefault(); setIsDragActive(true); }}
         onDragLeave={(e) => { e.preventDefault(); setIsDragActive(false); }}
         onDragOver={(e) => e.preventDefault()}
         onDrop={onDrop}
-        className={`relative flex flex-col items-center justify-center w-full p-8 border-2 border-dashed rounded-lg transition-colors duration-300 ${isDragActive ? 'border-blue-500 bg-blue-50 dark:bg-zinc-800' : 'border-gray-300 dark:border-zinc-700 hover:border-blue-400'} opacity-50 pointer-events-none`}
+        className={`relative flex flex-col items-center justify-center w-full p-8 border-2 border-dashed rounded-lg transition-colors duration-300 ${isDragActive ? 'border-blue-500 bg-blue-50 dark:bg-zinc-800' : 'border-gray-300 dark:border-zinc-700 hover:border-blue-400'}`}
       >
       {isProcessing ? (
         <>
@@ -302,8 +386,8 @@ const FileDropZone = ({ onFileUpload, isProcessing, progress }: { onFileUpload: 
               select file
             </label>
           </p>
-          <input id="file-upload" type="file" className="sr-only" onChange={onFileSelect} accept=".xlsx, .xls" />
-          <p className="mt-1 text-xs text-gray-500 dark:text-gray-500">Supports .xlsx and .xls</p>
+          <input id="file-upload" type="file" className="sr-only" onChange={onFileSelect} accept=".xlsx, .xls, .csv" />
+          <p className="mt-1 text-xs text-gray-500 dark:text-gray-500">Supports .xlsx, .xls, and .csv</p>
         </>
       )}
       </div>
@@ -332,7 +416,7 @@ const ErrorLogTable = ({ errors }: { errors: IErrorLog[] }) => {
               <AccordionTrigger className="text-left hover:no-underline">
                 <div className="flex justify-between w-full pr-4 items-center">
                   <span className="font-semibold text-sm break-words whitespace-normal text-left">{reason}</span>
-                  <span><Badge variant="destructive" className="flex-shrink-0 text-xs px-2 py-1 bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-200 border border-rose-200 dark:border-rose-800">{errs.length} rows</Badge></span>
+                  <span><Badge variant="danger" className="flex-shrink-0 text-xs px-2 py-1 bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-200 border border-rose-200 dark:border-rose-800">{errs.length} rows</Badge></span>
                 </div>
               </AccordionTrigger>
               <AccordionContent>
@@ -364,40 +448,113 @@ const ErrorLogTable = ({ errors }: { errors: IErrorLog[] }) => {
 };
 
 function parseExcelDate(value: any): string | undefined {
-  if (value === null || value === undefined) return undefined;
+  if (value === null || value === undefined || value === '') return undefined;
 
   // 1. Handle Excel's numeric date format (most reliable)
-  if (typeof value === 'number') {
-    const date = XLSX.SSF.parse_date_code(value);
-    if (date) {
-      const d = new Date(Date.UTC(date.y, date.m - 1, date.d, date.H, date.M, date.S));
-      if (d.getUTCFullYear() === date.y && d.getUTCMonth() === date.m - 1 && d.getUTCDate() === date.d) {
-        return d.toISOString();
+  if (typeof value === 'number' && !isNaN(value)) {
+    try {
+      // Handle reasonable date range (Excel dates typically between 1 and 50000)
+      if (value > 0 && value < 100000) {
+        // Excel date numbers represent days since 1900-01-01
+        const excelEpoch = new Date(1900, 0, 1);
+        const dateInMs = (value - 2) * 24 * 60 * 60 * 1000; // Subtract 2 to account for Excel's leap year bug
+        const date = new Date(excelEpoch.getTime() + dateInMs);
+        
+        if (!isNaN(date.getTime()) && date.getFullYear() > 1900 && date.getFullYear() < 2100) {
+          return date.toISOString();
+        }
       }
+    } catch (error) {
+      console.warn(`[DEBUG] Failed to parse Excel numeric date:`, value, error);
     }
   }
 
-  // 2. Strictly handle only DD/MM/YYYY or DD/MM/YYYY HH:MM:SS
+  // 2. Handle Date objects (ExcelJS might return Date objects)
+  if (value instanceof Date) {
+    try {
+      if (!isNaN(value.getTime())) {
+        return value.toISOString();
+      }
+    } catch (error) {
+      console.warn(`[DEBUG] Failed to convert Date object:`, value, error);
+    }
+  }
+
+  // 3. Handle string date formats - be more flexible
   if (typeof value === 'string') {
     const trimmedValue = value.trim();
-    // Regex: DD/MM/YYYY or DD/MM/YYYY HH:MM:SS
-    const parts = trimmedValue.match(/^([0-3]?\d)\/([01]?\d)\/(\d{4})(?:\s+([0-2]?\d):([0-5]?\d):([0-5]?\d))?$/);
-    if (parts) {
-      const day = parseInt(parts[1], 10);
-      const month = parseInt(parts[2], 10);
-      const year = parseInt(parts[3], 10);
-      const hours = parseInt(parts[4] || '0', 10);
-      const minutes = parseInt(parts[5] || '0', 10);
-      const seconds = parseInt(parts[6] || '0', 10);
-      if (year > 1000 && month > 0 && month <= 12 && day > 0 && day <= 31) {
-        const customDate = new Date(Date.UTC(year, month - 1, day, hours, minutes, seconds));
-        if (!isNaN(customDate.getTime()) && customDate.getUTCMonth() === month - 1) {
-          return customDate.toISOString();
+    if (trimmedValue === '') return undefined;
+    
+    // Try multiple date formats
+    const formats = [
+      // DD/MM/YYYY HH:MM:SS
+      /^([0-3]?\d)\/([01]?\d)\/(\d{4})\s+([0-2]?\d):([0-5]?\d):([0-5]?\d)$/,
+      // DD/MM/YYYY
+      /^([0-3]?\d)\/([01]?\d)\/(\d{4})$/,
+      // MM/DD/YYYY HH:MM:SS
+      /^([01]?\d)\/([0-3]?\d)\/(\d{4})\s+([0-2]?\d):([0-5]?\d):([0-5]?\d)$/,
+      // MM/DD/YYYY
+      /^([01]?\d)\/([0-3]?\d)\/(\d{4})$/,
+      // YYYY-MM-DD HH:MM:SS
+      /^(\d{4})-([01]?\d)-([0-3]?\d)\s+([0-2]?\d):([0-5]?\d):([0-5]?\d)$/,
+      // YYYY-MM-DD
+      /^(\d{4})-([01]?\d)-([0-3]?\d)$/
+    ];
+
+    for (let i = 0; i < formats.length; i++) {
+      const parts = trimmedValue.match(formats[i]);
+      if (parts) {
+        let day, month, year, hours = 0, minutes = 0, seconds = 0;
+        
+        if (i < 2) { // DD/MM/YYYY formats
+          day = parseInt(parts[1], 10);
+          month = parseInt(parts[2], 10);
+          year = parseInt(parts[3], 10);
+          if (parts[4]) hours = parseInt(parts[4], 10);
+          if (parts[5]) minutes = parseInt(parts[5], 10);
+          if (parts[6]) seconds = parseInt(parts[6], 10);
+        } else if (i < 4) { // MM/DD/YYYY formats
+          month = parseInt(parts[1], 10);
+          day = parseInt(parts[2], 10);
+          year = parseInt(parts[3], 10);
+          if (parts[4]) hours = parseInt(parts[4], 10);
+          if (parts[5]) minutes = parseInt(parts[5], 10);
+          if (parts[6]) seconds = parseInt(parts[6], 10);
+        } else { // YYYY-MM-DD formats
+          year = parseInt(parts[1], 10);
+          month = parseInt(parts[2], 10);
+          day = parseInt(parts[3], 10);
+          if (parts[4]) hours = parseInt(parts[4], 10);
+          if (parts[5]) minutes = parseInt(parts[5], 10);
+          if (parts[6]) seconds = parseInt(parts[6], 10);
+        }
+        
+        // Validate date components
+        if (year > 1900 && year < 2100 && month > 0 && month <= 12 && day > 0 && day <= 31) {
+          try {
+            const customDate = new Date(Date.UTC(year, month - 1, day, hours, minutes, seconds));
+            if (!isNaN(customDate.getTime())) {
+              return customDate.toISOString();
+            }
+          } catch (error) {
+            console.warn(`[DEBUG] Failed to create date from:`, trimmedValue, error);
+          }
         }
       }
     }
+
+    // Try native Date parsing as last resort
+    try {
+      const nativeDate = new Date(trimmedValue);
+      if (!isNaN(nativeDate.getTime())) {
+        return nativeDate.toISOString();
+      }
+    } catch (error) {
+      console.warn(`[DEBUG] Native date parsing failed:`, trimmedValue, error);
+    }
   }
-  // Tolak semua format lain
+
+  // Only log warning for first few failures to avoid spam
   return undefined;
 }
 
@@ -414,23 +571,68 @@ const processAndAnalyzeData = (rawData: any[]): { tickets: ITicket[], errorRows:
     const errorRows: IErrorLog[] = [];
     const uploadTimestamp = Date.now();
   
+    // Log sample data untuk debugging
+    console.log(`[DEBUG] Processing ${rawData.length} rows`);
+    if (rawData.length > 0) {
+      console.log(`[DEBUG] Sample row 1:`, rawData[0]);
+      console.log(`[DEBUG] Sample row 1 keys:`, Object.keys(rawData[0]));
+      if (rawData.length > 1) {
+        console.log(`[DEBUG] Sample row 2:`, rawData[1]);
+      }
+    }
+  
     rawData.forEach((row, index) => {
       if (Object.keys(row).length === 0) {
         return; 
+      }
+      
+      // Log first 5 rows untuk debugging
+      if (index < 5) {
+        console.log(`[DEBUG] Processing row ${index + 2}:`, row);
       }
       const customerId = row['Customer ID'];
       const openTimeValue = row['Waktu Open'];
       const openBy = row['Open By'];
       
-      if (!customerId || !openTimeValue || !openBy) {
-        errorRows.push({ row: index + 2, reason: `Data wajib (Customer ID, Waktu Open, atau Open By) kosong.` });
+      // Log field values untuk debugging
+      if (index < 5) {
+        console.log(`[DEBUG] Row ${index + 2} - Customer ID:`, customerId, `(Type: ${typeof customerId})`);
+        console.log(`[DEBUG] Row ${index + 2} - Waktu Open:`, openTimeValue, `(Type: ${typeof openTimeValue})`);
+        console.log(`[DEBUG] Row ${index + 2} - Open By:`, openBy, `(Type: ${typeof openBy})`);
+      }
+      
+      // Validasi field wajib - handle various data types and empty values
+      if (customerId === null || customerId === undefined || 
+          (typeof customerId === 'string' && customerId.trim() === '') ||
+          (typeof customerId === 'number' && isNaN(customerId))) {
+        errorRows.push({ row: index + 2, reason: `Customer ID kosong atau tidak valid: "${customerId}" (Type: ${typeof customerId})` });
+        if (index < 5) console.log(`[DEBUG] Row ${index + 2} FAILED: Customer ID validation`);
+        return;
+      }
+      
+      if (openTimeValue === null || openTimeValue === undefined || 
+          (typeof openTimeValue === 'string' && openTimeValue.trim() === '')) {
+        errorRows.push({ row: index + 2, reason: `Waktu Open kosong atau tidak valid: "${openTimeValue}" (Type: ${typeof openTimeValue})` });
+        if (index < 5) console.log(`[DEBUG] Row ${index + 2} FAILED: Waktu Open validation`);
+        return;
+      }
+      
+      if (openBy === null || openBy === undefined || 
+          (typeof openBy === 'string' && openBy.trim() === '')) {
+        errorRows.push({ row: index + 2, reason: `Open By kosong atau tidak valid: "${openBy}" (Type: ${typeof openBy})` });
+        if (index < 5) console.log(`[DEBUG] Row ${index + 2} FAILED: Open By validation`);
         return;
       }
       
       const openTimeIso = parseExcelDate(openTimeValue);
       if (!openTimeIso) {
-        errorRows.push({ row: index + 2, reason: `Format Waktu Open tidak valid: "${openTimeValue}"`});
+        errorRows.push({ row: index + 2, reason: `Format Waktu Open tidak valid: "${openTimeValue}" (Type: ${typeof openTimeValue})`});
+        if (index < 5) console.log(`[DEBUG] Row ${index + 2} FAILED: Date parsing for "${openTimeValue}"`);
         return;
+      }
+      
+      if (index < 5) {
+        console.log(`[DEBUG] Row ${index + 2} SUCCESS: All validations passed, parsed date:`, openTimeIso);
       }
       // Normalisasi ke format tanpa timezone (YYYY-MM-DDTHH:mm:ss)
       const openTime = openTimeIso.slice(0, 19);
@@ -502,8 +704,20 @@ const processAndAnalyzeData = (rawData: any[]): { tickets: ITicket[], errorRows:
         uploadTimestamp: uploadTimestamp,
       };
       tickets.push(ticket);
-    });
-  
+        });
+
+    // Log error summary untuk debugging
+    if (errorRows.length > 0) {
+      const errorTypes = {};
+      errorRows.forEach(err => {
+        const type = err.reason.split(':')[0] || err.reason;
+        errorTypes[type] = (errorTypes[type] || 0) + 1;
+      });
+      console.log(`[DEBUG] Error Summary:`, errorTypes);
+      console.log(`[DEBUG] Sample errors (first 10):`, errorRows.slice(0, 10));
+    }
+
+    console.log(`[DEBUG] Processing complete: ${tickets.length} success, ${errorRows.length} errors`);
     return { tickets, errorRows };
 };
 

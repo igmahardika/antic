@@ -1,36 +1,31 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import 'ag-grid-community/styles/ag-theme-quartz.css';
 import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 import StarIcon from '@mui/icons-material/Star';
 import GroupIcon from '@mui/icons-material/Group';
 import HowToRegIcon from '@mui/icons-material/HowToReg';
 import MoveToInboxIcon from '@mui/icons-material/MoveToInbox';
-import WorkspacePremiumIcon from '@mui/icons-material/WorkspacePremium';
 import BarChartIcon from '@mui/icons-material/BarChart';
-import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
-import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import FlashOnIcon from '@mui/icons-material/FlashOn';
 import MenuBookIcon from '@mui/icons-material/MenuBook';
-import ChatBubbleIcon from '@mui/icons-material/ChatBubble';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAgentStore } from '@/store/agentStore';
 import { useAgentAnalytics } from './AgentAnalyticsContext';
 import SummaryCard from './ui/SummaryCard';
 import TimeFilter from './TimeFilter';
-import { ListAlt as ListAltIcon, AssignmentTurnedIn as AssignmentTurnedInIcon, TrendingUp as TrendingUpIcon, Inbox as InboxIcon, HowToReg as PersonCheckIcon } from '@mui/icons-material';
+import { ListAlt as ListAltIcon, TrendingUp as TrendingUpIcon } from '@mui/icons-material';
 import { Lightbulb as LightbulbIcon } from '@mui/icons-material';
 import PageWrapper from './PageWrapper';
 import type { AgentMetric } from '@/utils/agentKpi';
 import { formatDurationDHM } from '@/lib/utils';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, Legend as RechartsLegend, Line, LabelList, Tooltip } from 'recharts';
-import { shallow } from 'zustand/shallow';
-import Papa from 'papaparse';
-import dayjs from 'dayjs';
-import duration from 'dayjs/plugin/duration';
+// Unused import - commented out
+// import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, Legend as RechartsLegend, Tooltip } from 'recharts';
 import { Badge } from '@/components/ui/badge';
 import * as RadixDialog from '@radix-ui/react-dialog';
+// Unused import - commented out
+// import dayjs from 'dayjs';
 
 // Define the structure of the data this component will receive
 export interface AgentAnalyticsData {
@@ -42,20 +37,21 @@ export interface AgentAnalyticsData {
   maxDurationFormatted: string;
 }
 
-const getTrendPercentage = (dataArr) => {
-  if (!dataArr || dataArr.length < 2) return null;
-  const prev = dataArr[dataArr.length - 2];
-  const curr = dataArr[dataArr.length - 1];
-  if (prev === 0) return null;
-  const percent = ((curr - prev) / Math.abs(prev)) * 100;
-  return percent;
-};
+// Unused function - commented out
+// const getTrendPercentage = (dataArr) => {
+//   if (!dataArr || dataArr.length < 2) return null;
+//   const prev = dataArr[dataArr.length - 2];
+//   const curr = dataArr[dataArr.length - 1];
+//   if (prev === 0) return null;
+//   const percent = ((curr - prev) / Math.abs(prev)) * 100;
+//   return percent;
+// };
 
-// Tambahkan array warna untuk icon dan trendline
-const AGENT_COLORS = [
-  'text-blue-500', 'text-green-500', 'text-orange-500', 'text-purple-500', 'text-red-500',
-  'text-pink-500', 'text-teal-500', 'text-yellow-500', 'text-indigo-500', 'text-emerald-500'
-];
+// Unused array - commented out
+// const AGENT_COLORS = [
+//   'text-blue-500', 'text-green-500', 'text-orange-500', 'text-purple-500', 'text-red-500',
+//   'text-pink-500', 'text-teal-500', 'text-yellow-500', 'text-indigo-500', 'text-emerald-500'
+// ];
 const TREND_COLORS = [
   '#6366F1', '#22C55E', '#F59E42', '#8B5CF6', '#EF4444', '#F472B6', '#14B8A6', '#EAB308', '#0EA5E9', '#10B981'
 ];
@@ -106,46 +102,46 @@ const CustomTooltip = ({ active = false, payload = [], label = '' } = {}) => {
   );
 };
 
-// Pada mini chart, custom Tooltip agar tampilkan format sesuai satuan
-const CustomMiniTooltip = ({ active, payload, label }: any) => {
-  if (!active || !payload || !payload.length) return null;
-  // Selalu render hanya satu value (payload[0]) untuk mini chart single series
-  let value = payload[0].value;
-  const lowerLabel = (label || '').toLowerCase();
-  let displayLabel = label;
-  if (lowerLabel.includes('frt')) {
-    value = typeof value === 'number' ? formatDurationDHM(value) : value;
-    displayLabel = 'FRT';
-  } else if (lowerLabel.includes('art')) {
-    value = typeof value === 'number' ? formatDurationDHM(value) : value;
-    displayLabel = 'ART';
-  } else if (lowerLabel.includes('fcr')) {
-    value = typeof value === 'number' ? value.toFixed(1) + '%' : value;
-    displayLabel = 'FCR';
-  } else if (lowerLabel.includes('sla')) {
-    value = typeof value === 'number' ? value.toFixed(1) + '%' : value;
-    displayLabel = 'SLA';
-  }
-  return (
-    <div className="bg-white dark:bg-zinc-900 rounded shadow px-3 py-2 text-xs">
-      <div className="font-bold mb-1">{label}</div>
-      <div><span className="font-semibold mr-2">{displayLabel}:</span><span className="font-mono">{value}</span></div>
-    </div>
-  );
-};
+// Unused component - commented out
+// const CustomMiniTooltip = ({ active, payload, label }: any) => {
+//   if (!active || !payload || !payload.length) return null;
+//   // Selalu render hanya satu value (payload[0]) untuk mini chart single series
+//   let value = payload[0].value;
+//   const lowerLabel = (label || '').toLowerCase();
+//   let displayLabel = label;
+//   if (lowerLabel.includes('frt')) {
+//     value = typeof value === 'number' ? formatDurationDHM(value) : value;
+//     displayLabel = 'FRT';
+//   } else if (lowerLabel.includes('art')) {
+//     value = typeof value === 'number' ? formatDurationDHM(value) : value;
+//     displayLabel = 'ART';
+//   } else if (lowerLabel.includes('fcr')) {
+//     value = typeof value === 'number' ? value.toFixed(1) + '%' : value;
+//     displayLabel = 'FCR';
+//   } else if (lowerLabel.includes('sla')) {
+//     value = typeof value === 'number' ? value.toFixed(1) + '%' : value;
+//     displayLabel = 'SLA';
+//   }
+//   return (
+//     <div className="bg-white dark:bg-zinc-900 rounded shadow px-3 py-2 text-xs">
+//       <div className="font-bold mb-1">{label}</div>
+//       <div><span className="font-semibold mr-2">{displayLabel}:</span><span className="font-mono">{value}</span></div>
+//     </div>
+//   );
+// };
 
-// Tambahkan komponen ScoreCircle di atas AgentAnalytics
-function ScoreCircle({ score }: { score: number }) {
-  const color = score >= 80 ? 'bg-green-500' : score >= 60 ? 'bg-yellow-400' : 'bg-red-500';
-  const icon = score >= 80 ? <EmojiEventsIcon className="text-white w-7 h-7 mb-1" /> : score >= 60 ? <StarIcon className="text-white w-7 h-7 mb-1" /> : <EmojiEventsIcon className="text-white w-7 h-7 mb-1" />;
-  return (
-    <div className={`flex flex-col items-center justify-center w-20 h-20 rounded-full shadow-lg ${color}`}>
-      {icon}
-      <span className="text-2xl font-extrabold text-white leading-none">{score}</span>
-      <span className="text-xs font-semibold text-white/80">Score</span>
-    </div>
-  );
-}
+// Unused component - commented out
+// function ScoreCircle({ score }: { score: number }) {
+//   const color = score >= 80 ? 'bg-green-500' : score >= 60 ? 'bg-yellow-400' : 'bg-red-500';
+//   const icon = score >= 80 ? <EmojiEventsIcon className="text-white w-7 h-7 mb-1" /> : score >= 60 ? <StarIcon className="text-white w-7 h-7 mb-1" /> : <EmojiEventsIcon className="text-white w-7 h-7 mb-1" />;
+//   return (
+//     <div className={`flex flex-col items-center justify-center w-20 h-20 rounded-full shadow-lg ${color}`}>
+//       {icon}
+//       <span className="text-2xl font-extrabold text-white leading-none">{score}</span>
+//       <span className="text-xs font-semibold text-white/80">Score</span>
+//     </div>
+//   );
+// }
 
 // Komponen Box besar untuk Rank dan Backlog
 function StatBox({ icon, value, label, bg, valueColor }: { icon: React.ReactNode, value: React.ReactNode, label: string, bg: string, valueColor?: string }) {
@@ -155,7 +151,7 @@ function StatBox({ icon, value, label, bg, valueColor }: { icon: React.ReactNode
         <div className={`w-12 h-12 min-w-12 min-h-12 rounded-xl flex items-center justify-center ${bg} shadow-lg`}>
           <span className="text-white" style={{ fontSize: 28 }}>{icon}</span>
         </div>
-        <span className={`text-4xl font-extrabold ${bg === 'bg-yellow-400' ? 'text-yellow-400' : bg === 'bg-green-500' ? 'text-green-500' : bg === 'bg-red-500' ? 'text-red-500' : bg === 'bg-blue-500' ? 'text-blue-500' : ''}`}>{value}</span>
+        <span className={`text-4xl font-extrabold ${valueColor || (bg === 'bg-yellow-400' ? 'text-yellow-400' : bg === 'bg-green-500' ? 'text-green-500' : bg === 'bg-red-500' ? 'text-red-500' : bg === 'bg-blue-500' ? 'text-blue-500' : '')}`}>{value}</span>
       </div>
       <div className="text-xs font-semibold text-gray-500 mt-1">{label}</div>
     </div>
@@ -175,7 +171,8 @@ const AgentAnalytics = () => {
   } = useAgentAnalytics() || {};
   const data = agentAnalyticsData || {};
   const agentMetrics = useAgentStore((state) => state.agentMetrics) as AgentMetric[];
-  const [excelAgentData, setExcelAgentData] = useState<any[]>([]);
+  // Unused state - commented out
+  // const [excelAgentData, setExcelAgentData] = useState<any[]>([]);
   const [debouncedTrendData, setDebouncedTrendData] = useState<any[]>([]);
   const [debouncedDatasets, setDebouncedDatasets] = useState<{ label: string; data: number[]; color?: string }[]>([]);
   const [selectedAgent, setSelectedAgent] = useState<string | null>(null);
@@ -188,25 +185,25 @@ const AgentAnalytics = () => {
   // Ganti monthOptions agar selalu 12 bulan
   const monthOptions = MONTH_OPTIONS;
 
-  // Calculate global summary metrics
-  const summaryKpi = useMemo(() => {
-    if (!agentMetrics || agentMetrics.length === 0) return null;
-    const avg = (arr: number[]) => arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : 0;
-    return {
-      avgFRT: avg(agentMetrics.map(m => m.frt)),
-      avgART: avg(agentMetrics.map(m => m.art)),
-      avgFCR: avg(agentMetrics.map(m => m.fcr)),
-      avgSLA: avg(agentMetrics.map(m => m.sla)),
-      avgVol: avg(agentMetrics.map(m => m.vol)),
-      avgBacklog: avg(agentMetrics.map(m => m.backlog)),
-    };
-  }, [agentMetrics]);
+  // Unused variable - commented out
+  // const summaryKpi = useMemo(() => {
+  //   if (!agentMetrics || agentMetrics.length === 0) return null;
+  //   const avg = (arr: number[]) => arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : 0;
+  //   return {
+  //     avgFRT: avg(agentMetrics.map(m => m.frt)),
+  //     avgART: avg(agentMetrics.map(m => m.art)),
+  //     avgFCR: avg(agentMetrics.map(m => m.fcr)),
+  //     avgSLA: avg(agentMetrics.map(m => m.sla)),
+  //     avgVol: avg(agentMetrics.map(m => m.vol)),
+  //     avgBacklog: avg(agentMetrics.map(m => m.backlog)),
+  //   };
+  // }, [agentMetrics]);
 
-  // Prepare per-agent monthly data for trendline (for recharts)
-  const rechartsAgentTrendData = useMemo(() => {
-    if (!data || !data.agentMonthlyChart || !Array.isArray(data.agentMonthlyChart.datasets)) return [];
-    return toRechartsAgentTrend(data.agentMonthlyChart.labels, data.agentMonthlyChart.datasets);
-  }, [data]);
+  // Unused variable - commented out
+  // const rechartsAgentTrendData = useMemo(() => {
+  //   if (!data || !data.agentMonthlyChart || !Array.isArray(data.agentMonthlyChart.datasets)) return [];
+  //   return toRechartsAgentTrend(data.agentMonthlyChart.labels, data.agentMonthlyChart.datasets);
+  // }, [data]);
   const agentTrendDatasets: { label: string; data: number[]; color?: string }[] = data?.agentMonthlyChart?.datasets || [];
   const agentTrendLabels: string[] = data?.agentMonthlyChart?.labels || [];
 
@@ -248,10 +245,11 @@ const AgentAnalytics = () => {
     );
   }
   const { summary = {} } = data;
-  const sortedAgentList = [...filteredAgentList].sort((a, b) => (b.ticketCount || 0) - (a.ticketCount || 0));
+  // Unused variable - commented out
+  // const sortedAgentList = [...filteredAgentList].sort((a, b) => (b.ticketCount || 0) - (a.ticketCount || 0));
 
-  // Gunakan excelAgentData jika ada, jika tidak gunakan data dari store
-  const dataSource = excelAgentData.length > 0 ? excelAgentData : agentMetrics;
+  // Use agentMetrics as data source (excelAgentData functionality removed)
+  const dataSource = agentMetrics;
 
   // --- Normalisasi & Scoring KPI sesuai formula baru ---
   function normalizePositive(actual: number, target: number) {
@@ -382,11 +380,12 @@ const AgentAnalytics = () => {
   const bestSLA = agentWithScore.reduce((a, b) => (b.sla > a.sla ? b : a), agentWithScore[0]);
   const mostReliable = agentWithScore.filter(a => a.backlog === 0).reduce((a, b) => (b.fcr > a.fcr ? b : a), agentWithScore[0]);
   const mostEngaged = agentWithScore.reduce((a, b) => (b.vol > a.vol ? b : a), agentWithScore[0]);
-  const mostImproved = agentWithScore.map(a => {
+  const agentWithDelta = agentWithScore.map(a => {
     const trend = getAgentScoreTrend(a.agent);
     const delta = trend.length > 1 ? trend[trend.length-1] - trend[trend.length-2] : 0;
     return { ...a, delta };
-  }).reduce((a, b) => (b.delta > a.delta ? b : a), agentWithScore[0]);
+  });
+  const mostImproved = agentWithDelta.reduce((a, b) => (b.delta > a.delta ? b : a), agentWithDelta[0]);
   const summaryCards = [
     {
       title: 'Total Active Agents',
@@ -428,7 +427,7 @@ const AgentAnalytics = () => {
       title: 'Most Improved Agent',
       value: mostImproved?.agent,
       icon: BarChartIcon,
-      description: `Biggest score increase (${mostImproved?.delta !== undefined ? (mostImproved.delta > 0 ? '+' : '') + mostImproved.delta.toFixed(1) : '-'})`,
+      description: `Biggest score increase (${(mostImproved as any)?.delta !== undefined ? ((mostImproved as any).delta > 0 ? '+' : '') + (mostImproved as any).delta.toFixed(1) : '-'})`,
     },
     {
       title: 'Most Engaged',
@@ -438,55 +437,49 @@ const AgentAnalytics = () => {
     },
   ];
 
-  // Helper: validasi angka
-  const safeNum = v => (typeof v === 'number' && !isNaN(v)) ? v : null;
-  const safeFixed = v => safeNum(v) !== null ? v.toFixed(1) : '-';
+  // Unused function - commented out
+  // const safeNum = v => (typeof v === 'number' && !isNaN(v)) ? v : null;
+  // Unused function - commented out
+  // const safeFixed = v => safeNum(v) !== null ? v.toFixed(1) : '-';
 
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const data = new Uint8Array(e.target?.result as ArrayBuffer);
-      const workbook = XLSX.read(data, { type: 'array' });
-      const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-      const jsonData = XLSX.utils.sheet_to_json(worksheet, { raw: false });
-      const processed = transformExcelData(jsonData);
-      setExcelAgentData(processed);
-    };
-    reader.readAsArrayBuffer(file);
-  };
+  // File upload functionality commented out - using main upload process instead
+  // const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  //   const file = event.target.files?.[0];
+  //   if (!file) return;
+  //   // Excel processing moved to main UploadProcess component
+  // };
 
-  function transformExcelData(data: any[]) {
-    // Group by agentName
-    const agentMap: Record<string, any[]> = {};
-    data.forEach(row => {
-      const agentName = row['Agent'] || row['agentName'] || row['Open By'] || row['OPEN BY'] || 'Unknown';
-      if (!agentMap[agentName]) agentMap[agentName] = [];
-      agentMap[agentName].push(row);
-    });
-    return Object.entries(agentMap).map(([agentName, rows]) => {
-      const ticketCount = rows.length;
-      const durations = rows.map(r => {
-        const open = dayjs(r['Waktu Open'] || r['OPEN TIME']);
-        const close = dayjs(r['Waktu Close Ticket'] || r['CLOSE TIME']);
-        return close.isValid() && open.isValid() ? close.diff(open, 'minute') : 0;
-      }).filter(Boolean);
-      const totalDuration = durations.reduce((a, b) => a + b, 0);
-      const avgDuration = durations.length ? totalDuration / durations.length : 0;
-      const minDuration = durations.length ? Math.min(...durations) : 0;
-      const maxDuration = durations.length ? Math.max(...durations) : 0;
-      return {
-        agentName,
-        ticketCount,
-        totalDurationFormatted: formatDurationDHM(totalDuration),
-        avgDurationFormatted: formatDurationDHM(avgDuration),
-        minDurationFormatted: formatDurationDHM(minDuration),
-        maxDurationFormatted: formatDurationDHM(maxDuration),
-        // Tambahkan field lain sesuai kebutuhan
-      };
-    });
-  }
+  // Unused function - commented out
+  // function transformExcelData(data: any[]) {
+  //   // Group by agentName
+  //   const agentMap: Record<string, any[]> = {};
+  //   data.forEach(row => {
+  //     const agentName = row['Agent'] || row['agentName'] || row['Open By'] || row['OPEN BY'] || 'Unknown';
+  //     if (!agentMap[agentName]) agentMap[agentName] = [];
+  //     agentMap[agentName].push(row);
+  //   });
+  //   return Object.entries(agentMap).map(([agentName, rows]) => {
+  //     const ticketCount = rows.length;
+  //     const durations = rows.map(r => {
+  //       const open = dayjs(r['Waktu Open'] || r['OPEN TIME']);
+  //       const close = dayjs(r['Waktu Close Ticket'] || r['CLOSE TIME']);
+  //       return close.isValid() && open.isValid() ? close.diff(open, 'minute') : 0;
+  //     }).filter(Boolean);
+  //     const totalDuration = durations.reduce((a, b) => a + b, 0);
+  //     const avgDuration = durations.length ? totalDuration / durations.length : 0;
+  //     const minDuration = durations.length ? Math.min(...durations) : 0;
+  //     const maxDuration = durations.length ? Math.max(...durations) : 0;
+  //     return {
+  //       agentName,
+  //       ticketCount,
+  //       totalDurationFormatted: formatDurationDHM(totalDuration),
+  //       avgDurationFormatted: formatDurationDHM(avgDuration),
+  //       minDurationFormatted: formatDurationDHM(minDuration),
+  //       maxDurationFormatted: formatDurationDHM(maxDuration),
+  //       // Tambahkan field lain sesuai kebutuhan
+  //     };
+  //   });
+  // }
 
   return (
     <PageWrapper>
@@ -534,11 +527,10 @@ const AgentAnalytics = () => {
       </div>
       {/* Per-Agent Cards with Trendline */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
-        {sortedAgentWithScore.map((agent, idx) => {
-          // Ambil closedCount dari dataSource yang punya field closedCount, fallback ke '-'
-          const closedCount = (dataSource.find(a => (a.agent === agent.agent || a.agentName === agent.agent) && typeof a.closedCount !== 'undefined')?.closedCount ?? '-');
-          // Hitung tren score bulan terakhir
-          const scoreTrend = getAgentScoreTrend(agent.agent);
+        {sortedAgentWithScore.map((agent) => {
+          // Unused variables - commented out
+          // const closedCount = (dataSource.find(a => (a.agent === agent.agent || (a as any).agentName === agent.agent) && typeof (a as any).closedCount !== 'undefined') as any)?.closedCount ?? '-';
+          // const scoreTrend = getAgentScoreTrend(agent.agent);
           // Dynamic style for score box
           let scoreBox = {
             bg: 'bg-yellow-400',
