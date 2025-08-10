@@ -339,7 +339,7 @@ export function SidebarNav({ isMobileOpen, setIsMobileOpen, onCollapseChange }) 
         {/* Logo area */}
         <div className="flex flex-col items-center justify-center pt-6 pb-4 gap-3">
           <img
-            src="/logo-a.png"
+            src="/navigationlogohms.png"
             alt="Antic Logo"
             className="max-w-[90%] h-16 object-contain mx-auto"
             style={{ display: autoCollapsed ? 'none' : 'block' }}

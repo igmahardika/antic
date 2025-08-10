@@ -36,7 +36,37 @@ if [ ! -f "package.json" ]; then
     exit 1
 fi
 
+# Check available disk space (require at least 1GB free)
+AVAILABLE_SPACE=$(df / | awk 'NR==2 {print $4}')
+if [ "$AVAILABLE_SPACE" -lt 1048576 ]; then
+    print_warning "Low disk space detected. Cleaning up..."
+    
+    # Clean npm cache
+    print_status "Cleaning npm cache..."
+    npm cache clean --force 2>/dev/null || true
+    rm -rf /root/.npm/_cacache /root/.npm/_logs/* 2>/dev/null || true
+    
+    # Clean apt cache
+    print_status "Cleaning apt cache..."
+    apt-get clean 2>/dev/null || true
+    
+    # Clean old logs
+    print_status "Cleaning old logs..."
+    journalctl --vacuum-time=7d 2>/dev/null || true
+    
+    # Check space again
+    AVAILABLE_SPACE=$(df / | awk 'NR==2 {print $4}')
+    if [ "$AVAILABLE_SPACE" -lt 1048576 ]; then
+        print_error "Insufficient disk space. Please free up more space manually."
+        print_error "Available: $(df -h / | awk 'NR==2 {print $4}')"
+        exit 1
+    else
+        print_success "Disk cleanup completed. Available: $(df -h / | awk 'NR==2 {print $4}')"
+    fi
+fi
+
 print_status "Step 1: Installing dependencies..."
+# Install dev dependencies first for TypeScript and build tools
 npm install
 if [ $? -ne 0 ]; then
     print_error "Failed to install dependencies"
@@ -44,11 +74,27 @@ if [ $? -ne 0 ]; then
 fi
 
 print_status "Step 2: Building frontend..."
+# Set environment variables for headless build with software rendering
+export NODE_ENV=production
+export QT_QPA_PLATFORM=offscreen
+export LIBGL_ALWAYS_SOFTWARE=1
+export MESA_GL_VERSION_OVERRIDE=3.3
+export MESA_GLSL_VERSION_OVERRIDE=330
+export GALLIUM_DRIVER=llvmpipe
+export PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
+export PUPPETEER_SKIP_DOWNLOAD=true
+
+print_status "Building with software rendering..."
 npm run build
 if [ $? -ne 0 ]; then
     print_error "Failed to build frontend"
     exit 1
 fi
+
+# Clean up after build to save space
+print_status "Cleaning up build artifacts..."
+rm -rf node_modules/.cache 2>/dev/null || true
+npm cache clean --force 2>/dev/null || true
 
 print_status "Step 3: Deploying to web server..."
 cp -r dist/* /home/nexa-hms/htdocs/hms.nexa.net.id/
@@ -59,11 +105,23 @@ fi
 
 print_status "Step 4: Installing backend dependencies..."
 cd antic-backend
-npm install
-if [ $? -ne 0 ]; then
-    print_error "Failed to install backend dependencies"
-    exit 1
+# Check if backend dependencies are already installed
+if [ ! -d "node_modules" ] || [ ! -f "node_modules/.package-lock.json" ]; then
+    npm ci --only=production --no-optional --ignore-scripts
+    if [ $? -ne 0 ]; then
+        print_warning "Backend production install failed, trying regular install..."
+        npm install --no-optional
+        if [ $? -ne 0 ]; then
+            print_error "Failed to install backend dependencies"
+            exit 1
+        fi
+    fi
+else
+    print_success "Backend dependencies already installed, skipping..."
 fi
+
+# Clean backend cache
+npm cache clean --force 2>/dev/null || true
 
 print_status "Step 5: Restarting backend service..."
 # Kill existing processes

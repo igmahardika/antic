@@ -1,24 +1,285 @@
-# Logs
-logs
-*.log
+# =============================================================================
+# .gitignore for AN-TIC Analytics Dashboard Project
+# =============================================================================
+
+# ================================
+# Environment Variables & Secrets
+# ================================
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+*.env
+.env.*
+
+# ================================
+# Documentation & Reports
+# ================================
+# Exclude all markdown files
+*.md
+
+# ================================
+# Debug & Testing Scripts
+# ================================
+# Debug scripts
+debug-*.js
+debug*.js
+
+# Test scripts and files
+test-*.js
+test*.js
+create-test-*.js
+*-test.js
+*.test.js
+*.spec.js
+
+# Testing data files
+test-data-*.xlsx
+test-*.xlsx
+*-test-data.*
+
+# Auto-generated or utility scripts
+auto-commit.js
+setup-default-user.js
+
+# ================================
+# Deployment & Setup Scripts
+# ================================
+# Deployment scripts
+deploy-*.sh
+*-deploy.sh
+
+# Setup and configuration scripts
+setup-*.sh
+*-setup.sh
+setup*.sh
+
+# Database and server scripts
+mysql-*.sh
+*-mysql.sh
+
+# Security and maintenance scripts
+security-*.sh
+fix-*.sh
+*-troubleshoot.sh
+
+# Start scripts (keep specific ones if needed)
+start-*.sh
+
+# ================================
+# Build & Distribution
+# ================================
+# Build outputs
+dist/
+build/
+out/
+
+# Dependency directories
+node_modules/
+jspm_packages/
+
+# Package manager files
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-node_modules
-dist
-dist-ssr
-*.local
+# ================================
+# IDE & Editor Files
+# ================================
+# VSCode
+.vscode/
+*.code-workspace
 
-# Editor directories and files
-.vscode/*
-!.vscode/extensions.json
-.idea
+# IntelliJ IDEA
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# Vim
+*.swp
+*.swo
+*~
+
+# Emacs
+*~
+\#*\#
+/.emacs.desktop
+/.emacs.desktop.lock
+*.elc
+
+# ================================
+# Operating System Files
+# ================================
+# macOS
 .DS_Store
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
+.AppleDouble
+.LSOverride
+Icon?
+._*
+.Spotlight-V100
+.Trashes
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+*.cab
+*.msi
+*.msm
+*.msp
+
+# Linux
+*~
+.fuse_hidden*
+.directory
+.Trash-*
+
+# ================================
+# Temporary & Cache Files
+# ================================
+# Logs
+logs/
+*.log
+log/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Runtime data
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage directory used by tools like istanbul
+coverage/
+*.lcov
+
+# Cache files
+.cache/
+.parcel-cache/
+.next/
+.nuxt/
+.vuepress/dist/
+
+# Temporary folders
+tmp/
+temp/
+.tmp/
+
+# ================================
+# Backup & Archive Files
+# ================================
+# Backup files
+*.backup
+*.bak
+*.backup.*
+*backup*
+package*.backup*
+
+# Archive files
+*.tar
+*.tar.gz
+*.tgz
+*.zip
+*.rar
+*.7z
+
+# ================================
+# Project Specific
+# ================================
+# Audit and report files
+audit-report.json
+audit*.json
+*-report.html
+lighthouse-report.html
+
+# Velonic themes (if external)
+velonic-themes/
+
+# Force file (seems to be generated)
+--force
+
+# Package lock files variations
+pnpm-lock.yaml
+
+# Config file copies
+postcss.config.cjs
+
+# ================================
+# Security & Sensitive Files
+# ================================
+# SSL certificates
+*.key
+*.cert
+*.crt
+*.pem
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Configuration files with credentials
+config/production.json
+config/secrets.json
+
+# ================================
+# Development Tools
+# ================================
+# ESLint cache
+.eslintcache
+
+# TypeScript cache
+*.tsbuildinfo
+
+# Microbundle cache
+.rpt2_cache/
+.rts2_cache_cjs/
+.rts2_cache_es/
+.rts2_cache_umd/
+
+# Optional npm cache directory
+.npm
+
+# Optional eslint cache
+.eslintcache
+
+# Microbundle cache
+.rpt2_cache/
+.rts2_cache_cjs/
+.rts2_cache_es/
+.rts2_cache_umd/
+
+# Optional REPL history
+.node_repl_history
+
+# Output of 'npm pack'
+*.tgz
+
+# Yarn Integrity file
+.yarn-integrity
+
+# ================================
+# Keep Important Files
+# ================================
+# Force include important files that might match patterns above
+!README.md
+!package.json
+!package-lock.json
+
+# Keep essential documentation (uncomment if needed)
+# !docs/README.md
+# !CONTRIBUTING.md
+# !LICENSE.md
