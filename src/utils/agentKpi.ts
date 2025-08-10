@@ -63,7 +63,35 @@ export function groupByAgent(tickets: Ticket[]): Record<string, Ticket[]> {
 export function calcMetrics(agentTickets: Ticket[]): AgentMetric {
   const agent = agentTickets[0]?.OpenBy || 'Unknown';
   const vol = agentTickets.length;
-  const backlog = agentTickets.filter(t => !t.WaktuCloseTicket).length;
+  // Determine backlog using the same "open" logic as ticket analytics.
+  // A ticket is considered backlog when:
+  // 1. There is no close time recorded.
+  // 2. The close time is in the future relative to now.
+  // 3. The close time falls in a later month than the open time.
+  // 4. The difference between close and open is greater than 30 days.
+  const backlog = agentTickets.filter(t => {
+    // No close time → backlog
+    if (!t.WaktuCloseTicket) return true;
+    const openDate = t.WaktuOpen instanceof Date ? t.WaktuOpen : new Date(t.WaktuOpen);
+    const closeDate = t.WaktuCloseTicket instanceof Date ? t.WaktuCloseTicket : new Date(t.WaktuCloseTicket);
+    if (isNaN(openDate.getTime()) || isNaN(closeDate.getTime())) return true;
+    // Close in the future → backlog
+    const now = new Date();
+    if (closeDate > now) return true;
+    // Close month/year later than open → backlog
+    const openMonth = openDate.getMonth();
+    const openYear = openDate.getFullYear();
+    const closeMonth = closeDate.getMonth();
+    const closeYear = closeDate.getFullYear();
+    if (closeYear > openYear || (closeYear === openYear && closeMonth > openMonth)) {
+      return true;
+    }
+    // Close more than 30 days after open → backlog
+    const daysDiff = (closeDate.getTime() - openDate.getTime()) / (1000 * 60 * 60 * 24);
+    if (daysDiff > 30) return true;
+    // Otherwise not backlog
+    return false;
+  }).length;
   let frtSum = 0, artSum = 0, frtCount = 0, artCount = 0, fcrCount = 0, slaCount = 0;
   agentTickets.forEach(t => {
     const open = t.WaktuOpen instanceof Date ? t.WaktuOpen : new Date(t.WaktuOpen);

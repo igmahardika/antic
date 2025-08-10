@@ -64,29 +64,33 @@ function computeAgentMetrics(tickets) {
     // Adaptasi dari calcMetrics
     const vol = ticketsArr.length;
     
-    // Menentukan backlog berdasarkan kriteria:
-    // 1. WaktuCloseTicket kosong ATAU di bulan berikutnya dari bulan Open
+    // Menentukan backlog menggunakan logika yang sama dengan TicketAnalytics ("open logic").
+    // Sebuah tiket dianggap backlog jika:
+    // 1. WaktuCloseTicket kosong.
+    // 2. WaktuCloseTicket berada di masa depan (lebih besar dari sekarang).
+    // 3. WaktuCloseTicket berada di bulan/tahun yang lebih besar daripada WaktuOpen.
+    // 4. Selisih antara WaktuCloseTicket dan WaktuOpen lebih dari 30 hari.
     const backlog = ticketsArr.filter(t => {
-      // Jika tidak ada WaktuCloseTicket, termasuk backlog
+      // 1. Tidak ada WaktuCloseTicket
       if (!t.WaktuCloseTicket) return true;
-      
-      // Cek apakah WaktuCloseTicket di bulan berikutnya dari WaktuOpen
       const openDate = t.WaktuOpen instanceof Date ? t.WaktuOpen : new Date(t.WaktuOpen);
       const closeDate = t.WaktuCloseTicket instanceof Date ? t.WaktuCloseTicket : new Date(t.WaktuCloseTicket);
-      
       if (isNaN(openDate.getTime()) || isNaN(closeDate.getTime())) return true;
-      
-      // Bandingkan bulan dan tahun
+      // 2. Close di masa depan
+      const now = new Date();
+      if (closeDate > now) return true;
+      // 3. Close di bulan/tahun berikutnya
       const openMonth = openDate.getMonth();
       const openYear = openDate.getFullYear();
       const closeMonth = closeDate.getMonth();
       const closeYear = closeDate.getFullYear();
-      
-      // Jika tahun closeTime lebih besar, atau tahun sama tapi bulan lebih besar
       if (closeYear > openYear || (closeYear === openYear && closeMonth > openMonth)) {
         return true;
       }
-      
+      // 4. Close lebih dari 30 hari setelah open
+      const daysDiff = (closeDate.getTime() - openDate.getTime()) / (1000 * 60 * 60 * 24);
+      if (daysDiff > 30) return true;
+      // Selain itu bukan backlog
       return false;
     }).length;
     let frtSum = 0, artSum = 0, frtCount = 0, artCount = 0, fcrCount = 0, slaCount = 0;
