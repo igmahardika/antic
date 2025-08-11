@@ -676,19 +676,25 @@ const Dashboard = () => {
   }, [allTickets, cutoffStart, cutoffEnd]);
 
   // --- Ensure agent KPI store always uses filtered tickets ---
-  React.useEffect(() => {
-    if (gridData && gridData.length > 0) {
-      const mappedFiltered = gridData.map(t => ({
-        ticket_id: t.id,
-        WaktuOpen: t.openTime,
-        WaktuCloseTicket: t.closeTime,
-        ClosePenanganan: t.closeHandling,
-        Penanganan2: t.handling2,
-        OpenBy: t.openBy || t.name || 'Unknown',
-      }));
-      useAgentStore.getState().setTickets(mappedFiltered);
-    } else {
-      useAgentStore.getState().setTickets([]);
+  useEffect(() => {
+    // Only update agentStore if not in Agent Analytics page to prevent conflicts
+    const currentPath = window.location.pathname;
+    const isAgentAnalyticsPage = currentPath.includes('/agent-analytics') || currentPath.includes('/ticket/agent-analytics');
+    
+    if (!isAgentAnalyticsPage) {
+      if (gridData && gridData.length > 0) {
+        const mappedFiltered = gridData.map(t => ({
+          ticket_id: t.id,
+          WaktuOpen: t.openTime,
+          WaktuCloseTicket: t.closeTime,
+          ClosePenanganan: t.closeHandling,
+          Penanganan2: t.handling2,
+          OpenBy: t.openBy || t.name || 'Unknown',
+        }));
+        useAgentStore.getState().setTickets(mappedFiltered);
+      } else {
+        useAgentStore.getState().setTickets([]);
+      }
     }
   }, [gridData]);
 

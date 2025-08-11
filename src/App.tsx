@@ -81,24 +81,45 @@ function AppLayout() {
   // Cek jika halaman login, sembunyikan sidebar dan background
   const isLoginPage = location.pathname === '/login';
 
-  // Bypass login: jika user ke /login, redirect ke /summary-dashboard
+  // DISABLED: Authentication check - Login page is disabled
+  // React.useEffect(() => {
+  //   const isLoginPage = location.pathname === '/login';
+  //   const isAdminPage = location.pathname === '/admin';
+  //   const authToken = localStorage.getItem('auth_token');
+  //   const user = localStorage.getItem('user');
+  //   
+  //   if (!isLoginPage && !isAdminPage && (!authToken || !user)) {
+  //     window.location.replace('/login');
+  //   }
+  // }, [location.pathname]);
+
+  // Auto-redirect from login page to dashboard
   React.useEffect(() => {
     if (location.pathname === '/login') {
       window.history.replaceState({}, '', '/summary-dashboard');
     }
   }, [location.pathname]);
 
-  // Authentication check dengan token
+  // Set up default user when no authentication exists
   React.useEffect(() => {
-    const isLoginPage = location.pathname === '/login';
-    const isAdminPage = location.pathname === '/admin';
     const authToken = localStorage.getItem('auth_token');
     const user = localStorage.getItem('user');
     
-    if (!isLoginPage && !isAdminPage && (!authToken || !user)) {
-      window.location.replace('/login');
+    if (!authToken || !user) {
+      // Set up default user for disabled login
+      const defaultUser = {
+        id: 1,
+        username: 'admin',
+        role: 'super admin',
+        created_at: new Date().toISOString(),
+        is_active: true
+      };
+      
+      localStorage.setItem('auth_token', 'mock-token-disabled-login');
+      localStorage.setItem('user', JSON.stringify(defaultUser));
+      localStorage.setItem('session_id', 'mock-session-disabled-login');
     }
-  }, [location.pathname]);
+  }, []);
 
   return (
     <div className="relative min-h-screen">
