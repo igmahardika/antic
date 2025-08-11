@@ -45,9 +45,11 @@ export const apiRequest = async (endpoint: string, options: RequestInit = {}) =>
   const res = await fetch(url, cfg);
 
   if (res.status === 401) {
-    localStorage.clear();
-    window.location.href = '/login';
-    throw new Error('Unauthenticated');
+    // DISABLED: Authentication redirect - Login page is disabled
+    // localStorage.clear();
+    // window.location.href = '/login';
+    // throw new Error('Unauthenticated');
+    console.warn('Authentication required but login is disabled');
   }
 
   const data = await res.json().catch(() => ({}));

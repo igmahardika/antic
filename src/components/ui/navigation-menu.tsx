@@ -387,7 +387,9 @@ export function SidebarNav({ isMobileOpen, setIsMobileOpen, onCollapseChange }) 
                 localStorage.removeItem('auth_token');
                 localStorage.removeItem('user');
                 localStorage.removeItem('session_id');
-                window.location.href = '/login';
+                // DISABLED: Login redirect - Login page is disabled
+                // window.location.href = '/login';
+                window.location.href = '/summary-dashboard';
               }
             }} className="cursor-pointer text-red-500 focus:bg-red-50 focus:text-red-600 dark:focus:bg-red-900/50 dark:focus:text-red-400 font-semibold">
               <LogoutIcon className="mr-2 h-4 w-4" />
@@ -433,7 +435,9 @@ function SidebarProfile({ autoCollapsed }) {
       localStorage.removeItem('auth_token');
       localStorage.removeItem('user');
       localStorage.removeItem('session_id');
-      navigate('/login');
+      // DISABLED: Login redirect - Login page is disabled
+      // navigate('/login');
+      navigate('/summary-dashboard');
     }
   };
 

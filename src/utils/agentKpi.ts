@@ -10,6 +10,7 @@ export interface Ticket {
   ClosePenanganan?: Date | string;
   Penanganan2?: string;
   OpenBy: string;
+  status?: string;
   // ...
 }
 
@@ -58,12 +59,75 @@ export function groupByAgent(tickets: Ticket[]): Record<string, Ticket[]> {
 }
 
 /**
+ * Validate if a ticket is considered backlog based on the specified criteria:
+ * 1. Status is "OPEN TICKET" 
+ * 2. WaktuCloseTicket is empty/null
+ * 3. WaktuCloseTicket is in a different month (next month) from WaktuOpen
+ */
+export function isBacklogTicket(ticket: Ticket): boolean {
+  const debug = typeof window !== 'undefined' && (window as any).__backlogDebug;
+  
+  // Criterion 1: Status is "OPEN TICKET"
+  const status = (ticket.status || '').trim().toLowerCase();
+  if (status === 'open ticket' || status === 'open') {
+    if (debug) console.log(`[BACKLOG] Ticket ${ticket.ticket_id} is backlog - Status: "${status}"`);
+    return true;
+  }
+  
+  // Criterion 2: WaktuCloseTicket is empty/null
+  if (!ticket.WaktuCloseTicket) {
+    if (debug) console.log(`[BACKLOG] Ticket ${ticket.ticket_id} is backlog - No close time`);
+    return true;
+  }
+  
+  // Criterion 3: WaktuCloseTicket is in next month from WaktuOpen
+  try {
+    const openDate = ticket.WaktuOpen instanceof Date ? ticket.WaktuOpen : new Date(ticket.WaktuOpen);
+    const closeDate = ticket.WaktuCloseTicket instanceof Date ? ticket.WaktuCloseTicket : new Date(ticket.WaktuCloseTicket);
+    
+    if (isNaN(openDate.getTime()) || isNaN(closeDate.getTime())) {
+      if (debug) console.log(`[BACKLOG] Ticket ${ticket.ticket_id} is backlog - Invalid dates`);
+      return true; // Invalid dates considered as backlog
+    }
+    
+    // Compare month and year
+    const openMonth = openDate.getMonth();
+    const openYear = openDate.getFullYear();
+    const closeMonth = closeDate.getMonth();
+    const closeYear = closeDate.getFullYear();
+    
+    // If close year is greater, or same year but close month is greater
+    if (closeYear > openYear || (closeYear === openYear && closeMonth > openMonth)) {
+      if (debug) console.log(`[BACKLOG] Ticket ${ticket.ticket_id} is backlog - Close in next month (Open: ${openYear}-${openMonth+1}, Close: ${closeYear}-${closeMonth+1})`);
+      return true;
+    }
+    
+    if (debug) console.log(`[BACKLOG] Ticket ${ticket.ticket_id} is NOT backlog - Status: "${status}", Open: ${openYear}-${openMonth+1}, Close: ${closeYear}-${closeMonth+1}`);
+  } catch (error) {
+    console.warn(`[BACKLOG] Error parsing dates for ticket ${ticket.ticket_id}:`, error);
+    return true; // Error in date parsing considered as backlog
+  }
+  
+  return false;
+}
+
+/**
+ * Enable or disable backlog debugging
+ */
+export function enableBacklogDebug(enable: boolean = true): void {
+  if (typeof window !== 'undefined') {
+    (window as any).__backlogDebug = enable;
+    console.log(`[BACKLOG] Debug mode ${enable ? 'enabled' : 'disabled'}`);
+  }
+}
+
+/**
  * Calculate metrics for a single agent's tickets.
  */
 export function calcMetrics(agentTickets: Ticket[]): AgentMetric {
   const agent = agentTickets[0]?.OpenBy || 'Unknown';
   const vol = agentTickets.length;
-  const backlog = agentTickets.filter(t => !t.WaktuCloseTicket).length;
+  const backlog = agentTickets.filter(isBacklogTicket).length;
   let frtSum = 0, artSum = 0, frtCount = 0, artCount = 0, fcrCount = 0, slaCount = 0;
   agentTickets.forEach(t => {
     const open = t.WaktuOpen instanceof Date ? t.WaktuOpen : new Date(t.WaktuOpen);

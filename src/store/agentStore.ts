@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { AgentMetric, Ticket, sanitizeTickets, calcAllMetrics } from '@/utils/agentKpi';
+import { AgentMetric, Ticket, sanitizeTickets, calcAllMetrics, isBacklogTicket } from '@/utils/agentKpi';
 
 interface AgentStore {
   tickets: Ticket[];
@@ -64,31 +64,11 @@ function computeAgentMetrics(tickets) {
     // Adaptasi dari calcMetrics
     const vol = ticketsArr.length;
     
-    // Menentukan backlog berdasarkan kriteria:
-    // 1. WaktuCloseTicket kosong ATAU di bulan berikutnya dari bulan Open
-    const backlog = ticketsArr.filter(t => {
-      // Jika tidak ada WaktuCloseTicket, termasuk backlog
-      if (!t.WaktuCloseTicket) return true;
-      
-      // Cek apakah WaktuCloseTicket di bulan berikutnya dari WaktuOpen
-      const openDate = t.WaktuOpen instanceof Date ? t.WaktuOpen : new Date(t.WaktuOpen);
-      const closeDate = t.WaktuCloseTicket instanceof Date ? t.WaktuCloseTicket : new Date(t.WaktuCloseTicket);
-      
-      if (isNaN(openDate.getTime()) || isNaN(closeDate.getTime())) return true;
-      
-      // Bandingkan bulan dan tahun
-      const openMonth = openDate.getMonth();
-      const openYear = openDate.getFullYear();
-      const closeMonth = closeDate.getMonth();
-      const closeYear = closeDate.getFullYear();
-      
-      // Jika tahun closeTime lebih besar, atau tahun sama tapi bulan lebih besar
-      if (closeYear > openYear || (closeYear === openYear && closeMonth > openMonth)) {
-        return true;
-      }
-      
-      return false;
-    }).length;
+    // Menentukan backlog berdasarkan kriteria yang sudah divalidasi:
+    // 1. Status adalah "OPEN TICKET"
+    // 2. WaktuCloseTicket kosong/null
+    // 3. WaktuCloseTicket di bulan berikutnya dari WaktuOpen
+    const backlog = ticketsArr.filter(isBacklogTicket).length;
     let frtSum = 0, artSum = 0, frtCount = 0, artCount = 0, fcrCount = 0, slaCount = 0;
     ticketsArr.forEach(t => {
       const open = t.WaktuOpen instanceof Date ? t.WaktuOpen : new Date(t.WaktuOpen);

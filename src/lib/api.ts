@@ -15,6 +15,22 @@ const getAuthHeaders = (): HeadersInit => {
   };
 };
 
+// Mock authentication for disabled login
+const getMockAuthHeaders = (): HeadersInit => {
+  const token = getAuthToken();
+  if (!token) {
+    // Provide mock authentication headers when no token exists
+    return {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer mock-token-disabled-login',
+    };
+  }
+  return {
+    'Content-Type': 'application/json',
+    ...(token && { Authorization: `Bearer ${token}` }),
+  };
+};
+
 // Generic API call function
 async function apiCall<T>(
   endpoint: string,
@@ -24,7 +40,7 @@ async function apiCall<T>(
   const response = await fetch(url, {
     ...options,
     headers: {
-      ...getAuthHeaders(),
+      ...getMockAuthHeaders(),
       ...options.headers,
     },
   });

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import 'ag-grid-community/styles/ag-theme-quartz.css';
 import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 import StarIcon from '@mui/icons-material/Star';
@@ -18,6 +18,7 @@ import { ListAlt as ListAltIcon, TrendingUp as TrendingUpIcon } from '@mui/icons
 import { Lightbulb as LightbulbIcon } from '@mui/icons-material';
 import PageWrapper from './PageWrapper';
 import type { AgentMetric } from '@/utils/agentKpi';
+import { enableBacklogDebug } from '@/utils/agentKpi';
 import { formatDurationDHM } from '@/lib/utils';
 // Unused import - commented out
 // import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -169,6 +170,17 @@ const AgentAnalytics = () => {
     allTickets,
     agentMonthlyChart
   } = useAgentAnalytics() || {};
+  
+  // Get cutoff dates for filtering
+  const { cutoffStart, cutoffEnd } = useMemo(() => {
+    if (!startMonth || !endMonth || !selectedYear) return { cutoffStart: null, cutoffEnd: null };
+    const y = Number(selectedYear);
+    const mStart = Number(startMonth) - 1;
+    const mEnd = Number(endMonth) - 1;
+    const cutoffStart = new Date(y, mStart, 1, 0, 0, 0, 0);
+    const cutoffEnd = new Date(y, mEnd + 1, 0, 23, 59, 59, 999);
+    return { cutoffStart, cutoffEnd };
+  }, [startMonth, endMonth, selectedYear]);
   const data = agentAnalyticsData || {};
   const agentMetrics = useAgentStore((state) => state.agentMetrics) as AgentMetric[];
   // Unused state - commented out
@@ -177,10 +189,18 @@ const AgentAnalytics = () => {
   const [debouncedDatasets, setDebouncedDatasets] = useState<{ label: string; data: number[]; color?: string }[]>([]);
   const [selectedAgent, setSelectedAgent] = useState<string | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
+  const [backlogDebugEnabled, setBacklogDebugEnabled] = useState(false);
 
   useEffect(() => {
     console.log('Agent Metrics DEBUG:', agentMetrics);
   }, [agentMetrics]);
+
+  // Function to toggle backlog debugging
+  const toggleBacklogDebug = () => {
+    const newState = !backlogDebugEnabled;
+    setBacklogDebugEnabled(newState);
+    enableBacklogDebug(newState);
+  };
 
   // Ganti monthOptions agar selalu 12 bulan
   const monthOptions = MONTH_OPTIONS;
@@ -500,6 +520,20 @@ const AgentAnalytics = () => {
           allYearsInData={allYearsInData}
         />
       </div>
+      
+      {/* Debug Controls */}
+      <div className="flex justify-center mb-4">
+        <button
+          onClick={toggleBacklogDebug}
+          className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+            backlogDebugEnabled 
+              ? 'bg-red-500 text-white hover:bg-red-600' 
+              : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+          }`}
+        >
+          {backlogDebugEnabled ? 'Disable' : 'Enable'} Backlog Debug
+        </button>
+      </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 mb-6">
         {summaryCards.map(s => {
           let iconBg;
@@ -798,7 +832,17 @@ const AgentAnalytics = () => {
                         {(() => {
                           const shiftCount = { Pagi: 0, Siang: 0, Malam: 0 };
                           if (allTickets && selectedAgent) {
-                            allTickets.filter(t => t.openBy === selectedAgent).forEach(t => {
+                            // Use filteredTickets from AgentAnalyticsContext instead of allTickets
+                            const agentFilteredTickets = allTickets.filter(t => {
+                              // Apply the same time filtering logic as in AgentAnalyticsContext
+                              if (!cutoffStart || !cutoffEnd) return true;
+                              if (!t.openTime) return false;
+                              const d = new Date(t.openTime);
+                              if (isNaN(d.getTime())) return false;
+                              return d >= cutoffStart && d <= cutoffEnd;
+                            }).filter(t => t.openBy === selectedAgent);
+                            
+                            agentFilteredTickets.forEach(t => {
                               if (!t.openTime) return;
                               const hour = new Date(t.openTime).getHours();
                               if (hour >= 6 && hour < 14) shiftCount.Pagi++;
