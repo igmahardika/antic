@@ -112,7 +112,7 @@ export default function AdminRumus() {
                   <ul className="list-disc pl-6 mt-1">
                     <li>Skor = min((Ticket Agent / Max Ticket Semua Agent) × 100, 120)</li>
                     <li>Mendorong produktivitas tanpa memberikan penalty berlebihan</li>
-                  </ul>
+              </ul>
                 </div>
               </div>
             </div>
@@ -127,7 +127,7 @@ export default function AdminRumus() {
                       <div><strong>Target:</strong> 75%</div>
                       <div><strong>Indikator:</strong> Tiket tanpa field Penanganan2</div>
                     </div>
-                    <div>
+                <div>
                       <div><strong>Rumus:</strong> <code>FCR = (Tiket tanpa follow-up / Total tiket) × 100%</code></div>
                       <div><strong>Scoring:</strong> <code>min((FCR / 75) × 100, 120)</code></div>
                       <div><strong>Contoh:</strong> FCR 70% → Skor = 93.3</div>
@@ -142,8 +142,8 @@ export default function AdminRumus() {
                       <div><strong>Definisi:</strong> Persentase tiket yang diselesaikan dalam batas waktu 24 jam</div>
                       <div><strong>Target:</strong> 85%</div>
                       <div><strong>Batas Waktu:</strong> ≤ 1440 menit (24 jam)</div>
-                    </div>
-                    <div>
+                </div>
+                <div>
                       <div><strong>Rumus:</strong> <code>SLA = (Tiket ≤ 24 jam / Total tiket) × 100%</code></div>
                       <div><strong>Scoring:</strong> <code>min((SLA / 85) × 100, 120)</code></div>
                       <div><strong>Contoh:</strong> SLA 69.8% → Skor = 82.1</div>
@@ -158,8 +158,8 @@ export default function AdminRumus() {
                       <div><strong>Definisi:</strong> Rata-rata waktu dari buka tiket hingga respon pertama</div>
                       <div><strong>Target:</strong> 15 menit</div>
                       <div><strong>Pengukuran:</strong> ClosePenanganan - WaktuOpen</div>
-                    </div>
-                    <div>
+                </div>
+                <div>
                       <div><strong>Rumus:</strong> <code>FRT = Σ(waktu respon) / Jumlah tiket</code></div>
                       <div><strong>Scoring:</strong> <code>min((15 / FRT) × 100, 120)</code></div>
                       <div><strong>Contoh:</strong> FRT 3000 menit → Skor = 0.5</div>
@@ -174,8 +174,8 @@ export default function AdminRumus() {
                       <div><strong>Definisi:</strong> Rata-rata waktu dari buka tiket hingga selesai</div>
                       <div><strong>Target:</strong> 30 menit</div>
                       <div><strong>Pengukuran:</strong> WaktuCloseTicket - WaktuOpen</div>
-                    </div>
-                    <div>
+                </div>
+                <div>
                       <div><strong>Rumus:</strong> <code>ART = Σ(waktu penyelesaian) / Jumlah tiket</code></div>
                       <div><strong>Scoring:</strong> <code>min((30 / ART) × 100, 120)</code></div>
                       <div><strong>Contoh:</strong> ART 4440 menit → Skor = 0.7</div>
@@ -190,8 +190,8 @@ export default function AdminRumus() {
                       <div><strong>Definisi:</strong> Tiket yang masih terbuka atau tertunda</div>
                       <div><strong>Kriteria:</strong> Status "OPEN TICKET", closeTime kosong, atau close di bulan berikutnya</div>
                       <div><strong>Tujuan:</strong> Mendorong penyelesaian tepat waktu</div>
-                    </div>
-                    <div>
+                </div>
+                <div>
                       <div><strong>Rumus Scoring:</strong></div>
                       <ul className="list-disc pl-4 mt-1">
                         <li>Backlog = 0 → Skor = 100</li>
@@ -209,8 +209,8 @@ export default function AdminRumus() {
                       <div><strong>Definisi:</strong> Jumlah tiket yang ditangani relatif terhadap agent paling produktif</div>
                       <div><strong>Filosofi:</strong> Mendorong produktivitas tanpa over-penalize</div>
                       <div><strong>Normalisasi:</strong> Berbasis performa maksimal tim</div>
-                    </div>
-                    <div>
+                </div>
+                <div>
                       <div><strong>Rumus:</strong> <code>Volume Score = (Tiket Agent / Max Tiket Tim) × 100</code></div>
                       <div><strong>Cap:</strong> Maksimal 120 untuk fairness</div>
                       <div><strong>Contoh:</strong> 814/814 tiket → Skor = 100</div>
@@ -281,7 +281,7 @@ export default function AdminRumus() {
                     <li>• <strong>Most Reliable:</strong> Highest FCR + zero backlog</li>
                     <li>• <strong>Most Improved:</strong> Biggest score delta increase</li>
                     <li>• <strong>Most Engaged:</strong> Highest ticket volume</li>
-                  </ul>
+              </ul>
                 </div>
               </div>
             </div>
@@ -305,7 +305,7 @@ export default function AdminRumus() {
                   <li>• Automated insight generation</li>
                   <li>• Performance badges & recognition</li>
                   <li>• Export capabilities (PDF/CSV)</li>
-                </ul>
+            </ul>
               </div>
             </div>
           </div>
@@ -404,7 +404,7 @@ export default function AdminRumus() {
                         <li>Status = "OPEN TICKET"</li>
                         <li>closeTime kosong/null</li>
                                                   <li>closeTime &gt; akhir bulan periode filter</li>
-                      </ul>
+              </ul>
                     </div>
                   </div>
                 </div>
@@ -416,8 +416,8 @@ export default function AdminRumus() {
                       <div><strong>Definisi:</strong> Tiket yang melebihi batas waktu SLA (&gt; 24 jam)</div>
                       <div><strong>Threshold:</strong> rawHours &gt; 24</div>
                       <div><strong>Impact:</strong> Indikator kegagalan SLA</div>
-                    </div>
-                    <div>
+            </div>
+            <div>
                       <div><strong>Rumus:</strong></div>
                       <pre className="bg-zinc-900 text-white rounded p-2 text-xs mt-1">{`Overdue = COUNT(tickets WHERE duration.rawHours > 24)`}</pre>
                     </div>
@@ -431,8 +431,8 @@ export default function AdminRumus() {
                       <div><strong>Definisi:</strong> Tiket yang memerlukan multiple handling steps</div>
                       <div><strong>Indikator:</strong> Ada closeHandling2, closeHandling3, closeHandling4, atau closeHandling5 yang tidak kosong</div>
                       <div><strong>Impact:</strong> Menunjukkan kompleksitas masalah</div>
-                    </div>
-                    <div>
+            </div>
+            <div>
                       <div><strong>Detection Logic:</strong></div>
                       <pre className="bg-zinc-900 text-white rounded p-2 text-xs mt-1">{`Escalated = tickets.filter(t => 
   [t.closeHandling2, t.closeHandling3, 
@@ -455,7 +455,7 @@ export default function AdminRumus() {
                     <li>Pagi: 06:00 - 14:00</li>
                     <li>Sore: 14:00 - 22:00</li>
                     <li>Malam: 22:00 - 06:00</li>
-                  </ul>
+              </ul>
                   <div><strong>Metrics per Shift:</strong> Average duration, Median, Count, Formatted duration (HH:MM:SS)</div>
                   <div><strong>Chart Data:</strong> Comparative performance visualization dengan insights shift tersibuk</div>
                 </div>
@@ -482,8 +482,8 @@ export default function AdminRumus() {
                     <li>• Ekstraksi top 15 keywords dari deskripsi tiket</li>
                     <li>• Text processing untuk mengidentifikasi pola masalah</li>
                     <li>• Frequency analysis untuk trend detection</li>
-                  </ul>
-                </div>
+              </ul>
+            </div>
                 
                 <div className="bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg p-3">
                   <h6 className="font-semibold text-orange-800 dark:text-orange-200 mb-1">📅 Monthly Trend Analysis</h6>
@@ -492,8 +492,8 @@ export default function AdminRumus() {
                     <li>• Identifikasi bulan tersibuk berdasarkan volume dan complexity</li>
                     <li>• Seasonal pattern recognition</li>
                     <li>• Forecasting capability untuk capacity planning</li>
-                  </ul>
-                </div>
+              </ul>
+            </div>
 
                 <div className="bg-rose-50 dark:bg-rose-900/20 border border-rose-200 dark:border-rose-800 rounded-lg p-3">
                   <h6 className="font-semibold text-rose-800 dark:text-rose-200 mb-1">🎯 Performance Insights</h6>
@@ -502,7 +502,7 @@ export default function AdminRumus() {
                     <li>• SLA compliance monitoring dengan alert thresholds</li>
                     <li>• Bottleneck identification dalam workflow</li>
                     <li>• Recommendation engine untuk process improvement</li>
-                  </ul>
+              </ul>
                 </div>
               </div>
             </div>
@@ -544,7 +544,7 @@ export default function AdminRumus() {
                   <li>• Export capabilities (PDF/CSV/Excel)</li>
                   <li>• Data validation dan quality checks</li>
                   <li>• Performance optimization untuk large datasets</li>
-                </ul>
+            </ul>
               </div>
             </div>
           </div>
@@ -734,7 +734,7 @@ const categoryRanking = categories
                     <li>• <strong>Process Optimization:</strong> SOP improvement berdasarkan failure patterns</li>
                     <li>• <strong>Resource Allocation:</strong> Staffing recommendation untuk high-risk segments</li>
                     <li>• <strong>Technology Solutions:</strong> Automation opportunities untuk common issues</li>
-                  </ul>
+              </ul>
                 </div>
 
                 <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3">
@@ -744,7 +744,7 @@ const categoryRanking = categories
                     <li>• <strong>Complaint Velocity:</strong> Alert pada sudden spike in complaints</li>
                     <li>• <strong>Resolution Time:</strong> Flag customers dengan extended resolution times</li>
                     <li>• <strong>Satisfaction Threshold:</strong> Proactive intervention untuk declining satisfaction</li>
-                  </ul>
+              </ul>
                 </div>
               </div>
             </div>
@@ -772,7 +772,7 @@ const categoryRanking = categories
                       <li>Recent Complaint Categories</li>
                       <li>Risk Score & Priority Level</li>
                       <li>Last Contact Date & Next Action</li>
-                    </ul>
+              </ul>
                   </div>
                 </div>
               </div>
@@ -815,7 +815,7 @@ const categoryRanking = categories
                   <li>• Priority-based workflow routing</li>
                   <li>• Customer detail modal dengan history</li>
                   <li>• Action plan generator</li>
-                </ul>
+            </ul>
               </div>
             </div>
           </div>
@@ -1326,14 +1326,14 @@ const mostReliable = reliableCandidates.reduce(
                       <li>Progressive loading dan virtualization</li>
                     </ul>
                   </div>
-                  <div>
+          <div>
                     <div><strong>Caching Strategy:</strong></div>
                     <ul className="list-disc pl-4 mt-1">
                       <li>IndexedDB untuk persistent storage</li>
                       <li>In-memory caching untuk frequently accessed data</li>
                       <li>Intelligent cache invalidation</li>
                       <li>Background data refresh</li>
-                    </ul>
+            </ul>
                   </div>
                 </div>
               </div>
