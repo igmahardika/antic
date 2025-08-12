@@ -172,13 +172,13 @@ export default function AdminRumus() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                     <div>
                       <div><strong>Definisi:</strong> Rata-rata waktu dari buka tiket hingga selesai</div>
-                      <div><strong>Target:</strong> 120 menit</div>
+                      <div><strong>Target:</strong> 1440 menit (24 jam)</div>
                       <div><strong>Pengukuran:</strong> WaktuCloseTicket - WaktuOpen</div>
                 </div>
                 <div>
                       <div><strong>Rumus:</strong> <code>ART = Σ(waktu penyelesaian) / Jumlah tiket</code></div>
-                      <div><strong>Scoring:</strong> <code>min((120 / ART) × 100, 120)</code></div>
-                      <div><strong>Contoh:</strong> ART 4440 menit → Skor = 0.7</div>
+                      <div><strong>Scoring:</strong> <code>min((1440 / ART) × 100, 120)</code></div>
+                      <div><strong>Contoh:</strong> ART 4440 menit → Skor = 32.4</div>
                     </div>
                   </div>
                 </div>
