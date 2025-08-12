@@ -235,9 +235,9 @@ export const AgentAnalyticsProvider = ({ children }) => {
       const fcr = fcrArr.length ? fcrArr.reduce((a,b)=>a+b,0)/fcrArr.length : 0;
       const sla = slaArr.length ? slaArr.reduce((a,b)=>a+b,0)/slaArr.length : 0;
       const art = artArr.length ? artArr.reduce((a,b)=>a+b,0)/artArr.length : 0;
-      // Normalisasi ART
-      const maxART = 1440; // 24 jam (bisa diganti sesuai kebutuhan)
-      const ART_norm = maxART ? (art / maxART) * 100 : 0;
+      // Normalisasi ART terhadap target 120 menit
+      const targetARTMinutes = 120; // 2 jam
+      const ART_norm = targetARTMinutes ? (art / targetARTMinutes) * 100 : 0;
       // Score
       const scoreRaw = w1 * fcr + w2 * sla - w3 * ART_norm - w4 * backlog;
       const score = Math.max(0, Math.min(100, Math.round(scoreRaw)));
