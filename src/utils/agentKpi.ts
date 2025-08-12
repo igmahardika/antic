@@ -165,7 +165,10 @@ export function calcMetrics(agentTickets: Ticket[]): AgentMetric {
 export function scoreAgent(m: Pick<AgentMetric, 'frt'|'art'|'fcr'|'sla'|'vol'|'backlog'>): number {
   // Normalization bounds (can be tuned)
   const frtNorm = m.frt <= 0 ? 100 : Math.max(0, 100 - Math.min(100, m.frt / 4)); // 0 min = 100, 400 min = 0
-  const artNorm = m.art <= 0 ? 100 : Math.max(0, 100 - Math.min(100, m.art / 4)); // 0 min = 100, 400 min = 0
+  // Adjust normalization scale to reflect 120-minute ART target.
+  // Previously used divisor 4 (~400 min zero-point). Now scale relative to 120 min target.
+  // Make 0 min = 100, 120 min ≈ 75, and decay more gradually afterwards.
+  const artNorm = m.art <= 0 ? 100 : Math.max(0, 100 - Math.min(100, (m.art / 12))); 
   const fcrNorm = Math.max(0, Math.min(100, m.fcr));
   const slaNorm = Math.max(0, Math.min(100, m.sla));
   const volNorm = Math.max(0, Math.min(100, (m.vol / 100) * 100)); // 100+ tickets = 100
