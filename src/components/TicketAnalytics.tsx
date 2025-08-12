@@ -190,94 +190,47 @@ const TicketAnalytics = ({ data: propsData }: TicketAnalyticsProps) => {
     });
     return map;
   }, [allCustomers]);
-  // Normalisasi daftar bulan pelanggan ke format 'YYYY-MM'
   const customerMonthMap = useMemo(() => {
-    const toMonthKey = (token: string, yearFallback: string): string | null => {
-      if (!token) return null;
-      let t = String(token).trim();
-      const monthNames: Record<string, number> = {
-        jan: 1, january: 1,
-        feb: 2, february: 2,
-        mar: 3, march: 3,
-        apr: 4, april: 4,
-        may: 5, mei: 5,
-        jun: 6, june: 6,
-        jul: 7, july: 7,
-        aug: 8, ags: 8, august: 8, agustus: 8,
-        sep: 9, sept: 9, september: 9,
-        oct: 10, okt: 10, october: 10, oktober: 10,
-        nov: 11, november: 11,
-        dec: 12, des: 12, december: 12, desember: 12,
-      };
-      // Try patterns with year
-      const ymd = t.match(/(\d{4})[-\/]?(\d{1,2})/); // 2025-1 or 2025/01
-      if (ymd) {
-        const y = ymd[1];
-        const m = String(Number(ymd[2])).padStart(2, '0');
-        return `${y}-${m}`;
-      }
-      // Try month names
-      const lower = t.toLowerCase();
-      if (monthNames[lower]) {
-        const m = String(monthNames[lower]).padStart(2, '0');
-        const y = yearFallback || '2025';
-        return `${y}-${m}`;
-      }
-      // Numeric only month
-      if (/^\d{1,2}$/.test(t)) {
-        const m = String(Number(t)).padStart(2, '0');
-        const y = yearFallback || '2025';
-        return `${y}-${m}`;
+    // Build active months per customer from uploaded Customer Data sheets.
+    // Customer ID format during save: `${sheetName}-${idx}-${Nama}`.
+    // We normalize `sheetName` to canonical 'YYYY-MM' keys used across analytics.
+    const MONTH_NAME_ID: Record<string, string> = {
+      januari: '01', februari: '02', maret: '03', april: '04', mei: '05', juni: '06',
+      juli: '07', agustus: '08', september: '09', oktober: '10', november: '11', desember: '12'
+    };
+    function normalizeSheetToMonth(sheet: string): string | null {
+      const s = (sheet || '').toLowerCase().trim();
+      // Case 1: already 'YYYY-MM'
+      const m1 = s.match(/(\d{4})[-_/ ](0[1-9]|1[0-2])/);
+      if (m1) return `${m1[1]}-${m1[2]}`;
+      // Case 2: contains month name (assume 2025 if year missing)
+      const monthName = Object.keys(MONTH_NAME_ID).find(n => s.includes(n));
+      if (monthName) {
+        const mm = MONTH_NAME_ID[monthName];
+        const y = (s.match(/\b(20\d{2})\b/) || [])[1] || '2025';
+        return `${y}-${mm}`;
       }
       return null;
-    };
-
-    const map = new Map<string, string[]>();
-    const yearFallback = (selectedYear && selectedYear !== 'ALL') ? String(selectedYear) : '2025';
-
-    // Build quick index from tickets for fallback months per customer
-    const ticketMonthsByCustomer = new Map<string, Set<string>>();
-    (Array.isArray(gridData) ? gridData : []).forEach(t => {
-      const name = (t.name || '').trim().toLowerCase();
-      if (!name || !t.openTime) return;
-      const d = new Date(t.openTime);
-      if (isNaN(d.getTime())) return;
-      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-      if (!ticketMonthsByCustomer.has(name)) ticketMonthsByCustomer.set(name, new Set());
-      ticketMonthsByCustomer.get(name)!.add(key);
-    });
-
+    }
+    const monthSetByCustomer = new Map<string, Set<string>>();
     (allCustomers || []).forEach(c => {
-      if (!c.nama) return;
       const nameKey = (c.nama || '').trim().toLowerCase();
-      const cAny = c as any;
-      let rawMonths: any = cAny.bulan ?? cAny.periode ?? [];
-      if (typeof rawMonths === 'string') {
-        rawMonths = rawMonths.split(/[,;|\s]+/).filter(Boolean);
-      }
-      if (!Array.isArray(rawMonths)) rawMonths = [];
-
-      // Normalize each entry to 'YYYY-MM'
-      const norm = Array.from(new Set(
-        rawMonths
-          .map((m: any) => toMonthKey(String(m), yearFallback))
-          .filter(Boolean) as string[]
-      ));
-
-      // Fallback: if empty after normalization, infer from tickets
-      const finalMonths = norm.length > 0
-        ? norm
-        : Array.from(ticketMonthsByCustomer.get(nameKey) || []);
-
-      // Last resort: if still empty, assume active all months in fallback year
-      const months = finalMonths.length > 0
-        ? finalMonths
-        : Array.from({ length: 12 }, (_, i) => `${yearFallback}-${String(i + 1).padStart(2, '0')}`);
-
-      map.set(nameKey, months);
+      if (!nameKey) return;
+      const id: string = String((c as any).id || '');
+      const sheetPart = id.split(`-${(c as any).nama || ''}`)[0] || id; // fallback
+      const firstSeg = id.split('-')[0];
+      // Try robust extraction: prefer YYYY-MM if present anywhere in id
+      let canonical = normalizeSheetToMonth(id);
+      if (!canonical) canonical = normalizeSheetToMonth(sheetPart);
+      if (!canonical) canonical = normalizeSheetToMonth(firstSeg);
+      if (!canonical) return;
+      if (!monthSetByCustomer.has(nameKey)) monthSetByCustomer.set(nameKey, new Set<string>());
+      monthSetByCustomer.get(nameKey)!.add(canonical);
     });
+    const map = new Map<string, string[]>();
+    monthSetByCustomer.forEach((set, key) => map.set(key, Array.from(set).sort()));
     return map;
-  }, [allCustomers, gridData, selectedYear]);
+  }, [allCustomers]);
   const jenisKlienList = ['Broadband', 'Broadband Business', 'Dedicated'];
   const allCategories = useMemo(() => Array.from(new Set((allCustomers || []).map(c => c.kategori).filter(Boolean))), [allCustomers]);
   const customerKategoriMap = useMemo(() => {
@@ -1636,6 +1589,36 @@ const TicketAnalytics = ({ data: propsData }: TicketAnalyticsProps) => {
             </table>
           </CardContent>
         </Card>
+        {/* Active Clients per Month (2025) */}
+        <Card className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg">
+          <CardHeader>
+            <CardTitle>Active Clients per Month (2025)</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <table className="min-w-max w-full text-sm text-left">
+              <thead>
+                <tr>
+                  <th className="px-4 py-2">Month</th>
+                  {Object.keys(tiketPerJenisKlienPerBulan).sort().map(month => (
+                    <th key={month} className="px-4 py-2">{month}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td className="px-4 py-2 font-bold text-blue-700 dark:text-blue-300">Active Clients</td>
+                  {Object.keys(tiketPerJenisKlienPerBulan).sort().map(month => {
+                    const totalClients = Array.from(customerMonthMap.entries()).filter(([_name, monthsArr]) => Array.isArray(monthsArr) && monthsArr.includes(month)).length;
+                    return (
+                      <td key={month} className="px-4 py-2 text-center font-mono">{totalClients}</td>
+                    );
+                  })}
+                </tr>
+              </tbody>
+            </table>
+          </CardContent>
+        </Card>
+
         {/* 9. Total Complaint Penetration Ratio (2025) */}
         <Card className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg">
           <CardHeader>
