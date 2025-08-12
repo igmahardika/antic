@@ -291,7 +291,8 @@ const AgentAnalytics = () => {
   function calculateAgentScore(agent: any, maxTicket: number) {
     const fcrScore = normalizePositive(agent.fcr, 75) * 0.3;
     const slaScore = normalizePositive(agent.sla, 85) * 0.25;
-    const frtScore = normalizeNegative(agent.frtMinutes, 15) * 0.15;
+    // Update FRT target to 60 minutes (1 hour)
+    const frtScore = normalizeNegative(agent.frtMinutes, 60) * 0.15;
     // Update ART target to 1440 minutes (24 hours)
     const artScore = normalizeNegative(agent.artMinutes, 1440) * 0.15;
     const backlogScore = scoreBacklog(agent.backlog) * 0.05;

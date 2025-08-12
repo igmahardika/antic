@@ -164,7 +164,7 @@ export function calcMetrics(agentTickets: Ticket[]): AgentMetric {
  */
 export function scoreAgent(m: Pick<AgentMetric, 'frt'|'art'|'fcr'|'sla'|'vol'|'backlog'>): number {
   // Normalization bounds (can be tuned)
-  const frtNorm = m.frt <= 0 ? 100 : Math.max(0, Math.min(100, (15 / m.frt) * 100)); // Target FRT 15 minutes
+  const frtNorm = m.frt <= 0 ? 100 : Math.max(0, Math.min(100, (60 / m.frt) * 100)); // Target FRT 60 minutes
   const artNorm = m.art <= 0 ? 100 : Math.max(0, Math.min(100, (1440 / m.art) * 100)); // Target ART 1440 minutes (24 hours)
   const fcrNorm = Math.max(0, Math.min(100, m.fcr));
   const slaNorm = Math.max(0, Math.min(100, m.sla));

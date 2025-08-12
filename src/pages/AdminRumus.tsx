@@ -161,8 +161,8 @@ export default function AdminRumus() {
                 </div>
                 <div>
                       <div><strong>Rumus:</strong> <code>FRT = Σ(waktu respon) / Jumlah tiket</code></div>
-                      <div><strong>Scoring:</strong> <code>min((15 / FRT) × 100, 120)</code></div>
-                      <div><strong>Contoh:</strong> FRT 3000 menit → Skor = 0.5</div>
+                      <div><strong>Scoring:</strong> <code>min((60 / FRT) × 100, 120)</code></div>
+                      <div><strong>Contoh:</strong> FRT 3000 menit → Skor = 2.0</div>
                     </div>
                   </div>
                 </div>
