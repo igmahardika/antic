@@ -190,23 +190,94 @@ const TicketAnalytics = ({ data: propsData }: TicketAnalyticsProps) => {
     });
     return map;
   }, [allCustomers]);
+  // Normalisasi daftar bulan pelanggan ke format 'YYYY-MM'
   const customerMonthMap = useMemo(() => {
+    const toMonthKey = (token: string, yearFallback: string): string | null => {
+      if (!token) return null;
+      let t = String(token).trim();
+      const monthNames: Record<string, number> = {
+        jan: 1, january: 1,
+        feb: 2, february: 2,
+        mar: 3, march: 3,
+        apr: 4, april: 4,
+        may: 5, mei: 5,
+        jun: 6, june: 6,
+        jul: 7, july: 7,
+        aug: 8, ags: 8, august: 8, agustus: 8,
+        sep: 9, sept: 9, september: 9,
+        oct: 10, okt: 10, october: 10, oktober: 10,
+        nov: 11, november: 11,
+        dec: 12, des: 12, december: 12, desember: 12,
+      };
+      // Try patterns with year
+      const ymd = t.match(/(\d{4})[-\/]?(\d{1,2})/); // 2025-1 or 2025/01
+      if (ymd) {
+        const y = ymd[1];
+        const m = String(Number(ymd[2])).padStart(2, '0');
+        return `${y}-${m}`;
+      }
+      // Try month names
+      const lower = t.toLowerCase();
+      if (monthNames[lower]) {
+        const m = String(monthNames[lower]).padStart(2, '0');
+        const y = yearFallback || '2025';
+        return `${y}-${m}`;
+      }
+      // Numeric only month
+      if (/^\d{1,2}$/.test(t)) {
+        const m = String(Number(t)).padStart(2, '0');
+        const y = yearFallback || '2025';
+        return `${y}-${m}`;
+      }
+      return null;
+    };
+
     const map = new Map<string, string[]>();
+    const yearFallback = (selectedYear && selectedYear !== 'ALL') ? String(selectedYear) : '2025';
+
+    // Build quick index from tickets for fallback months per customer
+    const ticketMonthsByCustomer = new Map<string, Set<string>>();
+    (Array.isArray(gridData) ? gridData : []).forEach(t => {
+      const name = (t.name || '').trim().toLowerCase();
+      if (!name || !t.openTime) return;
+      const d = new Date(t.openTime);
+      if (isNaN(d.getTime())) return;
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      if (!ticketMonthsByCustomer.has(name)) ticketMonthsByCustomer.set(name, new Set());
+      ticketMonthsByCustomer.get(name)!.add(key);
+    });
+
     (allCustomers || []).forEach(c => {
       if (!c.nama) return;
-      let months: string[] = [];
+      const nameKey = (c.nama || '').trim().toLowerCase();
       const cAny = c as any;
-      if (Array.isArray(cAny.bulan)) {
-        months = cAny.bulan;
-      } else if (Array.isArray(cAny.periode)) {
-        months = cAny.periode;
-      } else {
-        months = Array.from({ length: 12 }, (_, i) => `2025-${String(i + 1).padStart(2, '0')}`);
+      let rawMonths: any = cAny.bulan ?? cAny.periode ?? [];
+      if (typeof rawMonths === 'string') {
+        rawMonths = rawMonths.split(/[,;|\s]+/).filter(Boolean);
       }
-      map.set((c.nama || '').trim().toLowerCase(), months);
+      if (!Array.isArray(rawMonths)) rawMonths = [];
+
+      // Normalize each entry to 'YYYY-MM'
+      const norm = Array.from(new Set(
+        rawMonths
+          .map((m: any) => toMonthKey(String(m), yearFallback))
+          .filter(Boolean) as string[]
+      ));
+
+      // Fallback: if empty after normalization, infer from tickets
+      const finalMonths = norm.length > 0
+        ? norm
+        : Array.from(ticketMonthsByCustomer.get(nameKey) || []);
+
+      // Last resort: if still empty, assume active all months in fallback year
+      const months = finalMonths.length > 0
+        ? finalMonths
+        : Array.from({ length: 12 }, (_, i) => `${yearFallback}-${String(i + 1).padStart(2, '0')}`);
+
+      map.set(nameKey, months);
     });
     return map;
-  }, [allCustomers]);
+  }, [allCustomers, gridData, selectedYear]);
   const jenisKlienList = ['Broadband', 'Broadband Business', 'Dedicated'];
   const allCategories = useMemo(() => Array.from(new Set((allCustomers || []).map(c => c.kategori).filter(Boolean))), [allCustomers]);
   const customerKategoriMap = useMemo(() => {
