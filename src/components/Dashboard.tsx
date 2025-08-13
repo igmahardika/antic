@@ -1,24 +1,15 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Tab, Listbox } from '@headlessui/react';
-import { Upload, Grid, Users, BarChart2, UserCheck, Calendar } from 'react-feather';
+// import { Listbox } from '@headlessui/react';
+// import { Calendar } from 'react-feather';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db, ITicket } from '@/lib/db';
-import { analyzeKeywords, generateAnalysisConclusion, formatDurationDHM } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
-import { ModeToggle } from './mode-toggle';
+import { analyzeKeywords, formatDurationDHM } from '@/lib/utils';
+// import { Button } from '@/components/ui/button';
+// import { ModeToggle } from './mode-toggle';
 import { useAgentStore } from '@/store/agentStore';
-import { useNavigate } from 'react-router-dom';
+// import { useNavigate } from 'react-router-dom';
 
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { Moon, Sun, LogOut } from "lucide-react"
+// Dropdown/avatar imports removed (unused)
 
 import UploadProcess from './UploadProcess';
 import GridView from './GridView';
@@ -45,11 +36,7 @@ const allTabs = [
   { name: 'Admin Panel', component: AdminPanel, icon: UsersIcon },
 ];
 
-const timeFilters = [
-  { label: 'Last 1 Month', value: '1M' },
-  { label: 'Last 3 Months', value: '3M' },
-  { label: 'Last 6 Months', value: '6M' }
-];
+// Preset time filters removed; using explicit month/year
 
 // Color palette for agent charts. Using Tailwind CSS color names for reference.
 const agentChartColors = [
@@ -67,20 +54,21 @@ const agentChartColors = [
   '#d946ef', // fuchsia-500
 ];
 
-const monthOptions = [
-  { value: '01', label: 'January' },
-  { value: '02', label: 'February' },
-  { value: '03', label: 'March' },
-  { value: '04', label: 'April' },
-  { value: '05', label: 'May' },
-  { value: '06', label: 'June' },
-  { value: '07', label: 'July' },
-  { value: '08', label: 'August' },
-  { value: '09', label: 'September' },
-  { value: '10', label: 'October' },
-  { value: '11', label: 'November' },
-  { value: '12', label: 'December' },
-];
+// Month options retained for potential future use
+// const monthOptions = [
+//   { value: '01', label: 'January' },
+//   { value: '02', label: 'February' },
+//   { value: '03', label: 'March' },
+//   { value: '04', label: 'April' },
+//   { value: '05', label: 'May' },
+//   { value: '06', label: 'June' },
+//   { value: '07', label: 'July' },
+//   { value: '08', label: 'August' },
+//   { value: '09', label: 'September' },
+//   { value: '10', label: 'October' },
+//   { value: '11', label: 'November' },
+//   { value: '12', label: 'December' },
+// ];
 
 // Tambahkan array nama bulan Indonesia
 const monthNamesIndo = [
@@ -90,91 +78,37 @@ const monthNamesIndo = [
 
 // Ganti FilterWaktu agar hanya ada 3 dropdown: Start Month, End Month, Year
 // Hilangkan preset timeFilters
-const FilterWaktu: React.FC<{
-  startMonth: string | null;
-  setStartMonth: (v: string | null) => void;
-  endMonth: string | null;
-  setEndMonth: (v: string | null) => void;
-  selectedYear: string | null;
-  setSelectedYear: (v: string | null) => void;
-  monthOptions: { value: string, label: string }[];
-  allYearsInData: string[];
-  onRefresh: () => void;
-}> = ({ startMonth, setStartMonth, endMonth, setEndMonth, selectedYear, setSelectedYear, monthOptions, allYearsInData, onRefresh }) => (
-  <div className="flex flex-wrap items-center gap-3 p-4 bg-white/80 dark:bg-zinc-900/80 rounded-2xl shadow-lg border border-gray-200 dark:border-zinc-800 mb-6">
-    <Calendar className="h-5 w-5 text-blue-500 mr-2" />
-    <span className="text-sm font-semibold text-gray-700 dark:text-gray-200 mr-2">Time Filter:</span>
-    {/* Dropdown Start Month */}
-    <Listbox value={startMonth} onChange={setStartMonth}>
-      <div className="relative">
-        <Listbox.Button className="text-sm h-9 px-4 py-2 border border-blue-200 rounded-lg bg-white dark:bg-zinc-800 text-gray-700 dark:text-gray-200 shadow-sm focus:ring-2 focus:ring-blue-400 min-w-[100px] transition-all">
-          {startMonth ? monthOptions.find(m => m.value === startMonth)?.label : 'Start Month'}
-        </Listbox.Button>
-        <Listbox.Options className="absolute z-10 mt-1 w-32 bg-white dark:bg-zinc-800 border rounded-lg shadow-lg max-h-60 overflow-auto text-sm">
-          {monthOptions.map(month => (
-            <Listbox.Option key={month.value} value={month.value} className="px-3 py-2 cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900/30 rounded">
-              {month.label}
-            </Listbox.Option>
-    ))}
-        </Listbox.Options>
-      </div>
-    </Listbox>
-    {/* Dropdown End Month */}
-    <Listbox value={endMonth} onChange={setEndMonth}>
-      <div className="relative">
-        <Listbox.Button className="text-sm h-9 px-4 py-2 border border-blue-200 rounded-lg bg-white dark:bg-zinc-800 text-gray-700 dark:text-gray-200 shadow-sm focus:ring-2 focus:ring-blue-400 min-w-[100px] transition-all">
-          {endMonth ? monthOptions.find(m => m.value === endMonth)?.label : 'End Month'}
-        </Listbox.Button>
-        <Listbox.Options className="absolute z-10 mt-1 w-32 bg-white dark:bg-zinc-800 border rounded-lg shadow-lg max-h-60 overflow-auto text-sm">
-          {monthOptions.map(month => (
-            <Listbox.Option key={month.value} value={month.value} className="px-3 py-2 cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900/30 rounded">
-              {month.label}
-            </Listbox.Option>
-          ))}
-        </Listbox.Options>
-      </div>
-    </Listbox>
-    {/* Dropdown Year */}
-    <Listbox value={selectedYear} onChange={setSelectedYear}>
-      <div className="relative">
-        <Listbox.Button className="text-sm h-9 px-4 py-2 border border-blue-200 rounded-lg bg-white dark:bg-zinc-800 text-gray-700 dark:text-gray-200 shadow-sm focus:ring-2 focus:ring-blue-400 min-w-[100px] transition-all">
-          {selectedYear || 'Year'}
-        </Listbox.Button>
-        <Listbox.Options className="absolute z-10 mt-1 w-28 bg-white dark:bg-zinc-800 border rounded-lg shadow-lg max-h-60 overflow-auto text-sm">
-          {allYearsInData.map(year => (
-            <Listbox.Option key={year} value={year} className="px-3 py-2 cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900/30 rounded">
-              {year}
-            </Listbox.Option>
-          ))}
-        </Listbox.Options>
-      </div>
-    </Listbox>
-    {/* Tombol Refresh */}
-    <Button size="sm" className="ml-3 h-9 px-5 rounded-lg bg-blue-500 hover:bg-blue-600 text-white font-bold shadow transition-all" onClick={onRefresh} variant="secondary">Refresh</Button>
-  </div>
-);
+// Time filter component retained but unused on summary-only view
+// const FilterWaktu: React.FC<{
+//   startMonth: string | null;
+//   setStartMonth: (v: string | null) => void;
+//   endMonth: string | null;
+//   setEndMonth: (v: string | null) => void;
+//   selectedYear: string | null;
+//   setSelectedYear: (v: string | null) => void;
+//   monthOptions: { value: string, label: string }[];
+//   allYearsInData: string[];
+//   onRefresh: () => void;
+// }> = ({ startMonth, setStartMonth, endMonth, setEndMonth, selectedYear, setSelectedYear, monthOptions, allYearsInData, onRefresh }) => (
+//   <div className="flex flex-wrap items-center gap-3 p-4 bg-white/80 dark:bg-zinc-900/80 rounded-2xl shadow-lg border border-gray-200 dark:border-zinc-800 mb-6">
+//     <Calendar className="h-5 w-5 text-blue-500 mr-2" />
+//     <span className="text-sm font-semibold text-gray-700 dark:text-gray-200 mr-2">Time Filter:</span>
+//     <Button size="sm" className="ml-3 h-9 px-5 rounded-lg bg-blue-500 hover:bg-blue-600 text-white font-bold shadow transition-all" onClick={onRefresh} variant="secondary">Refresh</Button>
+//   </div>
+// );
 
 const Dashboard = () => {
-  const [selectedIndex, setSelectedIndex] = useState(0);
-  const [refreshTrigger, setRefreshTrigger] = useState(0);
-  const [startMonth, setStartMonth] = useState<string | null>(null);
-  const [endMonth, setEndMonth] = useState<string | null>(null);
-  const [selectedYear, setSelectedYear] = useState<string | null>(null);
+  const [selectedIndex] = useState(0);
+  const [refreshTrigger] = useState(0);
+  const [startMonth] = useState<string | null>(null);
+  const [endMonth] = useState<string | null>(null);
+  const [selectedYear] = useState<string | null>(null);
 
-  const navigate = useNavigate();
+  // const navigate = useNavigate();
 
-  const handleApplyFilter = () => {
-    // Cukup trigger refresh, karena nilai startMonth, endMonth, dan selectedYear
-    // sudah menjadi state utama dan langsung dipakai di useMemo.
-    setRefreshTrigger(prev => prev + 1);
-  };
+  // const handleApplyFilter = () => { /* trigger not used on summary view */ };
 
-  const handleUploadComplete = () => {
-    // Trigger a refresh to re-fetch data from the database
-    setRefreshTrigger(prev => prev + 1);
-    // Switch to Grid View tab after upload
-    setSelectedIndex(1);
-  };
+  // const handleUploadComplete = () => { /* not used here */ };
 
   // Live query to get data from IndexedDB based on the filter
   const allTickets = useLiveQuery(() => db.tickets.toArray(), [refreshTrigger]);
@@ -195,41 +129,9 @@ const Dashboard = () => {
     }
   }, [allTickets]);
 
-  // Ambil semua bulan unik dari data (mm/yyyy dari Waktu Open)
-  const allMonthsInData = useMemo(() => {
-    if (!allTickets) return [];
-    const monthSet = new Set<string>();
-    allTickets.forEach(t => {
-      if (t.openTime) {
-        const d = new Date(t.openTime);
-        if (!isNaN(d.getTime())) {
-          const mm = String(d.getMonth() + 1).padStart(2, '0');
-          const yyyy = d.getFullYear();
-          monthSet.add(`${mm}/${yyyy}`);
-        }
-      }
-    });
-    return Array.from(monthSet).sort((a, b) => {
-      const [ma, ya] = a.split('/');
-      const [mb, yb] = b.split('/');
-      return new Date(`${ya}-${ma}-01`).getTime() - new Date(`${yb}-${mb}-01`).getTime();
-    });
-  }, [allTickets]);
+  // Ambil semua bulan unik dari data (mm/yyyy) - tidak digunakan di summary view
 
-  // Ambil semua tahun unik dari data
-  const allYearsInData = useMemo(() => {
-    if (!allTickets) return [];
-    const yearSet = new Set<string>();
-    allTickets.forEach(t => {
-      if (t.openTime) {
-        const d = new Date(t.openTime);
-        if (!isNaN(d.getTime())) {
-          yearSet.add(String(d.getFullYear()));
-        }
-      }
-    });
-    return Array.from(yearSet).sort();
-  }, [allTickets]);
+  // Ambil semua tahun unik dari data - tidak digunakan di summary view
 
   const { cutoffStart, cutoffEnd } = useMemo(() => {
     if (!startMonth || !endMonth || !selectedYear) return { cutoffStart: null, cutoffEnd: null };
@@ -241,7 +143,7 @@ const Dashboard = () => {
     return { cutoffStart, cutoffEnd };
   }, [startMonth, endMonth, selectedYear]);
 
-  const { ticketAnalyticsData, agentAnalyticsData, gridData, kanbanData } = useMemo(() => {
+  const { ticketAnalyticsData, gridData } = useMemo(() => {
     if (!allTickets) {
       return { gridData: [], kanbanData: [], ticketAnalyticsData: null, agentAnalyticsData: [] };
     }
@@ -286,7 +188,7 @@ const Dashboard = () => {
     // --- End of Risk Classification ---
 
     const gridData = filteredTickets;
-    const kanbanData = processKanbanData(gridData, customerClassMap, customerMasterMap);
+    // const kanbanData = processKanbanData(gridData, customerClassMap, customerMasterMap);
 
     // --- Agent Analytics Processing ---
     // Master list of all agents. This ensures they always appear in the analysis.
@@ -668,9 +570,7 @@ const Dashboard = () => {
 
     return {
       ticketAnalyticsData,
-      agentAnalyticsData: finalAgentData,
       gridData,
-      kanbanData,
       filteredTickets,
     };
   }, [allTickets, cutoffStart, cutoffEnd]);
@@ -698,56 +598,7 @@ const Dashboard = () => {
     }
   }, [gridData]);
 
-  // Helper function for Kanban data processing
-  function processKanbanData(tickets: ITicket[], classMap: Record<string, string>, masterMap: Map<string, ITicket[]>) {
-    const customerMap: { [key: string]: { name: string, customerId: string, tickets: ITicket[], totalHandlingDuration: number, descriptions: string[], causes: string[], handlings: string[] } } = {};
-    // Hanya tiket closed (case-insensitive, trim)
-    const closedTickets = tickets.filter(ticket => (ticket.status || '').trim().toLowerCase() === 'closed');
-    closedTickets.forEach(ticket => {
-        const customerId = ticket.customerId || 'Unknown Customer';
-        if (customerId === 'Unknown Customer') return;
-
-        if (!customerMap[customerId]) {
-            customerMap[customerId] = { name: ticket.name, customerId: customerId, tickets: [], totalHandlingDuration: 0, descriptions: [], causes: [], handlings: [] };
-        }
-        customerMap[customerId].tickets.push(ticket);
-        customerMap[customerId].totalHandlingDuration += ticket.handlingDuration.rawHours || 0;
-        customerMap[customerId].descriptions.push(ticket.description);
-        customerMap[customerId].causes.push(ticket.cause);
-        customerMap[customerId].handlings.push(ticket.handling);
-    });
-
-    return Object.values(customerMap).map(customer => {
-        const descriptionKeywords = analyzeKeywords(customer.descriptions);
-        const causeKeywords = analyzeKeywords(customer.causes);
-        const handlingKeywords = analyzeKeywords(customer.handlings);
-
-        const analysisKeywords = {
-          description: descriptionKeywords.map(item => item[0]),
-          cause: causeKeywords.map(item => item[0]),
-          handling: handlingKeywords.map(item => item[0]),
-        };
-
-        const repClass = classMap[customer.customerId] || 'Normal';
-        
-        return {
-          id: customer.customerId,
-          name: customer.name,
-          customerId: customer.customerId,
-          ticketCount: customer.tickets.length,
-          totalHandlingDurationFormatted: formatDurationDHM(customer.totalHandlingDuration),
-          allTickets: customer.tickets,
-          fullTicketHistory: masterMap.get(customer.customerId) || [],
-          analysis: { 
-            description: descriptionKeywords,
-            cause: causeKeywords,
-            handling: handlingKeywords,
-            conclusion: generateAnalysisConclusion(analysisKeywords) 
-          },
-          repClass,
-        }
-    }).sort((a, b) => b.ticketCount - a.ticketCount);
-  }
+  // Helper function for Kanban data processing (unused in summary view)
 
   const user = JSON.parse(localStorage.getItem('user') || '{"role":"user"}');
   const role = user.role || 'user';
@@ -783,10 +634,10 @@ const Dashboard = () => {
     }
   }, [selectedIndex, tabs]);
 
-  const handleLogout = () => {
-    localStorage.removeItem('user');
-    navigate('/');
-  };
+  // const handleLogout = () => {
+  //   localStorage.removeItem('user');
+  //   navigate('/');
+  // };
 
   return (
     <div className="relative min-h-screen">
@@ -794,7 +645,7 @@ const Dashboard = () => {
       <div className="fixed inset-0 -z-10 bg-gradient-to-br from-blue-50 via-white to-pink-100 dark:from-zinc-900 dark:via-zinc-800 dark:to-blue-900" />
       <main className="p-4 sm:p-6 lg:p-8">
         {/* Tampilkan summary dashboard saja */}
-        <SummaryDashboard ticketAnalyticsData={ticketAnalyticsData} />
+        <SummaryDashboard ticketAnalyticsData={ticketAnalyticsData} filteredTickets={gridData} />
       </main>
     </div>
   );
