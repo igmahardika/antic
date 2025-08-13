@@ -160,8 +160,9 @@ export default function AdminRumus() {
                       <div><strong>Pengukuran:</strong> ClosePenanganan - WaktuOpen</div>
                 </div>
                 <div>
-                      <div><strong>Rumus:</strong> <code>FRT = Σ(waktu respon) / Jumlah tiket</code></div>
-                      <div><strong>Scoring:</strong> <code>min((60 / FRT) × 100, 120)</code></div>
+                  <div><strong>Rumus:</strong> <code>FRT = Σ(waktu respon) / Jumlah tiket</code></div>
+                  <div><strong>Target baru:</strong> 60 menit (1 jam)</div>
+                  <div><strong>Scoring:</strong> <code>min((60 / FRT) × 100, 120)</code></div>
                       <div><strong>Contoh:</strong> FRT 3000 menit → Skor = 2.0</div>
                     </div>
                   </div>
@@ -172,12 +173,12 @@ export default function AdminRumus() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                     <div>
                       <div><strong>Definisi:</strong> Rata-rata waktu dari buka tiket hingga selesai</div>
-                      <div><strong>Target:</strong> 1440 menit (24 jam)</div>
+                  <div><strong>Target baru:</strong> 1440 menit (24 jam)</div>
                       <div><strong>Pengukuran:</strong> WaktuCloseTicket - WaktuOpen</div>
                 </div>
                 <div>
                       <div><strong>Rumus:</strong> <code>ART = Σ(waktu penyelesaian) / Jumlah tiket</code></div>
-                      <div><strong>Scoring:</strong> <code>min((1440 / ART) × 100, 120)</code></div>
+                  <div><strong>Scoring:</strong> <code>min((1440 / ART) × 100, 120)</code></div>
                       <div><strong>Contoh:</strong> ART 4440 menit → Skor = 32.4</div>
                     </div>
                   </div>
@@ -322,6 +323,17 @@ export default function AdminRumus() {
             <p>
               Fitur Ticket Analytics menganalisis statistik tiket, tren, dan kategori komplain untuk monitoring performa layanan dan workload operasional. Sistem ini menggunakan berbagai metode statistik dan analisis multidimensional untuk memberikan insight yang actionable.
             </p>
+
+            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+              <h4 className="font-semibold text-blue-800 dark:text-blue-200 mb-2">Perubahan Definisi (2025-08)</h4>
+              <ul className="list-disc pl-6 text-sm space-y-1">
+                <li><strong>Active Clients per Month:</strong> Denominator memakai total baris upload per bulan (<code>customerMonthRowCount</code>), bukan jumlah nama unik.</li>
+                <li><strong>Active per Type/Category:</strong> Denominator memakai agregat baris upload per bulan per tipe/kategori (<code>customerMonthRowCountByType</code>/<code>...ByCategory</code>).</li>
+                <li><strong>Unique Complaining Clients:</strong> Nama dinormalisasi (trim/lowercase), harus aktif di bulan tersebut (<code>customerMonthMap</code> berisi bulan terkait), exclude klasifikasi <em>Di Luar Layanan</em>, <em>Gangguan Diluar Layanan</em>, dan <em>Request</em>.</li>
+                <li><strong>Total (Union):</strong> Baris “Total” di tabel unique adalah <em>union</em> lintas tipe/kategori per bulan (bukan penjumlahan) agar tidak double count.</li>
+                <li><strong>Rasio:</strong> Numerator = unique sesuai definisi; Denominator = agregat baris upload sesuai konteks (total/tipe/kategori).</li>
+              </ul>
+            </div>
             
             <div className="bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800 rounded-lg p-4">
               <h4 className="font-semibold text-indigo-800 dark:text-indigo-200 mb-2">📊 Overview Statistik Utama</h4>
