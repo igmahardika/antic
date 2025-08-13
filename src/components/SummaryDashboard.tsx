@@ -6,6 +6,7 @@ import { AreaChart, Area, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Lege
 const SummaryDashboard = ({ ticketAnalyticsData }: any) => {
   // Prepare monthly data
   const monthlyStatsData = ticketAnalyticsData?.monthlyStatsData;
+  const stats = ticketAnalyticsData?.stats || [];
 
   // Extract all years from monthlyStatsData.labels
   const allYears: string[] = useMemo(() => {
@@ -101,7 +102,28 @@ const SummaryDashboard = ({ ticketAnalyticsData }: any) => {
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+    <div className="grid grid-cols-1 gap-8">
+      {/* KPI Row */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {[
+          { title: 'Total Tickets', value: stats[0]?.value || '-', desc: stats[0]?.description || '' },
+          { title: 'Closed Tickets', value: stats[2]?.value || '-', desc: stats[2]?.description || '' },
+          { title: 'Avg Duration', value: stats[1]?.value || '-', desc: 'average resolution time' },
+          { title: 'Active Agents', value: stats[3]?.value || '-', desc: stats[3]?.description || '' },
+        ].map((kpi, idx) => (
+          <Card key={idx} className="bg-white dark:bg-zinc-900 shadow rounded-xl border">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm text-gray-600 dark:text-gray-400">{kpi.title}</CardTitle>
+            </CardHeader>
+            <CardContent className="pt-0">
+              <div className="text-2xl font-extrabold text-gray-900 dark:text-gray-100">{kpi.value}</div>
+              <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">{kpi.desc}</div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
       {/* Monthly Area Chart */}
       <Card className="bg-white dark:bg-zinc-900 shadow-lg rounded-xl border p-2">
         <CardHeader className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 pb-1">
@@ -187,6 +209,7 @@ const SummaryDashboard = ({ ticketAnalyticsData }: any) => {
           )}
         </CardContent>
       </Card>
+      </div>
     </div>
   );
 };
