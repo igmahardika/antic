@@ -181,12 +181,12 @@ export function scoreAgent(m: Pick<AgentMetric, 'frt'|'art'|'fcr'|'sla'|'vol'|'b
 }
 
 /**
- * Rank score: ≥60 A, 50–59 B, 40–49 C, else D
+ * Rank score: ≥75 A, 60–74 B, 45–59 C, else D
  */
 export function rank(score: number): 'A'|'B'|'C'|'D' {
-  if (score >= 60) return 'A';
-  if (score >= 50) return 'B';
-  if (score >= 40) return 'C';
+  if (score >= 75) return 'A';
+  if (score >= 60) return 'B';
+  if (score >= 45) return 'C';
   return 'D';
 }
 

@@ -236,10 +236,10 @@ export default function AdminRumus() {
                   <div>
                     <h5 className="font-semibold mb-2">🎖️ Grade Classification</h5>
                     <ul className="text-sm space-y-1">
-                      <li>• <strong>Grade A:</strong> Skor ≥ 60 (Excellent)</li>
-                      <li>• <strong>Grade B:</strong> Skor 50-59 (Good)</li>
-                      <li>• <strong>Grade C:</strong> Skor 40-49 (Fair)</li>
-                      <li>• <strong>Grade D:</strong> Skor &lt; 40 (Needs Improvement)</li>
+                      <li>• <strong>Grade A:</strong> Skor ≥ 75 (Excellent)</li>
+                      <li>• <strong>Grade B:</strong> Skor 60-74 (Good)</li>
+                      <li>• <strong>Grade C:</strong> Skor 45-59 (Fair)</li>
+                      <li>• <strong>Grade D:</strong> Skor &lt; 45 (Needs Improvement)</li>
                     </ul>
                   </div>
                 </div>
