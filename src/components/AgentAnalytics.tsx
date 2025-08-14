@@ -20,9 +20,28 @@ import PageWrapper from './PageWrapper';
 import type { AgentMetric } from '@/utils/agentKpi';
 import { enableBacklogDebug } from '@/utils/agentKpi';
 import { formatDurationDHM } from '@/lib/utils';
+import { 
+  Download, 
+  FileText, 
+  TrendingUp, 
+  TrendingDown, 
+  Target, 
+  Award, 
+  Clock, 
+  Users, 
+  BarChart3,
+  Calendar,
+  Star,
+  AlertTriangle,
+  CheckCircle,
+  XCircle,
+  ArrowUpRight,
+  ArrowDownRight,
+  Minus
+} from 'lucide-react';
 // Unused import - commented out
 // import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, Legend as RechartsLegend, Tooltip } from 'recharts';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, Legend as RechartsLegend, Tooltip, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, LineChart, Line, PieChart, Pie, Cell, BarChart, Bar } from 'recharts';
 import { Badge } from '@/components/ui/badge';
 import * as RadixDialog from '@radix-ui/react-dialog';
 // Unused import - commented out
@@ -36,6 +55,66 @@ export interface AgentAnalyticsData {
   avgDurationFormatted: string;
   minDurationFormatted: string;
   maxDurationFormatted: string;
+}
+
+// Agent Report Interfaces
+interface MonthlyPerformance {
+  month: string;
+  tickets: number;
+  frt: number;
+  art: number;
+  fcr: number;
+  sla: number;
+  score: number;
+  grade: string;
+}
+
+interface Milestone {
+  date: string;
+  type: 'achievement' | 'improvement' | 'milestone';
+  title: string;
+  description: string;
+  value?: number;
+}
+
+interface KPIAnalysis {
+  frt: { trend: string; avg: number; best: number; worst: number; target: number; };
+  art: { trend: string; avg: number; best: number; worst: number; target: number; };
+  fcr: { trend: string; avg: number; best: number; worst: number; target: number; };
+  sla: { trend: string; avg: number; best: number; worst: number; target: number; };
+  volume: { trend: string; total: number; avg: number; peak: number; };
+}
+
+interface ShiftAnalysis {
+  pagi: { count: number; percentage: number; avgScore: number; };
+  siang: { count: number; percentage: number; avgScore: number; };
+  malam: { count: number; percentage: number; avgScore: number; };
+  optimal: string;
+}
+
+interface CategoryAnalysis {
+  categories: Array<{ name: string; count: number; avgScore: number; percentage: number; }>;
+  strongest: string;
+  weakest: string;
+}
+
+interface AgentReport {
+  agentName: string;
+  startDate: Date;
+  endDate: Date;
+  totalMonths: number;
+  overallScore: number;
+  grade: string;
+  rank: number;
+  totalTickets: number;
+  monthlyPerformance: MonthlyPerformance[];
+  milestones: Milestone[];
+  kpiAnalysis: KPIAnalysis;
+  shiftAnalysis: ShiftAnalysis;
+  categoryAnalysis: CategoryAnalysis;
+  strengths: string[];
+  weaknesses: string[];
+  recommendations: string[];
 }
 
 // Unused function - commented out
@@ -190,6 +269,19 @@ const AgentAnalytics = () => {
   const [selectedAgent, setSelectedAgent] = useState<string | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [backlogDebugEnabled, setBacklogDebugEnabled] = useState(false);
+
+  // Export functions
+  const exportToPDF = (report: AgentReport) => {
+    // TODO: Implement PDF export using @react-pdf/renderer
+    console.log('Exporting to PDF:', report);
+    alert('PDF export feature coming soon!');
+  };
+
+  const exportToExcel = (report: AgentReport) => {
+    // TODO: Implement Excel export using xlsx library
+    console.log('Exporting to Excel:', report);
+    alert('Excel export feature coming soon!');
+  };
 
   useEffect(() => {
     console.log('Agent Metrics DEBUG:', agentMetrics);
@@ -398,6 +490,242 @@ const AgentAnalytics = () => {
   // --- Refactor summaryCards sesuai struktur rekomendasi ---
   const topOverall = agentWithScore.reduce((a, b) => (b.score > a.score ? b : a), agentWithScore[0]);
   const fastestResponder = agentWithScore.reduce((a, b) => (b.frt < a.frt ? b : a), agentWithScore[0]);
+
+  // Generate comprehensive Agent Report
+  function generateAgentReport(agentName: string): AgentReport {
+    if (!data.agentMonthlyChart || !allTickets) {
+      return null;
+    }
+
+    // Get agent's monthly data
+    const volArr = data.agentMonthlyChart.datasets?.find(ds => ds.label === agentName)?.data || [];
+    const frtArr = data.agentMonthlyChart.datasetsFRT?.find(ds => ds.label === agentName)?.data || [];
+    const artArr = data.agentMonthlyChart.datasetsART?.find(ds => ds.label === agentName)?.data || [];
+    const fcrArr = data.agentMonthlyChart.datasetsFCR?.find(ds => ds.label === agentName)?.data || [];
+    const slaArr = data.agentMonthlyChart.datasetsSLA?.find(ds => ds.label === agentName)?.data || [];
+    const scoreArr = getAgentScoreTrend(agentName);
+
+    // Agent's tickets
+    const agentTickets = allTickets.filter(t => t.openBy === agentName);
+    const ticketDates = agentTickets.map(t => new Date(t.openTime)).filter(d => !isNaN(d.getTime()));
+    
+    // Career timeline
+    const startDate = ticketDates.length > 0 ? new Date(Math.min(...ticketDates.map(d => d.getTime()))) : new Date();
+    const endDate = ticketDates.length > 0 ? new Date(Math.max(...ticketDates.map(d => d.getTime()))) : new Date();
+    const totalMonths = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24 * 30));
+
+    // Overall metrics
+    const agentMetric = dataSource.find(m => m.agent === agentName);
+    const overallScore = agentMetric?.score || 0;
+    const grade = agentMetric?.rank || 'D';
+    const rank = sortedAgentWithScore.findIndex(a => a.agent === agentName) + 1;
+    const totalTickets = agentMetric?.vol || 0;
+
+    // Monthly performance
+    const monthlyPerformance: MonthlyPerformance[] = data.agentMonthlyChart.labels?.map((label, i) => ({
+      month: label,
+      tickets: volArr[i] || 0,
+      frt: frtArr[i] || 0,
+      art: artArr[i] || 0,
+      fcr: fcrArr[i] || 0,
+      sla: slaArr[i] || 0,
+      score: scoreArr[i] || 0,
+      grade: scoreArr[i] >= 75 ? 'A' : scoreArr[i] >= 60 ? 'B' : scoreArr[i] >= 45 ? 'C' : 'D'
+    })) || [];
+
+    // Milestones
+    const milestones: Milestone[] = [];
+    if (monthlyPerformance.length > 0) {
+      // Best month
+      const bestMonth = monthlyPerformance.reduce((a, b) => b.score > a.score ? b : a);
+      milestones.push({
+        date: bestMonth.month,
+        type: 'achievement',
+        title: 'Best Performance Month',
+        description: `Achieved highest score of ${bestMonth.score} with ${bestMonth.tickets} tickets`,
+        value: bestMonth.score
+      });
+
+      // First month
+      milestones.push({
+        date: monthlyPerformance[0].month,
+        type: 'milestone',
+        title: 'Career Start',
+        description: `Started with ${monthlyPerformance[0].tickets} tickets`,
+        value: monthlyPerformance[0].tickets
+      });
+
+      // Grade improvements
+      let currentGrade = monthlyPerformance[0].grade;
+      monthlyPerformance.forEach((month, i) => {
+        if (month.grade !== currentGrade) {
+          milestones.push({
+            date: month.month,
+            type: 'improvement',
+            title: `Grade ${currentGrade} → ${month.grade}`,
+            description: `Improved from Grade ${currentGrade} to ${month.grade}`,
+            value: month.score
+          });
+          currentGrade = month.grade;
+        }
+      });
+    }
+
+    // KPI Analysis
+    const kpiAnalysis: KPIAnalysis = {
+      frt: {
+        trend: getTrendDirection(frtArr.slice(-3)),
+        avg: frtArr.length ? frtArr.reduce((a, b) => a + b, 0) / frtArr.length : 0,
+        best: Math.min(...frtArr.filter(v => v > 0)),
+        worst: Math.max(...frtArr),
+        target: 60
+      },
+      art: {
+        trend: getTrendDirection(artArr.slice(-3)),
+        avg: artArr.length ? artArr.reduce((a, b) => a + b, 0) / artArr.length : 0,
+        best: Math.min(...artArr.filter(v => v > 0)),
+        worst: Math.max(...artArr),
+        target: 1440
+      },
+      fcr: {
+        trend: getTrendDirection(fcrArr.slice(-3)),
+        avg: fcrArr.length ? fcrArr.reduce((a, b) => a + b, 0) / fcrArr.length : 0,
+        best: Math.max(...fcrArr),
+        worst: Math.min(...fcrArr),
+        target: 75
+      },
+      sla: {
+        trend: getTrendDirection(slaArr.slice(-3)),
+        avg: slaArr.length ? slaArr.reduce((a, b) => a + b, 0) / slaArr.length : 0,
+        best: Math.max(...slaArr),
+        worst: Math.min(...slaArr),
+        target: 85
+      },
+      volume: {
+        trend: getTrendDirection(volArr.slice(-3)),
+        total: totalTickets,
+        avg: volArr.length ? volArr.reduce((a, b) => a + b, 0) / volArr.length : 0,
+        peak: Math.max(...volArr)
+      }
+    };
+
+    // Shift Analysis
+    const shiftCount = { pagi: 0, siang: 0, malam: 0 };
+    const shiftScores = { pagi: [] as number[], siang: [] as number[], malam: [] as number[] };
+    
+    agentTickets.forEach(t => {
+      if (!t.openTime) return;
+      const hour = new Date(t.openTime).getHours();
+      let shift: keyof typeof shiftCount;
+      if (hour >= 6 && hour < 14) shift = 'pagi';
+      else if (hour >= 14 && hour < 22) shift = 'siang';
+      else shift = 'malam';
+      
+      shiftCount[shift]++;
+      // Find corresponding score for this ticket's month
+      const ticketMonth = `${new Date(t.openTime).getFullYear()}-${String(new Date(t.openTime).getMonth() + 1).padStart(2, '0')}`;
+      const monthIndex = data.agentMonthlyChart.labels?.findIndex(label => label.includes(ticketMonth.split('-')[1])) || -1;
+      if (monthIndex >= 0 && scoreArr[monthIndex]) {
+        shiftScores[shift].push(scoreArr[monthIndex]);
+      }
+    });
+
+    const totalShiftTickets = Object.values(shiftCount).reduce((a, b) => a + b, 0);
+    const shiftAnalysis: ShiftAnalysis = {
+      pagi: {
+        count: shiftCount.pagi,
+        percentage: totalShiftTickets > 0 ? (shiftCount.pagi / totalShiftTickets) * 100 : 0,
+        avgScore: shiftScores.pagi.length ? shiftScores.pagi.reduce((a, b) => a + b, 0) / shiftScores.pagi.length : 0
+      },
+      siang: {
+        count: shiftCount.siang,
+        percentage: totalShiftTickets > 0 ? (shiftCount.siang / totalShiftTickets) * 100 : 0,
+        avgScore: shiftScores.siang.length ? shiftScores.siang.reduce((a, b) => a + b, 0) / shiftScores.siang.length : 0
+      },
+      malam: {
+        count: shiftCount.malam,
+        percentage: totalShiftTickets > 0 ? (shiftCount.malam / totalShiftTickets) * 100 : 0,
+        avgScore: shiftScores.malam.length ? shiftScores.malam.reduce((a, b) => a + b, 0) / shiftScores.malam.length : 0
+      },
+      optimal: Object.entries(shiftScores).reduce((a, b) => 
+        (a[1].length ? a[1].reduce((x, y) => x + y, 0) / a[1].length : 0) > 
+        (b[1].length ? b[1].reduce((x, y) => x + y, 0) / b[1].length : 0) ? a : b
+      )[0]
+    };
+
+    // Category Analysis
+    const categoryMap = {};
+    agentTickets.forEach(t => {
+      const category = t.category || 'Uncategorized';
+      if (!categoryMap[category]) {
+        categoryMap[category] = { count: 0, scores: [] };
+      }
+      categoryMap[category].count++;
+      
+      // Find corresponding score
+      const ticketMonth = `${new Date(t.openTime).getFullYear()}-${String(new Date(t.openTime).getMonth() + 1).padStart(2, '0')}`;
+      const monthIndex = data.agentMonthlyChart.labels?.findIndex(label => label.includes(ticketMonth.split('-')[1])) || -1;
+      if (monthIndex >= 0 && scoreArr[monthIndex]) {
+        categoryMap[category].scores.push(scoreArr[monthIndex]);
+      }
+    });
+
+    const categories = Object.entries(categoryMap).map(([name, data]: [string, any]) => ({
+      name,
+      count: data.count,
+      avgScore: data.scores.length ? data.scores.reduce((a, b) => a + b, 0) / data.scores.length : 0,
+      percentage: (data.count / totalTickets) * 100
+    })).sort((a, b) => b.count - a.count);
+
+    const categoryAnalysis: CategoryAnalysis = {
+      categories,
+      strongest: categories.length > 0 ? categories[0].name : 'N/A',
+      weakest: categories.length > 0 ? categories[categories.length - 1].name : 'N/A'
+    };
+
+    // Strengths & Weaknesses
+    const strengths: string[] = [];
+    const weaknesses: string[] = [];
+
+    if (kpiAnalysis.fcr.avg >= 75) strengths.push('Excellent First Call Resolution');
+    if (kpiAnalysis.sla.avg >= 85) strengths.push('Strong SLA Compliance');
+    if (kpiAnalysis.frt.avg <= 60) strengths.push('Fast Response Time');
+    if (kpiAnalysis.art.avg <= 1440) strengths.push('Efficient Resolution Time');
+    if (grade === 'A') strengths.push('Consistent High Performance');
+
+    if (kpiAnalysis.fcr.avg < 60) weaknesses.push('Low First Call Resolution Rate');
+    if (kpiAnalysis.sla.avg < 70) weaknesses.push('SLA Compliance Issues');
+    if (kpiAnalysis.frt.avg > 120) weaknesses.push('Slow Response Time');
+    if (kpiAnalysis.art.avg > 2880) weaknesses.push('Long Resolution Time');
+    if (grade === 'D') weaknesses.push('Performance Below Standards');
+
+    // Recommendations
+    const recommendations: string[] = [];
+    if (kpiAnalysis.frt.avg > 60) recommendations.push('Focus on reducing First Response Time');
+    if (kpiAnalysis.art.avg > 1440) recommendations.push('Improve resolution efficiency');
+    if (kpiAnalysis.fcr.avg < 75) recommendations.push('Enhance first-call resolution skills');
+    if (kpiAnalysis.sla.avg < 85) recommendations.push('Prioritize SLA compliance');
+    if (shiftAnalysis.optimal !== 'siang') recommendations.push(`Consider optimizing ${shiftAnalysis.optimal} shift performance`);
+
+    return {
+      agentName,
+      startDate,
+      endDate,
+      totalMonths,
+      overallScore,
+      grade,
+      rank,
+      totalTickets,
+      monthlyPerformance,
+      milestones,
+      kpiAnalysis,
+      shiftAnalysis,
+      categoryAnalysis,
+      strengths,
+      weaknesses,
+      recommendations
+    };
+  }
   const fastestResolution = agentWithScore.reduce((a, b) => (b.art < a.art ? b : a), agentWithScore[0]);
   const bestSLA = agentWithScore.reduce((a, b) => (b.sla > a.sla ? b : a), agentWithScore[0]);
   const mostReliable = agentWithScore.filter(a => a.backlog === 0).reduce((a, b) => (b.fcr > a.fcr ? b : a), agentWithScore[0]);
@@ -862,7 +1190,323 @@ const AgentAnalytics = () => {
                       </tbody>
                     </table>
                   </div>
-    </div>
+                </div>
+
+                {/* Agent Career Report */}
+                {(() => {
+                  const report = generateAgentReport(selectedAgent);
+                  if (!report) return null;
+                  
+                  return (
+                    <div className="mt-8 space-y-6">
+                      {/* Report Header */}
+                      <div className="border-b border-gray-200 dark:border-gray-700 pb-4">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Agent Career Report</h2>
+                            <p className="text-sm text-gray-600 dark:text-gray-400">
+                              {report.agentName} • {report.totalMonths} months experience • {report.startDate.toLocaleDateString()} - {report.endDate.toLocaleDateString()}
+                            </p>
+                          </div>
+                          <div className="flex gap-2">
+                            <button 
+                              onClick={() => exportToPDF(report)}
+                              className="flex items-center gap-2 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                            >
+                              <Download size={16} />
+                              Export PDF
+                            </button>
+                            <button 
+                              onClick={() => exportToExcel(report)}
+                              className="flex items-center gap-2 px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                            >
+                              <FileText size={16} />
+                              Export Excel
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Executive Summary */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 rounded-xl p-4">
+                          <div className="flex items-center gap-3">
+                            <div className="p-2 bg-blue-500 rounded-lg">
+                              <Award className="text-white" size={20} />
+                            </div>
+                            <div>
+                              <p className="text-sm text-gray-600 dark:text-gray-400">Overall Grade</p>
+                              <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{report.grade}</p>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 rounded-xl p-4">
+                          <div className="flex items-center gap-3">
+                            <div className="p-2 bg-green-500 rounded-lg">
+                              <Target className="text-white" size={20} />
+                            </div>
+                            <div>
+                              <p className="text-sm text-gray-600 dark:text-gray-400">Overall Score</p>
+                              <p className="text-2xl font-bold text-green-600 dark:text-green-400">{report.overallScore}</p>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 rounded-xl p-4">
+                          <div className="flex items-center gap-3">
+                            <div className="p-2 bg-purple-500 rounded-lg">
+                              <Users className="text-white" size={20} />
+                            </div>
+                            <div>
+                              <p className="text-sm text-gray-600 dark:text-gray-400">Team Rank</p>
+                              <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">#{report.rank}</p>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div className="bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-900/20 dark:to-orange-800/20 rounded-xl p-4">
+                          <div className="flex items-center gap-3">
+                            <div className="p-2 bg-orange-500 rounded-lg">
+                              <BarChart3 className="text-white" size={20} />
+                            </div>
+                            <div>
+                              <p className="text-sm text-gray-600 dark:text-gray-400">Total Tickets</p>
+                              <p className="text-2xl font-bold text-orange-600 dark:text-orange-400">{report.totalTickets.toLocaleString()}</p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Career Timeline */}
+                      <div className="bg-white dark:bg-zinc-800 rounded-xl p-6 shadow-lg">
+                        <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
+                          <Calendar className="text-blue-500" size={20} />
+                          Career Performance Timeline
+                        </h3>
+                        <ResponsiveContainer width="100%" height={200}>
+                          <LineChart data={report.monthlyPerformance}>
+                            <XAxis dataKey="month" />
+                            <YAxis domain={[0, 100]} />
+                            <CartesianGrid strokeDasharray="3 3" />
+                            <Tooltip />
+                            <Line type="monotone" dataKey="score" stroke="#3b82f6" strokeWidth={3} dot={{ fill: '#3b82f6', strokeWidth: 2, r: 4 }} />
+                          </LineChart>
+                        </ResponsiveContainer>
+                      </div>
+
+                      {/* KPI Radar Analysis */}
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <div className="bg-white dark:bg-zinc-800 rounded-xl p-6 shadow-lg">
+                          <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
+                            <Target className="text-green-500" size={20} />
+                            KPI Performance Analysis
+                          </h3>
+                          <ResponsiveContainer width="100%" height={300}>
+                            <RadarChart data={[
+                              {
+                                subject: 'FRT',
+                                A: Math.min((report.kpiAnalysis.frt.target / report.kpiAnalysis.frt.avg) * 100, 100),
+                                B: 100,
+                                fullMark: 100,
+                              },
+                              {
+                                subject: 'ART',
+                                A: Math.min((report.kpiAnalysis.art.target / report.kpiAnalysis.art.avg) * 100, 100),
+                                B: 100,
+                                fullMark: 100,
+                              },
+                              {
+                                subject: 'FCR',
+                                A: report.kpiAnalysis.fcr.avg,
+                                B: 100,
+                                fullMark: 100,
+                              },
+                              {
+                                subject: 'SLA',
+                                A: report.kpiAnalysis.sla.avg,
+                                B: 100,
+                                fullMark: 100,
+                              },
+                              {
+                                subject: 'Volume',
+                                A: Math.min((report.kpiAnalysis.volume.avg / report.kpiAnalysis.volume.peak) * 100, 100),
+                                B: 100,
+                                fullMark: 100,
+                              },
+                            ]}>
+                              <PolarGrid />
+                              <PolarAngleAxis dataKey="subject" />
+                              <PolarRadiusAxis angle={90} domain={[0, 100]} />
+                              <Radar name="Performance" dataKey="A" stroke="#3b82f6" fill="#3b82f6" fillOpacity={0.3} />
+                              <Radar name="Target" dataKey="B" stroke="#ef4444" fill="#ef4444" fillOpacity={0.1} />
+                            </RadarChart>
+                          </ResponsiveContainer>
+                        </div>
+
+                        <div className="bg-white dark:bg-zinc-800 rounded-xl p-6 shadow-lg">
+                          <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
+                            <Clock className="text-purple-500" size={20} />
+                            Shift Performance Analysis
+                          </h3>
+                          <ResponsiveContainer width="100%" height={300}>
+                            <PieChart>
+                              <Pie
+                                data={[
+                                  { name: 'Pagi', value: report.shiftAnalysis.pagi.count, fill: '#3b82f6' },
+                                  { name: 'Siang', value: report.shiftAnalysis.siang.count, fill: '#22c55e' },
+                                  { name: 'Malam', value: report.shiftAnalysis.malam.count, fill: '#f59e0b' },
+                                ]}
+                                cx="50%"
+                                cy="50%"
+                                outerRadius={80}
+                                dataKey="value"
+                                label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                              />
+                            </PieChart>
+                          </ResponsiveContainer>
+                          <div className="mt-4 text-center">
+                            <p className="text-sm text-gray-600 dark:text-gray-400">
+                              Optimal Shift: <span className="font-semibold text-purple-600">{report.shiftAnalysis.optimal}</span>
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Milestones & Achievements */}
+                      <div className="bg-white dark:bg-zinc-800 rounded-xl p-6 shadow-lg">
+                        <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
+                          <Star className="text-yellow-500" size={20} />
+                          Career Milestones & Achievements
+                        </h3>
+                        <div className="space-y-3">
+                          {report.milestones.map((milestone, index) => (
+                            <div key={index} className="flex items-start gap-3 p-3 bg-gray-50 dark:bg-zinc-700 rounded-lg">
+                              <div className={`p-2 rounded-full ${
+                                milestone.type === 'achievement' ? 'bg-green-100 text-green-600' :
+                                milestone.type === 'improvement' ? 'bg-blue-100 text-blue-600' :
+                                'bg-gray-100 text-gray-600'
+                              }`}>
+                                {milestone.type === 'achievement' ? <Award size={16} /> :
+                                 milestone.type === 'improvement' ? <TrendingUp size={16} /> :
+                                 <Calendar size={16} />}
+                              </div>
+                              <div className="flex-1">
+                                <h4 className="font-semibold text-gray-900 dark:text-gray-100">{milestone.title}</h4>
+                                <p className="text-sm text-gray-600 dark:text-gray-400">{milestone.description}</p>
+                                <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">{milestone.date}</p>
+                              </div>
+                              {milestone.value && (
+                                <div className="text-right">
+                                  <span className="text-lg font-bold text-gray-900 dark:text-gray-100">{milestone.value}</span>
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Strengths & Weaknesses */}
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <div className="bg-white dark:bg-zinc-800 rounded-xl p-6 shadow-lg">
+                          <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
+                            <CheckCircle className="text-green-500" size={20} />
+                            Key Strengths
+                          </h3>
+                          <div className="space-y-2">
+                            {report.strengths.length > 0 ? (
+                              report.strengths.map((strength, index) => (
+                                <div key={index} className="flex items-center gap-2 p-2 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                                  <CheckCircle className="text-green-500" size={16} />
+                                  <span className="text-sm text-gray-700 dark:text-gray-300">{strength}</span>
+                                </div>
+                              ))
+                            ) : (
+                              <p className="text-sm text-gray-500 dark:text-gray-400">No significant strengths identified</p>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="bg-white dark:bg-zinc-800 rounded-xl p-6 shadow-lg">
+                          <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
+                            <AlertTriangle className="text-orange-500" size={20} />
+                            Areas for Improvement
+                          </h3>
+                          <div className="space-y-2">
+                            {report.weaknesses.length > 0 ? (
+                              report.weaknesses.map((weakness, index) => (
+                                <div key={index} className="flex items-center gap-2 p-2 bg-orange-50 dark:bg-orange-900/20 rounded-lg">
+                                  <AlertTriangle className="text-orange-500" size={16} />
+                                  <span className="text-sm text-gray-700 dark:text-gray-300">{weakness}</span>
+                                </div>
+                              ))
+                            ) : (
+                              <p className="text-sm text-gray-500 dark:text-gray-400">No significant weaknesses identified</p>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Recommendations */}
+                      <div className="bg-white dark:bg-zinc-800 rounded-xl p-6 shadow-lg">
+                        <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
+                                                     <LightbulbIcon className="text-yellow-500" />
+                          Development Recommendations
+                        </h3>
+                        <div className="space-y-3">
+                          {report.recommendations.map((rec, index) => (
+                            <div key={index} className="flex items-start gap-3 p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
+                                                             <div className="p-1 bg-yellow-100 dark:bg-yellow-800 rounded-full">
+                                 <LightbulbIcon className="text-yellow-600" />
+                               </div>
+                              <span className="text-sm text-gray-700 dark:text-gray-300">{rec}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Category Expertise */}
+                      <div className="bg-white dark:bg-zinc-800 rounded-xl p-6 shadow-lg">
+                        <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
+                          <BarChart3 className="text-indigo-500" size={20} />
+                          Category Expertise Analysis
+                        </h3>
+                        <div className="overflow-x-auto">
+                          <table className="min-w-full text-sm">
+                            <thead>
+                              <tr className="border-b border-gray-200 dark:border-gray-700">
+                                <th className="text-left py-2">Category</th>
+                                <th className="text-right py-2">Tickets</th>
+                                <th className="text-right py-2">Percentage</th>
+                                <th className="text-right py-2">Avg Score</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {report.categoryAnalysis.categories.map((cat, index) => (
+                                <tr key={index} className="border-b border-gray-100 dark:border-gray-800">
+                                  <td className="py-2">{cat.name}</td>
+                                  <td className="text-right py-2">{cat.count}</td>
+                                  <td className="text-right py-2">{cat.percentage.toFixed(1)}%</td>
+                                  <td className="text-right py-2">{cat.avgScore.toFixed(1)}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                        <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                            <p className="text-sm font-semibold text-green-700 dark:text-green-300">Strongest Category</p>
+                            <p className="text-lg font-bold text-green-600 dark:text-green-400">{report.categoryAnalysis.strongest}</p>
+                          </div>
+                          <div className="p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg">
+                            <p className="text-sm font-semibold text-orange-700 dark:text-orange-300">Needs Improvement</p>
+                            <p className="text-lg font-bold text-orange-600 dark:text-orange-400">{report.categoryAnalysis.weakest}</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
               </>
             )}
           </RadixDialog.Content>
