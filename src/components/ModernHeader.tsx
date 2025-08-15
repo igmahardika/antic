@@ -1,8 +1,6 @@
-import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ModeToggle } from './mode-toggle';
-import BarChartIcon from '@mui/icons-material/BarChart';
 import NotificationsIcon from '@mui/icons-material/Notifications';
 import SearchIcon from '@mui/icons-material/Search';
 import SettingsIcon from '@mui/icons-material/Settings';
@@ -16,7 +14,7 @@ const ModernHeader = () => {
         <div className="flex flex-col md:flex-row items-center justify-between h-auto md:h-20 gap-4 md:gap-6">
           {/* Logo & Brand */}
           <div className="flex items-center gap-4 md:gap-6">
-            <img src="/logo-a.png" alt="Antic Logo" className="h-12 w-auto drop-shadow-lg rounded-xl" />
+            <img src="/logo-a.png" alt="Helpdesk Management System Logo" className="h-12 w-auto drop-shadow-lg rounded-xl" />
             <span className="text-2xl font-extrabold text-primary tracking-tight">Insight Dashboard</span>
           </div>
           {/* Search Bar */}

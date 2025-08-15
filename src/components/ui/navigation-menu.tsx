@@ -9,18 +9,13 @@ import BarChartIcon from '@mui/icons-material/BarChart';
 import PersonCheckIcon from '@mui/icons-material/HowToReg';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
-import ShieldIcon from '@mui/icons-material/Security';
-import MenuIcon from '@mui/icons-material/Menu';
-import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
-import ChevronRightIcon from '@mui/icons-material/ChevronRight';
-import Brightness7Icon from '@mui/icons-material/Brightness7';
-import Brightness4Icon from '@mui/icons-material/Brightness4';
+
 import PersonIcon from '@mui/icons-material/Person';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { ModeToggle } from '../mode-toggle';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Tooltip } from '@mui/material';
+
 import LogoutIcon from '@mui/icons-material/Logout';
 import ScienceIcon from '@mui/icons-material/Science';
 import ConfirmationNumberIcon from '@mui/icons-material/ConfirmationNumber';
@@ -258,7 +253,7 @@ export function SidebarNav({ isMobileOpen, setIsMobileOpen, onCollapseChange }) 
   try {
     user = JSON.parse(localStorage.getItem('user') || '{"role":"user"}');
     const permissions = JSON.parse(localStorage.getItem('menuPermissions') || '{}');
-    const allowed = permissions[user.role] || [];
+
     // allowedMenus = allMenus.filter(menu => allowed.includes(menu.name)); // This line is removed
   } catch {}
   // Responsive/collapse logic (hover only)
@@ -278,7 +273,7 @@ export function SidebarNav({ isMobileOpen, setIsMobileOpen, onCollapseChange }) 
   const sidebarClass = `h-full bg-white dark:bg-zinc-900 shadow-xl border-r border-gray-200 dark:border-zinc-800 flex flex-col top-0 left-0 transition-all duration-300 fixed z-40 md:static md:z-auto md:block`;
 
   // Fungsi render menu dan submenu
-  const renderMenu = (menu, idx, parent = false) => {
+  const renderMenu = (menu, parent = false) => {
     if (menu.children && menu.children.length > 0) {
       return (
         <div key={menu.path} className={parent ? '' : 'mb-2'}>
@@ -290,7 +285,7 @@ export function SidebarNav({ isMobileOpen, setIsMobileOpen, onCollapseChange }) 
             <span className={`${autoCollapsed ? 'hidden' : 'block'} transition-all duration-200`} style={{ whiteSpace: 'nowrap' }}>{menu.name}</span>
           </div>
           <div className={`${autoCollapsed ? 'hidden' : 'block'} ml-6`}> {/* Indent submenu */}
-            {menu.children.map((child, cidx) => renderMenu(child, cidx, true))}
+            {menu.children.map((child) => renderMenu(child, true))}
           </div>
         </div>
       );
@@ -340,14 +335,14 @@ export function SidebarNav({ isMobileOpen, setIsMobileOpen, onCollapseChange }) 
         <div className="flex flex-col items-center justify-center pt-6 pb-4 gap-3">
           <img
             src="/logo-a.png"
-            alt="Antic Logo"
+            alt="Helpdesk Management System Logo"
             className="max-w-[90%] h-16 object-contain mx-auto"
             style={{ display: autoCollapsed ? 'none' : 'block' }}
           />
         </div>
         {/* Menu */}
         <nav className="flex flex-col gap-1 px-2">
-          {allowedMenus.map((menu, idx) => renderMenu(menu, idx))}
+          {allowedMenus.map((menu) => renderMenu(menu))}
         </nav>
       </div>
       {/* Bottom section: Avatar/Profile & ModeToggle, modern layout */}
@@ -409,73 +404,7 @@ export function SidebarNav({ isMobileOpen, setIsMobileOpen, onCollapseChange }) 
   );
 }
 
-// Update SidebarProfile to show avatar only when collapsed, avatar+name+role when expanded
-function SidebarProfile({ autoCollapsed }) {
-  const navigate = useNavigate();
-  const user = JSON.parse(localStorage.getItem('user') || '{"role":"user"}');
-  const [open, setOpen] = React.useState(false);
 
-  const handleLogout = async () => {
-    try {
-      const authToken = localStorage.getItem('auth_token');
-      if (authToken) {
-        // Call logout API
-        await fetch('http://localhost:3001/logout', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${authToken}`,
-            'Content-Type': 'application/json',
-          },
-        });
-      }
-    } catch (error) {
-      console.error('Logout API error:', error);
-    } finally {
-      // Clear local storage regardless of API call result
-      localStorage.removeItem('auth_token');
-      localStorage.removeItem('user');
-      localStorage.removeItem('session_id');
-      // DISABLED: Login redirect - Login page is disabled
-      // navigate('/login');
-      navigate('/summary-dashboard');
-    }
-  };
-
-  return (
-    <div className="w-full flex flex-col gap-4 items-start px-4 pb-4">
-      <DropdownMenu open={open} onOpenChange={setOpen}>
-        <DropdownMenuTrigger asChild>
-          <button className="flex items-center gap-3 w-full rounded-xl px-2 py-2 hover:bg-gray-100 dark:hover:bg-zinc-800 transition group focus:outline-none">
-            <Avatar className="h-10 w-10 border-none">
-              <AvatarFallback className="bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300 font-semibold">
-                {user.username ? user.username.charAt(0).toUpperCase() : 'U'}
-              </AvatarFallback>
-            </Avatar>
-            {!autoCollapsed && (
-              <div className="flex flex-col items-start">
-                <span className="font-semibold text-gray-900 dark:text-white text-base leading-tight">{user.username || 'User'}</span>
-                <span className="text-xs text-gray-500 dark:text-gray-400 capitalize">{user.role} Role</span>
-              </div>
-            )}
-            <ExpandMoreIcon className="ml-auto h-4 w-4 text-gray-400 group-hover:text-gray-600 transition" />
-          </button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent className="w-56" align="start">
-          <DropdownMenuLabel>
-            <div className="font-semibold text-gray-900 dark:text-white text-base">{user.username || 'User'}</div>
-            <div className="text-xs text-gray-500 dark:text-gray-400 capitalize">{user.role} Role</div>
-          </DropdownMenuLabel>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-red-500 focus:bg-red-50 focus:text-red-600 dark:focus:bg-red-900/50 dark:focus:text-red-400 font-semibold">
-            <LogoutIcon className="mr-2 h-4 w-4" />
-            <span>Logout</span>
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-      {/* Hanya satu tombol toggle dark/light mode di bawah avatar, tanpa menu popover */}
-    </div>
-  );
-}
 
 export {
   navigationMenuTriggerStyle,

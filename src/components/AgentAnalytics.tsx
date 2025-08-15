@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import 'ag-grid-community/styles/ag-theme-quartz.css';
 import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 import StarIcon from '@mui/icons-material/Star';
@@ -10,8 +10,10 @@ import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import FlashOnIcon from '@mui/icons-material/FlashOn';
 import MenuBookIcon from '@mui/icons-material/MenuBook';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { useAgentStore } from '@/store/agentStore';
 import { useAgentAnalytics } from './AgentAnalyticsContext';
+import jsPDF from 'jspdf';
 import SummaryCard from './ui/SummaryCard';
 import TimeFilter from './TimeFilter';
 import { ListAlt as ListAltIcon, TrendingUp as TrendingUpIcon } from '@mui/icons-material';
@@ -20,28 +22,11 @@ import PageWrapper from './PageWrapper';
 import type { AgentMetric } from '@/utils/agentKpi';
 import { enableBacklogDebug } from '@/utils/agentKpi';
 import { formatDurationDHM } from '@/lib/utils';
-import { 
-  Download, 
-  FileText, 
-  TrendingUp, 
-  TrendingDown, 
-  Target, 
-  Award, 
-  Clock, 
-  Users, 
-  BarChart3,
-  Calendar,
-  Star,
-  AlertTriangle,
-  CheckCircle,
-  XCircle,
-  ArrowUpRight,
-  ArrowDownRight,
-  Minus
-} from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Calendar, Clock, Award, TrendingUp, Users, Target, Activity, BarChart3, Download } from 'lucide-react';
 // Unused import - commented out
 // import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, Legend as RechartsLegend, Tooltip, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, LineChart, Line, PieChart, Pie, Cell, BarChart, Bar } from 'recharts';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, Legend as RechartsLegend, Tooltip } from 'recharts';
 import { Badge } from '@/components/ui/badge';
 import * as RadixDialog from '@radix-ui/react-dialog';
 // Unused import - commented out
@@ -55,66 +40,6 @@ export interface AgentAnalyticsData {
   avgDurationFormatted: string;
   minDurationFormatted: string;
   maxDurationFormatted: string;
-}
-
-// Agent Report Interfaces
-interface MonthlyPerformance {
-  month: string;
-  tickets: number;
-  frt: number;
-  art: number;
-  fcr: number;
-  sla: number;
-  score: number;
-  grade: string;
-}
-
-interface Milestone {
-  date: string;
-  type: 'achievement' | 'improvement' | 'milestone';
-  title: string;
-  description: string;
-  value?: number;
-}
-
-interface KPIAnalysis {
-  frt: { trend: string; avg: number; best: number; worst: number; target: number; };
-  art: { trend: string; avg: number; best: number; worst: number; target: number; };
-  fcr: { trend: string; avg: number; best: number; worst: number; target: number; };
-  sla: { trend: string; avg: number; best: number; worst: number; target: number; };
-  volume: { trend: string; total: number; avg: number; peak: number; };
-}
-
-interface ShiftAnalysis {
-  pagi: { count: number; percentage: number; avgScore: number; };
-  siang: { count: number; percentage: number; avgScore: number; };
-  malam: { count: number; percentage: number; avgScore: number; };
-  optimal: string;
-}
-
-interface CategoryAnalysis {
-  categories: Array<{ name: string; count: number; avgScore: number; percentage: number; }>;
-  strongest: string;
-  weakest: string;
-}
-
-interface AgentReport {
-  agentName: string;
-  startDate: Date;
-  endDate: Date;
-  totalMonths: number;
-  overallScore: number;
-  grade: string;
-  rank: number;
-  totalTickets: number;
-  monthlyPerformance: MonthlyPerformance[];
-  milestones: Milestone[];
-  kpiAnalysis: KPIAnalysis;
-  shiftAnalysis: ShiftAnalysis;
-  categoryAnalysis: CategoryAnalysis;
-  strengths: string[];
-  weaknesses: string[];
-  recommendations: string[];
 }
 
 // Unused function - commented out
@@ -250,16 +175,8 @@ const AgentAnalytics = () => {
     agentMonthlyChart
   } = useAgentAnalytics() || {};
   
-  // Get cutoff dates for filtering
-  const { cutoffStart, cutoffEnd } = useMemo(() => {
-    if (!startMonth || !endMonth || !selectedYear) return { cutoffStart: null, cutoffEnd: null };
-    const y = Number(selectedYear);
-    const mStart = Number(startMonth) - 1;
-    const mEnd = Number(endMonth) - 1;
-    const cutoffStart = new Date(y, mStart, 1, 0, 0, 0, 0);
-    const cutoffEnd = new Date(y, mEnd + 1, 0, 23, 59, 59, 999);
-    return { cutoffStart, cutoffEnd };
-  }, [startMonth, endMonth, selectedYear]);
+  // Note: cutoffStart and cutoffEnd are not used in career report tabs
+  // They are only used for time filtering in the main agent list
   const data = agentAnalyticsData || {};
   const agentMetrics = useAgentStore((state) => state.agentMetrics) as AgentMetric[];
   // Unused state - commented out
@@ -269,19 +186,7 @@ const AgentAnalytics = () => {
   const [selectedAgent, setSelectedAgent] = useState<string | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [backlogDebugEnabled, setBacklogDebugEnabled] = useState(false);
-
-  // Export functions
-  const exportToPDF = (report: AgentReport) => {
-    // TODO: Implement PDF export using @react-pdf/renderer
-    console.log('Exporting to PDF:', report);
-    alert('PDF export feature coming soon!');
-  };
-
-  const exportToExcel = (report: AgentReport) => {
-    // TODO: Implement Excel export using xlsx library
-    console.log('Exporting to Excel:', report);
-    alert('Excel export feature coming soon!');
-  };
+  const [exportYear, setExportYear] = useState('all');
 
   useEffect(() => {
     console.log('Agent Metrics DEBUG:', agentMetrics);
@@ -292,6 +197,533 @@ const AgentAnalytics = () => {
     const newState = !backlogDebugEnabled;
     setBacklogDebugEnabled(newState);
     enableBacklogDebug(newState);
+  };
+
+  // Function to export agent career report to PDF
+  const exportToPDF = async () => {
+    if (!selectedAgent) return;
+    
+    try {
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      const margin = 20;
+      
+      let yPosition = margin;
+      
+      // Helper functions for professional report design
+      const addHeader = (title: string, subtitle: string) => {
+        pdf.setFontSize(24);
+        pdf.setFont('helvetica', 'bold');
+        pdf.setTextColor(17, 24, 39);
+        pdf.text(title, pageWidth / 2, yPosition, { align: 'center' });
+        yPosition += 8;
+        
+        pdf.setFontSize(14);
+        pdf.setFont('helvetica', 'normal');
+        pdf.setTextColor(107, 114, 128);
+        pdf.text(subtitle, pageWidth / 2, yPosition, { align: 'center' });
+        yPosition += 15;
+      };
+      
+      const addSectionTitle = (title: string) => {
+        pdf.setFontSize(16);
+        pdf.setFont('helvetica', 'bold');
+        pdf.setTextColor(17, 24, 39);
+        pdf.text(title, margin, yPosition);
+        yPosition += 8;
+        
+        // Add underline
+        pdf.setDrawColor(59, 130, 246);
+        pdf.setLineWidth(1);
+        pdf.line(margin, yPosition, margin + 40, yPosition);
+        yPosition += 8;
+      };
+      
+      const addSubsectionTitle = (title: string) => {
+        pdf.setFontSize(12);
+        pdf.setFont('helvetica', 'bold');
+        pdf.setTextColor(55, 65, 81);
+        pdf.text(title, margin, yPosition);
+        yPosition += 6;
+      };
+      
+
+      
+      const addInsightBox = (title: string, description: string, impact: string, y: number) => {
+        const boxWidth = pageWidth - (margin * 2);
+        const boxHeight = 25;
+        
+        // Draw box
+        pdf.setFillColor(248, 250, 252);
+        pdf.setDrawColor(226, 232, 240);
+        pdf.setLineWidth(0.5);
+        pdf.roundedRect(margin, y, boxWidth, boxHeight, 2, 2, 'FD');
+        
+        // Title
+        pdf.setFontSize(11);
+        pdf.setFont('helvetica', 'bold');
+        pdf.setTextColor(17, 24, 39);
+        pdf.text(title, margin + 5, y + 6);
+        
+        // Impact badge
+        const impactColor = impact === 'HIGH' ? [239, 68, 68] : impact === 'MEDIUM' ? [245, 158, 11] : [34, 197, 94];
+        pdf.setTextColor(impactColor[0], impactColor[1], impactColor[2]);
+        pdf.text(`[${impact}]`, margin + 5, y + 16);
+        
+        // Description
+        pdf.setFontSize(9);
+        pdf.setFont('helvetica', 'normal');
+        pdf.setTextColor(107, 114, 128);
+        const descLines = pdf.splitTextToSize(description, boxWidth - 10);
+        pdf.text(descLines, margin + 5, y + 22);
+      };
+      
+      const addParagraph = (text: string) => {
+        pdf.setFontSize(10);
+        pdf.setFont('helvetica', 'normal');
+        pdf.setTextColor(55, 65, 81);
+        const lines = pdf.splitTextToSize(text, pageWidth - (margin * 2));
+        pdf.text(lines, margin, yPosition);
+        yPosition += lines.length * 5 + 3;
+      };
+      
+
+      
+      // ===== PROFESSIONAL REPORT HEADER =====
+      addHeader('Agent Career Report', `Performance Analysis for ${selectedAgent}`);
+      
+      // Report metadata
+      pdf.setFontSize(10);
+      pdf.setFont('helvetica', 'normal');
+      pdf.setTextColor(107, 114, 128);
+      pdf.text(`Report Period: ${exportYear === 'all' ? 'All Time Career Data' : exportYear}`, margin, yPosition);
+      pdf.text(`Generated: ${new Date().toLocaleDateString('en-US', { 
+        year: 'numeric', 
+        month: 'short', 
+        day: 'numeric' 
+      })}`, pageWidth - margin - 60, yPosition);
+      yPosition += 8;
+      
+      // Executive Summary
+      addParagraph(`This report provides a comprehensive analysis of ${selectedAgent}'s performance throughout their career. The analysis covers key performance indicators, efficiency metrics, quality standards, and actionable insights for continuous improvement.`);
+      
+      yPosition += 5;
+      
+      // ===== GET AGENT DATA =====
+      const agentTickets = allTickets?.filter(t => t.openBy === selectedAgent) || [];
+      let filteredTickets = agentTickets;
+      
+      if (exportYear !== 'all') {
+        filteredTickets = agentTickets.filter(t => {
+          if (!t.openTime) return false;
+          const ticketYear = new Date(t.openTime).getFullYear().toString();
+          return ticketYear === exportYear;
+        });
+      }
+      
+      // Calculate all metrics
+      const totalTickets = filteredTickets.length;
+      
+      // Tenure calculation
+      const validTickets = filteredTickets.filter(t => {
+        if (!t.openTime) return false;
+        const date = new Date(t.openTime);
+        return !isNaN(date.getTime());
+      });
+      
+      const firstTicket = validTickets.length > 0 ? 
+        validTickets.reduce((earliest, t) => {
+          const currentDate = new Date(t.openTime);
+          const earliestDate = new Date(earliest.openTime);
+          return currentDate < earliestDate ? t : earliest;
+        }) : null;
+        
+      const lastTicket = validTickets.length > 0 ? 
+        validTickets.reduce((latest, t) => {
+          const currentDate = new Date(t.openTime);
+          const latestDate = new Date(latest.openTime);
+          return currentDate > latestDate ? t : latest;
+        }) : null;
+      
+      let tenure = 0;
+      if (firstTicket && lastTicket) {
+        const firstDate = new Date(firstTicket.openTime);
+        const lastDate = new Date(lastTicket.openTime);
+        if (!isNaN(firstDate.getTime()) && !isNaN(lastDate.getTime())) {
+          tenure = Math.ceil((lastDate.getTime() - firstDate.getTime()) / (1000 * 60 * 60 * 24));
+        }
+      }
+      
+      // AHT calculation
+      const ahtValues = filteredTickets
+        .filter(t => {
+          if (!t.openTime || !t.closeTime) return false;
+          const openDate = new Date(t.openTime);
+          const closeDate = new Date(t.closeTime);
+          return !isNaN(openDate.getTime()) && !isNaN(closeDate.getTime()) && closeDate > openDate;
+        })
+        .map(t => {
+          const open = new Date(t.openTime);
+          const close = new Date(t.closeTime);
+          return (close.getTime() - open.getTime()) / 60000;
+        })
+        .filter(t => t > 0 && t < 10080);
+      
+      const avgAHT = ahtValues.length > 0 ? 
+        ahtValues.reduce((sum, val) => sum + val, 0) / ahtValues.length : 0;
+      
+      // FCR calculation
+      const fcrTickets = filteredTickets.filter(t => {
+        return !t.handling2 || t.handling2.trim() === '';
+      });
+      const fcrRate = totalTickets > 0 ? (fcrTickets.length / totalTickets) * 100 : 0;
+      
+      // SLA calculation
+      const slaCompliant = filteredTickets.filter(t => {
+        if (!t.openTime || !t.closeTime) return false;
+        const openDate = new Date(t.openTime);
+        const closeDate = new Date(t.closeTime);
+        if (isNaN(openDate.getTime()) || isNaN(closeDate.getTime())) return false;
+        if (closeDate <= openDate) return false;
+        
+        const diffMin = (closeDate.getTime() - openDate.getTime()) / 60000;
+        return diffMin <= 1440 && diffMin > 0;
+      }).length;
+      const slaRate = totalTickets > 0 ? (slaCompliant / totalTickets) * 100 : 0;
+      
+      // Escalation calculation
+      const escalated = filteredTickets.filter(t => {
+        const handlingFields = [t.closeHandling2, t.closeHandling3, t.closeHandling4, t.closeHandling5];
+        return handlingFields.some(h => h && h.trim() !== '');
+      }).length;
+      const escalationRate = totalTickets > 0 ? (escalated / totalTickets) * 100 : 0;
+      
+      // Shift breakdown
+      const shiftCount = { Pagi: 0, Siang: 0, Malam: 0 };
+      filteredTickets.forEach(t => {
+        if (!t.openTime) return;
+        const hour = new Date(t.openTime).getHours();
+        if (hour >= 6 && hour < 14) shiftCount.Pagi++;
+        else if (hour >= 14 && hour < 22) shiftCount.Siang++;
+        else shiftCount.Malam++;
+      });
+      
+      // Calculate CPI
+      const efficiencyScore = Math.max(0, 100 - (avgAHT / 60) * 10);
+      const qualityScore = slaRate;
+      const resolutionScore = fcrRate - escalationRate;
+      const reliabilityScore = Math.max(0, 100 - escalationRate * 5);
+      const productivityScore = Math.min(100, (totalTickets / 100) * 100);
+      
+      const cpi = Math.round(
+        efficiencyScore * 0.25 +
+        qualityScore * 0.30 +
+        resolutionScore * 0.20 +
+        reliabilityScore * 0.15 +
+        productivityScore * 0.10
+      );
+      
+      const getCPILevel = (score: number) => {
+        if (score >= 90) return { level: 'Platinum', color: [147, 51, 234] };
+        if (score >= 70) return { level: 'Gold', color: [245, 158, 11] };
+        if (score >= 40) return { level: 'Silver', color: [107, 114, 128] };
+        return { level: 'Bronze', color: [249, 115, 22] };
+      };
+      
+      const cpiLevel = getCPILevel(cpi);
+      
+      // ===== KEY PERFORMANCE INDICATORS =====
+      addSectionTitle('Key Performance Indicators');
+      
+      // KPI Table Layout with better spacing
+      const col1 = margin;
+      const col2 = margin + 90;
+      const col3 = margin + 170;
+      const col4 = margin + 250;
+      
+      // Header row with better formatting
+      pdf.setFontSize(11);
+      pdf.setFont('helvetica', 'bold');
+      pdf.setTextColor(17, 24, 39);
+      pdf.text('Metric', col1, yPosition);
+      pdf.text('Value', col2, yPosition);
+      pdf.text('Target', col3, yPosition);
+      pdf.text('Status', col4, yPosition);
+      yPosition += 6;
+      
+      // Separator line
+      pdf.setDrawColor(226, 232, 240);
+      pdf.setLineWidth(0.5);
+      pdf.line(margin, yPosition, pageWidth - margin, yPosition);
+      yPosition += 8;
+      
+      // Data rows with improved formatting
+      pdf.setFontSize(10);
+      pdf.setFont('helvetica', 'normal');
+      
+      const kpiData = [
+        { 
+          metric: 'Total Tickets Handled', 
+          value: totalTickets.toLocaleString(), 
+          target: 'N/A', 
+          status: 'Active',
+          statusColor: [107, 114, 128]
+        },
+        { 
+          metric: 'Career Tenure', 
+          value: `${tenure} days`, 
+          target: 'N/A', 
+          status: 'Ongoing',
+          statusColor: [107, 114, 128]
+        },
+        { 
+          metric: 'Average Handle Time', 
+          value: `${Math.floor(avgAHT/60)}h ${Math.floor(avgAHT%60)}m`, 
+          target: '≤24h', 
+          status: avgAHT <= 1440 ? '✅ On Target' : '⚠️ Above Target',
+          statusColor: avgAHT <= 1440 ? [34, 197, 94] : [245, 158, 11]
+        },
+        { 
+          metric: 'SLA Compliance Rate', 
+          value: `${slaRate.toFixed(1)}%`, 
+          target: '≥85%', 
+          status: slaRate >= 85 ? '✅ Exceeding' : '⚠️ Below Target',
+          statusColor: slaRate >= 85 ? [34, 197, 94] : [245, 158, 11]
+        },
+        { 
+          metric: 'FCR Rate', 
+          value: `${fcrRate.toFixed(1)}%`, 
+          target: '≥75%', 
+          status: fcrRate >= 75 ? '✅ Exceeding' : '⚠️ Below Target',
+          statusColor: fcrRate >= 75 ? [34, 197, 94] : [245, 158, 11]
+        },
+        { 
+          metric: 'Escalation Rate', 
+          value: `${escalationRate.toFixed(1)}%`, 
+          target: '≤10%', 
+          status: escalationRate <= 10 ? '✅ On Target' : '⚠️ Above Target',
+          statusColor: escalationRate <= 10 ? [34, 197, 94] : [245, 158, 11]
+        }
+      ];
+      
+      kpiData.forEach(row => {
+        // Metric name
+        pdf.setTextColor(17, 24, 39);
+        pdf.text(row.metric, col1, yPosition);
+        
+        // Value
+        pdf.setFont('helvetica', 'bold');
+        pdf.text(row.value, col2, yPosition);
+        
+        // Target
+        pdf.setFont('helvetica', 'normal');
+        pdf.setTextColor(107, 114, 128);
+        pdf.text(row.target, col3, yPosition);
+        
+        // Status with color
+        pdf.setTextColor(row.statusColor[0], row.statusColor[1], row.statusColor[2]);
+        pdf.setFont('helvetica', 'bold');
+        pdf.text(row.status, col4, yPosition);
+        
+        yPosition += 6;
+      });
+      
+      yPosition += 8;
+      
+      // Shift Distribution with better formatting
+      yPosition += 3;
+      addSubsectionTitle('Shift Distribution');
+      
+      const shiftData = [
+        { shift: 'Pagi', count: shiftCount.Pagi, percentage: ((shiftCount.Pagi/totalTickets)*100).toFixed(1) },
+        { shift: 'Siang', count: shiftCount.Siang, percentage: ((shiftCount.Siang/totalTickets)*100).toFixed(1) },
+        { shift: 'Malam', count: shiftCount.Malam, percentage: ((shiftCount.Malam/totalTickets)*100).toFixed(1) }
+      ];
+      
+      shiftData.forEach((item, index) => {
+        const xPos = margin + (index * 80);
+        
+        // Shift name
+        pdf.setFontSize(10);
+        pdf.setFont('helvetica', 'bold');
+        pdf.setTextColor(17, 24, 39);
+        pdf.text(item.shift, xPos, yPosition);
+        
+        // Count and percentage
+        pdf.setFont('helvetica', 'normal');
+        pdf.setTextColor(107, 114, 128);
+        pdf.text(`${item.count} tickets (${item.percentage}%)`, xPos, yPosition + 5);
+      });
+      
+      yPosition += 12;
+      
+      // ===== CAREER PERFORMANCE INDEX =====
+      addSectionTitle('Career Performance Index');
+      
+      // CPI Score and Level with better formatting
+      pdf.setFontSize(16);
+      pdf.setFont('helvetica', 'bold');
+      pdf.setTextColor(cpiLevel.color[0], cpiLevel.color[1], cpiLevel.color[2]);
+      pdf.text(`Overall Score: ${cpi} (${cpiLevel.level})`, margin, yPosition);
+      yPosition += 10;
+      
+      // CPI Components Table with better layout
+      addSubsectionTitle('Performance Components');
+      
+      const componentData = [
+        { component: 'Efficiency', score: efficiencyScore, weight: '25%', color: [59, 130, 246] },
+        { component: 'Quality', score: qualityScore, weight: '30%', color: [34, 197, 94] },
+        { component: 'Resolution', score: resolutionScore, weight: '20%', color: [168, 85, 247] },
+        { component: 'Reliability', score: reliabilityScore, weight: '15%', color: [249, 115, 22] },
+        { component: 'Productivity', score: productivityScore, weight: '10%', color: [236, 72, 153] }
+      ];
+      
+      componentData.forEach(comp => {
+        // Component name
+        pdf.setFontSize(10);
+        pdf.setFont('helvetica', 'bold');
+        pdf.setTextColor(17, 24, 39);
+        pdf.text(comp.component, margin, yPosition);
+        
+        // Score with color
+        pdf.setTextColor(comp.color[0], comp.color[1], comp.color[2]);
+        pdf.text(`${comp.score.toFixed(0)}`, margin + 80, yPosition);
+        
+        // Weight
+        pdf.setFont('helvetica', 'normal');
+        pdf.setTextColor(107, 114, 128);
+        pdf.text(`(${comp.weight})`, margin + 120, yPosition);
+        
+        yPosition += 5;
+      });
+      
+      yPosition += 8;
+      
+      // Performance Summary with better language
+      const performanceText = `The agent demonstrates ${cpiLevel.level.toLowerCase()} level performance with a balanced approach across all key areas. The ${cpi >= 70 ? 'strong' : 'solid'} foundation in quality and efficiency metrics indicates ${cpi >= 70 ? 'excellent potential for advancement' : 'good potential for development'}.`;
+      addParagraph(performanceText);
+      
+      yPosition += 5;
+      
+      // ===== AUTO INSIGHTS =====
+      addSectionTitle('Key Insights & Recommendations');
+      
+      const insights = [];
+      
+      // Generate comprehensive insights
+      if (avgAHT > 1440) {
+        insights.push({
+          title: 'AHT Above Target',
+          description: `Average Handle Time (${Math.floor(avgAHT/60)}h ${Math.floor(avgAHT%60)}m) exceeds 24-hour target. Consider process optimization and training.`,
+          impact: 'HIGH'
+        });
+      } else if (avgAHT < 720) {
+        insights.push({
+          title: 'Excellent AHT Performance',
+          description: `Average Handle Time (${Math.floor(avgAHT/60)}h ${Math.floor(avgAHT%60)}m) is well below target. Share best practices with team.`,
+          impact: 'POSITIVE'
+        });
+      }
+      
+      if (slaRate < 85) {
+        insights.push({
+          title: 'SLA Below Target',
+          description: `SLA compliance rate (${slaRate.toFixed(1)}%) is below 85% target. Focus on faster resolution and prioritize urgent cases.`,
+          impact: 'HIGH'
+        });
+      } else if (slaRate > 95) {
+        insights.push({
+          title: 'Outstanding SLA Performance',
+          description: `SLA compliance rate (${slaRate.toFixed(1)}%) exceeds 95%. Maintain current standards and share best practices.`,
+          impact: 'POSITIVE'
+        });
+      }
+      
+      if (fcrRate < 75) {
+        insights.push({
+          title: 'FCR Below Target',
+          description: `First Contact Resolution rate (${fcrRate.toFixed(1)}%) is below 75% target. Review knowledge base and improve resolution skills.`,
+          impact: 'HIGH'
+        });
+      } else if (fcrRate > 85) {
+        insights.push({
+          title: 'Excellent FCR Performance',
+          description: `First Contact Resolution rate (${fcrRate.toFixed(1)}%) exceeds 85%. Consider mentoring opportunities for newer agents.`,
+          impact: 'POSITIVE'
+        });
+      }
+      
+      if (escalationRate > 10) {
+        insights.push({
+          title: 'High Escalation Rate',
+          description: `Escalation rate (${escalationRate.toFixed(1)}%) is above 10% threshold. Identify common reasons and provide additional training.`,
+          impact: 'MEDIUM'
+        });
+      } else if (escalationRate < 5) {
+        insights.push({
+          title: 'Low Escalation Rate',
+          description: `Escalation rate (${escalationRate.toFixed(1)}%) is below 5%. Excellent problem-solving skills demonstrated.`,
+          impact: 'POSITIVE'
+        });
+      }
+      
+      if (totalTickets > 500) {
+        insights.push({
+          title: 'High Volume Handler',
+          description: `Handled ${totalTickets.toLocaleString()} tickets - excellent productivity. Consider mentoring opportunities and share workload strategies.`,
+          impact: 'POSITIVE'
+        });
+      }
+      
+      // Always show at least one insight or summary
+      if (insights.length > 0) {
+        insights.forEach((insight) => {
+          addInsightBox(insight.title, insight.description, insight.impact, yPosition);
+          yPosition += 30;
+        });
+      } else {
+        // Show positive summary when all metrics are good
+        addInsightBox(
+          'Consistent Performance', 
+          'All key performance indicators are within target ranges. Continue maintaining current standards and consider advancement opportunities.',
+          'POSITIVE',
+          yPosition
+        );
+        yPosition += 30;
+      }
+      
+      yPosition += 8;
+      
+      // Executive Summary
+      addSectionTitle('Executive Summary');
+      
+      const summaryText = [
+        `${selectedAgent} demonstrates ${cpiLevel.level.toLowerCase()} level performance with a Career Performance Index of ${cpi}.`,
+        `Over ${tenure} days of active service, the agent has handled ${totalTickets} tickets with an average handle time of ${Math.floor(avgAHT/60)}h ${Math.floor(avgAHT%60)}m.`,
+        `Key strengths include ${slaRate >= 85 ? 'excellent SLA compliance' : 'consistent ticket handling'}, while areas for improvement include ${fcrRate < 75 ? 'first contact resolution' : 'overall efficiency'}.`,
+        `The agent shows ${cpi >= 70 ? 'strong potential for advancement' : 'good foundation for development'} and would benefit from ${cpi >= 70 ? 'mentoring opportunities' : 'targeted training programs'}.`
+      ];
+      
+      summaryText.forEach(text => {
+        addParagraph(text);
+      });
+      
+      // Footer
+      yPosition = pageHeight - 15;
+      pdf.setFontSize(8);
+      pdf.setFont('helvetica', 'italic');
+      pdf.setTextColor(107, 114, 128);
+      pdf.text('Generated by Helpdesk Management System', pageWidth / 2, yPosition, { align: 'center' });
+      
+      // Save the PDF
+      const fileName = `Agent_Career_Report_${selectedAgent}_${exportYear === 'all' ? 'AllTime' : exportYear}_${new Date().toISOString().split('T')[0]}.pdf`;
+      pdf.save(fileName);
+      
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      alert('Error generating PDF. Please try again.');
+    }
   };
 
   // Ganti monthOptions agar selalu 12 bulan
@@ -490,242 +922,6 @@ const AgentAnalytics = () => {
   // --- Refactor summaryCards sesuai struktur rekomendasi ---
   const topOverall = agentWithScore.reduce((a, b) => (b.score > a.score ? b : a), agentWithScore[0]);
   const fastestResponder = agentWithScore.reduce((a, b) => (b.frt < a.frt ? b : a), agentWithScore[0]);
-
-  // Generate comprehensive Agent Report
-  function generateAgentReport(agentName: string): AgentReport {
-    if (!data.agentMonthlyChart || !allTickets) {
-      return null;
-    }
-
-    // Get agent's monthly data
-    const volArr = data.agentMonthlyChart.datasets?.find(ds => ds.label === agentName)?.data || [];
-    const frtArr = data.agentMonthlyChart.datasetsFRT?.find(ds => ds.label === agentName)?.data || [];
-    const artArr = data.agentMonthlyChart.datasetsART?.find(ds => ds.label === agentName)?.data || [];
-    const fcrArr = data.agentMonthlyChart.datasetsFCR?.find(ds => ds.label === agentName)?.data || [];
-    const slaArr = data.agentMonthlyChart.datasetsSLA?.find(ds => ds.label === agentName)?.data || [];
-    const scoreArr = getAgentScoreTrend(agentName);
-
-    // Agent's tickets
-    const agentTickets = allTickets.filter(t => t.openBy === agentName);
-    const ticketDates = agentTickets.map(t => new Date(t.openTime)).filter(d => !isNaN(d.getTime()));
-    
-    // Career timeline
-    const startDate = ticketDates.length > 0 ? new Date(Math.min(...ticketDates.map(d => d.getTime()))) : new Date();
-    const endDate = ticketDates.length > 0 ? new Date(Math.max(...ticketDates.map(d => d.getTime()))) : new Date();
-    const totalMonths = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24 * 30));
-
-    // Overall metrics
-    const agentMetric = dataSource.find(m => m.agent === agentName);
-    const overallScore = agentMetric?.score || 0;
-    const grade = agentMetric?.rank || 'D';
-    const rank = sortedAgentWithScore.findIndex(a => a.agent === agentName) + 1;
-    const totalTickets = agentMetric?.vol || 0;
-
-    // Monthly performance
-    const monthlyPerformance: MonthlyPerformance[] = data.agentMonthlyChart.labels?.map((label, i) => ({
-      month: label,
-      tickets: volArr[i] || 0,
-      frt: frtArr[i] || 0,
-      art: artArr[i] || 0,
-      fcr: fcrArr[i] || 0,
-      sla: slaArr[i] || 0,
-      score: scoreArr[i] || 0,
-      grade: scoreArr[i] >= 75 ? 'A' : scoreArr[i] >= 60 ? 'B' : scoreArr[i] >= 45 ? 'C' : 'D'
-    })) || [];
-
-    // Milestones
-    const milestones: Milestone[] = [];
-    if (monthlyPerformance.length > 0) {
-      // Best month
-      const bestMonth = monthlyPerformance.reduce((a, b) => b.score > a.score ? b : a);
-      milestones.push({
-        date: bestMonth.month,
-        type: 'achievement',
-        title: 'Best Performance Month',
-        description: `Achieved highest score of ${bestMonth.score} with ${bestMonth.tickets} tickets`,
-        value: bestMonth.score
-      });
-
-      // First month
-      milestones.push({
-        date: monthlyPerformance[0].month,
-        type: 'milestone',
-        title: 'Career Start',
-        description: `Started with ${monthlyPerformance[0].tickets} tickets`,
-        value: monthlyPerformance[0].tickets
-      });
-
-      // Grade improvements
-      let currentGrade = monthlyPerformance[0].grade;
-      monthlyPerformance.forEach((month, i) => {
-        if (month.grade !== currentGrade) {
-          milestones.push({
-            date: month.month,
-            type: 'improvement',
-            title: `Grade ${currentGrade} → ${month.grade}`,
-            description: `Improved from Grade ${currentGrade} to ${month.grade}`,
-            value: month.score
-          });
-          currentGrade = month.grade;
-        }
-      });
-    }
-
-    // KPI Analysis
-    const kpiAnalysis: KPIAnalysis = {
-      frt: {
-        trend: getTrendDirection(frtArr.slice(-3)),
-        avg: frtArr.length ? frtArr.reduce((a, b) => a + b, 0) / frtArr.length : 0,
-        best: Math.min(...frtArr.filter(v => v > 0)),
-        worst: Math.max(...frtArr),
-        target: 60
-      },
-      art: {
-        trend: getTrendDirection(artArr.slice(-3)),
-        avg: artArr.length ? artArr.reduce((a, b) => a + b, 0) / artArr.length : 0,
-        best: Math.min(...artArr.filter(v => v > 0)),
-        worst: Math.max(...artArr),
-        target: 1440
-      },
-      fcr: {
-        trend: getTrendDirection(fcrArr.slice(-3)),
-        avg: fcrArr.length ? fcrArr.reduce((a, b) => a + b, 0) / fcrArr.length : 0,
-        best: Math.max(...fcrArr),
-        worst: Math.min(...fcrArr),
-        target: 75
-      },
-      sla: {
-        trend: getTrendDirection(slaArr.slice(-3)),
-        avg: slaArr.length ? slaArr.reduce((a, b) => a + b, 0) / slaArr.length : 0,
-        best: Math.max(...slaArr),
-        worst: Math.min(...slaArr),
-        target: 85
-      },
-      volume: {
-        trend: getTrendDirection(volArr.slice(-3)),
-        total: totalTickets,
-        avg: volArr.length ? volArr.reduce((a, b) => a + b, 0) / volArr.length : 0,
-        peak: Math.max(...volArr)
-      }
-    };
-
-    // Shift Analysis
-    const shiftCount = { pagi: 0, siang: 0, malam: 0 };
-    const shiftScores = { pagi: [] as number[], siang: [] as number[], malam: [] as number[] };
-    
-    agentTickets.forEach(t => {
-      if (!t.openTime) return;
-      const hour = new Date(t.openTime).getHours();
-      let shift: keyof typeof shiftCount;
-      if (hour >= 6 && hour < 14) shift = 'pagi';
-      else if (hour >= 14 && hour < 22) shift = 'siang';
-      else shift = 'malam';
-      
-      shiftCount[shift]++;
-      // Find corresponding score for this ticket's month
-      const ticketMonth = `${new Date(t.openTime).getFullYear()}-${String(new Date(t.openTime).getMonth() + 1).padStart(2, '0')}`;
-      const monthIndex = data.agentMonthlyChart.labels?.findIndex(label => label.includes(ticketMonth.split('-')[1])) || -1;
-      if (monthIndex >= 0 && scoreArr[monthIndex]) {
-        shiftScores[shift].push(scoreArr[monthIndex]);
-      }
-    });
-
-    const totalShiftTickets = Object.values(shiftCount).reduce((a, b) => a + b, 0);
-    const shiftAnalysis: ShiftAnalysis = {
-      pagi: {
-        count: shiftCount.pagi,
-        percentage: totalShiftTickets > 0 ? (shiftCount.pagi / totalShiftTickets) * 100 : 0,
-        avgScore: shiftScores.pagi.length ? shiftScores.pagi.reduce((a, b) => a + b, 0) / shiftScores.pagi.length : 0
-      },
-      siang: {
-        count: shiftCount.siang,
-        percentage: totalShiftTickets > 0 ? (shiftCount.siang / totalShiftTickets) * 100 : 0,
-        avgScore: shiftScores.siang.length ? shiftScores.siang.reduce((a, b) => a + b, 0) / shiftScores.siang.length : 0
-      },
-      malam: {
-        count: shiftCount.malam,
-        percentage: totalShiftTickets > 0 ? (shiftCount.malam / totalShiftTickets) * 100 : 0,
-        avgScore: shiftScores.malam.length ? shiftScores.malam.reduce((a, b) => a + b, 0) / shiftScores.malam.length : 0
-      },
-      optimal: Object.entries(shiftScores).reduce((a, b) => 
-        (a[1].length ? a[1].reduce((x, y) => x + y, 0) / a[1].length : 0) > 
-        (b[1].length ? b[1].reduce((x, y) => x + y, 0) / b[1].length : 0) ? a : b
-      )[0]
-    };
-
-    // Category Analysis
-    const categoryMap = {};
-    agentTickets.forEach(t => {
-      const category = t.category || 'Uncategorized';
-      if (!categoryMap[category]) {
-        categoryMap[category] = { count: 0, scores: [] };
-      }
-      categoryMap[category].count++;
-      
-      // Find corresponding score
-      const ticketMonth = `${new Date(t.openTime).getFullYear()}-${String(new Date(t.openTime).getMonth() + 1).padStart(2, '0')}`;
-      const monthIndex = data.agentMonthlyChart.labels?.findIndex(label => label.includes(ticketMonth.split('-')[1])) || -1;
-      if (monthIndex >= 0 && scoreArr[monthIndex]) {
-        categoryMap[category].scores.push(scoreArr[monthIndex]);
-      }
-    });
-
-    const categories = Object.entries(categoryMap).map(([name, data]: [string, any]) => ({
-      name,
-      count: data.count,
-      avgScore: data.scores.length ? data.scores.reduce((a, b) => a + b, 0) / data.scores.length : 0,
-      percentage: (data.count / totalTickets) * 100
-    })).sort((a, b) => b.count - a.count);
-
-    const categoryAnalysis: CategoryAnalysis = {
-      categories,
-      strongest: categories.length > 0 ? categories[0].name : 'N/A',
-      weakest: categories.length > 0 ? categories[categories.length - 1].name : 'N/A'
-    };
-
-    // Strengths & Weaknesses
-    const strengths: string[] = [];
-    const weaknesses: string[] = [];
-
-    if (kpiAnalysis.fcr.avg >= 75) strengths.push('Excellent First Call Resolution');
-    if (kpiAnalysis.sla.avg >= 85) strengths.push('Strong SLA Compliance');
-    if (kpiAnalysis.frt.avg <= 60) strengths.push('Fast Response Time');
-    if (kpiAnalysis.art.avg <= 1440) strengths.push('Efficient Resolution Time');
-    if (grade === 'A') strengths.push('Consistent High Performance');
-
-    if (kpiAnalysis.fcr.avg < 60) weaknesses.push('Low First Call Resolution Rate');
-    if (kpiAnalysis.sla.avg < 70) weaknesses.push('SLA Compliance Issues');
-    if (kpiAnalysis.frt.avg > 120) weaknesses.push('Slow Response Time');
-    if (kpiAnalysis.art.avg > 2880) weaknesses.push('Long Resolution Time');
-    if (grade === 'D') weaknesses.push('Performance Below Standards');
-
-    // Recommendations
-    const recommendations: string[] = [];
-    if (kpiAnalysis.frt.avg > 60) recommendations.push('Focus on reducing First Response Time');
-    if (kpiAnalysis.art.avg > 1440) recommendations.push('Improve resolution efficiency');
-    if (kpiAnalysis.fcr.avg < 75) recommendations.push('Enhance first-call resolution skills');
-    if (kpiAnalysis.sla.avg < 85) recommendations.push('Prioritize SLA compliance');
-    if (shiftAnalysis.optimal !== 'siang') recommendations.push(`Consider optimizing ${shiftAnalysis.optimal} shift performance`);
-
-    return {
-      agentName,
-      startDate,
-      endDate,
-      totalMonths,
-      overallScore,
-      grade,
-      rank,
-      totalTickets,
-      monthlyPerformance,
-      milestones,
-      kpiAnalysis,
-      shiftAnalysis,
-      categoryAnalysis,
-      strengths,
-      weaknesses,
-      recommendations
-    };
-  }
   const fastestResolution = agentWithScore.reduce((a, b) => (b.art < a.art ? b : a), agentWithScore[0]);
   const bestSLA = agentWithScore.reduce((a, b) => (b.sla > a.sla ? b : a), agentWithScore[0]);
   const mostReliable = agentWithScore.filter(a => a.backlog === 0).reduce((a, b) => (b.fcr > a.fcr ? b : a), agentWithScore[0]);
@@ -1027,11 +1223,31 @@ const AgentAnalytics = () => {
         <RadixDialog.Portal>
           <RadixDialog.Overlay className="fixed inset-0 bg-black/50 z-50" />
           <RadixDialog.Content className="fixed right-0 top-0 h-full w-full md:w-[800px] max-w-full bg-white dark:bg-zinc-900 shadow-2xl z-50 overflow-y-auto p-8">
+            <RadixDialog.Title className="sr-only">Agent Detail</RadixDialog.Title>
             <div className="flex items-center justify-between mb-6">
               <div className="text-2xl font-bold text-gray-900 dark:text-gray-100">Agent Detail</div>
+              <div className="flex items-center gap-2">
+                <select 
+                  className="px-3 py-2 border rounded-md text-sm bg-white dark:bg-gray-800 dark:border-gray-600"
+                  onChange={(e) => setExportYear(e.target.value)}
+                  value={exportYear}
+                >
+                  <option value="all">All Time</option>
+                  <option value="2025">2025</option>
+                  <option value="2024">2024</option>
+                  <option value="2023">2023</option>
+                </select>
+                <Button 
+                  onClick={exportToPDF}
+                  className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white"
+                >
+                  <Download className="w-4 h-4" />
+                  Export PDF
+                </Button>
               <RadixDialog.Close asChild>
                 <button className="text-blue-700 dark:text-blue-300 hover:text-red-500 text-4xl font-extrabold focus:outline-none transition-colors duration-150" aria-label="Close agent detail">&times;</button>
               </RadixDialog.Close>
+              </div>
             </div>
             {selectedAgent && (
               <>
@@ -1147,366 +1363,1223 @@ const AgentAnalytics = () => {
                     </div>
                   );
                 })()}
-                {/* Shift Highlight tetap di bawah */}
-                <div className="mt-4">
-                  <div className="font-bold mb-2">Shift Breakdown</div>
-                  <div className="overflow-x-auto">
-                    <table className="min-w-full text-xs border">
-                      <thead>
-                        <tr className="bg-zinc-100 dark:bg-zinc-800">
-                          <th className="px-2 py-1">Shift</th>
-                          <th className="px-2 py-1">Ticket Count</th>
-                        </tr>
-                      </thead>
-                      <tbody>
+                                 {/* Agent Career Report Tabs */}
+                 <Tabs defaultValue="overview" className="w-full mt-6">
+                   <TabsList className="grid w-full grid-cols-6">
+                     <TabsTrigger value="overview" className="flex items-center gap-2">
+                       <Activity className="w-4 h-4" />
+                       Overview
+                     </TabsTrigger>
+                     <TabsTrigger value="career" className="flex items-center gap-2">
+                       <Award className="w-4 h-4" />
+                       Career Report
+                     </TabsTrigger>
+                     <TabsTrigger value="performance" className="flex items-center gap-2">
+                       <Target className="w-4 h-4" />
+                       Performance
+                     </TabsTrigger>
+                     <TabsTrigger value="insights" className="flex items-center gap-2">
+                       <LightbulbIcon className="w-4 h-4" />
+                       Auto Insights
+                     </TabsTrigger>
+                     <TabsTrigger value="trends" className="flex items-center gap-2">
+                       <TrendingUp className="w-4 h-4" />
+                       Trends
+                     </TabsTrigger>
+                     <TabsTrigger value="details" className="flex items-center gap-2">
+                       <BarChart3 className="w-4 h-4" />
+                       Details
+                     </TabsTrigger>
+                   </TabsList>
+
+                                     {/* Overview Tab - Summary of All Career Data */}
+                   <TabsContent value="overview" className="mt-4">
                         {(() => {
+                       // Calculate overview metrics using all career data
+                       const agentTickets = allTickets?.filter(t => t.openBy === selectedAgent) || [];
+                       
+                       if (agentTickets.length === 0) {
+                         return (
+                           <div className="text-center py-8 text-gray-500">
+                             <Activity className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+                             <p>No career data available for this agent.</p>
+                           </div>
+                         );
+                       }
+                       
+                       // Calculate all career metrics for overview
+                       const totalTickets = agentTickets.length;
+                       
+                       // Tenure calculation
+                       const validTickets = agentTickets.filter(t => {
+                         if (!t.openTime) return false;
+                         const date = new Date(t.openTime);
+                         return !isNaN(date.getTime());
+                       });
+                       
+                       const firstTicket = validTickets.length > 0 ? 
+                         validTickets.reduce((earliest, t) => {
+                           const currentDate = new Date(t.openTime);
+                           const earliestDate = new Date(earliest.openTime);
+                           return currentDate < earliestDate ? t : earliest;
+                         }) : null;
+                         
+                       const lastTicket = validTickets.length > 0 ? 
+                         validTickets.reduce((latest, t) => {
+                           const currentDate = new Date(t.openTime);
+                           const latestDate = new Date(latest.openTime);
+                           return currentDate > latestDate ? t : latest;
+                         }) : null;
+                       
+                       let tenure = 0;
+                       if (firstTicket && lastTicket) {
+                         const firstDate = new Date(firstTicket.openTime);
+                         const lastDate = new Date(lastTicket.openTime);
+                         if (!isNaN(firstDate.getTime()) && !isNaN(lastDate.getTime())) {
+                           tenure = Math.ceil((lastDate.getTime() - firstDate.getTime()) / (1000 * 60 * 60 * 24));
+                         }
+                       }
+                       
+                       // Performance metrics
+                       const closedTickets = agentTickets.filter(t => {
+                         const status = (t.status || '').trim().toLowerCase();
+                         return status.includes('close') || status.includes('closed');
+                       }).length;
+                       
+                       const ahtValues = agentTickets
+                         .filter(t => {
+                           if (!t.openTime || !t.closeTime) return false;
+                           const openDate = new Date(t.openTime);
+                           const closeDate = new Date(t.closeTime);
+                           return !isNaN(openDate.getTime()) && !isNaN(closeDate.getTime()) && closeDate > openDate;
+                         })
+                         .map(t => {
+                           const open = new Date(t.openTime);
+                           const close = new Date(t.closeTime);
+                           return (close.getTime() - open.getTime()) / 60000;
+                         })
+                         .filter(t => t > 0 && t < 10080);
+                       
+                       const avgAHT = ahtValues.length > 0 ? 
+                         ahtValues.reduce((sum, val) => sum + val, 0) / ahtValues.length : 0;
+                       
+                       const fcrTickets = agentTickets.filter(t => {
+                         return !t.handling2 || t.handling2.trim() === '';
+                       });
+                       const fcrRate = totalTickets > 0 ? (fcrTickets.length / totalTickets) * 100 : 0;
+                       
+                       const slaCompliant = agentTickets.filter(t => {
+                         if (!t.openTime || !t.closeTime) return false;
+                         const openDate = new Date(t.openTime);
+                         const closeDate = new Date(t.closeTime);
+                         if (isNaN(openDate.getTime()) || isNaN(closeDate.getTime())) return false;
+                         if (closeDate <= openDate) return false;
+                         
+                         const diffMin = (closeDate.getTime() - openDate.getTime()) / 60000;
+                         return diffMin <= 1440 && diffMin > 0;
+                       }).length;
+                       const slaRate = totalTickets > 0 ? (slaCompliant / totalTickets) * 100 : 0;
+                       
+                       const escalated = agentTickets.filter(t => {
+                         const handlingFields = [t.closeHandling2, t.closeHandling3, t.closeHandling4, t.closeHandling5];
+                         return handlingFields.some(h => h && h.trim() !== '');
+                       }).length;
+                       const escalationRate = totalTickets > 0 ? (escalated / totalTickets) * 100 : 0;
+                       
+                       // Calculate CPI for overview
+                       const efficiencyScore = Math.max(0, 100 - (avgAHT / 60) * 10);
+                       const qualityScore = slaRate;
+                       const resolutionScore = fcrRate - escalationRate;
+                       const reliabilityScore = Math.max(0, 100 - escalationRate * 5);
+                       const productivityScore = Math.min(100, (totalTickets / 100) * 100);
+                       
+                       const cpi = Math.round(
+                         efficiencyScore * 0.25 +
+                         qualityScore * 0.30 +
+                         resolutionScore * 0.20 +
+                         reliabilityScore * 0.15 +
+                         productivityScore * 0.10
+                       );
+                       
+                       const getCPILevel = (score) => {
+                         if (score >= 90) return { level: 'Platinum', color: 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300' };
+                         if (score >= 70) return { level: 'Gold', color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300' };
+                         if (score >= 40) return { level: 'Silver', color: 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-300' };
+                         return { level: 'Bronze', color: 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300' };
+                       };
+                       
+                       const cpiLevel = getCPILevel(cpi);
+                       
+                       // Shift breakdown for overview
                           const shiftCount = { Pagi: 0, Siang: 0, Malam: 0 };
-                          if (allTickets && selectedAgent) {
-                            // Use filteredTickets from AgentAnalyticsContext instead of allTickets
-                            const agentFilteredTickets = allTickets.filter(t => {
-                              // Apply the same time filtering logic as in AgentAnalyticsContext
-                              if (!cutoffStart || !cutoffEnd) return true;
-                              if (!t.openTime) return false;
-                              const d = new Date(t.openTime);
-                              if (isNaN(d.getTime())) return false;
-                              return d >= cutoffStart && d <= cutoffEnd;
-                            }).filter(t => t.openBy === selectedAgent);
-                            
-                            agentFilteredTickets.forEach(t => {
+                       agentTickets.forEach(t => {
                               if (!t.openTime) return;
                               const hour = new Date(t.openTime).getHours();
                               if (hour >= 6 && hour < 14) shiftCount.Pagi++;
                               else if (hour >= 14 && hour < 22) shiftCount.Siang++;
                               else shiftCount.Malam++;
                             });
-                          }
-                          return Object.entries(shiftCount).map(([shift, count]) => (
-                            <tr key={shift} className="border-b">
-                              <td className="px-2 py-1">{shift}</td>
-                              <td className="px-2 py-1">{count}</td>
+                       
+                       return (
+                         <div className="space-y-6">
+                           {/* Career Summary Header */}
+                           <Card className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20">
+                             <CardContent className="p-6">
+                               <div className="flex items-center justify-between">
+                                 <div>
+                                   <h3 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                                     Career Overview - {selectedAgent}
+                                   </h3>
+                                   <p className="text-gray-600 dark:text-gray-400">
+                                     Comprehensive career summary and performance index
+                                   </p>
+                                 </div>
+                                 <div className="text-center">
+                                   <div className="text-4xl font-bold text-blue-600 dark:text-blue-400 mb-2">
+                                     {cpi}
+                                   </div>
+                                   <span className={`px-3 py-1 rounded-full text-sm font-semibold ${cpiLevel.color}`}>
+                                     {cpiLevel.level}
+                                   </span>
+                                 </div>
+                               </div>
+                             </CardContent>
+                           </Card>
+                           
+                           {/* Key Metrics Grid */}
+                           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                             <Card>
+                               <CardContent className="p-4 text-center">
+                                 <div className="text-2xl font-bold text-blue-600 mb-1">{totalTickets}</div>
+                                 <div className="text-sm text-gray-600 dark:text-gray-400">Total Tickets</div>
+                                 <div className="text-xs text-gray-500">Career Total</div>
+                               </CardContent>
+                             </Card>
+                             
+                             <Card>
+                               <CardContent className="p-4 text-center">
+                                 <div className="text-2xl font-bold text-green-600 mb-1">{tenure}</div>
+                                 <div className="text-sm text-gray-600 dark:text-gray-400">Active Days</div>
+                                 <div className="text-xs text-gray-500">Career Tenure</div>
+                               </CardContent>
+                             </Card>
+                             
+                             <Card>
+                               <CardContent className="p-4 text-center">
+                                 <div className="text-2xl font-bold text-purple-600 mb-1">{slaRate.toFixed(1)}%</div>
+                                 <div className="text-sm text-gray-600 dark:text-gray-400">SLA Rate</div>
+                                 <div className="text-xs text-gray-500">Quality Metric</div>
+                               </CardContent>
+                             </Card>
+                             
+                             <Card>
+                               <CardContent className="p-4 text-center">
+                                 <div className="text-2xl font-bold text-orange-600 mb-1">{fcrRate.toFixed(1)}%</div>
+                                 <div className="text-sm text-gray-600 dark:text-gray-400">FCR Rate</div>
+                                 <div className="text-xs text-gray-500">Resolution Metric</div>
+                               </CardContent>
+                             </Card>
+                           </div>
+                           
+                                                       {/* Performance Summary */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                              <Card>
+                                <CardHeader>
+                                  <CardTitle className="text-lg flex items-center gap-2">
+                                    <TrendingUp className="w-5 h-5" />
+                                    Performance Summary
+                                  </CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                  <div className="space-y-4">
+                                    <div className="flex justify-between items-center">
+                                      <span className="text-sm text-gray-600 dark:text-gray-400">Average Handle Time</span>
+                                      <span className="font-semibold">{formatDurationDHM(avgAHT)}</span>
+                                    </div>
+                                    <div className="flex justify-between items-center">
+                                      <span className="text-sm text-gray-600 dark:text-gray-400">Closed Tickets</span>
+                                      <span className="font-semibold">{closedTickets} / {totalTickets}</span>
+                                    </div>
+                                    <div className="flex justify-between items-center">
+                                      <span className="text-sm text-gray-600 dark:text-gray-400">Escalation Rate</span>
+                                      <span className="font-semibold">{escalationRate.toFixed(1)}%</span>
+                                    </div>
+                                    <div className="flex justify-between items-center">
+                                      <span className="text-sm text-gray-600 dark:text-gray-400">Career Start</span>
+                                      <span className="font-semibold">{firstTicket ? new Date(firstTicket.openTime).toLocaleDateString() : 'N/A'}</span>
+                                    </div>
+                                  </div>
+                                </CardContent>
+                              </Card>
+                              
+                              <Card>
+                                <CardHeader>
+                                  <CardTitle className="text-lg flex items-center gap-2">
+                                    <BarChart3 className="w-5 h-5" />
+                                    Shift Distribution
+                                  </CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                  <div className="space-y-4">
+                                    {Object.entries(shiftCount).map(([shift, count]) => (
+                                      <div key={shift} className="flex justify-between items-center">
+                                        <span className="text-sm text-gray-600 dark:text-gray-400">{shift}</span>
+                                        <span className="font-semibold">{count} tickets</span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </CardContent>
+                              </Card>
+                            </div>
+                            
+                            {/* Quick Insights Summary */}
+                            <Card>
+                              <CardHeader>
+                                <CardTitle className="text-lg flex items-center gap-2">
+                                  <LightbulbIcon className="w-5 h-5" />
+                                  Quick Insights
+                                </CardTitle>
+                              </CardHeader>
+                              <CardContent>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                  <div className="space-y-3">
+                                    <div className="flex items-center gap-2">
+                                      <div className={`w-3 h-3 rounded-full ${
+                                        avgAHT > 1440 ? 'bg-red-500' : avgAHT < 720 ? 'bg-green-500' : 'bg-yellow-500'
+                                      }`}></div>
+                                      <span className="text-sm">
+                                        {avgAHT > 1440 ? 'AHT Above Target' : avgAHT < 720 ? 'Excellent AHT' : 'Good AHT Performance'}
+                                      </span>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                      <div className={`w-3 h-3 rounded-full ${
+                                        slaRate < 85 ? 'bg-red-500' : slaRate > 95 ? 'bg-green-500' : 'bg-yellow-500'
+                                      }`}></div>
+                                      <span className="text-sm">
+                                        {slaRate < 85 ? 'SLA Below Target' : slaRate > 95 ? 'Outstanding SLA' : 'Good SLA Performance'}
+                                      </span>
+                                    </div>
+                                  </div>
+                                  <div className="space-y-3">
+                                    <div className="flex items-center gap-2">
+                                      <div className={`w-3 h-3 rounded-full ${
+                                        fcrRate < 75 ? 'bg-red-500' : 'bg-green-500'
+                                      }`}></div>
+                                      <span className="text-sm">
+                                        {fcrRate < 75 ? 'FCR Below Target' : 'Good FCR Performance'}
+                                      </span>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                      <div className={`w-3 h-3 rounded-full ${
+                                        escalationRate > 10 ? 'bg-yellow-500' : 'bg-green-500'
+                                      }`}></div>
+                                      <span className="text-sm">
+                                        {escalationRate > 10 ? 'High Escalation Rate' : 'Low Escalation Rate'}
+                                      </span>
+                                    </div>
+                                  </div>
+                                </div>
+                              </CardContent>
+                            </Card>
+                         </div>
+                       );
+                     })()}
+                   </TabsContent>
+
+                  {/* Career Report Tab */}
+                  <TabsContent value="career" className="mt-4">
+                    {(() => {
+                      // Calculate career metrics with proper validation
+                      const agentTickets = allTickets?.filter(t => t.openBy === selectedAgent) || [];
+                      
+                      // Validate and find first/last tickets with proper date handling
+                      const validTickets = agentTickets.filter(t => {
+                        if (!t.openTime) return false;
+                        const date = new Date(t.openTime);
+                        return !isNaN(date.getTime());
+                      });
+                      
+                      const firstTicket = validTickets.length > 0 ? 
+                        validTickets.reduce((earliest, t) => {
+                          const currentDate = new Date(t.openTime);
+                          const earliestDate = new Date(earliest.openTime);
+                          return currentDate < earliestDate ? t : earliest;
+                        }) : null;
+                        
+                      const lastTicket = validTickets.length > 0 ? 
+                        validTickets.reduce((latest, t) => {
+                          const currentDate = new Date(t.openTime);
+                          const latestDate = new Date(latest.openTime);
+                          return currentDate > latestDate ? t : latest;
+                        }) : null;
+                      
+                      // Calculate tenure with validation
+                      let tenure = 0;
+                      if (firstTicket && lastTicket) {
+                        const firstDate = new Date(firstTicket.openTime);
+                        const lastDate = new Date(lastTicket.openTime);
+                        if (!isNaN(firstDate.getTime()) && !isNaN(lastDate.getTime())) {
+                          tenure = Math.ceil((lastDate.getTime() - firstDate.getTime()) / (1000 * 60 * 60 * 24));
+                        }
+                      }
+                      
+                      const totalTickets = agentTickets.length;
+                      
+                      // Calculate closed tickets with proper status validation
+                      const closedTickets = agentTickets.filter(t => {
+                        const status = (t.status || '').trim().toLowerCase();
+                        return status.includes('close') || status.includes('closed');
+                      }).length;
+                      
+                      // Calculate AHT (Average Handle Time) with validation
+                      const ahtValues = agentTickets
+                        .filter(t => {
+                          if (!t.openTime || !t.closeTime) return false;
+                          const openDate = new Date(t.openTime);
+                          const closeDate = new Date(t.closeTime);
+                          return !isNaN(openDate.getTime()) && !isNaN(closeDate.getTime()) && closeDate > openDate;
+                        })
+                        .map(t => {
+                          const open = new Date(t.openTime);
+                          const close = new Date(t.closeTime);
+                          return (close.getTime() - open.getTime()) / 60000; // in minutes
+                        })
+                        .filter(t => t > 0 && t < 10080); // Filter out unreasonable values (>1 week)
+                      
+                      const avgAHT = ahtValues.length > 0 ? 
+                        ahtValues.reduce((sum, val) => sum + val, 0) / ahtValues.length : 0;
+                      
+                      // Calculate FCR (First Contact Resolution) - tickets without second handling
+                      const fcrTickets = agentTickets.filter(t => {
+                        // Check if there's no second handling (handling2 is empty/null/undefined)
+                        return !t.handling2 || t.handling2.trim() === '';
+                      });
+                      const fcrRate = totalTickets > 0 ? (fcrTickets.length / totalTickets) * 100 : 0;
+                      
+                      // Calculate SLA compliance with validation
+                      const slaCompliant = agentTickets.filter(t => {
+                        if (!t.openTime || !t.closeTime) return false;
+                        const openDate = new Date(t.openTime);
+                        const closeDate = new Date(t.closeTime);
+                        if (isNaN(openDate.getTime()) || isNaN(closeDate.getTime())) return false;
+                        if (closeDate <= openDate) return false; // Invalid time range
+                        
+                        const diffMin = (closeDate.getTime() - openDate.getTime()) / 60000;
+                        return diffMin <= 1440 && diffMin > 0; // 24 hours max, must be positive
+                      }).length;
+                      
+                      const slaRate = totalTickets > 0 ? (slaCompliant / totalTickets) * 100 : 0;
+                      
+                      // Calculate FRT (First Response Time) with validation
+                      const frtValues = agentTickets
+                        .filter(t => {
+                          if (!t.openTime || !t.closeHandling) return false;
+                          const openDate = new Date(t.openTime);
+                          const handlingDate = new Date(t.closeHandling);
+                          return !isNaN(openDate.getTime()) && !isNaN(handlingDate.getTime()) && handlingDate > openDate;
+                        })
+                        .map(t => {
+                          const open = new Date(t.openTime);
+                          const handling = new Date(t.closeHandling);
+                          return (handling.getTime() - open.getTime()) / 60000;
+                        })
+                        .filter(t => t > 0 && t < 10080); // Filter out unreasonable values
+                      
+                      const avgFRT = frtValues.length > 0 ? 
+                        frtValues.reduce((sum, val) => sum + val, 0) / frtValues.length : 0;
+                      
+                      // Calculate ART (Average Resolution Time) with validation
+                      const artValues = agentTickets
+                        .filter(t => {
+                          if (!t.openTime || !t.closeTime) return false;
+                          const openDate = new Date(t.openTime);
+                          const closeDate = new Date(t.closeTime);
+                          return !isNaN(openDate.getTime()) && !isNaN(closeDate.getTime()) && closeDate > openDate;
+                        })
+                        .map(t => {
+                          const open = new Date(t.openTime);
+                          const close = new Date(t.closeTime);
+                          return (close.getTime() - open.getTime()) / 60000;
+                        })
+                        .filter(t => t > 0 && t < 10080); // Filter out unreasonable values
+                      
+                      const avgART = artValues.length > 0 ? 
+                        artValues.reduce((sum, val) => sum + val, 0) / artValues.length : 0;
+                      
+                      // Calculate backlog with proper validation
+                      const backlog = agentTickets.filter(t => {
+                        const status = (t.status || '').trim().toLowerCase();
+                        const hasCloseTime = t.closeTime && !isNaN(new Date(t.closeTime).getTime());
+                        return !status.includes('close') && !hasCloseTime;
+                      }).length;
+                      
+                      // Calculate escalation rate with validation
+                      const escalated = agentTickets.filter(t => {
+                        const handlingFields = [t.closeHandling2, t.closeHandling3, t.closeHandling4, t.closeHandling5];
+                        return handlingFields.some(h => h && h.trim() !== '');
+                      }).length;
+                      
+                      const escalationRate = totalTickets > 0 ? (escalated / totalTickets) * 100 : 0;
+                      
+                      // Calculate active days with validation
+                      const activeDays = new Set(
+                        agentTickets
+                          .filter(t => {
+                            if (!t.openTime) return false;
+                            const date = new Date(t.openTime);
+                            return !isNaN(date.getTime());
+                          })
+                          .map(t => new Date(t.openTime).toDateString())
+                      ).size;
+                      
+                      // Debug logging for data validation
+                      if (typeof window !== 'undefined' && selectedAgent) {
+                        console.log(`[Agent Career Report] ${selectedAgent} - Data Validation:`, {
+                          totalTickets,
+                          validTickets: validTickets.length,
+                          firstTicket: firstTicket?.openTime,
+                          lastTicket: lastTicket?.openTime,
+                          tenure,
+                          closedTickets,
+                          ahtValues: ahtValues.length,
+                          avgAHT,
+                          fcrTickets: fcrTickets.length,
+                          fcrRate,
+                          slaCompliant,
+                          slaRate,
+                          frtValues: frtValues.length,
+                          avgFRT,
+                          artValues: artValues.length,
+                          avgART,
+                          backlog,
+                          escalated,
+                          escalationRate,
+                          activeDays
+                        });
+                      }
+                      
+                      return (
+                        <div className="space-y-6">
+                          {/* Career Summary Cards */}
+                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                            <Card className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20">
+                              <CardContent className="p-4">
+                                <div className="flex items-center gap-3">
+                                  <Calendar className="w-8 h-8 text-blue-600" />
+                                  <div>
+                                    <p className="text-sm text-gray-600 dark:text-gray-400">Tenure</p>
+                                    <p className="text-xl font-bold text-blue-900 dark:text-blue-100">{tenure} days</p>
+                                  </div>
+                                </div>
+                              </CardContent>
+                            </Card>
+                            
+                            <Card className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20">
+                              <CardContent className="p-4">
+                                <div className="flex items-center gap-3">
+                                  <ListAltIcon className="w-8 h-8 text-green-600" />
+                                  <div>
+                                    <p className="text-sm text-gray-600 dark:text-gray-400">Total Tickets</p>
+                                    <p className="text-xl font-bold text-green-900 dark:text-green-100">{totalTickets.toLocaleString()}</p>
+                                  </div>
+                                </div>
+                              </CardContent>
+                            </Card>
+                            
+                            <Card className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20">
+                              <CardContent className="p-4">
+                                <div className="flex items-center gap-3">
+                                  <Clock className="w-8 h-8 text-purple-600" />
+                                  <div>
+                                    <p className="text-sm text-gray-600 dark:text-gray-400">Avg AHT</p>
+                                    <p className="text-xl font-bold text-purple-900 dark:text-purple-100">{formatDurationDHM(avgAHT)}</p>
+                                  </div>
+                                </div>
+                              </CardContent>
+                            </Card>
+                            
+                            <Card className="bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-900/20 dark:to-orange-800/20">
+                              <CardContent className="p-4">
+                                <div className="flex items-center gap-3">
+                                  <Target className="w-8 h-8 text-orange-600" />
+                                  <div>
+                                    <p className="text-sm text-gray-600 dark:text-gray-400">SLA Rate</p>
+                                    <p className="text-xl font-bold text-orange-900 dark:text-orange-100">{slaRate.toFixed(1)}%</p>
+                                  </div>
+                                </div>
+                              </CardContent>
+                            </Card>
+                          </div>
+
+                          {/* Performance Metrics */}
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <Card>
+                              <CardHeader>
+                                <CardTitle className="text-lg flex items-center gap-2">
+                                  <TrendingUp className="w-5 h-5" />
+                                  Performance Metrics
+                                </CardTitle>
+                              </CardHeader>
+                              <CardContent className="space-y-4">
+                                <div className="grid grid-cols-2 gap-4">
+                                  <div className="text-center p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                                    <p className="text-2xl font-bold text-blue-600">{fcrRate.toFixed(1)}%</p>
+                                    <p className="text-sm text-gray-600 dark:text-gray-400">FCR Rate</p>
+                                  </div>
+                                  <div className="text-center p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                                    <p className="text-2xl font-bold text-green-600">{escalationRate.toFixed(1)}%</p>
+                                    <p className="text-sm text-gray-600 dark:text-gray-400">Escalation Rate</p>
+                                  </div>
+                                  <div className="text-center p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
+                                    <p className="text-2xl font-bold text-purple-600">{formatDurationDHM(avgFRT)}</p>
+                                    <p className="text-sm text-gray-600 dark:text-gray-400">Avg FRT</p>
+                                  </div>
+                                  <div className="text-center p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg">
+                                    <p className="text-2xl font-bold text-orange-600">{formatDurationDHM(avgART)}</p>
+                                    <p className="text-sm text-gray-600 dark:text-gray-400">Avg ART</p>
+                                  </div>
+                                </div>
+                              </CardContent>
+                            </Card>
+
+                            <Card>
+                              <CardHeader>
+                                <CardTitle className="text-lg flex items-center gap-2">
+                                  <Users className="w-5 h-5" />
+                                  Activity Summary
+                                </CardTitle>
+                              </CardHeader>
+                              <CardContent className="space-y-4">
+                                <div className="space-y-3">
+                                  <div className="flex justify-between items-center">
+                                    <span className="text-sm text-gray-600 dark:text-gray-400">Active Days</span>
+                                    <span className="font-semibold">{activeDays} days</span>
+                                  </div>
+                                  <div className="flex justify-between items-center">
+                                    <span className="text-sm text-gray-600 dark:text-gray-400">Closed Tickets</span>
+                                    <span className="font-semibold">{closedTickets.toLocaleString()}</span>
+                                  </div>
+                                  <div className="flex justify-between items-center">
+                                    <span className="text-sm text-gray-600 dark:text-gray-400">Current Backlog</span>
+                                    <span className="font-semibold">{backlog}</span>
+                                  </div>
+                                  <div className="flex justify-between items-center">
+                                    <span className="text-sm text-gray-600 dark:text-gray-400">Resolution Rate</span>
+                                    <span className="font-semibold">{totalTickets > 0 ? ((closedTickets / totalTickets) * 100).toFixed(1) : 0}%</span>
+                                  </div>
+                                </div>
+                              </CardContent>
+                            </Card>
+                          </div>
+
+                          {/* Career Timeline */}
+                          <Card>
+                            <CardHeader>
+                              <CardTitle className="text-lg flex items-center gap-2">
+                                <Calendar className="w-5 h-5" />
+                                Career Timeline
+                              </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                              <div className="space-y-4">
+                                <div className="flex items-center gap-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                                  <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                                  <div>
+                                    <p className="font-semibold">Started Active</p>
+                                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                                      {firstTicket ? new Date(firstTicket.openTime).toLocaleDateString('id-ID', {
+                                        year: 'numeric',
+                                        month: 'long',
+                                        day: 'numeric'
+                                      }) : 'Unknown'}
+                                    </p>
+                                  </div>
+                                </div>
+                                
+                                <div className="flex items-center gap-4 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                                  <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                                  <div>
+                                    <p className="font-semibold">Latest Activity</p>
+                                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                                      {lastTicket ? new Date(lastTicket.openTime).toLocaleDateString('id-ID', {
+                                        year: 'numeric',
+                                        month: 'long',
+                                        day: 'numeric'
+                                      }) : 'Unknown'}
+                                    </p>
+                                  </div>
+                                </div>
+                                
+                                <div className="flex items-center gap-4 p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
+                                  <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
+                                  <div>
+                                    <p className="font-semibold">Career Milestones</p>
+                                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                                      {totalTickets >= 1000 ? '🏆 1000+ Tickets Handled' : 
+                                       totalTickets >= 500 ? '🥉 500+ Tickets Handled' :
+                                       totalTickets >= 100 ? '🥈 100+ Tickets Handled' : '🚀 Getting Started'}
+                                    </p>
+                                  </div>
+                                </div>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        </div>
+                      );
+                    })()}
+                  </TabsContent>
+
+                  {/* Performance Tab - Career Performance Index */}
+                  <TabsContent value="performance" className="mt-4">
+                    {(() => {
+                      // Calculate CPI (Career Performance Index)
+                      const agentTickets = allTickets?.filter(t => t.openBy === selectedAgent) || [];
+                      const totalTickets = agentTickets.length;
+                      
+                      if (totalTickets === 0) {
+                        return (
+                          <div className="text-center py-8 text-gray-500">
+                            <Target className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+                            <p>No performance data available for this agent.</p>
+                          </div>
+                        );
+                      }
+                      
+                      // Calculate all metrics for CPI
+                      
+                      // AHT calculation
+                      const ahtValues = agentTickets
+                        .filter(t => {
+                          if (!t.openTime || !t.closeTime) return false;
+                          const openDate = new Date(t.openTime);
+                          const closeDate = new Date(t.closeTime);
+                          return !isNaN(openDate.getTime()) && !isNaN(closeDate.getTime()) && closeDate > openDate;
+                        })
+                        .map(t => {
+                          const open = new Date(t.openTime);
+                          const close = new Date(t.closeTime);
+                          return (close.getTime() - open.getTime()) / 60000;
+                        })
+                        .filter(t => t > 0 && t < 10080);
+                      
+                      const avgAHT = ahtValues.length > 0 ? 
+                        ahtValues.reduce((sum, val) => sum + val, 0) / ahtValues.length : 0;
+                      
+                      // FCR calculation
+                      const fcrTickets = agentTickets.filter(t => {
+                        return !t.handling2 || t.handling2.trim() === '';
+                      });
+                      const fcrRate = totalTickets > 0 ? (fcrTickets.length / totalTickets) * 100 : 0;
+                      
+                      // SLA calculation
+                      const slaCompliant = agentTickets.filter(t => {
+                        if (!t.openTime || !t.closeTime) return false;
+                        const openDate = new Date(t.openTime);
+                        const closeDate = new Date(t.closeTime);
+                        if (isNaN(openDate.getTime()) || isNaN(closeDate.getTime())) return false;
+                        if (closeDate <= openDate) return false;
+                        
+                        const diffMin = (closeDate.getTime() - openDate.getTime()) / 60000;
+                        return diffMin <= 1440 && diffMin > 0;
+                      }).length;
+                      const slaRate = totalTickets > 0 ? (slaCompliant / totalTickets) * 100 : 0;
+                      
+                      // Escalation calculation
+                      const escalated = agentTickets.filter(t => {
+                        const handlingFields = [t.closeHandling2, t.closeHandling3, t.closeHandling4, t.closeHandling5];
+                        return handlingFields.some(h => h && h.trim() !== '');
+                      }).length;
+                      const escalationRate = totalTickets > 0 ? (escalated / totalTickets) * 100 : 0;
+                      
+                      // Calculate CPI components (simplified version)
+                      const efficiencyScore = Math.max(0, 100 - (avgAHT / 60) * 10); // Normalize AHT
+                      const qualityScore = slaRate; // Use SLA as quality proxy
+                      const resolutionScore = fcrRate - escalationRate; // FCR minus escalation penalty
+                      const reliabilityScore = Math.max(0, 100 - escalationRate * 5); // Penalty for escalation
+                      const productivityScore = Math.min(100, (totalTickets / 100) * 100); // Volume based
+                      
+                      // Calculate CPI with weights
+                      const cpi = Math.round(
+                        efficiencyScore * 0.25 +
+                        qualityScore * 0.30 +
+                        resolutionScore * 0.20 +
+                        reliabilityScore * 0.15 +
+                        productivityScore * 0.10
+                      );
+                      
+                      // Determine CPI level
+                      const getCPILevel = (score) => {
+                        if (score >= 90) return { level: 'Platinum', color: 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300' };
+                        if (score >= 70) return { level: 'Gold', color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300' };
+                        if (score >= 40) return { level: 'Silver', color: 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-300' };
+                        return { level: 'Bronze', color: 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300' };
+                      };
+                      
+                      const cpiLevel = getCPILevel(cpi);
+                      
+                      return (
+                        <div className="space-y-6">
+                          {/* CPI Header */}
+                          <Card className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20">
+                            <CardContent className="p-6">
+                              <div className="flex items-center justify-between">
+                                <div>
+                                  <h3 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                                    Career Performance Index
+                                  </h3>
+                                  <p className="text-gray-600 dark:text-gray-400">
+                                    Comprehensive performance score for {selectedAgent}
+                                  </p>
+                                </div>
+                                <div className="text-center">
+                                  <div className="text-4xl font-bold text-blue-600 dark:text-blue-400 mb-2">
+                                    {cpi}
+                                  </div>
+                                  <span className={`px-3 py-1 rounded-full text-sm font-semibold ${cpiLevel.color}`}>
+                                    {cpiLevel.level}
+                                  </span>
+                                </div>
+                              </div>
+                            </CardContent>
+                          </Card>
+                          
+                          {/* CPI Components */}
+                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+                            <Card>
+                              <CardContent className="p-4 text-center">
+                                <div className="text-2xl font-bold text-blue-600 mb-1">{efficiencyScore.toFixed(0)}</div>
+                                <div className="text-sm text-gray-600 dark:text-gray-400">Efficiency (25%)</div>
+                                <div className="text-xs text-gray-500">AHT: {formatDurationDHM(avgAHT)}</div>
+                              </CardContent>
+                            </Card>
+                            
+                            <Card>
+                              <CardContent className="p-4 text-center">
+                                <div className="text-2xl font-bold text-green-600 mb-1">{qualityScore.toFixed(0)}</div>
+                                <div className="text-sm text-gray-600 dark:text-gray-400">Quality (30%)</div>
+                                <div className="text-xs text-gray-500">SLA: {slaRate.toFixed(1)}%</div>
+                              </CardContent>
+                            </Card>
+                            
+                            <Card>
+                              <CardContent className="p-4 text-center">
+                                <div className="text-2xl font-bold text-purple-600 mb-1">{resolutionScore.toFixed(0)}</div>
+                                <div className="text-sm text-gray-600 dark:text-gray-400">Resolution (20%)</div>
+                                <div className="text-xs text-gray-500">FCR: {fcrRate.toFixed(1)}%</div>
+                              </CardContent>
+                            </Card>
+                            
+                            <Card>
+                              <CardContent className="p-4 text-center">
+                                <div className="text-2xl font-bold text-orange-600 mb-1">{reliabilityScore.toFixed(0)}</div>
+                                <div className="text-sm text-gray-600 dark:text-gray-400">Reliability (15%)</div>
+                                <div className="text-xs text-gray-500">Esc: {escalationRate.toFixed(1)}%</div>
+                              </CardContent>
+                            </Card>
+                            
+                            <Card>
+                              <CardContent className="p-4 text-center">
+                                <div className="text-2xl font-bold text-indigo-600 mb-1">{productivityScore.toFixed(0)}</div>
+                                <div className="text-sm text-gray-600 dark:text-gray-400">Productivity (10%)</div>
+                                <div className="text-xs text-gray-500">Vol: {totalTickets}</div>
+                              </CardContent>
+                            </Card>
+                          </div>
+                          
+                          {/* Performance Breakdown */}
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <Card>
+                              <CardHeader>
+                                <CardTitle className="text-lg flex items-center gap-2">
+                                  <TrendingUp className="w-5 h-5" />
+                                  Performance Metrics
+                                </CardTitle>
+                              </CardHeader>
+                              <CardContent>
+                                <div className="space-y-4">
+                                  <div className="flex justify-between items-center">
+                                    <span className="text-sm text-gray-600 dark:text-gray-400">Average Handle Time</span>
+                                    <span className="font-semibold">{formatDurationDHM(avgAHT)}</span>
+                                  </div>
+                                  <div className="flex justify-between items-center">
+                                    <span className="text-sm text-gray-600 dark:text-gray-400">First Contact Resolution</span>
+                                    <span className="font-semibold">{fcrRate.toFixed(1)}%</span>
+                                  </div>
+                                  <div className="flex justify-between items-center">
+                                    <span className="text-sm text-gray-600 dark:text-gray-400">SLA Compliance</span>
+                                    <span className="font-semibold">{slaRate.toFixed(1)}%</span>
+                                  </div>
+                                  <div className="flex justify-between items-center">
+                                    <span className="text-sm text-gray-600 dark:text-gray-400">Escalation Rate</span>
+                                    <span className="font-semibold">{escalationRate.toFixed(1)}%</span>
+                                  </div>
+                                </div>
+                              </CardContent>
+                            </Card>
+                            
+                            <Card>
+                              <CardHeader>
+                                <CardTitle className="text-lg flex items-center gap-2">
+                                  <Target className="w-5 h-5" />
+                                  Performance Targets
+                                </CardTitle>
+                              </CardHeader>
+                              <CardContent>
+                                <div className="space-y-4">
+                                  <div className="flex justify-between items-center">
+                                    <span className="text-sm text-gray-600 dark:text-gray-400">AHT Target</span>
+                                    <span className="font-semibold">≤ 24h</span>
+                                  </div>
+                                  <div className="flex justify-between items-center">
+                                    <span className="text-sm text-gray-600 dark:text-gray-400">FCR Target</span>
+                                    <span className="font-semibold">≥ 75%</span>
+                                  </div>
+                                  <div className="flex justify-between items-center">
+                                    <span className="text-sm text-gray-600 dark:text-gray-400">SLA Target</span>
+                                    <span className="font-semibold">≥ 85%</span>
+                                  </div>
+                                  <div className="flex justify-between items-center">
+                                    <span className="text-sm text-gray-600 dark:text-gray-400">Escalation Target</span>
+                                    <span className="font-semibold">≤ 10%</span>
+                                  </div>
+                                </div>
+                              </CardContent>
+                            </Card>
+                          </div>
+                        </div>
+                      );
+                    })()}
+                  </TabsContent>
+
+                  {/* Auto Insights Tab */}
+                  <TabsContent value="insights" className="mt-4">
+                    {(() => {
+                      const agentTickets = allTickets?.filter(t => t.openBy === selectedAgent) || [];
+                      const totalTickets = agentTickets.length;
+                      
+                      if (totalTickets === 0) {
+                        return (
+                          <div className="text-center py-8 text-gray-500">
+                            <LightbulbIcon className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+                            <p>No insights available for this agent.</p>
+                          </div>
+                        );
+                      }
+                      
+                      // Calculate metrics for insights
+                      const ahtValues = agentTickets
+                        .filter(t => {
+                          if (!t.openTime || !t.closeTime) return false;
+                          const openDate = new Date(t.openTime);
+                          const closeDate = new Date(t.closeTime);
+                          return !isNaN(openDate.getTime()) && !isNaN(closeDate.getTime()) && closeDate > openDate;
+                        })
+                        .map(t => {
+                          const open = new Date(t.openTime);
+                          const close = new Date(t.closeTime);
+                          return (close.getTime() - open.getTime()) / 60000;
+                        })
+                        .filter(t => t > 0 && t < 10080);
+                      
+                      const avgAHT = ahtValues.length > 0 ? 
+                        ahtValues.reduce((sum, val) => sum + val, 0) / ahtValues.length : 0;
+                      
+                      const fcrTickets = agentTickets.filter(t => {
+                        return !t.handling2 || t.handling2.trim() === '';
+                      });
+                      const fcrRate = totalTickets > 0 ? (fcrTickets.length / totalTickets) * 100 : 0;
+                      
+                      const slaCompliant = agentTickets.filter(t => {
+                        if (!t.openTime || !t.closeTime) return false;
+                        const openDate = new Date(t.openTime);
+                        const closeDate = new Date(t.closeTime);
+                        if (isNaN(openDate.getTime()) || isNaN(closeDate.getTime())) return false;
+                        if (closeDate <= openDate) return false;
+                        
+                        const diffMin = (closeDate.getTime() - openDate.getTime()) / 60000;
+                        return diffMin <= 1440 && diffMin > 0;
+                      }).length;
+                      const slaRate = totalTickets > 0 ? (slaCompliant / totalTickets) * 100 : 0;
+                      
+                      const escalated = agentTickets.filter(t => {
+                        const handlingFields = [t.closeHandling2, t.closeHandling3, t.closeHandling4, t.closeHandling5];
+                        return handlingFields.some(h => h && h.trim() !== '');
+                      }).length;
+                      const escalationRate = totalTickets > 0 ? (escalated / totalTickets) * 100 : 0;
+                      
+                      // Generate insights based on metrics
+                      const insights = [];
+                      
+                      // Efficiency insights
+                      if (avgAHT > 1440) {
+                        insights.push({
+                          category: 'Efficiency',
+                          impact: 'high',
+                          title: 'AHT Above Target',
+                          description: `Average Handle Time (${formatDurationDHM(avgAHT)}) is above 24-hour target.`,
+                          recommendation: 'Review ticket handling process and identify bottlenecks.',
+                          color: 'bg-red-50 border-red-200 dark:bg-red-900/20 dark:border-red-800'
+                        });
+                      } else if (avgAHT < 720) {
+                        insights.push({
+                          category: 'Efficiency',
+                          impact: 'medium',
+                          title: 'Excellent AHT Performance',
+                          description: `Average Handle Time (${formatDurationDHM(avgAHT)}) is well below target.`,
+                          recommendation: 'Share best practices with team members.',
+                          color: 'bg-green-50 border-green-200 dark:bg-green-900/20 dark:border-green-800'
+                        });
+                      }
+                      
+                      // Quality insights
+                      if (slaRate < 85) {
+                        insights.push({
+                          category: 'Quality',
+                          impact: 'high',
+                          title: 'SLA Below Target',
+                          description: `SLA compliance rate (${slaRate.toFixed(1)}%) is below 85% target.`,
+                          recommendation: 'Focus on faster ticket resolution and prioritize urgent cases.',
+                          color: 'bg-red-50 border-red-200 dark:bg-red-900/20 dark:border-red-800'
+                        });
+                      } else if (slaRate > 95) {
+                        insights.push({
+                          category: 'Quality',
+                          impact: 'medium',
+                          title: 'Outstanding SLA Performance',
+                          description: `SLA compliance rate (${slaRate.toFixed(1)}%) exceeds 95%.`,
+                          recommendation: 'Excellent performance! Maintain current standards.',
+                          color: 'bg-green-50 border-green-200 dark:bg-green-900/20 dark:border-green-800'
+                        });
+                      }
+                      
+                      // Resolution insights
+                      if (fcrRate < 75) {
+                        insights.push({
+                          category: 'Resolution',
+                          impact: 'high',
+                          title: 'FCR Below Target',
+                          description: `First Contact Resolution rate (${fcrRate.toFixed(1)}%) is below 75% target.`,
+                          recommendation: 'Review knowledge base and improve first-contact resolution skills.',
+                          color: 'bg-red-50 border-red-200 dark:bg-red-900/20 dark:border-red-800'
+                        });
+                      }
+                      
+                      if (escalationRate > 10) {
+                        insights.push({
+                          category: 'Resolution',
+                          impact: 'medium',
+                          title: 'High Escalation Rate',
+                          description: `Escalation rate (${escalationRate.toFixed(1)}%) is above 10% threshold.`,
+                          recommendation: 'Identify common escalation reasons and provide additional training.',
+                          color: 'bg-yellow-50 border-yellow-200 dark:bg-yellow-900/20 dark:border-yellow-800'
+                        });
+                      }
+                      
+                      // Volume insights
+                      if (totalTickets > 500) {
+                        insights.push({
+                          category: 'Productivity',
+                          impact: 'medium',
+                          title: 'High Volume Handler',
+                          description: `Handled ${totalTickets} tickets - excellent productivity.`,
+                          recommendation: 'Consider mentoring opportunities for newer agents.',
+                          color: 'bg-blue-50 border-blue-200 dark:bg-blue-900/20 dark:border-blue-800'
+                        });
+                      }
+                      
+                      return (
+                        <div className="space-y-6">
+                          <Card>
+                            <CardHeader>
+                              <CardTitle className="text-lg flex items-center gap-2">
+                                <LightbulbIcon className="w-5 h-5" />
+                                Auto Insights & Recommendations
+                              </CardTitle>
+                                                             <p className="text-sm text-muted-foreground">
+                                 AI-powered insights based on performance analysis
+                               </p>
+                            </CardHeader>
+                            <CardContent>
+                              {insights.length > 0 ? (
+                                <div className="space-y-4">
+                                  {insights.map((insight, index) => (
+                                    <div key={index} className={`p-4 rounded-lg border ${insight.color}`}>
+                                      <div className="flex items-start gap-3">
+                                        <div className={`w-2 h-2 rounded-full mt-2 ${
+                                          insight.impact === 'high' ? 'bg-red-500' :
+                                          insight.impact === 'medium' ? 'bg-yellow-500' : 'bg-green-500'
+                                        }`}></div>
+                                        <div className="flex-1">
+                                          <div className="flex items-center gap-2 mb-2">
+                                            <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                                              {insight.title}
+                                            </span>
+                                            <span className={`px-2 py-1 rounded text-xs font-semibold ${
+                                              insight.impact === 'high' ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300' :
+                                              insight.impact === 'medium' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300' :
+                                              'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300'
+                                            }`}>
+                                              {insight.impact.toUpperCase()}
+                                            </span>
+                                          </div>
+                                          <p className="text-sm text-gray-700 dark:text-gray-300 mb-2">
+                                            {insight.description}
+                                          </p>
+                                          <div className="bg-white dark:bg-gray-800 rounded p-3">
+                                            <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-1">
+                                              💡 Recommendation:
+                                            </p>
+                                            <p className="text-sm text-gray-600 dark:text-gray-400">
+                                              {insight.recommendation}
+                                            </p>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              ) : (
+                                <div className="text-center py-8 text-gray-500">
+                                  <LightbulbIcon className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+                                  <p>No specific insights at this time. Performance is within normal ranges.</p>
+                                </div>
+                              )}
+                            </CardContent>
+                          </Card>
+                        </div>
+                      );
+                    })()}
+                  </TabsContent>
+
+                  {/* Trends Tab */}
+                  <TabsContent value="trends" className="mt-4">
+                    <div className="space-y-6">
+                      <Card>
+                        <CardHeader>
+                          <CardTitle className="text-lg flex items-center gap-2">
+                            <TrendingUp className="w-5 h-5" />
+                            Performance Trends (Last 12 Months)
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <ResponsiveContainer width="100%" height={300}>
+                            <AreaChart data={(() => {
+                              const scoreTrendArr = getAgentScoreTrend(selectedAgent);
+                              return Array.isArray(scoreTrendArr)
+                                ? scoreTrendArr.map((score, i) => ({ 
+                                    month: data.agentMonthlyChart.labels?.[i] || `Month ${i+1}`, 
+                                    score,
+                                    trend: score > 60 ? 'Good' : score > 45 ? 'Fair' : 'Needs Improvement'
+                                  }))
+                                : [];
+                            })()}>
+                              <defs>
+                                <linearGradient id="colorScoreTrend" x1="0" y1="0" x2="0" y2="1">
+                                  <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.8}/>
+                                  <stop offset="95%" stopColor="#3b82f6" stopOpacity={0.1}/>
+                                </linearGradient>
+                              </defs>
+                              <XAxis dataKey="month" />
+                              <YAxis domain={[0, 100]} />
+                              <CartesianGrid strokeDasharray="3 3" />
+                              <RechartsTooltip />
+                              <Area type="monotone" dataKey="score" stroke="#3b82f6" fill="url(#colorScoreTrend)" />
+                            </AreaChart>
+                          </ResponsiveContainer>
+                        </CardContent>
+                      </Card>
+                    </div>
+                  </TabsContent>
+
+                  {/* Details Tab */}
+                  <TabsContent value="details" className="mt-4">
+                    <div className="space-y-6">
+                      <Card>
+                        <CardHeader>
+                          <CardTitle className="text-lg flex items-center gap-2">
+                            <BarChart3 className="w-5 h-5" />
+                            Detailed Metrics
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="overflow-x-auto">
+                            <table className="min-w-full text-sm">
+                              <thead>
+                                <tr className="border-b">
+                                  <th className="text-left py-2">Metric</th>
+                                  <th className="text-right py-2">Value</th>
+                                  <th className="text-right py-2">Target</th>
+                                  <th className="text-right py-2">Status</th>
+                                </tr>
+                              </thead>
+                              <tbody className="space-y-2">
+                                {(() => {
+                                  const agentTickets = allTickets?.filter(t => t.openBy === selectedAgent) || [];
+                                  const totalTickets = agentTickets.length;
+                                  
+                                  // Calculate closed tickets with proper validation
+                                  const closedTickets = agentTickets.filter(t => {
+                                    const status = (t.status || '').trim().toLowerCase();
+                                    return status.includes('close') || status.includes('closed');
+                                  }).length;
+                                  
+                                  // Calculate SLA compliance with validation
+                                  const slaCompliant = agentTickets.filter(t => {
+                                    if (!t.openTime || !t.closeTime) return false;
+                                    const openDate = new Date(t.openTime);
+                                    const closeDate = new Date(t.closeTime);
+                                    if (isNaN(openDate.getTime()) || isNaN(closeDate.getTime())) return false;
+                                    if (closeDate <= openDate) return false; // Invalid time range
+                                    
+                                    const diffMin = (closeDate.getTime() - openDate.getTime()) / 60000;
+                                    return diffMin <= 1440 && diffMin > 0; // 24 hours max, must be positive
+                                  }).length;
+                                  
+                                  // Calculate FCR with validation
+                                  const fcrTickets = agentTickets.filter(t => {
+                                    return !t.handling2 || t.handling2.trim() === '';
+                                  });
+                                  
+                                  // Calculate escalation with validation
+                                  const escalated = agentTickets.filter(t => {
+                                    const handlingFields = [t.closeHandling2, t.closeHandling3, t.closeHandling4, t.closeHandling5];
+                                    return handlingFields.some(h => h && h.trim() !== '');
+                                  }).length;
+                                  
+                                  const metrics = [
+                                    { name: 'Total Tickets', value: totalTickets, target: 'N/A', status: 'info' },
+                                    { name: 'Closed Tickets', value: closedTickets, target: totalTickets, status: closedTickets === totalTickets ? 'success' : 'warning' },
+                                    { name: 'SLA Compliance', value: `${((slaCompliant / totalTickets) * 100).toFixed(1)}%`, target: '85%', status: (slaCompliant / totalTickets) * 100 >= 85 ? 'success' : 'warning' },
+                                    { name: 'FCR Rate', value: `${((fcrTickets.length / totalTickets) * 100).toFixed(1)}%`, target: '75%', status: (fcrTickets.length / totalTickets) * 100 >= 75 ? 'success' : 'warning' },
+                                    { name: 'Escalation Rate', value: `${((escalated / totalTickets) * 100).toFixed(1)}%`, target: '<10%', status: (escalated / totalTickets) * 100 < 10 ? 'success' : 'warning' },
+                                  ];
+                                  
+                                  return metrics.map((metric, idx) => (
+                                    <tr key={idx} className="border-b">
+                                      <td className="py-2">{metric.name}</td>
+                                      <td className="text-right py-2 font-mono">{metric.value}</td>
+                                      <td className="text-right py-2 text-gray-500">{metric.target}</td>
+                                      <td className="text-right py-2">
+                                        <span className={`px-2 py-1 rounded text-xs font-semibold ${
+                                          metric.status === 'success' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300' :
+                                          metric.status === 'warning' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300' :
+                                          'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300'
+                                        }`}>
+                                          {metric.status === 'success' ? '✓ Good' : 
+                                           metric.status === 'warning' ? '⚠ Needs Attention' : 'ℹ Info'}
+                                        </span>
+                                      </td>
                             </tr>
                           ));
                         })()}
                       </tbody>
                     </table>
                   </div>
-                </div>
-
-                {/* Agent Career Report */}
-                {(() => {
-                  const report = generateAgentReport(selectedAgent);
-                  if (!report) return null;
-                  
-                  return (
-                    <div className="mt-8 space-y-6">
-                      {/* Report Header */}
-                      <div className="border-b border-gray-200 dark:border-gray-700 pb-4">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Agent Career Report</h2>
-                            <p className="text-sm text-gray-600 dark:text-gray-400">
-                              {report.agentName} • {report.totalMonths} months experience • {report.startDate.toLocaleDateString()} - {report.endDate.toLocaleDateString()}
-                            </p>
-                          </div>
-                          <div className="flex gap-2">
-                            <button 
-                              onClick={() => exportToPDF(report)}
-                              className="flex items-center gap-2 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                            >
-                              <Download size={16} />
-                              Export PDF
-                            </button>
-                            <button 
-                              onClick={() => exportToExcel(report)}
-                              className="flex items-center gap-2 px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-                            >
-                              <FileText size={16} />
-                              Export Excel
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Executive Summary */}
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                        <div className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 rounded-xl p-4">
-                          <div className="flex items-center gap-3">
-                            <div className="p-2 bg-blue-500 rounded-lg">
-                              <Award className="text-white" size={20} />
-                            </div>
-                            <div>
-                              <p className="text-sm text-gray-600 dark:text-gray-400">Overall Grade</p>
-                              <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{report.grade}</p>
-                            </div>
-                          </div>
-                        </div>
-                        
-                        <div className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 rounded-xl p-4">
-                          <div className="flex items-center gap-3">
-                            <div className="p-2 bg-green-500 rounded-lg">
-                              <Target className="text-white" size={20} />
-                            </div>
-                            <div>
-                              <p className="text-sm text-gray-600 dark:text-gray-400">Overall Score</p>
-                              <p className="text-2xl font-bold text-green-600 dark:text-green-400">{report.overallScore}</p>
-                            </div>
-                          </div>
-                        </div>
-                        
-                        <div className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 rounded-xl p-4">
-                          <div className="flex items-center gap-3">
-                            <div className="p-2 bg-purple-500 rounded-lg">
-                              <Users className="text-white" size={20} />
-                            </div>
-                            <div>
-                              <p className="text-sm text-gray-600 dark:text-gray-400">Team Rank</p>
-                              <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">#{report.rank}</p>
-                            </div>
-                          </div>
-                        </div>
-                        
-                        <div className="bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-900/20 dark:to-orange-800/20 rounded-xl p-4">
-                          <div className="flex items-center gap-3">
-                            <div className="p-2 bg-orange-500 rounded-lg">
-                              <BarChart3 className="text-white" size={20} />
-                            </div>
-                            <div>
-                              <p className="text-sm text-gray-600 dark:text-gray-400">Total Tickets</p>
-                              <p className="text-2xl font-bold text-orange-600 dark:text-orange-400">{report.totalTickets.toLocaleString()}</p>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Career Timeline */}
-                      <div className="bg-white dark:bg-zinc-800 rounded-xl p-6 shadow-lg">
-                        <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
-                          <Calendar className="text-blue-500" size={20} />
-                          Career Performance Timeline
-                        </h3>
-                        <ResponsiveContainer width="100%" height={200}>
-                          <LineChart data={report.monthlyPerformance}>
-                            <XAxis dataKey="month" />
-                            <YAxis domain={[0, 100]} />
-                            <CartesianGrid strokeDasharray="3 3" />
-                            <Tooltip />
-                            <Line type="monotone" dataKey="score" stroke="#3b82f6" strokeWidth={3} dot={{ fill: '#3b82f6', strokeWidth: 2, r: 4 }} />
-                          </LineChart>
-                        </ResponsiveContainer>
-                      </div>
-
-                      {/* KPI Radar Analysis */}
-                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        <div className="bg-white dark:bg-zinc-800 rounded-xl p-6 shadow-lg">
-                          <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
-                            <Target className="text-green-500" size={20} />
-                            KPI Performance Analysis
-                          </h3>
-                          <ResponsiveContainer width="100%" height={300}>
-                            <RadarChart data={[
-                              {
-                                subject: 'FRT',
-                                A: Math.min((report.kpiAnalysis.frt.target / report.kpiAnalysis.frt.avg) * 100, 100),
-                                B: 100,
-                                fullMark: 100,
-                              },
-                              {
-                                subject: 'ART',
-                                A: Math.min((report.kpiAnalysis.art.target / report.kpiAnalysis.art.avg) * 100, 100),
-                                B: 100,
-                                fullMark: 100,
-                              },
-                              {
-                                subject: 'FCR',
-                                A: report.kpiAnalysis.fcr.avg,
-                                B: 100,
-                                fullMark: 100,
-                              },
-                              {
-                                subject: 'SLA',
-                                A: report.kpiAnalysis.sla.avg,
-                                B: 100,
-                                fullMark: 100,
-                              },
-                              {
-                                subject: 'Volume',
-                                A: Math.min((report.kpiAnalysis.volume.avg / report.kpiAnalysis.volume.peak) * 100, 100),
-                                B: 100,
-                                fullMark: 100,
-                              },
-                            ]}>
-                              <PolarGrid />
-                              <PolarAngleAxis dataKey="subject" />
-                              <PolarRadiusAxis angle={90} domain={[0, 100]} />
-                              <Radar name="Performance" dataKey="A" stroke="#3b82f6" fill="#3b82f6" fillOpacity={0.3} />
-                              <Radar name="Target" dataKey="B" stroke="#ef4444" fill="#ef4444" fillOpacity={0.1} />
-                            </RadarChart>
-                          </ResponsiveContainer>
-                        </div>
-
-                        <div className="bg-white dark:bg-zinc-800 rounded-xl p-6 shadow-lg">
-                          <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
-                            <Clock className="text-purple-500" size={20} />
-                            Shift Performance Analysis
-                          </h3>
-                          <ResponsiveContainer width="100%" height={300}>
-                            <PieChart>
-                              <Pie
-                                data={[
-                                  { name: 'Pagi', value: report.shiftAnalysis.pagi.count, fill: '#3b82f6' },
-                                  { name: 'Siang', value: report.shiftAnalysis.siang.count, fill: '#22c55e' },
-                                  { name: 'Malam', value: report.shiftAnalysis.malam.count, fill: '#f59e0b' },
-                                ]}
-                                cx="50%"
-                                cy="50%"
-                                outerRadius={80}
-                                dataKey="value"
-                                label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                              />
-                            </PieChart>
-                          </ResponsiveContainer>
-                          <div className="mt-4 text-center">
-                            <p className="text-sm text-gray-600 dark:text-gray-400">
-                              Optimal Shift: <span className="font-semibold text-purple-600">{report.shiftAnalysis.optimal}</span>
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Milestones & Achievements */}
-                      <div className="bg-white dark:bg-zinc-800 rounded-xl p-6 shadow-lg">
-                        <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
-                          <Star className="text-yellow-500" size={20} />
-                          Career Milestones & Achievements
-                        </h3>
-                        <div className="space-y-3">
-                          {report.milestones.map((milestone, index) => (
-                            <div key={index} className="flex items-start gap-3 p-3 bg-gray-50 dark:bg-zinc-700 rounded-lg">
-                              <div className={`p-2 rounded-full ${
-                                milestone.type === 'achievement' ? 'bg-green-100 text-green-600' :
-                                milestone.type === 'improvement' ? 'bg-blue-100 text-blue-600' :
-                                'bg-gray-100 text-gray-600'
-                              }`}>
-                                {milestone.type === 'achievement' ? <Award size={16} /> :
-                                 milestone.type === 'improvement' ? <TrendingUp size={16} /> :
-                                 <Calendar size={16} />}
-                              </div>
-                              <div className="flex-1">
-                                <h4 className="font-semibold text-gray-900 dark:text-gray-100">{milestone.title}</h4>
-                                <p className="text-sm text-gray-600 dark:text-gray-400">{milestone.description}</p>
-                                <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">{milestone.date}</p>
-                              </div>
-                              {milestone.value && (
-                                <div className="text-right">
-                                  <span className="text-lg font-bold text-gray-900 dark:text-gray-100">{milestone.value}</span>
-                                </div>
-                              )}
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-
-                      {/* Strengths & Weaknesses */}
-                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        <div className="bg-white dark:bg-zinc-800 rounded-xl p-6 shadow-lg">
-                          <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
-                            <CheckCircle className="text-green-500" size={20} />
-                            Key Strengths
-                          </h3>
-                          <div className="space-y-2">
-                            {report.strengths.length > 0 ? (
-                              report.strengths.map((strength, index) => (
-                                <div key={index} className="flex items-center gap-2 p-2 bg-green-50 dark:bg-green-900/20 rounded-lg">
-                                  <CheckCircle className="text-green-500" size={16} />
-                                  <span className="text-sm text-gray-700 dark:text-gray-300">{strength}</span>
-                                </div>
-                              ))
-                            ) : (
-                              <p className="text-sm text-gray-500 dark:text-gray-400">No significant strengths identified</p>
-                            )}
-                          </div>
-                        </div>
-
-                        <div className="bg-white dark:bg-zinc-800 rounded-xl p-6 shadow-lg">
-                          <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
-                            <AlertTriangle className="text-orange-500" size={20} />
-                            Areas for Improvement
-                          </h3>
-                          <div className="space-y-2">
-                            {report.weaknesses.length > 0 ? (
-                              report.weaknesses.map((weakness, index) => (
-                                <div key={index} className="flex items-center gap-2 p-2 bg-orange-50 dark:bg-orange-900/20 rounded-lg">
-                                  <AlertTriangle className="text-orange-500" size={16} />
-                                  <span className="text-sm text-gray-700 dark:text-gray-300">{weakness}</span>
-                                </div>
-                              ))
-                            ) : (
-                              <p className="text-sm text-gray-500 dark:text-gray-400">No significant weaknesses identified</p>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Recommendations */}
-                      <div className="bg-white dark:bg-zinc-800 rounded-xl p-6 shadow-lg">
-                        <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
-                                                     <LightbulbIcon className="text-yellow-500" />
-                          Development Recommendations
-                        </h3>
-                        <div className="space-y-3">
-                          {report.recommendations.map((rec, index) => (
-                            <div key={index} className="flex items-start gap-3 p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
-                                                             <div className="p-1 bg-yellow-100 dark:bg-yellow-800 rounded-full">
-                                 <LightbulbIcon className="text-yellow-600" />
-                               </div>
-                              <span className="text-sm text-gray-700 dark:text-gray-300">{rec}</span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-
-                      {/* Category Expertise */}
-                      <div className="bg-white dark:bg-zinc-800 rounded-xl p-6 shadow-lg">
-                        <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
-                          <BarChart3 className="text-indigo-500" size={20} />
-                          Category Expertise Analysis
-                        </h3>
-                        <div className="overflow-x-auto">
-                          <table className="min-w-full text-sm">
-                            <thead>
-                              <tr className="border-b border-gray-200 dark:border-gray-700">
-                                <th className="text-left py-2">Category</th>
-                                <th className="text-right py-2">Tickets</th>
-                                <th className="text-right py-2">Percentage</th>
-                                <th className="text-right py-2">Avg Score</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {report.categoryAnalysis.categories.map((cat, index) => (
-                                <tr key={index} className="border-b border-gray-100 dark:border-gray-800">
-                                  <td className="py-2">{cat.name}</td>
-                                  <td className="text-right py-2">{cat.count}</td>
-                                  <td className="text-right py-2">{cat.percentage.toFixed(1)}%</td>
-                                  <td className="text-right py-2">{cat.avgScore.toFixed(1)}</td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
-                        </div>
-                        <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div className="p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
-                            <p className="text-sm font-semibold text-green-700 dark:text-green-300">Strongest Category</p>
-                            <p className="text-lg font-bold text-green-600 dark:text-green-400">{report.categoryAnalysis.strongest}</p>
-                          </div>
-                          <div className="p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg">
-                            <p className="text-sm font-semibold text-orange-700 dark:text-orange-300">Needs Improvement</p>
-                            <p className="text-lg font-bold text-orange-600 dark:text-orange-400">{report.categoryAnalysis.weakest}</p>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })()}
+                        </CardContent>
+                      </Card>
+    </div>
+                  </TabsContent>
+                </Tabs>
               </>
             )}
           </RadixDialog.Content>

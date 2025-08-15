@@ -1,7 +1,7 @@
-# AN-TIC Analytics Dashboard
+# Helpdesk Management System
 
 ## Overview
-AN-TIC adalah aplikasi dashboard analitik modern untuk monitoring performa agent, tiket, dan customer secara profesional. Dirancang dengan UI/UX modern, clean, dan responsif menggunakan React, Tailwind CSS, dan IndexedDB (Dexie) untuk penyimpanan lokal.
+Helpdesk Management System adalah aplikasi manajemen tiket dan analitik modern untuk monitoring performa agent, tiket, dan customer secara profesional. Dirancang dengan UI/UX modern, clean, dan responsif menggunakan React, Tailwind CSS, dan IndexedDB (Dexie) untuk penyimpanan lokal.
 
 ---
 
@@ -41,8 +41,8 @@ AN-TIC adalah aplikasi dashboard analitik modern untuk monitoring performa agent
 ## Instalasi & Setup
 1. **Clone repo:**
    ```bash
-   git clone https://github.com/igmahardika/antic.git
-   cd antic
+   git clone https://github.com/igmahardika/helpdesk-management-system.git
+   cd helpdesk-management-system
    ```
 2. **Install dependencies:**
    ```bash
