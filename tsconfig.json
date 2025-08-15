@@ -15,7 +15,7 @@
     "allowJs": true,
     "noUnusedLocals": true,
     "strictNullChecks": false,
-    "moduleResolution": "bundler",
+    "moduleResolution": "node",
     "isolatedModules": true,
     "verbatimModuleSyntax": true
   }

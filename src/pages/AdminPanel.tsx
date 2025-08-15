@@ -161,7 +161,7 @@ const AdminPanel: React.FC = () => {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = 'antic-users-export.json';
+      a.download = 'helpdesk-users-export.json';
       a.click();
       URL.revokeObjectURL(url);
     } catch (err) {

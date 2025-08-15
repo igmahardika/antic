@@ -1,7 +1,7 @@
 {
-  "name": "vite_react_shadcn_ts",
+  "name": "helpdesk-management-system",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -9,7 +9,7 @@
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
     "preview": "vite preview",
-    "start": "node antic-backend/server.mjs"
+    "start": "node helpdesk-backend/server.mjs"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
@@ -77,7 +77,10 @@
     "flowbite": "^3.1.2",
     "flowbite-react": "^0.11.8",
     "framer-motion": "^12.19.1",
+    "html2canvas": "^1.4.1",
     "input-otp": "^1.2.4",
+    "jspdf": "^3.0.1",
+    "jspdf-autotable": "^5.0.2",
     "lucide-react": "^0.536.0",
     "next-themes": "^0.4.6",
     "papaparse": "^5.5.3",
@@ -131,17 +134,17 @@
       "environment": "node"
     }
   },
-  "description": "## Project info",
+  "description": "Helpdesk Management System - A comprehensive ticket management and analytics platform",
   "main": "auto-commit.js",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/igmahardika/antic.git"
+    "url": "git+https://github.com/igmahardika/helpdesk-management-system.git"
   },
-  "keywords": [],
+  "keywords": ["helpdesk", "ticket-management", "analytics", "customer-support"],
   "author": "",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/igmahardika/antic/issues"
+    "url": "https://github.com/igmahardika/helpdesk-management-system/issues"
   },
-  "homepage": "https://github.com/igmahardika/antic#readme"
+  "homepage": "https://github.com/igmahardika/helpdesk-management-system#readme"
 }
