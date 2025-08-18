@@ -1402,8 +1402,9 @@ const AgentAnalytics = () => {
                         <AreaChart data={chartData} margin={{ top: 8, right: 8, left: 8, bottom: 8 }}>
                           <defs>
                             <linearGradient id="colorScore" x1="0" y1="0" x2="0" y2="1">
-                              <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.8}/>
-                              <stop offset="95%" stopColor="#3b82f6" stopOpacity={0.1}/>
+                              <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.6}/>
+                              <stop offset="50%" stopColor="#3b82f6" stopOpacity={0.3}/>
+                              <stop offset="95%" stopColor="#3b82f6" stopOpacity={0.05}/>
                             </linearGradient>
                           </defs>
                           <XAxis dataKey="month" tick={{ fontSize: 12 }} />
@@ -2653,8 +2654,9 @@ const AgentAnalytics = () => {
                             })()}>
                               <defs>
                                 <linearGradient id="colorScoreTrend" x1="0" y1="0" x2="0" y2="1">
-                                  <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.8}/>
-                                  <stop offset="95%" stopColor="#3b82f6" stopOpacity={0.1}/>
+                                  <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.6}/>
+                                  <stop offset="50%" stopColor="#3b82f6" stopOpacity={0.3}/>
+                                  <stop offset="95%" stopColor="#3b82f6" stopOpacity={0.05}/>
                                 </linearGradient>
                               </defs>
                               <XAxis dataKey="month" />
