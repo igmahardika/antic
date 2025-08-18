@@ -1157,7 +1157,7 @@ const AgentAnalytics = () => {
                   
                   {/* Summary KPIs - Rank & Score */}
                   <div className="flex gap-3 mb-4">
-                    <div className="flex-1 bg-blue-500 rounded-lg p-3 text-center">
+                    <div className="flex-1 bg-black rounded-lg p-3 text-center">
                       <div className="text-white text-2xl font-bold">#{agent.rankNum}</div>
                       <div className="text-white/80 text-xs">Rank</div>
                     </div>
