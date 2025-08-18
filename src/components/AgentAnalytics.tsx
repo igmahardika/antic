@@ -1132,7 +1132,7 @@ const AgentAnalytics = () => {
                     <img 
                       src={`/agent-photos/${agent.agent}.png`} 
                       alt={agent.agent}
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-cover object-center"
                       onError={(e) => {
                         // Fallback jika foto tidak ada
                         const target = e.target as HTMLImageElement;
@@ -1274,16 +1274,16 @@ const AgentAnalytics = () => {
                 <div className="flex items-center gap-6">
                   {/* Agent Photo */}
                   <div className="w-20 h-20 rounded-full bg-gradient-to-br from-white via-blue-100 to-purple-100 flex items-center justify-center relative overflow-hidden shadow-lg">
-                    <img 
-                      src={`/agent-photos/${selectedAgent}.png`} 
-                      alt={selectedAgent}
-                      className="w-full h-full object-cover rounded-full"
-                      onError={(e) => {
-                        const target = e.target as HTMLImageElement;
-                        target.style.display = 'none';
-                        target.nextElementSibling?.classList.remove('hidden');
-                      }}
-                    />
+                                      <img 
+                    src={`/agent-photos/${selectedAgent}.png`} 
+                    alt={selectedAgent}
+                    className="w-full h-full object-cover object-center rounded-full"
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      target.style.display = 'none';
+                      target.nextElementSibling?.classList.remove('hidden');
+                    }}
+                  />
                     <div className="w-full h-full rounded-full bg-purple-500 flex items-center justify-center text-white text-2xl font-bold hidden">
                       {selectedAgent?.[0] || '?'}
                     </div>
