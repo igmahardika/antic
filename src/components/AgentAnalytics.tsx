@@ -1060,30 +1060,32 @@ const AgentAnalytics = () => {
           {backlogDebugEnabled ? 'Disable' : 'Enable'} Backlog Debug
         </button>
       </div>
-      <div className="flex gap-3 mb-6 overflow-x-auto pb-2">
-        {summaryCards.map(s => {
-          let iconBg;
-          if (s.title === 'Total Active Agents') iconBg = "bg-blue-700";
-          else if (s.title === 'Top Overall Agent') iconBg = "bg-blue-700";
-          else if (s.title === 'Fastest Responder') iconBg = "bg-purple-500";
-          else if (s.title === 'Fastest Resolution') iconBg = "bg-green-600";
-          else if (s.title === 'Best SLA Performer') iconBg = "bg-yellow-400";
-          else if (s.title === 'Most Reliable') iconBg = "bg-red-500";
-          else if (s.title === 'Most Improved Agent') iconBg = "bg-indigo-500";
-          else if (s.title === 'Most Engaged') iconBg = "bg-teal-500";
-          else iconBg = "bg-gray-500";
+      <div className="w-full mb-6">
+        <div className="flex gap-3 overflow-x-auto pb-2 pr-6 scrollbar-hide">
+          {summaryCards.map(s => {
+            let iconBg;
+            if (s.title === 'Total Active Agents') iconBg = "bg-blue-700";
+            else if (s.title === 'Top Overall Agent') iconBg = "bg-blue-700";
+            else if (s.title === 'Fastest Responder') iconBg = "bg-purple-500";
+            else if (s.title === 'Fastest Resolution') iconBg = "bg-green-600";
+            else if (s.title === 'Best SLA Performer') iconBg = "bg-yellow-400";
+            else if (s.title === 'Most Reliable') iconBg = "bg-red-500";
+            else if (s.title === 'Most Improved Agent') iconBg = "bg-indigo-500";
+            else if (s.title === 'Most Engaged') iconBg = "bg-teal-500";
+            else iconBg = "bg-gray-500";
 
-          return (
-        <SummaryCard
-              key={s.title}
-              icon={<s.icon className="w-7 h-7 text-white" />}
-              title={s.title}
-              value={s.value}
-              description={s.description}
-              iconBg={iconBg}
-            />
-          );
-        })}
+            return (
+          <SummaryCard
+                key={s.title}
+                icon={<s.icon className="w-7 h-7 text-white" />}
+                title={s.title}
+                value={s.value}
+                description={s.description}
+                iconBg={iconBg}
+              />
+            );
+          })}
+        </div>
       </div>
       {/* Per-Agent Cards with Trendline */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
