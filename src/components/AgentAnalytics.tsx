@@ -1060,7 +1060,7 @@ const AgentAnalytics = () => {
           {backlogDebugEnabled ? 'Disable' : 'Enable'} Backlog Debug
         </button>
       </div>
-      <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
+      <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3 mb-6 overflow-x-auto">
         {summaryCards.map(s => {
           let iconBg;
           if (s.title === 'Total Active Agents') iconBg = "bg-blue-700";
@@ -1074,26 +1074,14 @@ const AgentAnalytics = () => {
           else iconBg = "bg-gray-500";
 
           return (
-            <div key={s.title} className="min-w-[160px] max-w-[180px] bg-white dark:bg-zinc-900 rounded-xl shadow-sm border border-zinc-200 dark:border-zinc-800 p-4 flex flex-col items-center text-center flex-shrink-0">
-              {/* Icon */}
-              <div className={`w-10 h-10 rounded-lg ${iconBg} flex items-center justify-center mb-3`}>
-                <s.icon className="w-5 h-5 text-white" />
-              </div>
-              {/* Title */}
-              <div className="text-[10px] font-bold text-zinc-700 dark:text-zinc-300 uppercase tracking-wide mb-2 leading-tight min-h-[24px] flex items-center">
-                {s.title}
-              </div>
-              {/* Value */}
-              <div className="text-base font-bold text-zinc-900 dark:text-zinc-100 mb-2 leading-tight min-h-[20px] flex items-center justify-center">
-                {typeof s.value === 'string' && s.value.length > 12 
-                  ? s.value.substring(0, 10) + '...' 
-                  : s.value}
-              </div>
-              {/* Description */}
-              <div className="text-[10px] text-zinc-500 dark:text-zinc-400 leading-tight min-h-[32px] flex items-center justify-center">
-                {s.description}
-              </div>
-            </div>
+        <SummaryCard
+              key={s.title}
+              icon={<s.icon className="w-7 h-7 text-white" />}
+              title={s.title}
+              value={s.value}
+              description={s.description}
+              iconBg={iconBg}
+            />
           );
         })}
       </div>
@@ -1142,10 +1130,10 @@ const AgentAnalytics = () => {
                     />
                     {/* Fallback avatar jika foto tidak ada */}
                     <div className="w-24 h-24 rounded-full bg-white/20 flex items-center justify-center text-white text-3xl font-bold shadow-lg hidden">
-                      {agent.agent?.[0] || '?'}
-                    </div>
-                  </div>
+                  {agent.agent?.[0] || '?'}
                 </div>
+                </div>
+              </div>
                 
                 {/* Right Section - Agent Metrics */}
                 <div className="w-2/3 p-6 flex flex-col">
@@ -1153,12 +1141,12 @@ const AgentAnalytics = () => {
                   <div className="flex items-center gap-3 mb-4">
                     <div className="w-12 h-12 rounded-full bg-purple-500 flex items-center justify-center text-white text-lg font-bold">
                       {agent.agent?.[0] || '?'}
-                    </div>
+                  </div>
                     <div>
                       <div className="text-xl font-bold text-zinc-800 dark:text-zinc-100">{agent.agent}</div>
                       <div className="text-sm text-zinc-500 dark:text-zinc-400">Agent</div>
-                    </div>
-                  </div>
+                </div>
+              </div>
                   
                   {/* Summary KPIs - Rank & Score */}
                   <div className="flex gap-3 mb-4">
@@ -1175,36 +1163,36 @@ const AgentAnalytics = () => {
                   {/* Detailed Metrics Grid */}
                   <div className="grid grid-cols-3 gap-2 mb-4">
                     <div className="flex flex-col items-center">
-                      <ListAltIcon className="text-blue-600 mb-1" fontSize="small" />
+                  <ListAltIcon className="text-blue-600 mb-1" fontSize="small" />
                       <div className="font-bold text-sm">{agent.vol ?? '-'}</div>
-                      <div className="text-xs text-zinc-500 dark:text-zinc-400">Tiket</div>
-                    </div>
+                  <div className="text-xs text-zinc-500 dark:text-zinc-400">Tiket</div>
+                </div>
                     <div className="flex flex-col items-center">
-                      <AccessTimeIcon className="text-purple-600 mb-1" fontSize="small" />
+                  <AccessTimeIcon className="text-purple-600 mb-1" fontSize="small" />
                       <div className="font-bold text-sm">{agent.frt ? formatDurationDHM(agent.frt) : '-'}</div>
-                      <div className="text-xs text-zinc-500 dark:text-zinc-400">FRT</div>
-                    </div>
+                  <div className="text-xs text-zinc-500 dark:text-zinc-400">FRT</div>
+                </div>
                     <div className="flex flex-col items-center">
                       <AccessTimeIcon className="text-red-500 mb-1" fontSize="small" />
                       <div className="font-bold text-sm">{agent.art ? formatDurationDHM(agent.art) : '-'}</div>
-                      <div className="text-xs text-zinc-500 dark:text-zinc-400">ART</div>
-                    </div>
+                  <div className="text-xs text-zinc-500 dark:text-zinc-400">ART</div>
+                </div>
                     <div className="flex flex-col items-center">
-                      <FlashOnIcon className="text-green-600 mb-1" fontSize="small" />
+                  <FlashOnIcon className="text-green-600 mb-1" fontSize="small" />
                       <div className="font-bold text-sm">{agent.fcr !== undefined ? `${agent.fcr.toFixed(1)}%` : '-'}</div>
-                      <div className="text-xs text-zinc-500 dark:text-zinc-400">FCR</div>
-                    </div>
+                  <div className="text-xs text-zinc-500 dark:text-zinc-400">FCR</div>
+                </div>
                     <div className="flex flex-col items-center">
-                      <TrendingUpIcon className="text-yellow-500 mb-1" fontSize="small" />
+                  <TrendingUpIcon className="text-yellow-500 mb-1" fontSize="small" />
                       <div className="font-bold text-sm">{agent.sla !== undefined ? `${agent.sla.toFixed(1)}%` : '-'}</div>
-                      <div className="text-xs text-zinc-500 dark:text-zinc-400">SLA</div>
-                    </div>
+                  <div className="text-xs text-zinc-500 dark:text-zinc-400">SLA</div>
+                </div>
                     <div className="flex flex-col items-center">
-                      <MoveToInboxIcon className="text-red-500 mb-1" fontSize="small" />
+                  <MoveToInboxIcon className="text-red-500 mb-1" fontSize="small" />
                       <div className="font-bold text-sm">{agent.backlog ?? 0}</div>
-                      <div className="text-xs text-zinc-500 dark:text-zinc-400">Backlog</div>
-                    </div>
+                  <div className="text-xs text-zinc-500 dark:text-zinc-400">Backlog</div>
                   </div>
+              </div>
                   
                   {/* Progress Bar */}
                   <div className="w-full h-2 bg-zinc-200 dark:bg-zinc-800 rounded-full overflow-hidden mb-3">
@@ -1214,15 +1202,15 @@ const AgentAnalytics = () => {
                         background: 'linear-gradient(to right, #3b82f6, #22c55e, #fde047)' 
                       }} 
                     />
-                  </div>
+              </div>
                   
                   {/* Alert Message */}
-                  {agent.insight && (
+              {agent.insight && (
                     <div className="flex items-center gap-2 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg px-3 py-2 text-sm text-yellow-800 dark:text-yellow-200">
                       <LightbulbIcon className="text-yellow-500" fontSize="small" />
-                      <span>{agent.insight}</span>
-                    </div>
-                  )}
+                  <span>{agent.insight}</span>
+                </div>
+              )}
                 </div>
               </div>
             </div>
