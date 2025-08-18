@@ -1091,23 +1091,35 @@ const AgentAnalytics = () => {
           // Unused variables - commented out
           // const closedCount = (dataSource.find(a => (a.agent === agent.agent || (a as any).agentName === agent.agent) && typeof (a as any).closedCount !== 'undefined') as any)?.closedCount ?? '-';
           // const scoreTrend = getAgentScoreTrend(agent.agent);
-          // Dynamic style for score box
+          // Dynamic style for score box based on grade
           let scoreBox = {
             bg: 'bg-yellow-400',
             icon: <StarIcon />, 
-            valueColor: 'text-yellow-700',
+            valueColor: 'text-zinc-800',
           };
-          if (agent.score >= 80) {
+          if (agent.score >= 75) {
             scoreBox = {
               bg: 'bg-green-500',
               icon: <StarIcon />, 
-              valueColor: 'text-green-700',
+              valueColor: 'text-white',
             };
-          } else if (agent.score < 60) {
+          } else if (agent.score >= 60) {
+            scoreBox = {
+              bg: 'bg-blue-500',
+              icon: <StarIcon />, 
+              valueColor: 'text-white',
+            };
+          } else if (agent.score >= 45) {
+            scoreBox = {
+              bg: 'bg-orange-500',
+              icon: <StarIcon />, 
+              valueColor: 'text-white',
+            };
+          } else {
             scoreBox = {
               bg: 'bg-red-500',
               icon: <StarIcon />, 
-              valueColor: 'text-red-600',
+              valueColor: 'text-white',
             };
           }
           return (
@@ -1148,11 +1160,11 @@ const AgentAnalytics = () => {
                     <div className="flex-1 bg-blue-500 rounded-lg p-3 text-center">
                       <div className="text-white text-2xl font-bold">#{agent.rankNum}</div>
                       <div className="text-white/80 text-xs">Rank</div>
-                </div>
-                    <div className="flex-1 bg-yellow-400 rounded-lg p-3 text-center">
-                      <div className="text-zinc-800 text-2xl font-bold">{agent.score ?? 0}</div>
-                      <div className="text-zinc-600 text-xs">Score</div>
-              </div>
+                    </div>
+                    <div className={`flex-1 ${scoreBox.bg} rounded-lg p-3 text-center`}>
+                      <div className={`text-2xl font-bold ${scoreBox.valueColor}`}>{agent.score ?? 0}</div>
+                      <div className={`text-xs ${scoreBox.valueColor === 'text-white' ? 'text-white/80' : 'text-zinc-600'}`}>Score</div>
+                    </div>
                   </div>
                   
                   {/* Detailed Metrics Grid */}
