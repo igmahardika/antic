@@ -63,8 +63,17 @@ const SummaryCard: React.FC<SummaryCardProps> = ({
       </div>
     </div>
     <div className="flex items-end min-h-[32px]">
-      <span className="text-xl md:text-2xl lg:text-3xl font-mono font-extrabold tracking-tight">
-        {value}
+      <span className={`font-extrabold tracking-tight break-words ${
+        // Jika value adalah string (nama agent), gunakan font size yang lebih kecil
+        typeof value === 'string' && value.length > 15 
+          ? 'text-sm md:text-base lg:text-lg' 
+          : 'text-xl md:text-2xl lg:text-3xl font-mono'
+      }`}>
+        {typeof value === 'string' && value.length > 20 ? (
+          <span className="truncate block" title={value}>{value}</span>
+        ) : (
+          value
+        )}
       </span>
       {subvalue && (
         <span className="text-sm md:text-base font-semibold text-gray-500 dark:text-gray-300 ml-1 mb-0.5 align-bottom">
