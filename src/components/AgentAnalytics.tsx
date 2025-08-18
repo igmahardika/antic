@@ -179,6 +179,9 @@ const AgentAnalytics = () => {
   // They are only used for time filtering in the main agent list
   const data = agentAnalyticsData || {};
   const agentMetrics = useAgentStore((state) => state.agentMetrics) as AgentMetric[];
+  
+  // Use agentMetrics as data source (excelAgentData functionality removed)
+  const dataSource = agentMetrics;
   // Unused state - commented out
   // const [excelAgentData, setExcelAgentData] = useState<any[]>([]);
   const [debouncedTrendData, setDebouncedTrendData] = useState<any[]>([]);
@@ -191,6 +194,13 @@ const AgentAnalytics = () => {
   useEffect(() => {
     console.log('Agent Metrics DEBUG:', agentMetrics);
   }, [agentMetrics]);
+
+  // Debug: log agent names to check for inconsistencies
+  useEffect(() => {
+    if (dataSource && dataSource.length > 0) {
+      console.log('Agent names in dataSource:', dataSource.map(a => a.agent));
+    }
+  }, [dataSource]);
 
   // Function to toggle backlog debugging
   const toggleBacklogDebug = () => {
@@ -792,9 +802,6 @@ const AgentAnalytics = () => {
   // Unused variable - commented out
   // const sortedAgentList = [...filteredAgentList].sort((a, b) => (b.ticketCount || 0) - (a.ticketCount || 0));
 
-  // Use agentMetrics as data source (excelAgentData functionality removed)
-  const dataSource = agentMetrics;
-
   // --- Normalisasi & Scoring KPI sesuai formula baru ---
   function normalizePositive(actual: number, target: number) {
     return Math.min((actual / target) * 100, 120);
@@ -882,6 +889,20 @@ const AgentAnalytics = () => {
     if (Math.abs(delta) < 1e-2) return 'flat';
     return delta > 0 ? 'up' : 'down';
   }
+
+  // Helper: normalize agent name for photo lookup
+  function getAgentPhotoPath(agentName: string): string {
+    // Special handling for Difa' Fathir Aditya
+    if (agentName.includes('Difa')) {
+      // Try the exact filename first (with apostrophe)
+      return `/agent-photos/Difa' Fathir Aditya.png`;
+    }
+    
+    // For other agents, use the original name
+    return `/agent-photos/${agentName}.png`;
+  }
+
+
   // Helper: insight text per KPI
   function generateKpiInsight(kpi: string, trend: 'up' | 'down' | 'flat') {
     const messages: Record<string, Record<string, string>> = {
@@ -1130,14 +1151,18 @@ const AgentAnalytics = () => {
                   {/* Agent Photo - akan menggunakan foto yang diupload */}
                   <div className="w-full h-full flex items-center justify-center">
                     <img 
-                      src={`/agent-photos/${agent.agent}.png`} 
+                      src={getAgentPhotoPath(agent.agent)} 
                       alt={agent.agent}
                       className="w-full h-full object-cover object-center"
                       onError={(e) => {
                         // Fallback jika foto tidak ada
                         const target = e.target as HTMLImageElement;
+                        console.warn(`[Photo Error] Failed to load image for agent: "${agent.agent}" at path: ${target.src}`);
                         target.style.display = 'none';
                         target.nextElementSibling?.classList.remove('hidden');
+                      }}
+                      onLoad={() => {
+                        console.log(`[Photo Success] Successfully loaded image for agent: "${agent.agent}"`);
                       }}
                     />
                     {/* Fallback avatar jika foto tidak ada */}
@@ -1275,13 +1300,17 @@ const AgentAnalytics = () => {
                   {/* Agent Photo */}
                   <div className="w-20 h-20 rounded-full bg-gradient-to-br from-white via-blue-100 to-purple-100 flex items-center justify-center relative overflow-hidden shadow-lg">
                                       <img 
-                    src={`/agent-photos/${selectedAgent}.png`} 
+                    src={selectedAgent ? getAgentPhotoPath(selectedAgent) : ''} 
                     alt={selectedAgent}
                     className="w-full h-full object-cover object-center rounded-full"
                     onError={(e) => {
                       const target = e.target as HTMLImageElement;
+                      console.warn(`[Modal Photo Error] Failed to load image for selected agent: "${selectedAgent}" at path: ${target.src}`);
                       target.style.display = 'none';
                       target.nextElementSibling?.classList.remove('hidden');
+                    }}
+                    onLoad={() => {
+                      console.log(`[Modal Photo Success] Successfully loaded image for selected agent: "${selectedAgent}"`);
                     }}
                   />
                     <div className="w-full h-full rounded-full bg-purple-500 flex items-center justify-center text-white text-2xl font-bold hidden">
@@ -1311,9 +1340,9 @@ const AgentAnalytics = () => {
                     <Download className="w-4 h-4" />
                     Export PDF
                   </Button>
-                  <RadixDialog.Close asChild>
+              <RadixDialog.Close asChild>
                     <button className="text-gray-500 hover:text-red-500 text-2xl font-bold focus:outline-none transition-colors duration-150 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800" aria-label="Close agent detail">&times;</button>
-                  </RadixDialog.Close>
+              </RadixDialog.Close>
                 </div>
               </div>
             </div>
@@ -1522,7 +1551,7 @@ const AgentAnalytics = () => {
                       <div>
                         <div className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-3">KPI Performance Analysis</div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                          {Object.keys(kpiTrends).map(kpi => (
+                        {Object.keys(kpiTrends).map(kpi => (
                             <div key={kpi} className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
                               <Badge variant={kpiTrends[kpi]==='up' ? 'success' : kpiTrends[kpi]==='down' ? 'danger' : 'default'}>
                                 {kpiTrends[kpi] === 'up' ? '↗' : kpiTrends[kpi] === 'down' ? '↘' : '→'}
@@ -1530,12 +1559,12 @@ const AgentAnalytics = () => {
                               <div className="flex-1">
                                 <div className="font-semibold text-gray-900 dark:text-gray-100">{kpiLabels[kpi]}</div>
                                 <div className="text-sm text-gray-600 dark:text-gray-400">{generateKpiInsight(kpi, kpiTrends[kpi])}</div>
-                                {kpi === 'ticket' && agentTicketShare.length > 0 && (
+                            {kpi === 'ticket' && agentTicketShare.length > 0 && (
                                   <div className="text-xs text-gray-500 mt-1">Share: {agentTicketShare.slice(-1)[0]} of total tickets</div>
-                                )}
+                            )}
                               </div>
                             </div>
-                          ))}
+                        ))}
                         </div>
                       </div>
                     </div>
@@ -2074,145 +2103,6 @@ const AgentAnalytics = () => {
                                     <p className="text-xl font-bold text-orange-900 dark:text-orange-100">{slaRate.toFixed(1)}%</p>
                                   </div>
                                 </div>
-                              </CardContent>
-                            </Card>
-                          </div>
-                          
-                          {/* Goal Attainment & Benchmarking */}
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            {/* Goal Attainment & Gaps */}
-                            <Card>
-                              <CardHeader>
-                                <CardTitle className="text-lg flex items-center gap-2">
-                                  <Target className="w-5 h-5" />
-                                  Goal Attainment & Gaps
-                                </CardTitle>
-                              </CardHeader>
-                              <CardContent>
-                                {(() => {
-                                  // Targets
-                                  const expectedAHTLocal = expectedAHT;
-                                  const targets = {
-                                    aht: { ok: avgAHT <= expectedAHTLocal, gap: Math.max(0, avgAHT - expectedAHTLocal), label: 'AHT', unit: 'min' },
-                                    frt: { ok: true, gap: 0, label: 'FRT', unit: 'min' }, // FRT lifetime optional
-                                    art: { ok: true, gap: 0, label: 'ART', unit: 'min' }, // ART lifetime optional
-                                    sla: { ok: slaRate >= 85, gap: Math.max(0, 85 - slaRate), label: 'SLA', unit: '%' },
-                                    fcr: { ok: fcrRate >= 75, gap: Math.max(0, 75 - fcrRate), label: 'FCR', unit: '%' },
-                                    esc: { ok: escalationRate <= 10, gap: Math.max(0, escalationRate - 10), label: 'Esc', unit: '%' },
-                                    prod: { ok: productivityRatio >= 1, gap: Math.max(0, (1 - productivityRatio) * 50), label: 'Productivity', unit: 'tk/mo' },
-                                  } as const;
-
-                                  const entries = Object.entries(targets);
-                                  const met = entries.filter(([,v]) => v.ok).length;
-                                  const total = entries.length - 2; // exclude frt/art lifetime placeholders
-                                  return (
-                                    <div className="space-y-4">
-                                      <div className="flex items-center justify-between p-3 rounded bg-gray-50 dark:bg-gray-800">
-                                        <span className="text-sm text-gray-600 dark:text-gray-400">Targets Met</span>
-                                        <span className="font-semibold">{met}/{total}</span>
-                                      </div>
-                                      <div className="grid grid-cols-2 gap-3">
-                                        {entries.filter(([k]) => k !== 'frt' && k !== 'art').map(([key, v]) => (
-                                          <div key={key} className={`p-3 rounded border ${v.ok ? 'border-green-200 dark:border-green-900/40 bg-green-50 dark:bg-green-900/20' : 'border-yellow-200 dark:border-yellow-900/40 bg-yellow-50 dark:bg-yellow-900/20'}`}>
-                                            <div className="flex items-center justify-between">
-                                              <span className="text-sm font-medium">{v.label}</span>
-                                              <span className={`text-xs px-2 py-0.5 rounded ${v.ok ? 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300' : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-300'}`}>{v.ok ? 'OK' : 'GAP'}</span>
-                                            </div>
-                                            {!v.ok && (
-                                              <div className="text-xs mt-1 text-gray-600 dark:text-gray-400">Gap: {v.gap.toFixed(1)}{v.unit}</div>
-                                            )}
-                                          </div>
-                                        ))}
-                                      </div>
-                                    </div>
-                                  );
-                                })()}
-                              </CardContent>
-                            </Card>
-
-                            {/* Benchmark vs Team */}
-                            <Card>
-                              <CardHeader>
-                                <CardTitle className="text-lg flex items-center gap-2">
-                                  <BarChart3 className="w-5 h-5" />
-                                  Benchmark vs Team (Percentile)
-                                </CardTitle>
-                              </CardHeader>
-                              <CardContent>
-                                {(() => {
-                                  const ticketsByAgent: Record<string, typeof allTickets> = {};
-                                  (allTickets || []).forEach(t => {
-                                    const a = t.openBy || 'Unknown';
-                                    if (!ticketsByAgent[a]) ticketsByAgent[a] = [] as any;
-                                    (ticketsByAgent[a] as any).push(t);
-                                  });
-
-                                  const metrics: { agent: string; aht: number; sla: number; fcr: number; esc: number; vol: number }[] = [];
-                                  for (const [agent, rows] of Object.entries(ticketsByAgent)) {
-                                    const total = rows.length;
-                                    const ahtVals = rows
-                                      .filter((t: any) => t.openTime && t.closeTime && new Date(t.closeTime) > new Date(t.openTime))
-                                      .map((t: any) => (new Date(t.closeTime).getTime() - new Date(t.openTime).getTime()) / 60000);
-                                    const avgA = ahtVals.length ? ahtVals.reduce((a: number,b: number)=>a+b,0)/ahtVals.length : 0;
-                                    const slaC = rows.filter((t: any) => t.openTime && t.closeTime && ((new Date(t.closeTime).getTime() - new Date(t.openTime).getTime())/60000) <= 1440).length;
-                                    const fcrC = rows.filter((t: any) => !t.handling2 || (t.handling2||'').trim()==='').length;
-                                    const escC = rows.filter((t: any) => [t.closeHandling2,t.closeHandling3,t.closeHandling4,t.closeHandling5].some((h:any)=>h && h.trim()!=='')).length;
-                                    metrics.push({
-                                      agent,
-                                      aht: avgA,
-                                      sla: total? (slaC/total)*100:0,
-                                      fcr: total? (fcrC/total)*100:0,
-                                      esc: total? (escC/total)*100:0,
-                                      vol: total
-                                    });
-                                  }
-
-                                  const pct = (arr: number[], value: number, higherIsBetter: boolean) => {
-                                    const sorted = [...arr].sort((a,b)=>a-b);
-                                    if (higherIsBetter) {
-                                      const rank = sorted.findIndex(v=>v>value);
-                                      const idx = rank === -1 ? sorted.length : rank;
-                                      return (idx/sorted.length)*100;
-                                    } else {
-                                      const rank = sorted.findIndex(v=>v>=value);
-                                      const idx = rank === -1 ? sorted.length : rank;
-                                      return (1 - idx/ sorted.length)*100;
-                                    }
-                                  };
-
-                                  const self = metrics.find(m=>m.agent===selectedAgent);
-                                  if (!self) return <div className="text-sm text-gray-500">No team data.</div>;
-                                  const ahtPct = pct(metrics.map(m=>m.aht), self.aht, false);
-                                  const slaPct = pct(metrics.map(m=>m.sla), self.sla, true);
-                                  const fcrPct = pct(metrics.map(m=>m.fcr), self.fcr, true);
-                                  const escPct = pct(metrics.map(m=>m.esc), self.esc, false);
-                                  const volPct = pct(metrics.map(m=>m.vol), self.vol, true);
-
-                                  const rows = [
-                                    { name: 'AHT (lower is better)', value: `${formatDurationDHM(self.aht)}`, pct: ahtPct },
-                                    { name: 'SLA%', value: `${self.sla.toFixed(1)}%`, pct: slaPct },
-                                    { name: 'FCR%', value: `${self.fcr.toFixed(1)}%`, pct: fcrPct },
-                                    { name: 'Escalation%', value: `${self.esc.toFixed(1)}%`, pct: escPct },
-                                    { name: 'Volume', value: `${self.vol}`, pct: volPct },
-                                  ];
-
-                                  return (
-                                    <div className="space-y-3">
-                                      {rows.map((r,i)=> (
-                                        <div key={i} className="p-3 rounded bg-gray-50 dark:bg-gray-800">
-                                          <div className="flex items-center justify-between mb-1">
-                                            <span className="text-sm text-gray-600 dark:text-gray-400">{r.name}</span>
-                                            <span className="font-semibold">{r.value}</span>
-                                          </div>
-                                          <div className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded overflow-hidden">
-                                            <div className="h-2 bg-blue-500" style={{width: `${Math.max(0, Math.min(100, r.pct))}%`}} />
-                                          </div>
-                                          <div className="text-xs text-right text-gray-500 mt-1">P{r.pct.toFixed(0)}</div>
-                                        </div>
-                                      ))}
-                                    </div>
-                                  );
-                                })()}
                               </CardContent>
                             </Card>
                           </div>
@@ -3062,18 +2952,18 @@ const AgentAnalytics = () => {
                                            metric.status === 'warning' ? '⚠ Needs Attention' : 'ℹ Info'}
                                         </span>
                                       </td>
-                                    </tr>
-                                  ));
-                                })()}
-                              </tbody>
-                            </table>
-                          </div>
+                            </tr>
+                          ));
+                        })()}
+                      </tbody>
+                    </table>
+                  </div>
                         </CardContent>
                       </Card>
                     </div>
                   </TabsContent>
                 </Tabs>
-              </div>
+    </div>
               </>
             )}
           </RadixDialog.Content>
