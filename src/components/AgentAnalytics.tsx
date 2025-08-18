@@ -1086,7 +1086,7 @@ const AgentAnalytics = () => {
         })}
       </div>
       {/* Per-Agent Cards with Trendline */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
         {sortedAgentWithScore.map((agent) => {
           // Unused variables - commented out
           // const closedCount = (dataSource.find(a => (a.agent === agent.agent || (a as any).agentName === agent.agent) && typeof (a as any).closedCount !== 'undefined') as any)?.closedCount ?? '-';
@@ -1111,71 +1111,108 @@ const AgentAnalytics = () => {
             };
           }
           return (
-            <div key={agent.agent} className="relative bg-gradient-to-br from-white via-zinc-50 to-zinc-100 dark:from-zinc-900 dark:via-zinc-800 dark:to-zinc-900 rounded-2xl shadow-lg p-8 flex flex-col gap-6 hover:shadow-2xl transition-all border border-zinc-200 dark:border-zinc-800 items-center overflow-x-hidden" onClick={() => { setSelectedAgent(agent.agent); setModalOpen(true); }} style={{ cursor: 'pointer' }}>
-              {/* Header */}
-              <div className="flex items-center gap-4 w-full">
-                <div className="w-16 h-16 rounded-full bg-gradient-to-tr from-blue-400 to-purple-400 flex items-center justify-center text-white text-3xl font-bold shadow-md">
-                  {agent.agent?.[0] || '?'}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="text-2xl font-extrabold text-zinc-800 dark:text-zinc-100 truncate">{agent.agent}</div>
-                  <div className="text-sm text-zinc-500 dark:text-zinc-400 font-medium">Agent</div>
-                </div>
-              </div>
-              {/* Dua box besar: Rank & Score */}
-              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 sm:gap-8 w-full max-w-full">
-                <div className="shrink-0 w-full sm:w-auto max-w-full">
-                  <StatBox icon={<EmojiEventsIcon />} value={`#${agent.rankNum}`} label="Rank" bg="bg-blue-500" valueColor="text-blue-700" />
+            <div key={agent.agent} className="relative bg-white dark:bg-zinc-900 rounded-2xl shadow-lg hover:shadow-2xl transition-all border border-zinc-200 dark:border-zinc-800 overflow-hidden h-80" onClick={() => { setSelectedAgent(agent.agent); setModalOpen(true); }} style={{ cursor: 'pointer' }}>
+              <div className="flex h-full">
+                {/* Left Section - Agent Photo */}
+                <div className="w-1/3 bg-gradient-to-b from-teal-500 to-blue-600 flex items-center justify-center relative overflow-hidden">
+                  {/* Agent Photo - akan menggunakan foto yang diupload */}
+                  <div className="w-full h-full flex items-center justify-center">
+                    <img 
+                      src={`/agent-photos/${agent.agent}.png`} 
+                      alt={agent.agent}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        // Fallback jika foto tidak ada
+                        const target = e.target as HTMLImageElement;
+                        target.style.display = 'none';
+                        target.nextElementSibling?.classList.remove('hidden');
+                      }}
+                    />
+                    {/* Fallback avatar jika foto tidak ada */}
+                    <div className="w-24 h-24 rounded-full bg-white/20 flex items-center justify-center text-white text-3xl font-bold shadow-lg hidden">
+                      {agent.agent?.[0] || '?'}
+                    </div>
                   </div>
-                <div className="shrink-0 w-full sm:w-auto max-w-full">
-                  <StatBox icon={scoreBox.icon} value={agent.score ?? 0} label="Score" bg={scoreBox.bg} valueColor={scoreBox.valueColor} />
                 </div>
-              </div>
-              {/* KPI grid */}
-              <div className="grid grid-cols-3 md:grid-cols-3 grid-rows-2 gap-x-4 gap-y-2 w-full mt-2">
-                <div className="flex flex-col items-center min-w-0">
-                  <ListAltIcon className="text-blue-600 mb-1" fontSize="small" />
-                  <div className="font-bold text-lg">{agent.vol ?? '-'}</div>
-                  <div className="text-xs text-zinc-500 dark:text-zinc-400">Tiket</div>
-                </div>
-                <div className="flex flex-col items-center min-w-0">
-                  <AccessTimeIcon className="text-purple-600 mb-1" fontSize="small" />
-                  <div className="font-bold text-lg">{agent.frt ? formatDurationDHM(agent.frt) : '-'}</div>
-                  <div className="text-xs text-zinc-500 dark:text-zinc-400">FRT</div>
-                </div>
-                <div className="flex flex-col items-center min-w-0">
-                  <AccessTimeIcon className="text-pink-600 mb-1" fontSize="small" />
-                  <div className="font-bold text-lg">{agent.art ? formatDurationDHM(agent.art) : '-'}</div>
-                  <div className="text-xs text-zinc-500 dark:text-zinc-400">ART</div>
-                </div>
-                <div className="flex flex-col items-center min-w-0">
-                  <FlashOnIcon className="text-green-600 mb-1" fontSize="small" />
-                  <div className="font-bold text-lg">{agent.fcr !== undefined ? `${agent.fcr.toFixed(1)}%` : '-'}</div>
-                  <div className="text-xs text-zinc-500 dark:text-zinc-400">FCR</div>
-                </div>
-                <div className="flex flex-col items-center min-w-0">
-                  <TrendingUpIcon className="text-yellow-500 mb-1" fontSize="small" />
-                  <div className="font-bold text-lg">{agent.sla !== undefined ? `${agent.sla.toFixed(1)}%` : '-'}</div>
-                  <div className="text-xs text-zinc-500 dark:text-zinc-400">SLA</div>
-                </div>
-                <div className="flex flex-col items-center min-w-0">
-                  <MoveToInboxIcon className="text-red-500 mb-1" fontSize="small" />
-                  <div className="font-bold text-lg">{agent.backlog ?? 0}</div>
-                  <div className="text-xs text-zinc-500 dark:text-zinc-400">Backlog</div>
+                
+                {/* Right Section - Agent Metrics */}
+                <div className="w-2/3 p-6 flex flex-col">
+                  {/* Agent Header */}
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-12 h-12 rounded-full bg-purple-500 flex items-center justify-center text-white text-lg font-bold">
+                      {agent.agent?.[0] || '?'}
+                    </div>
+                    <div>
+                      <div className="text-xl font-bold text-zinc-800 dark:text-zinc-100">{agent.agent}</div>
+                      <div className="text-sm text-zinc-500 dark:text-zinc-400">Agent</div>
+                    </div>
                   </div>
-              </div>
-              {/* Progress bar score */}
-              <div className="w-full h-3 bg-zinc-200 dark:bg-zinc-800 rounded-full overflow-hidden mb-2 relative mt-2">
-                <div className="absolute left-0 top-0 h-full rounded-full"
-                  style={{ width: `${agent.score || 0}%`, background: 'linear-gradient(to right, #3b82f6, #22c55e, #fde047)' }} />
-              </div>
-              {/* Insight */}
-              {agent.insight && (
-                <div className="flex items-center gap-2 bg-yellow-50 dark:bg-zinc-900 rounded-lg px-3 py-2 mt-2 text-sm text-yellow-800 dark:text-yellow-200 shadow-inner">
-                  <LightbulbIcon className="text-yellow-400" />
-                  <span>{agent.insight}</span>
+                  
+                  {/* Summary KPIs - Rank & Score */}
+                  <div className="flex gap-3 mb-4">
+                    <div className="flex-1 bg-blue-500 rounded-lg p-3 text-center">
+                      <div className="text-white text-2xl font-bold">#{agent.rankNum}</div>
+                      <div className="text-white/80 text-xs">Rank</div>
+                    </div>
+                    <div className="flex-1 bg-yellow-400 rounded-lg p-3 text-center">
+                      <div className="text-zinc-800 text-2xl font-bold">{agent.score ?? 0}</div>
+                      <div className="text-zinc-600 text-xs">Score</div>
+                    </div>
+                  </div>
+                  
+                  {/* Detailed Metrics Grid */}
+                  <div className="grid grid-cols-3 gap-2 mb-4">
+                    <div className="flex flex-col items-center">
+                      <ListAltIcon className="text-blue-600 mb-1" fontSize="small" />
+                      <div className="font-bold text-sm">{agent.vol ?? '-'}</div>
+                      <div className="text-xs text-zinc-500 dark:text-zinc-400">Tiket</div>
+                    </div>
+                    <div className="flex flex-col items-center">
+                      <AccessTimeIcon className="text-purple-600 mb-1" fontSize="small" />
+                      <div className="font-bold text-sm">{agent.frt ? formatDurationDHM(agent.frt) : '-'}</div>
+                      <div className="text-xs text-zinc-500 dark:text-zinc-400">FRT</div>
+                    </div>
+                    <div className="flex flex-col items-center">
+                      <AccessTimeIcon className="text-red-500 mb-1" fontSize="small" />
+                      <div className="font-bold text-sm">{agent.art ? formatDurationDHM(agent.art) : '-'}</div>
+                      <div className="text-xs text-zinc-500 dark:text-zinc-400">ART</div>
+                    </div>
+                    <div className="flex flex-col items-center">
+                      <FlashOnIcon className="text-green-600 mb-1" fontSize="small" />
+                      <div className="font-bold text-sm">{agent.fcr !== undefined ? `${agent.fcr.toFixed(1)}%` : '-'}</div>
+                      <div className="text-xs text-zinc-500 dark:text-zinc-400">FCR</div>
+                    </div>
+                    <div className="flex flex-col items-center">
+                      <TrendingUpIcon className="text-yellow-500 mb-1" fontSize="small" />
+                      <div className="font-bold text-sm">{agent.sla !== undefined ? `${agent.sla.toFixed(1)}%` : '-'}</div>
+                      <div className="text-xs text-zinc-500 dark:text-zinc-400">SLA</div>
+                    </div>
+                    <div className="flex flex-col items-center">
+                      <MoveToInboxIcon className="text-red-500 mb-1" fontSize="small" />
+                      <div className="font-bold text-sm">{agent.backlog ?? 0}</div>
+                      <div className="text-xs text-zinc-500 dark:text-zinc-400">Backlog</div>
+                    </div>
+                  </div>
+                  
+                  {/* Progress Bar */}
+                  <div className="w-full h-2 bg-zinc-200 dark:bg-zinc-800 rounded-full overflow-hidden mb-3">
+                    <div className="h-full rounded-full"
+                      style={{ 
+                        width: `${agent.score || 0}%`, 
+                        background: 'linear-gradient(to right, #3b82f6, #22c55e, #fde047)' 
+                      }} 
+                    />
+                  </div>
+                  
+                  {/* Alert Message */}
+                  {agent.insight && (
+                    <div className="flex items-center gap-2 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg px-3 py-2 text-sm text-yellow-800 dark:text-yellow-200">
+                      <LightbulbIcon className="text-yellow-500" fontSize="small" />
+                      <span>{agent.insight}</span>
+                    </div>
+                  )}
                 </div>
-              )}
+              </div>
             </div>
           );
         })}

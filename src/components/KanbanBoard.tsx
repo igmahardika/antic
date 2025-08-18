@@ -19,7 +19,6 @@ import { FixedSizeList as List } from 'react-window';
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from './ui/tooltip';
 import TimeFilter from './TimeFilter';
 import * as RadixDialog from '@radix-ui/react-dialog';
-import AgentPhoto from './AgentPhoto';
 
 // Define the structure of the kanban data object
 interface KanbanCustomer {
@@ -468,155 +467,40 @@ const KanbanBoard = () => {
     const topIssue = Object.entries(issueCount).sort((a, b) => Number(b[1]) - Number(a[1]))[0]?.[0] || '-';
     // Last open ticket
     const lastTicket = tickets.slice().sort((a, b) => new Date(b.openTime).getTime() - new Date(a.openTime).getTime())[0];
-    
-    // Calculate agent metrics for the new design
-    const totalTickets = tickets.length;
-    const fcrRate = tickets.length > 0 ? Math.round((tickets.filter(t => t.status === 'Closed' && !t.reopenCount).length / tickets.length) * 100) : 0;
-    const slaRate = tickets.length > 0 ? Math.round((tickets.filter(t => t.slaMet).length / tickets.length) * 100) : 0;
-    const backlogCount = tickets.filter(t => t.status !== 'Closed').length;
-    
-    // Calculate FRT and ART (simplified for now)
-    const avgFRT = tickets.length > 0 ? tickets.reduce((acc, t) => acc + (t.firstResponseTime || 0), 0) / tickets.length : 0;
-    const avgART = tickets.length > 0 ? tickets.reduce((acc, t) => acc + (t.handlingDuration?.rawHours || 0), 0) / tickets.length : 0;
-    
-    // Format duration for display
-    const formatDuration = (hours) => {
-      const days = Math.floor(hours / 24);
-      const remainingHours = Math.floor(hours % 24);
-      const minutes = Math.floor((hours % 1) * 60);
-      const seconds = Math.floor(((hours % 1) * 60 % 1) * 60);
-      return `${days}:${remainingHours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-    };
-
-
-    
-    // Calculate rank (placeholder - you can implement actual ranking logic)
-    const rank = Math.floor(Math.random() * 20) + 1; // Placeholder rank
-    
-    // Calculate score (placeholder - you can implement actual scoring logic)
-    const score = Math.floor(Math.random() * 40) + 40; // Placeholder score between 40-80
+    // Trend badge
+    let trendBadge = null;
+    if (customer.trend === 'Naik') trendBadge = <span className="ml-2 px-2 py-0.5 rounded-full bg-green-100 text-green-700 text-xs font-bold dark:bg-green-200 dark:text-green-900">Trend: Up</span>;
+    else if (customer.trend === 'Turun') trendBadge = <span className="ml-2 px-2 py-0.5 rounded-full bg-red-100 text-red-700 text-xs font-bold dark:bg-red-200 dark:text-red-900">Trend: Down</span>;
+    else if (customer.trend === 'Stabil') trendBadge = <span className="ml-2 px-2 py-0.5 rounded-full bg-gray-100 text-gray-700 text-xs font-bold dark:bg-gray-200 dark:text-gray-900">Trend: Stable</span>;
 
     return (
       <TooltipProvider delayDuration={200}>
         <Tooltip>
           <TooltipTrigger asChild>
-            <div
-              className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg overflow-hidden transition-all duration-300 cursor-pointer hover:shadow-xl hover:scale-[1.02] min-h-[280px]"
-              onClick={() => setOpenDialogId(customer.id)}
-            >
-              <div className="flex h-full">
-                {/* Left Section - Agent Photo */}
-                <div className="w-1/3 bg-gradient-to-b from-teal-500 to-blue-600 flex items-center justify-center relative overflow-hidden">
-                  <AgentPhoto agentName={customer.name} />
-                </div>
-
-                {/* Right Section - Agent Metrics */}
-                <div className="w-2/3 p-6 flex flex-col">
-                  {/* Agent Header */}
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="w-10 h-10 bg-purple-500 rounded-full flex items-center justify-center">
-                      <span className="text-white font-bold text-lg">
-                        {customer.name.split(' ').map(n => n[0]).join('').toUpperCase()}
-                      </span>
-                    </div>
-                    <div>
-                      <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">{customer.name}</h3>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">Agent</p>
-                    </div>
-                  </div>
-
-                  {/* Summary KPIs */}
-                  <div className="flex gap-3 mb-4">
-                    <div className="bg-blue-500 rounded-lg p-3 flex-1 text-center">
-                      <div className="text-white text-2xl font-bold">#{rank}</div>
-                      <div className="text-blue-100 text-xs">Rank</div>
-                    </div>
-                    <div className="bg-yellow-500 rounded-lg p-3 flex-1 text-center">
-                      <div className="text-white text-2xl font-bold">{score}</div>
-                      <div className="text-yellow-100 text-xs">Score</div>
-                    </div>
-                  </div>
-
-                  {/* Detailed Metrics Grid */}
-                  <div className="grid grid-cols-3 gap-3 mb-4">
-                    <div className="flex items-center gap-2">
-                      <div className="w-6 h-6 bg-blue-500 rounded flex items-center justify-center">
-                        <span className="text-white text-xs">📋</span>
-                      </div>
-                      <div>
-                        <div className="text-sm font-bold text-gray-900 dark:text-gray-100">{totalTickets}</div>
-                        <div className="text-xs text-gray-500 dark:text-gray-400">Tiket</div>
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-center gap-2">
-                      <div className="w-6 h-6 bg-purple-500 rounded flex items-center justify-center">
-                        <span className="text-white text-xs">⏰</span>
-                      </div>
-                      <div>
-                        <div className="text-sm font-bold text-gray-900 dark:text-gray-100">{formatDuration(avgFRT)}</div>
-                        <div className="text-xs text-gray-500 dark:text-gray-400">FRT</div>
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-center gap-2">
-                      <div className="w-6 h-6 bg-red-500 rounded flex items-center justify-center">
-                        <span className="text-white text-xs">⏱️</span>
-                      </div>
-                      <div>
-                        <div className="text-sm font-bold text-gray-900 dark:text-gray-100">{formatDuration(avgART)}</div>
-                        <div className="text-xs text-gray-500 dark:text-gray-400">ART</div>
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-center gap-2">
-                      <div className="w-6 h-6 bg-green-500 rounded flex items-center justify-center">
-                        <span className="text-white text-xs">⚡</span>
-                      </div>
-                      <div>
-                        <div className="text-sm font-bold text-gray-900 dark:text-gray-100">{fcrRate}%</div>
-                        <div className="text-xs text-gray-500 dark:text-gray-400">FCR</div>
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-center gap-2">
-                      <div className="w-6 h-6 bg-yellow-500 rounded flex items-center justify-center">
-                        <span className="text-white text-xs">📈</span>
-                      </div>
-                      <div>
-                        <div className="text-sm font-bold text-gray-900 dark:text-gray-100">{slaRate}%</div>
-                        <div className="text-xs text-gray-500 dark:text-gray-400">SLA</div>
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-center gap-2">
-                      <div className="w-6 h-6 bg-red-500 rounded flex items-center justify-center">
-                        <span className="text-white text-xs">⬇️</span>
-                      </div>
-                      <div>
-                        <div className="text-sm font-bold text-gray-900 dark:text-gray-100">{backlogCount}</div>
-                        <div className="text-xs text-gray-500 dark:text-gray-400">Backlog</div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Progress Bar */}
-                  <div className="mb-3">
-                    <div className="w-full bg-gray-200 rounded-full h-2">
-                      <div className="bg-gradient-to-r from-blue-500 via-green-500 to-yellow-500 h-2 rounded-full" style={{width: `${score}%`}}></div>
-                    </div>
-                  </div>
-
-                  {/* Alert Message */}
-                  {slaRate < 70 && (
-                    <div className="bg-yellow-100 dark:bg-yellow-900/20 rounded-lg p-3 flex items-center gap-2">
-                      <span className="text-yellow-600 dark:text-yellow-400">💡</span>
-                      <span className="text-yellow-800 dark:text-yellow-200 text-sm">SLA di bawah target.</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
+      <div
+        className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg p-6 flex flex-col min-h-[200px] transition-all duration-300 min-w-0 overflow-hidden cursor-pointer hover:shadow-xl hover:scale-[1.02]"
+        onClick={() => setOpenDialogId(customer.id)}
+      >
+        <div className="flex items-center gap-4 mb-2">
+          <div className="w-12 h-12 min-w-12 min-h-12 rounded-xl flex items-center justify-center bg-blue-500 shadow-lg">
+            <GroupIcon className="text-white" style={{ fontSize: 28 }} />
+          </div>
+          <div className="flex-1">
+            <h3 className="text-lg md:text-xl font-bold text-gray-900 dark:text-gray-100 break-words whitespace-normal">{customer.name}</h3>
+          </div>
+          <Badge variant="info" className="ml-2">{customer.ticketCount} TICKETS</Badge>
+                {trendBadge}
+        </div>
+        <div className="flex gap-4 mb-2">
+          <Badge variant="success" className="mb-2">Closed: {closed} / {tickets.length} ({percentClosed}%)</Badge>
+        </div>
+        <div className="flex items-center gap-2 text-sm font-semibold text-gray-800 dark:text-gray-200 mb-1">
+          <HowToRegIcon className="text-blue-400" /> Top Agent: {topAgent}
+        </div>
+        <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-300">
+          <Badge variant="warning" className="mr-2">Top Issue</Badge> {topIssue}
+        </div>
+      </div>
           </TooltipTrigger>
           <TooltipContent side="top" className="max-w-xs text-[13px]">
             <div className="text-sm font-semibold mb-1 text-blue-900 dark:text-blue-200">Preview</div>

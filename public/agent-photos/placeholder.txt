@@ -1,0 +1,11 @@
+# Placeholder File
+
+File ini hanya untuk memastikan folder agent-photos terdeteksi oleh Git.
+
+Untuk menambahkan foto agent:
+1. Upload file PNG dengan background transparan
+2. Nama file harus sama dengan nama agent di sistem
+3. Contoh: Priyo Ardi Nugroho.png
+
+Sistem akan otomatis menampilkan foto agent jika file ditemukan, 
+atau menampilkan avatar dengan inisial jika foto tidak ada.
