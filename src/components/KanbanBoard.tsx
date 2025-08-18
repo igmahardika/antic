@@ -19,6 +19,7 @@ import { FixedSizeList as List } from 'react-window';
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from './ui/tooltip';
 import TimeFilter from './TimeFilter';
 import * as RadixDialog from '@radix-ui/react-dialog';
+import AgentPhoto from './AgentPhoto';
 
 // Define the structure of the kanban data object
 interface KanbanCustomer {
@@ -487,8 +488,7 @@ const KanbanBoard = () => {
       return `${days}:${remainingHours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
     };
 
-    // Agent photo path (assuming photos are in /public/agents/ folder)
-    const agentPhotoPath = `/agents/${customer.name.replace(/\s+/g, '_')}.png`;
+
     
     // Calculate rank (placeholder - you can implement actual ranking logic)
     const rank = Math.floor(Math.random() * 20) + 1; // Placeholder rank
@@ -507,26 +507,7 @@ const KanbanBoard = () => {
               <div className="flex h-full">
                 {/* Left Section - Agent Photo */}
                 <div className="w-1/3 bg-gradient-to-b from-teal-500 to-blue-600 flex items-center justify-center relative overflow-hidden">
-                  <div className="w-full h-full flex items-center justify-center">
-                    <img 
-                      src={agentPhotoPath} 
-                      alt={`${customer.name}`}
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-                        // Fallback to placeholder if image doesn't exist
-                        const target = e.target as HTMLImageElement;
-                        target.style.display = 'none';
-                        const nextSibling = target.nextSibling as HTMLElement;
-                        if (nextSibling) {
-                          nextSibling.style.display = 'flex';
-                        }
-                      }}
-                    />
-                    {/* Fallback placeholder */}
-                    <div className="w-full h-full flex items-center justify-center bg-blue-600 text-white text-4xl font-bold" style={{display: 'none'}}>
-                      {customer.name.split(' ').map(n => n[0]).join('').toUpperCase()}
-                    </div>
-                  </div>
+                  <AgentPhoto agentName={customer.name} />
                 </div>
 
                 {/* Right Section - Agent Metrics */}
