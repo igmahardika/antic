@@ -55,9 +55,8 @@ const AgentPhoto: React.FC<AgentPhotoProps> = ({ agentName, className = "" }) =>
           onError={handleImageError}
         />
       ) : (
-        <div className="w-full h-full flex items-center justify-center bg-blue-600 text-white text-4xl font-bold">
-          {initials}
-        </div>
+        // Jika foto tidak ada, tampilkan background gradient kosong
+        <div className="w-full h-full bg-gradient-to-b from-teal-500 to-blue-600"></div>
       )}
     </div>
   );

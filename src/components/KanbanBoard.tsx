@@ -538,7 +538,7 @@ const KanbanBoard = () => {
                   </div>
 
                   {/* Detailed Metrics Grid */}
-                  <div className="grid grid-cols-2 gap-3 mb-4">
+                  <div className="grid grid-cols-3 gap-3 mb-4">
                     <div className="flex items-center gap-2">
                       <div className="w-6 h-6 bg-blue-500 rounded flex items-center justify-center">
                         <span className="text-white text-xs">📋</span>
@@ -581,7 +581,7 @@ const KanbanBoard = () => {
                     
                     <div className="flex items-center gap-2">
                       <div className="w-6 h-6 bg-yellow-500 rounded flex items-center justify-center">
-                        <span className="text-white text-xs">📊</span>
+                        <span className="text-white text-xs">📈</span>
                       </div>
                       <div>
                         <div className="text-sm font-bold text-gray-900 dark:text-gray-100">{slaRate}%</div>
@@ -591,7 +591,7 @@ const KanbanBoard = () => {
                     
                     <div className="flex items-center gap-2">
                       <div className="w-6 h-6 bg-red-500 rounded flex items-center justify-center">
-                        <span className="text-white text-xs">📦</span>
+                        <span className="text-white text-xs">⬇️</span>
                       </div>
                       <div>
                         <div className="text-sm font-bold text-gray-900 dark:text-gray-100">{backlogCount}</div>
