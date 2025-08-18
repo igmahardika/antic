@@ -1060,7 +1060,7 @@ const AgentAnalytics = () => {
           {backlogDebugEnabled ? 'Disable' : 'Enable'} Backlog Debug
         </button>
       </div>
-      <div className="grid grid-cols-8 gap-3 mb-6 overflow-x-auto">
+      <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
         {summaryCards.map(s => {
           let iconBg;
           if (s.title === 'Total Active Agents') iconBg = "bg-blue-700";
@@ -1074,23 +1074,23 @@ const AgentAnalytics = () => {
           else iconBg = "bg-gray-500";
 
           return (
-            <div key={s.title} className="min-w-[140px] bg-white dark:bg-zinc-900 rounded-xl shadow-sm border border-zinc-200 dark:border-zinc-800 p-3 flex flex-col items-center text-center">
+            <div key={s.title} className="min-w-[160px] max-w-[180px] bg-white dark:bg-zinc-900 rounded-xl shadow-sm border border-zinc-200 dark:border-zinc-800 p-4 flex flex-col items-center text-center flex-shrink-0">
               {/* Icon */}
-              <div className={`w-8 h-8 rounded-lg ${iconBg} flex items-center justify-center mb-2`}>
-                <s.icon className="w-4 h-4 text-white" />
+              <div className={`w-10 h-10 rounded-lg ${iconBg} flex items-center justify-center mb-3`}>
+                <s.icon className="w-5 h-5 text-white" />
               </div>
               {/* Title */}
-              <div className="text-xs font-bold text-zinc-700 dark:text-zinc-300 uppercase tracking-wide mb-1 leading-tight">
+              <div className="text-[10px] font-bold text-zinc-700 dark:text-zinc-300 uppercase tracking-wide mb-2 leading-tight min-h-[24px] flex items-center">
                 {s.title}
               </div>
               {/* Value */}
-              <div className="text-lg font-bold text-zinc-900 dark:text-zinc-100 mb-1 leading-tight">
-                {typeof s.value === 'string' && s.value.length > 15 
-                  ? s.value.substring(0, 12) + '...' 
+              <div className="text-base font-bold text-zinc-900 dark:text-zinc-100 mb-2 leading-tight min-h-[20px] flex items-center justify-center">
+                {typeof s.value === 'string' && s.value.length > 12 
+                  ? s.value.substring(0, 10) + '...' 
                   : s.value}
               </div>
               {/* Description */}
-              <div className="text-xs text-zinc-500 dark:text-zinc-400 leading-tight">
+              <div className="text-[10px] text-zinc-500 dark:text-zinc-400 leading-tight min-h-[32px] flex items-center justify-center">
                 {s.description}
               </div>
             </div>
