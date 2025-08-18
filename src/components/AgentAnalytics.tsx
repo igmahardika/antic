@@ -1060,32 +1060,30 @@ const AgentAnalytics = () => {
           {backlogDebugEnabled ? 'Disable' : 'Enable'} Backlog Debug
         </button>
       </div>
-      <div className="w-full mb-6">
-        <div className="flex gap-3 overflow-x-auto pb-2 pr-6 scrollbar-hide">
-          {summaryCards.map(s => {
-            let iconBg;
-            if (s.title === 'Total Active Agents') iconBg = "bg-blue-700";
-            else if (s.title === 'Top Overall Agent') iconBg = "bg-blue-700";
-            else if (s.title === 'Fastest Responder') iconBg = "bg-purple-500";
-            else if (s.title === 'Fastest Resolution') iconBg = "bg-green-600";
-            else if (s.title === 'Best SLA Performer') iconBg = "bg-yellow-400";
-            else if (s.title === 'Most Reliable') iconBg = "bg-red-500";
-            else if (s.title === 'Most Improved Agent') iconBg = "bg-indigo-500";
-            else if (s.title === 'Most Engaged') iconBg = "bg-teal-500";
-            else iconBg = "bg-gray-500";
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 mb-6">
+        {summaryCards.map(s => {
+          let iconBg;
+          if (s.title === 'Total Active Agents') iconBg = "bg-blue-700";
+          else if (s.title === 'Top Overall Agent') iconBg = "bg-blue-700";
+          else if (s.title === 'Fastest Responder') iconBg = "bg-purple-500";
+          else if (s.title === 'Fastest Resolution') iconBg = "bg-green-600";
+          else if (s.title === 'Best SLA Performer') iconBg = "bg-yellow-400";
+          else if (s.title === 'Most Reliable') iconBg = "bg-red-500";
+          else if (s.title === 'Most Improved Agent') iconBg = "bg-indigo-500";
+          else if (s.title === 'Most Engaged') iconBg = "bg-teal-500";
+          else iconBg = "bg-gray-500";
 
-            return (
-          <SummaryCard
-                key={s.title}
-                icon={<s.icon className="w-7 h-7 text-white" />}
-                title={s.title}
-                value={s.value}
-                description={s.description}
-                iconBg={iconBg}
-              />
-            );
-          })}
-        </div>
+          return (
+        <SummaryCard
+              key={s.title}
+              icon={<s.icon className="w-7 h-7 text-white" />}
+              title={s.title}
+              value={s.value}
+              description={s.description}
+              iconBg={iconBg}
+            />
+          );
+        })}
       </div>
       {/* Per-Agent Cards with Trendline */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
@@ -1116,7 +1114,7 @@ const AgentAnalytics = () => {
             <div key={agent.agent} className="relative bg-white dark:bg-zinc-900 rounded-2xl shadow-lg hover:shadow-2xl transition-all border border-zinc-200 dark:border-zinc-800 overflow-hidden h-80" onClick={() => { setSelectedAgent(agent.agent); setModalOpen(true); }} style={{ cursor: 'pointer' }}>
               <div className="flex h-full">
                 {/* Left Section - Agent Photo */}
-                <div className="w-1/3 bg-gradient-to-b from-teal-500 to-blue-600 flex items-center justify-center relative overflow-hidden">
+                <div className="w-1/3 bg-gradient-to-br from-white via-blue-100 to-purple-100 flex items-center justify-center relative overflow-hidden">
                   {/* Agent Photo - akan menggunakan foto yang diupload */}
                   <div className="w-full h-full flex items-center justify-center">
                     <img 
@@ -1139,16 +1137,11 @@ const AgentAnalytics = () => {
                 
                 {/* Right Section - Agent Metrics */}
                 <div className="w-2/3 p-6 flex flex-col">
-                  {/* Agent Header */}
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="w-12 h-12 rounded-full bg-purple-500 flex items-center justify-center text-white text-lg font-bold">
-                      {agent.agent?.[0] || '?'}
+                                    {/* Agent Header */}
+                  <div className="mb-4">
+                    <div className="text-xl font-bold text-zinc-800 dark:text-zinc-100">{agent.agent}</div>
+                    <div className="text-sm text-zinc-500 dark:text-zinc-400">Agent</div>
                   </div>
-                    <div>
-                      <div className="text-xl font-bold text-zinc-800 dark:text-zinc-100">{agent.agent}</div>
-                      <div className="text-sm text-zinc-500 dark:text-zinc-400">Agent</div>
-                </div>
-              </div>
                   
                   {/* Summary KPIs - Rank & Score */}
                   <div className="flex gap-3 mb-4">
