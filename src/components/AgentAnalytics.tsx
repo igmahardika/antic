@@ -1544,30 +1544,18 @@ const AgentAnalytics = () => {
                 {/* Agent Career Report Tabs */}
                 <div className="px-6">
                   <Tabs defaultValue="overview" className="w-full">
-                    <TabsList className="grid w-full grid-cols-6 bg-gray-100 dark:bg-gray-800 p-1 rounded-lg">
+                    <TabsList className="grid w-full grid-cols-3 bg-gray-100 dark:bg-gray-800 p-1 rounded-lg">
                       <TabsTrigger value="overview" className="flex items-center gap-2 data-[state=active]:bg-white dark:data-[state=active]:bg-gray-700 data-[state=active]:shadow-sm">
                         <Activity className="w-4 h-4" />
-                        <span className="hidden sm:inline">Overview</span>
-                      </TabsTrigger>
-                      <TabsTrigger value="career" className="flex items-center gap-2 data-[state=active]:bg-white dark:data-[state=active]:bg-gray-700 data-[state=active]:shadow-sm">
-                        <Award className="w-4 h-4" />
-                        <span className="hidden sm:inline">Career</span>
+                        <span className="hidden sm:inline">Overview & Career</span>
                       </TabsTrigger>
                       <TabsTrigger value="performance" className="flex items-center gap-2 data-[state=active]:bg-white dark:data-[state=active]:bg-gray-700 data-[state=active]:shadow-sm">
                         <Target className="w-4 h-4" />
-                        <span className="hidden sm:inline">Performance</span>
-                      </TabsTrigger>
-                      <TabsTrigger value="insights" className="flex items-center gap-2 data-[state=active]:bg-white dark:data-[state=active]:bg-gray-700 data-[state=active]:shadow-sm">
-                        <LightbulbIcon className="w-4 h-4" />
-                        <span className="hidden sm:inline">Insights</span>
+                        <span className="hidden sm:inline">Performance & Insights</span>
                       </TabsTrigger>
                       <TabsTrigger value="trends" className="flex items-center gap-2 data-[state=active]:bg-white dark:data-[state=active]:bg-gray-700 data-[state=active]:shadow-sm">
                         <TrendingUp className="w-4 h-4" />
-                        <span className="hidden sm:inline">Trends</span>
-                      </TabsTrigger>
-                      <TabsTrigger value="details" className="flex items-center gap-2 data-[state=active]:bg-white dark:data-[state=active]:bg-gray-700 data-[state=active]:shadow-sm">
-                        <BarChart3 className="w-4 h-4" />
-                        <span className="hidden sm:inline">Details</span>
+                        <span className="hidden sm:inline">Trends & History</span>
                       </TabsTrigger>
                     </TabsList>
 
@@ -2270,12 +2258,89 @@ const AgentAnalytics = () => {
                       }).length;
                       const escalationRate = totalTickets > 0 ? (escalated / totalTickets) * 100 : 0;
                       
-                      // Calculate CPI components (simplified version)
-                      const efficiencyScore = Math.max(0, 100 - (avgAHT / 60) * 10); // Normalize AHT
-                      const qualityScore = slaRate; // Use SLA as quality proxy
-                      const resolutionScore = fcrRate - escalationRate; // FCR minus escalation penalty
-                      const reliabilityScore = Math.max(0, 100 - escalationRate * 5); // Penalty for escalation
-                      const productivityScore = Math.min(100, (totalTickets / 100) * 100); // Volume based
+                      // Tenure calculation
+                      const validTickets = agentTickets.filter(t => {
+                        if (!t.openTime) return false;
+                        const date = new Date(t.openTime);
+                        return !isNaN(date.getTime());
+                      });
+                      
+                      const firstTicket = validTickets.length > 0 ? 
+                        validTickets.reduce((earliest, t) => {
+                          const currentDate = new Date(t.openTime);
+                          const earliestDate = new Date(earliest.openTime);
+                          return currentDate < earliestDate ? t : earliest;
+                        }) : null;
+                        
+                      const lastTicket = validTickets.length > 0 ? 
+                        validTickets.reduce((latest, t) => {
+                          const currentDate = new Date(t.openTime);
+                          const latestDate = new Date(latest.openTime);
+                          return currentDate > latestDate ? t : latest;
+                        }) : null;
+                      
+                      let tenure = 0;
+                      if (firstTicket && lastTicket) {
+                        const firstDate = new Date(firstTicket.openTime);
+                        const lastDate = new Date(lastTicket.openTime);
+                        if (!isNaN(firstDate.getTime()) && !isNaN(lastDate.getTime())) {
+                          tenure = Math.ceil((lastDate.getTime() - firstDate.getTime()) / (1000 * 60 * 60 * 24));
+                        }
+                      }
+                      
+                      // Active days calculation
+                      const activeDays = new Set(
+                        agentTickets
+                          .filter(t => {
+                            if (!t.openTime) return false;
+                            const date = new Date(t.openTime);
+                            return !isNaN(date.getTime());
+                          })
+                          .map(t => new Date(t.openTime).toDateString())
+                      ).size;
+                      
+                      // Calculate CPI components with enhanced formulas
+                      
+                      // 1. Efficiency Score (25%) - Enhanced AHT calculation with tenure consideration
+                      const tenureMonths = Math.max(1, tenure / 30); // Convert days to months
+                      const expectedAHT = Math.max(30, 60 - (tenureMonths * 2)); // Expected AHT decreases with experience
+                      const ahtEfficiency = Math.max(0, Math.min(100, 100 - ((avgAHT - expectedAHT) / expectedAHT) * 50));
+                      const efficiencyScore = Math.round(ahtEfficiency);
+                      
+                      // 2. Quality Score (30%) - Enhanced with multiple quality indicators
+                      const slaWeight = 0.6;
+                      const fcrWeight = 0.3;
+                      const escalationWeight = 0.1;
+                      
+                      const slaQuality = slaRate;
+                      const fcrQuality = fcrRate;
+                      const escalationQuality = Math.max(0, 100 - escalationRate * 2);
+                      
+                      const qualityScore = Math.round(
+                        slaQuality * slaWeight +
+                        fcrQuality * fcrWeight +
+                        escalationQuality * escalationWeight
+                      );
+                      
+                      // 3. Resolution Score (20%) - Enhanced with proper bounds and context
+                      const baseResolution = fcrRate;
+                      const escalationPenalty = escalationRate * 1.5; // Increased penalty
+                      const resolutionScore = Math.max(0, Math.min(100, baseResolution - escalationPenalty));
+                      
+                      // 4. Reliability Score (15%) - Enhanced with attendance and consistency
+                      const attendanceRate = activeDays / Math.max(1, tenure); // Daily attendance rate
+                      const escalationPenaltyReliability = escalationRate * 3;
+                      const consistencyBonus = Math.min(20, (100 - Math.abs(slaRate - fcrRate)) / 5); // Bonus for consistent performance
+                      
+                      const reliabilityScore = Math.max(0, Math.min(100, 
+                        attendanceRate * 100 - escalationPenaltyReliability + consistencyBonus
+                      ));
+                      
+                      // 5. Productivity Score (10%) - Enhanced with tenure-adjusted volume
+                      const expectedTicketsPerMonth = 50; // Base expectation
+                      const actualTicketsPerMonth = totalTickets / Math.max(1, tenureMonths);
+                      const productivityRatio = actualTicketsPerMonth / expectedTicketsPerMonth;
+                      const productivityScore = Math.min(100, Math.max(0, productivityRatio * 100));
                       
                       // Calculate CPI with weights
                       const cpi = Math.round(
@@ -2361,6 +2426,115 @@ const AgentAnalytics = () => {
                                 <div className="text-2xl font-bold text-indigo-600 mb-1">{productivityScore.toFixed(0)}</div>
                                 <div className="text-sm text-gray-600 dark:text-gray-400">Productivity (10%)</div>
                                 <div className="text-xs text-gray-500">Vol: {totalTickets}</div>
+                              </CardContent>
+                            </Card>
+                          </div>
+                          
+                          {/* Enhanced CPI Details */}
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <Card>
+                              <CardHeader>
+                                <CardTitle className="text-lg flex items-center gap-2">
+                                  <BarChart3 className="w-5 h-5" />
+                                  CPI Calculation Details
+                                </CardTitle>
+                              </CardHeader>
+                              <CardContent className="space-y-4">
+                                <div className="space-y-3">
+                                  <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                                    <div className="font-semibold text-blue-800 dark:text-blue-200 mb-1">Efficiency Score ({efficiencyScore.toFixed(0)})</div>
+                                    <div className="text-sm text-blue-700 dark:text-blue-300">
+                                      <div>• Expected AHT: {formatDurationDHM(expectedAHT)}</div>
+                                      <div>• Actual AHT: {formatDurationDHM(avgAHT)}</div>
+                                      <div>• Tenure: {tenure} days ({tenureMonths.toFixed(1)} months)</div>
+                                      <div>• Performance: {avgAHT <= expectedAHT ? '✅ Above Expectation' : '⚠️ Below Expectation'}</div>
+                                    </div>
+                                  </div>
+                                  
+                                  <div className="p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                                    <div className="font-semibold text-green-800 dark:text-green-200 mb-1">Quality Score ({qualityScore.toFixed(0)})</div>
+                                    <div className="text-sm text-green-700 dark:text-green-300">
+                                      <div>• SLA Rate: {slaRate.toFixed(1)}% (Weight: 60%)</div>
+                                      <div>• FCR Rate: {fcrRate.toFixed(1)}% (Weight: 30%)</div>
+                                      <div>• Escalation Quality: {escalationQuality.toFixed(0)} (Weight: 10%)</div>
+                                      <div>• Overall: {qualityScore >= 80 ? '✅ Excellent' : qualityScore >= 60 ? '⚠️ Good' : '❌ Needs Improvement'}</div>
+                                    </div>
+                                  </div>
+                                  
+                                  <div className="p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
+                                    <div className="font-semibold text-purple-800 dark:text-purple-200 mb-1">Resolution Score ({resolutionScore.toFixed(0)})</div>
+                                    <div className="text-sm text-purple-700 dark:text-purple-300">
+                                      <div>• Base FCR: {fcrRate.toFixed(1)}%</div>
+                                      <div>• Escalation Penalty: -{escalationPenalty.toFixed(1)}</div>
+                                      <div>• Net Score: {resolutionScore.toFixed(0)}</div>
+                                      <div>• Status: {resolutionScore >= 70 ? '✅ Strong' : resolutionScore >= 50 ? '⚠️ Moderate' : '❌ Weak'}</div>
+                                    </div>
+                                  </div>
+                                </div>
+                              </CardContent>
+                            </Card>
+                            
+                            <Card>
+                              <CardHeader>
+                                <CardTitle className="text-lg flex items-center gap-2">
+                                  <Target className="w-5 h-5" />
+                                  Performance Targets & Benchmarks
+                                </CardTitle>
+                              </CardHeader>
+                              <CardContent className="space-y-4">
+                                <div className="space-y-3">
+                                  <div className="flex justify-between items-center p-2 bg-gray-50 dark:bg-gray-800 rounded">
+                                    <span className="text-sm">AHT Target</span>
+                                    <span className="font-semibold">≤ {formatDurationDHM(expectedAHT)}</span>
+                                  </div>
+                                  <div className="flex justify-between items-center p-2 bg-gray-50 dark:bg-gray-800 rounded">
+                                    <span className="text-sm">SLA Target</span>
+                                    <span className="font-semibold">≥ 85%</span>
+                                  </div>
+                                  <div className="flex justify-between items-center p-2 bg-gray-50 dark:bg-gray-800 rounded">
+                                    <span className="text-sm">FCR Target</span>
+                                    <span className="font-semibold">≥ 75%</span>
+                                  </div>
+                                  <div className="flex justify-between items-center p-2 bg-gray-50 dark:bg-gray-800 rounded">
+                                    <span className="text-sm">Escalation Target</span>
+                                    <span className="font-semibold">≤ 10%</span>
+                                  </div>
+                                  <div className="flex justify-between items-center p-2 bg-gray-50 dark:bg-gray-800 rounded">
+                                    <span className="text-sm">Productivity Target</span>
+                                    <span className="font-semibold">≥ 50 tickets/month</span>
+                                  </div>
+                                </div>
+                                
+                                <div className="mt-4 p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
+                                  <div className="font-semibold text-yellow-800 dark:text-yellow-200 mb-2">Performance Summary</div>
+                                  <div className="text-sm text-yellow-700 dark:text-yellow-300">
+                                    {(() => {
+                                      const targets = {
+                                        aht: avgAHT <= expectedAHT,
+                                        sla: slaRate >= 85,
+                                        fcr: fcrRate >= 75,
+                                        escalation: escalationRate <= 10,
+                                        productivity: productivityRatio >= 1
+                                      };
+                                      
+                                      const metTargets = Object.values(targets).filter(Boolean).length;
+                                      const totalTargets = Object.keys(targets).length;
+                                      const percentage = (metTargets / totalTargets) * 100;
+                                      
+                                      return (
+                                        <div>
+                                          <div>• Targets Met: {metTargets}/{totalTargets} ({percentage.toFixed(0)}%)</div>
+                                          <div>• Overall Grade: {cpiLevel.level}</div>
+                                          <div>• Recommendation: {
+                                            percentage >= 80 ? 'Excellent performance, consider for advancement' :
+                                            percentage >= 60 ? 'Good performance, focus on improvement areas' :
+                                            'Needs improvement, consider additional training'
+                                          }</div>
+                                        </div>
+                                      );
+                                    })()}
+                                  </div>
+                                </div>
                               </CardContent>
                             </Card>
                           </div>
