@@ -2077,6 +2077,145 @@ const AgentAnalytics = () => {
                               </CardContent>
                             </Card>
                           </div>
+                          
+                          {/* Goal Attainment & Benchmarking */}
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            {/* Goal Attainment & Gaps */}
+                            <Card>
+                              <CardHeader>
+                                <CardTitle className="text-lg flex items-center gap-2">
+                                  <Target className="w-5 h-5" />
+                                  Goal Attainment & Gaps
+                                </CardTitle>
+                              </CardHeader>
+                              <CardContent>
+                                {(() => {
+                                  // Targets
+                                  const expectedAHTLocal = expectedAHT;
+                                  const targets = {
+                                    aht: { ok: avgAHT <= expectedAHTLocal, gap: Math.max(0, avgAHT - expectedAHTLocal), label: 'AHT', unit: 'min' },
+                                    frt: { ok: true, gap: 0, label: 'FRT', unit: 'min' }, // FRT lifetime optional
+                                    art: { ok: true, gap: 0, label: 'ART', unit: 'min' }, // ART lifetime optional
+                                    sla: { ok: slaRate >= 85, gap: Math.max(0, 85 - slaRate), label: 'SLA', unit: '%' },
+                                    fcr: { ok: fcrRate >= 75, gap: Math.max(0, 75 - fcrRate), label: 'FCR', unit: '%' },
+                                    esc: { ok: escalationRate <= 10, gap: Math.max(0, escalationRate - 10), label: 'Esc', unit: '%' },
+                                    prod: { ok: productivityRatio >= 1, gap: Math.max(0, (1 - productivityRatio) * 50), label: 'Productivity', unit: 'tk/mo' },
+                                  } as const;
+
+                                  const entries = Object.entries(targets);
+                                  const met = entries.filter(([,v]) => v.ok).length;
+                                  const total = entries.length - 2; // exclude frt/art lifetime placeholders
+                                  return (
+                                    <div className="space-y-4">
+                                      <div className="flex items-center justify-between p-3 rounded bg-gray-50 dark:bg-gray-800">
+                                        <span className="text-sm text-gray-600 dark:text-gray-400">Targets Met</span>
+                                        <span className="font-semibold">{met}/{total}</span>
+                                      </div>
+                                      <div className="grid grid-cols-2 gap-3">
+                                        {entries.filter(([k]) => k !== 'frt' && k !== 'art').map(([key, v]) => (
+                                          <div key={key} className={`p-3 rounded border ${v.ok ? 'border-green-200 dark:border-green-900/40 bg-green-50 dark:bg-green-900/20' : 'border-yellow-200 dark:border-yellow-900/40 bg-yellow-50 dark:bg-yellow-900/20'}`}>
+                                            <div className="flex items-center justify-between">
+                                              <span className="text-sm font-medium">{v.label}</span>
+                                              <span className={`text-xs px-2 py-0.5 rounded ${v.ok ? 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300' : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-300'}`}>{v.ok ? 'OK' : 'GAP'}</span>
+                                            </div>
+                                            {!v.ok && (
+                                              <div className="text-xs mt-1 text-gray-600 dark:text-gray-400">Gap: {v.gap.toFixed(1)}{v.unit}</div>
+                                            )}
+                                          </div>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  );
+                                })()}
+                              </CardContent>
+                            </Card>
+
+                            {/* Benchmark vs Team */}
+                            <Card>
+                              <CardHeader>
+                                <CardTitle className="text-lg flex items-center gap-2">
+                                  <BarChart3 className="w-5 h-5" />
+                                  Benchmark vs Team (Percentile)
+                                </CardTitle>
+                              </CardHeader>
+                              <CardContent>
+                                {(() => {
+                                  const ticketsByAgent: Record<string, typeof allTickets> = {};
+                                  (allTickets || []).forEach(t => {
+                                    const a = t.openBy || 'Unknown';
+                                    if (!ticketsByAgent[a]) ticketsByAgent[a] = [] as any;
+                                    (ticketsByAgent[a] as any).push(t);
+                                  });
+
+                                  const metrics: { agent: string; aht: number; sla: number; fcr: number; esc: number; vol: number }[] = [];
+                                  for (const [agent, rows] of Object.entries(ticketsByAgent)) {
+                                    const total = rows.length;
+                                    const ahtVals = rows
+                                      .filter((t: any) => t.openTime && t.closeTime && new Date(t.closeTime) > new Date(t.openTime))
+                                      .map((t: any) => (new Date(t.closeTime).getTime() - new Date(t.openTime).getTime()) / 60000);
+                                    const avgA = ahtVals.length ? ahtVals.reduce((a: number,b: number)=>a+b,0)/ahtVals.length : 0;
+                                    const slaC = rows.filter((t: any) => t.openTime && t.closeTime && ((new Date(t.closeTime).getTime() - new Date(t.openTime).getTime())/60000) <= 1440).length;
+                                    const fcrC = rows.filter((t: any) => !t.handling2 || (t.handling2||'').trim()==='').length;
+                                    const escC = rows.filter((t: any) => [t.closeHandling2,t.closeHandling3,t.closeHandling4,t.closeHandling5].some((h:any)=>h && h.trim()!=='')).length;
+                                    metrics.push({
+                                      agent,
+                                      aht: avgA,
+                                      sla: total? (slaC/total)*100:0,
+                                      fcr: total? (fcrC/total)*100:0,
+                                      esc: total? (escC/total)*100:0,
+                                      vol: total
+                                    });
+                                  }
+
+                                  const pct = (arr: number[], value: number, higherIsBetter: boolean) => {
+                                    const sorted = [...arr].sort((a,b)=>a-b);
+                                    if (higherIsBetter) {
+                                      const rank = sorted.findIndex(v=>v>value);
+                                      const idx = rank === -1 ? sorted.length : rank;
+                                      return (idx/sorted.length)*100;
+                                    } else {
+                                      const rank = sorted.findIndex(v=>v>=value);
+                                      const idx = rank === -1 ? sorted.length : rank;
+                                      return (1 - idx/ sorted.length)*100;
+                                    }
+                                  };
+
+                                  const self = metrics.find(m=>m.agent===selectedAgent);
+                                  if (!self) return <div className="text-sm text-gray-500">No team data.</div>;
+                                  const ahtPct = pct(metrics.map(m=>m.aht), self.aht, false);
+                                  const slaPct = pct(metrics.map(m=>m.sla), self.sla, true);
+                                  const fcrPct = pct(metrics.map(m=>m.fcr), self.fcr, true);
+                                  const escPct = pct(metrics.map(m=>m.esc), self.esc, false);
+                                  const volPct = pct(metrics.map(m=>m.vol), self.vol, true);
+
+                                  const rows = [
+                                    { name: 'AHT (lower is better)', value: `${formatDurationDHM(self.aht)}`, pct: ahtPct },
+                                    { name: 'SLA%', value: `${self.sla.toFixed(1)}%`, pct: slaPct },
+                                    { name: 'FCR%', value: `${self.fcr.toFixed(1)}%`, pct: fcrPct },
+                                    { name: 'Escalation%', value: `${self.esc.toFixed(1)}%`, pct: escPct },
+                                    { name: 'Volume', value: `${self.vol}`, pct: volPct },
+                                  ];
+
+                                  return (
+                                    <div className="space-y-3">
+                                      {rows.map((r,i)=> (
+                                        <div key={i} className="p-3 rounded bg-gray-50 dark:bg-gray-800">
+                                          <div className="flex items-center justify-between mb-1">
+                                            <span className="text-sm text-gray-600 dark:text-gray-400">{r.name}</span>
+                                            <span className="font-semibold">{r.value}</span>
+                                          </div>
+                                          <div className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded overflow-hidden">
+                                            <div className="h-2 bg-blue-500" style={{width: `${Math.max(0, Math.min(100, r.pct))}%`}} />
+                                          </div>
+                                          <div className="text-xs text-right text-gray-500 mt-1">P{r.pct.toFixed(0)}</div>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  );
+                                })()}
+                              </CardContent>
+                            </Card>
+                          </div>
 
                           {/* Performance Metrics */}
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
