@@ -34,7 +34,7 @@ const SummaryCard: React.FC<SummaryCardProps> = ({
   active = false,
 }) => (
   <div
-    className={`bg-white dark:bg-zinc-900 rounded-2xl shadow-lg p-6 flex flex-col min-h-[180px] transition-all duration-300 min-w-0 overflow-hidden
+    className={`bg-white dark:bg-zinc-900 rounded-2xl shadow-lg p-4 flex flex-col min-h-[140px] transition-all duration-300 min-w-0 overflow-hidden
       ${onClick ? 'cursor-pointer hover:shadow-xl hover:scale-[1.02]' : ''}
       ${active ? '' : ''}
       ${className}`}
@@ -43,14 +43,14 @@ const SummaryCard: React.FC<SummaryCardProps> = ({
     role={onClick ? 'button' : undefined}
     aria-pressed={active}
   >
-    <div className="flex items-center gap-4 mb-2">
+    <div className="flex items-center gap-3 mb-2">
       <div
-        className={`w-12 h-12 min-w-12 min-h-12 rounded-xl flex items-center justify-center ${iconBg} shadow-lg`}
+        className={`w-10 h-10 min-w-10 min-h-10 rounded-lg flex items-center justify-center ${iconBg} shadow-lg`}
       >
-        <span className="text-white" style={{ fontSize: 28 }}>{icon}</span>
+        <span className="text-white" style={{ fontSize: 20 }}>{icon}</span>
       </div>
       <div className="flex-1 flex items-center">
-        <span className="text-xs sm:text-sm md:text-base font-semibold uppercase tracking-wide break-words whitespace-normal">
+        <span className="text-[10px] sm:text-xs md:text-sm font-semibold uppercase tracking-wide break-words whitespace-normal">
           {title}
         </span>
         {badge && (
@@ -62,17 +62,17 @@ const SummaryCard: React.FC<SummaryCardProps> = ({
         )}
       </div>
     </div>
-    <div className="flex items-end min-h-[40px]">
-      <span className="text-2xl md:text-3xl lg:text-4xl font-mono font-extrabold tracking-tight">
+    <div className="flex items-end min-h-[32px]">
+      <span className="text-xl md:text-2xl lg:text-3xl font-mono font-extrabold tracking-tight">
         {value}
       </span>
       {subvalue && (
-        <span className="text-base md:text-lg font-semibold text-gray-500 dark:text-gray-300 ml-1 mb-0.5 align-bottom">
+        <span className="text-sm md:text-base font-semibold text-gray-500 dark:text-gray-300 ml-1 mb-0.5 align-bottom">
           {subvalue}
         </span>
       )}
     </div>
-    <div className="text-xs sm:text-sm text-gray-700 dark:text-gray-300 mt-1 break-words whitespace-normal">
+    <div className="text-[10px] sm:text-xs text-gray-700 dark:text-gray-300 mt-1 break-words whitespace-normal">
       {description}
     </div>
   </div>

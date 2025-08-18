@@ -1148,11 +1148,11 @@ const AgentAnalytics = () => {
                     <div className="flex-1 bg-blue-500 rounded-lg p-3 text-center">
                       <div className="text-white text-2xl font-bold">#{agent.rankNum}</div>
                       <div className="text-white/80 text-xs">Rank</div>
-                    </div>
+                </div>
                     <div className="flex-1 bg-yellow-400 rounded-lg p-3 text-center">
                       <div className="text-zinc-800 text-2xl font-bold">{agent.score ?? 0}</div>
                       <div className="text-zinc-600 text-xs">Score</div>
-                    </div>
+              </div>
                   </div>
                   
                   {/* Detailed Metrics Grid */}
