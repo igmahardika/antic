@@ -34,8 +34,8 @@ const SummaryCard: React.FC<SummaryCardProps> = ({
   active = false,
 }) => (
   <div
-    className={`bg-white dark:bg-zinc-900 rounded-xl shadow-lg p-3 flex flex-col min-h-[120px] w-[160px] flex-shrink-0 transition-all duration-300 overflow-hidden
-      ${onClick ? 'cursor-pointer hover:shadow-xl hover:scale-[1.02]' : ''}
+    className={`bg-white dark:bg-zinc-900 rounded-xl shadow-lg p-3 flex flex-col min-h-[120px] w-[160px] flex-shrink-0 transition-all duration-300 overflow-hidden hover:shadow-xl hover:scale-[1.02] cursor-pointer
+      ${onClick ? '' : ''}
       ${active ? '' : ''}
       ${className}`}
     onClick={onClick}
