@@ -1269,7 +1269,30 @@ const AgentAnalytics = () => {
           <RadixDialog.Content className="fixed right-0 top-0 h-full w-full md:w-[800px] max-w-full bg-white dark:bg-zinc-900 shadow-2xl z-50 overflow-y-auto p-8">
             <RadixDialog.Title className="sr-only">Agent Detail</RadixDialog.Title>
             <div className="flex items-center justify-between mb-6">
-              <div className="text-2xl font-bold text-gray-900 dark:text-gray-100">Agent Detail</div>
+              <div className="flex items-center gap-4">
+                {/* Agent Photo */}
+                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-white via-blue-100 to-purple-100 flex items-center justify-center relative overflow-hidden">
+                  <img 
+                    src={`/agent-photos/${selectedAgent}.png`} 
+                    alt={selectedAgent}
+                    className="w-full h-full object-cover rounded-full"
+                    onError={(e) => {
+                      // Fallback jika foto tidak ada
+                      const target = e.target as HTMLImageElement;
+                      target.style.display = 'none';
+                      target.nextElementSibling?.classList.remove('hidden');
+                    }}
+                  />
+                  {/* Fallback avatar jika foto tidak ada */}
+                  <div className="w-full h-full rounded-full bg-purple-500 flex items-center justify-center text-white text-xl font-bold hidden">
+                    {selectedAgent?.[0] || '?'}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-2xl font-bold text-gray-900 dark:text-gray-100">{selectedAgent}</div>
+                  <div className="text-sm text-gray-500 dark:text-gray-400">Agent Detail</div>
+                </div>
+              </div>
               <div className="flex items-center gap-2">
                 <select 
                   className="px-3 py-2 border rounded-md text-sm bg-white dark:bg-gray-800 dark:border-gray-600"
