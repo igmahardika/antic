@@ -1060,7 +1060,7 @@ const AgentAnalytics = () => {
           {backlogDebugEnabled ? 'Disable' : 'Enable'} Backlog Debug
         </button>
       </div>
-      <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3 mb-6 overflow-x-auto">
+      <div className="flex gap-3 mb-6 overflow-x-auto pb-2">
         {summaryCards.map(s => {
           let iconBg;
           if (s.title === 'Total Active Agents') iconBg = "bg-blue-700";

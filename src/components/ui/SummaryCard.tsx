@@ -34,7 +34,7 @@ const SummaryCard: React.FC<SummaryCardProps> = ({
   active = false,
 }) => (
   <div
-    className={`bg-white dark:bg-zinc-900 rounded-xl shadow-lg p-3 flex flex-col min-h-[120px] transition-all duration-300 min-w-0 overflow-hidden
+    className={`bg-white dark:bg-zinc-900 rounded-xl shadow-lg p-3 flex flex-col min-h-[120px] w-[160px] flex-shrink-0 transition-all duration-300 overflow-hidden
       ${onClick ? 'cursor-pointer hover:shadow-xl hover:scale-[1.02]' : ''}
       ${active ? '' : ''}
       ${className}`}
@@ -43,27 +43,27 @@ const SummaryCard: React.FC<SummaryCardProps> = ({
     role={onClick ? 'button' : undefined}
     aria-pressed={active}
   >
-    <div className="flex items-center gap-2 mb-2">
+    <div className="flex items-start gap-2 mb-2">
       <div
-        className={`w-8 h-8 min-w-8 min-h-8 rounded-lg flex items-center justify-center ${iconBg} shadow-md`}
+        className={`w-8 h-8 min-w-8 min-h-8 rounded-lg flex items-center justify-center ${iconBg} shadow-md flex-shrink-0`}
       >
         <span className="text-white" style={{ fontSize: 16 }}>{icon}</span>
       </div>
-      <div className="flex-1 flex items-center">
-        <span className="text-[10px] font-semibold uppercase tracking-wide break-words whitespace-normal leading-tight">
+      <div className="flex-1 min-w-0">
+        <span className="text-[10px] font-semibold uppercase tracking-wide break-words leading-tight block">
           {title}
         </span>
         {badge && (
           <span
-            className={`ml-1 px-2 py-0.5 rounded text-[8px] font-bold text-white ${badgeColor}`}
+            className={`inline-block mt-1 px-2 py-0.5 rounded text-[8px] font-bold text-white ${badgeColor}`}
           >
             {badge}
           </span>
         )}
       </div>
     </div>
-    <div className="flex items-end min-h-[32px]">
-      <span className="text-lg font-mono font-extrabold tracking-tight">
+    <div className="flex items-end min-h-[32px] mb-2">
+      <span className="text-lg font-mono font-extrabold tracking-tight break-words leading-tight">
         {value}
       </span>
       {subvalue && (
@@ -72,7 +72,7 @@ const SummaryCard: React.FC<SummaryCardProps> = ({
         </span>
       )}
     </div>
-    <div className="text-[10px] text-gray-700 dark:text-gray-300 mt-1 break-words whitespace-normal leading-tight">
+    <div className="text-[10px] text-gray-700 dark:text-gray-300 break-words leading-tight flex-1">
       {description}
     </div>
   </div>
