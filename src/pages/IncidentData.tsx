@@ -164,7 +164,7 @@ export const IncidentData: React.FC = () => {
   };
 
   const getStatusBadgeVariant = (status: string | null | undefined) => {
-    if (!status) return 'secondary';
+    if (!status || typeof status !== 'string') return 'secondary';
     const s = status.toLowerCase();
     if (s === 'done') return 'success';
     if (s === 'open') return 'warning';
@@ -173,7 +173,7 @@ export const IncidentData: React.FC = () => {
   };
 
   const getPriorityBadgeVariant = (priority: string | null | undefined) => {
-    if (!priority) return 'secondary';
+    if (!priority || typeof priority !== 'string') return 'secondary';
     const p = priority.toLowerCase();
     if (p === 'high') return 'danger';
     if (p === 'medium') return 'warning';
