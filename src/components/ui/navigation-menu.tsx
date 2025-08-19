@@ -21,6 +21,7 @@ import ScienceIcon from '@mui/icons-material/Science';
 import ConfirmationNumberIcon from '@mui/icons-material/ConfirmationNumber';
 import StorageIcon from '@mui/icons-material/Storage';
 import MenuBookIcon from '@mui/icons-material/MenuBook';
+import WarningIcon from '@mui/icons-material/Warning';
 
 import { cn } from "@/lib/utils"
 
@@ -204,6 +205,23 @@ export function SidebarNav({ isMobileOpen, setIsMobileOpen, onCollapseChange }) 
           name: 'Agent Analytics',
           path: '/ticket/agent-analytics',
           icon: <PersonCheckIcon sx={{ fontSize: 18 }} />,
+        },
+      ],
+    },
+    {
+      name: 'Incident',
+      path: '/incident',
+      icon: <WarningIcon sx={{ fontSize: 18 }} />,
+      children: [
+        {
+          name: 'Incident Data',
+          path: '/incident/data',
+          icon: <TableChartIcon sx={{ fontSize: 18 }} />,
+        },
+        {
+          name: 'Incident Analytics',
+          path: '/incident/analytics',
+          icon: <BarChartIcon sx={{ fontSize: 18 }} />,
         },
       ],
     },

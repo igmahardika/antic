@@ -1,4 +1,5 @@
 import Dexie, { Table } from 'dexie';
+import { Incident } from '@/types/incident';
 
 // Definisikan struktur data tiket yang akan disimpan di IndexedDB
 export interface ITicket {
@@ -65,6 +66,7 @@ export class TicketDB extends Dexie {
   users!: Table<IUser, number>;
   menuPermissions!: Table<IMenuPermission, number>;
   customers!: Table<ICustomer, string>;
+  incidents!: Table<Incident, string>; // pk = id
 
   constructor() {
     super('InsightTicketDatabase');
@@ -84,6 +86,19 @@ export class TicketDB extends Dexie {
       users: '++id, username, role',
       menuPermissions: '++id, role',
       customers: 'id, nama, jenisKlien, layanan, kategori'
+    });
+    this.version(5).stores({
+      tickets: 'id, openTime, name, uploadTimestamp, cabang',
+      users: '++id, username, role',
+      menuPermissions: '++id, role',
+      customers: 'id, nama, jenisKlien, layanan, kategori',
+      // Index yang sering dipakai filter:
+      // startTime, status, priority, site, klasifikasiGangguan, level, ncal, noCase
+      incidents: `
+        id,
+        startTime, status, priority, site,
+        klasifikasiGangguan, level, ncal, noCase
+      `
     });
   }
 }

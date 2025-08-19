@@ -1070,8 +1070,8 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
               <div className="space-y-2">
                 <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 border-b border-gray-200 dark:border-zinc-700 pb-1">Key Metrics</h3>
                 
-                {/* Bulan tersibuk */}
-                {insights.busiestMonth && (
+            {/* Bulan tersibuk */}
+            {insights.busiestMonth && (
                   <div className="p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
                     <div className="flex items-center justify-between mb-1">
                       <div className="flex items-center gap-1">
@@ -1098,8 +1098,8 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
                   </div>
                 )}
                 
-                {/* Kategori dominan */}
-                {insights.topCategory && (
+            {/* Kategori dominan */}
+            {insights.topCategory && (
                   <div className="p-2 bg-purple-50 dark:bg-purple-900/20 rounded-lg border border-purple-200 dark:border-purple-800">
                     <div className="flex items-center justify-between mb-1">
                       <div className="flex items-center gap-1">
@@ -1126,8 +1126,8 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
                   </div>
                 )}
                 
-                {/* Pelanggan kronis/ekstrem */}
-                {insights.chronicPercent && (
+            {/* Pelanggan kronis/ekstrem */}
+            {insights.chronicPercent && (
                   <div className="p-2 bg-orange-50 dark:bg-orange-900/20 rounded-lg border border-orange-200 dark:border-orange-800">
                     <div className="flex items-center justify-between mb-1">
                       <div className="flex items-center gap-1">
@@ -1151,7 +1151,7 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
                 <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 border-b border-gray-200 dark:border-zinc-700 pb-1">Performance Insights</h3>
                 
                 {/* Complaint Penetration */}
-                {typeof complaintPenetrationByType !== 'undefined' && (
+            {typeof complaintPenetrationByType !== 'undefined' && (
                   <div className="p-2 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800">
                     <div className="flex items-center justify-between mb-1">
                       <div className="flex items-center gap-1">
@@ -1171,7 +1171,7 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
                 
                 {/* Handling Time Insights */}
                 <div className="space-y-3">
-                  {typeof safeMaxAvg !== 'undefined' && safeMaxAvg.shift && (
+            {typeof safeMaxAvg !== 'undefined' && safeMaxAvg.shift && (
                     <div className="p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800">
                       <div className="flex items-center gap-2 mb-1">
                         <AssignmentIcon className="text-amber-500 text-xs" />
@@ -1183,7 +1183,7 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
                     </div>
                   )}
                   
-                  {typeof safeMaxAvgCat !== 'undefined' && safeMaxAvgCat.cat && (
+            {typeof safeMaxAvgCat !== 'undefined' && safeMaxAvgCat.cat && (
                     <div className="p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800">
                       <div className="flex items-center gap-2 mb-1">
                         <AssignmentIcon className="text-amber-500 text-xs" />
@@ -2879,7 +2879,7 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
                             isOutlier ? 'bg-red-500' : 'bg-purple-500'
                           }`}>
                             <AssignmentIcon className="text-white text-xs" />
-                        </div>
+    </div>
                           <div>
                             <h4 className="font-semibold text-gray-900 dark:text-gray-100 truncate max-w-[120px]" title={cat.cat}>{cat.cat}</h4>
                             <p className="text-xs text-gray-600 dark:text-gray-400">{cat.count} tiket</p>
