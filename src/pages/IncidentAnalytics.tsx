@@ -6,6 +6,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import SummaryCard from '@/components/ui/SummaryCard';
+import {
+  ChartConfig,
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+} from "@/components/ui/chart";
 import { 
   BarChart, 
   Bar, 
@@ -22,7 +28,8 @@ import {
   AreaChart,
   Area,
   ComposedChart,
-  Legend
+  Legend,
+  Rectangle
 } from 'recharts';
 import { 
   AlertTriangle, 
@@ -465,7 +472,10 @@ export const IncidentAnalytics: React.FC = () => {
     })
     .map(([priority, count]) => ({
       name: priority,
-      value: count
+      value: count,
+      fill: priority === 'High' ? 'var(--color-high)' : 
+            priority === 'Medium' ? 'var(--color-medium)' :
+            priority === 'Low' ? 'var(--color-low)' : 'var(--color-unknown)'
     }));
 
   const klasifikasiData = Object.entries(stats.byKlas).map(([klas, count]) => ({
@@ -478,7 +488,8 @@ export const IncidentAnalytics: React.FC = () => {
     .slice(0, 10)
     .map(([site, count]) => ({
       name: site,
-      value: count
+      value: count,
+      fill: 'var(--chart-1)'
     }));
 
   const levelData = Object.entries(stats.byLevel)
@@ -490,7 +501,11 @@ export const IncidentAnalytics: React.FC = () => {
     })
     .map(([level, count]) => ({
       name: `Level ${level}`,
-      value: count
+      value: count,
+      fill: level === '8' ? 'var(--color-level8)' :
+            level === '17' ? 'var(--color-level17)' :
+            level === '27' ? 'var(--color-level27)' :
+            level === '46' ? 'var(--color-level46)' : 'var(--color-levelunknown)'
     }));
 
   // Debug chart data preparation
@@ -508,16 +523,6 @@ export const IncidentAnalytics: React.FC = () => {
     value: stats.byNCAL[ncal] || 0,
     color: NCAL_COLORS[ncal as keyof typeof NCAL_COLORS]
   }));
-
-  const ncalDurationData = NCAL_ORDER.map(ncal => {
-    const duration = stats.byNCALDuration[ncal];
-    return {
-      name: ncal,
-      actual: duration?.avg || 0,
-      target: NCAL_TARGETS[ncal as keyof typeof NCAL_TARGETS] || 0,
-      color: NCAL_COLORS[ncal as keyof typeof NCAL_COLORS]
-    };
-  });
 
   // Prepare monthly NCAL data for area charts
   const monthlyNCALData = Object.keys(stats.byMonthNCAL)
@@ -541,6 +546,140 @@ export const IncidentAnalytics: React.FC = () => {
       return monthData;
     });
 
+  // Filter NCAL categories that have data (non-zero values)
+  const activeNCALCategories = NCAL_ORDER.filter(ncal => {
+    // Check if any month has non-zero data for this NCAL
+    const hasCountData = monthlyNCALData.some(month => month[ncal] > 0);
+    const hasDurationData = monthlyNCALDurationData.some(month => month[ncal] > 0);
+    return hasCountData || hasDurationData;
+  });
+
+  // Chart configurations
+  const ncalChartConfig = {
+    value: {
+      label: "Count",
+    },
+    ...Object.fromEntries(
+      NCAL_ORDER.map(ncal => [
+        ncal.toLowerCase(),
+        {
+          label: ncal,
+          color: NCAL_COLORS[ncal as keyof typeof NCAL_COLORS],
+        }
+      ])
+    )
+  } satisfies ChartConfig;
+
+  const ncalAreaChartConfig = {
+    ...Object.fromEntries(
+      activeNCALCategories.map(ncal => [
+        ncal.toLowerCase(),
+        {
+          label: ncal,
+          color: NCAL_COLORS[ncal as keyof typeof NCAL_COLORS],
+        }
+      ])
+    )
+  } satisfies ChartConfig;
+
+  const priorityChartConfig = {
+    value: {
+      label: "Count",
+    },
+    high: {
+      label: "High",
+      color: "var(--chart-1)",
+    },
+    medium: {
+      label: "Medium", 
+      color: "var(--chart-2)",
+    },
+    low: {
+      label: "Low",
+      color: "var(--chart-3)",
+    },
+    unknown: {
+      label: "Unknown",
+      color: "var(--chart-4)",
+    },
+  } satisfies ChartConfig;
+
+  const levelChartConfig = {
+    value: {
+      label: "Count",
+    },
+    level8: {
+      label: "Level 8",
+      color: "var(--chart-1)",
+    },
+    level17: {
+      label: "Level 17",
+      color: "var(--chart-2)",
+    },
+    level27: {
+      label: "Level 27",
+      color: "var(--chart-3)",
+    },
+    level46: {
+      label: "Level 46",
+      color: "var(--chart-4)",
+    },
+    levelunknown: {
+      label: "Level Unknown",
+      color: "var(--chart-5)",
+    },
+  } satisfies ChartConfig;
+
+  const siteChartConfig = {
+    value: {
+      label: "Count",
+    },
+  } satisfies ChartConfig;
+
+  const ncalDurationData = NCAL_ORDER.map(ncal => {
+    const duration = stats.byNCALDuration[ncal];
+    return {
+      name: ncal,
+      actual: duration?.avg || 0,
+      target: NCAL_TARGETS[ncal as keyof typeof NCAL_TARGETS] || 0,
+      color: NCAL_COLORS[ncal as keyof typeof NCAL_COLORS]
+    };
+  });
+
+  // Debug active NCAL categories
+  console.log('🔍 ACTIVE NCAL CATEGORIES:', {
+    allNCAL: NCAL_ORDER,
+    activeNCAL: activeNCALCategories,
+    monthlyNCALData: monthlyNCALData.map(month => ({
+      month: month.month,
+      totals: NCAL_ORDER.map(ncal => ({ ncal, value: month[ncal] }))
+    })),
+    monthlyNCALDurationData: monthlyNCALDurationData.map(month => ({
+      month: month.month,
+      totals: NCAL_ORDER.map(ncal => ({ ncal, value: month[ncal] }))
+    }))
+  });
+
+  // Validate chart data integrity
+  console.log('✅ CHART DATA VALIDATION:', {
+    ncalCountChart: {
+      totalMonths: monthlyNCALData.length,
+      activeCategories: activeNCALCategories.length,
+      sampleData: monthlyNCALData.slice(0, 2).map(month => ({
+        month: month.month,
+        ncalValues: activeNCALCategories.map(ncal => ({ ncal, value: month[ncal] }))
+      }))
+    },
+    ncalDurationChart: {
+      totalMonths: monthlyNCALDurationData.length,
+      activeCategories: activeNCALCategories.length,
+      sampleData: monthlyNCALDurationData.slice(0, 2).map(month => ({
+        month: month.month,
+        ncalValues: activeNCALCategories.map(ncal => ({ ncal, value: month[ncal] }))
+      }))
+    }
+  });
+
   // Debug chart data (background only)
   console.group('📊 CHART DATA');
   console.log('📈 Monthly NCAL Count Chart Data:', monthlyNCALData);
@@ -563,8 +702,8 @@ export const IncidentAnalytics: React.FC = () => {
 
   return (
     <PageWrapper>
-      <div className="space-y-6">
-        {/* Header */}
+    <div className="space-y-6">
+      {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Incident Analytics</h1>
@@ -682,7 +821,7 @@ export const IncidentAnalytics: React.FC = () => {
             <CardDescription>Distribution of incidents by NCAL level</CardDescription>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
+            <ChartContainer config={ncalChartConfig}>
               <PieChart>
                 <Pie
                   data={ncalData}
@@ -698,9 +837,9 @@ export const IncidentAnalytics: React.FC = () => {
                     <Cell key={`cell-${index}`} fill={entry.color} />
                   ))}
                 </Pie>
-                <Tooltip />
+                <ChartTooltip content={<ChartTooltipContent />} />
               </PieChart>
-            </ResponsiveContainer>
+            </ChartContainer>
           </CardContent>
         </Card>
       </div>
@@ -716,37 +855,67 @@ export const IncidentAnalytics: React.FC = () => {
             <CardDescription>Monthly incident count by NCAL level</CardDescription>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
+            <ChartContainer config={ncalAreaChartConfig}>
               <AreaChart 
+                accessibilityLayer
                 data={monthlyNCALData}
-                margin={{ top: 20, right: 30, left: 0, bottom: 0 }}
+                margin={{
+                  top: 20,
+                  right: 30,
+                  left: 20,
+                  bottom: 20,
+                }}
               >
+                <CartesianGrid vertical={false} />
+                <XAxis
+                  dataKey="month"
+                  tickLine={false}
+                  axisLine={false}
+                  tickMargin={8}
+                  tickFormatter={(value) => {
+                    // Format month display: "2024-01" -> "Jan 2024"
+                    const [year, month] = value.split('-');
+                    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
+                                      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                    return `${monthNames[parseInt(month) - 1]} ${year}`;
+                  }}
+                />
+                <YAxis 
+                  tickLine={false} 
+                  axisLine={false} 
+                  tickMargin={8}
+                  tickFormatter={(value) => value.toLocaleString()}
+                />
+                <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
                 <defs>
-                  {NCAL_ORDER.map(ncal => (
-                    <linearGradient key={ncal} id={`color${ncal}`} x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor={NCAL_COLORS[ncal as keyof typeof NCAL_COLORS]} stopOpacity={0.8}/>
-                      <stop offset="95%" stopColor={NCAL_COLORS[ncal as keyof typeof NCAL_COLORS]} stopOpacity={0.1}/>
+                  {activeNCALCategories.map(ncal => (
+                    <linearGradient key={ncal} id={`fill${ncal}`} x1="0" y1="0" x2="0" y2="1">
+                      <stop
+                        offset="5%"
+                        stopColor={NCAL_COLORS[ncal as keyof typeof NCAL_COLORS]}
+                        stopOpacity={0.8}
+                      />
+                      <stop
+                        offset="95%"
+                        stopColor={NCAL_COLORS[ncal as keyof typeof NCAL_COLORS]}
+                        stopOpacity={0.1}
+                      />
                     </linearGradient>
                   ))}
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                <XAxis dataKey="month" tickLine={false} axisLine={false} tickMargin={8} minTickGap={24} />
-                <YAxis tickLine={false} axisLine={false} tickMargin={8} minTickGap={24} />
-                <Tooltip />
-                <Legend />
-                {NCAL_ORDER.map(ncal => (
+                {activeNCALCategories.map(ncal => (
                   <Area
                     key={ncal}
-                    type="monotone"
                     dataKey={ncal}
-                    stackId="1"
+                    type="natural"
+                    fill={`url(#fill${ncal})`}
+                    fillOpacity={0.4}
                     stroke={NCAL_COLORS[ncal as keyof typeof NCAL_COLORS]}
-                    fill={`url(#color${ncal})`}
-                    strokeWidth={3}
+                    stackId="a"
                   />
                 ))}
               </AreaChart>
-            </ResponsiveContainer>
+            </ChartContainer>
           </CardContent>
         </Card>
 
@@ -759,39 +928,71 @@ export const IncidentAnalytics: React.FC = () => {
             <CardDescription>Average duration by NCAL level per month</CardDescription>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
+            <ChartContainer config={ncalAreaChartConfig}>
               <AreaChart 
+                accessibilityLayer
                 data={monthlyNCALDurationData}
-                margin={{ top: 20, right: 30, left: 0, bottom: 0 }}
+                margin={{
+                  top: 20,
+                  right: 30,
+                  left: 20,
+                  bottom: 20,
+                }}
               >
+                <CartesianGrid vertical={false} />
+                <XAxis
+                  dataKey="month"
+                  tickLine={false}
+                  axisLine={false}
+                  tickMargin={8}
+                  tickFormatter={(value) => {
+                    // Format month display: "2024-01" -> "Jan 2024"
+                    const [year, month] = value.split('-');
+                    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
+                                      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                    return `${monthNames[parseInt(month) - 1]} ${year}`;
+                  }}
+                />
+                <YAxis 
+                  tickLine={false} 
+                  axisLine={false} 
+                  tickMargin={8}
+                  tickFormatter={(value) => formatDurationHMS(value)}
+                />
+                <ChartTooltip 
+                  cursor={false} 
+                  content={<ChartTooltipContent />}
+                  formatter={(value: number) => [formatDurationHMS(value), 'Duration']}
+                />
                 <defs>
-                  {NCAL_ORDER.map(ncal => (
-                    <linearGradient key={ncal} id={`colorDuration${ncal}`} x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor={NCAL_COLORS[ncal as keyof typeof NCAL_COLORS]} stopOpacity={0.8}/>
-                      <stop offset="95%" stopColor={NCAL_COLORS[ncal as keyof typeof NCAL_COLORS]} stopOpacity={0.1}/>
+                  {activeNCALCategories.map(ncal => (
+                    <linearGradient key={ncal} id={`fillDuration${ncal}`} x1="0" y1="0" x2="0" y2="1">
+                      <stop
+                        offset="5%"
+                        stopColor={NCAL_COLORS[ncal as keyof typeof NCAL_COLORS]}
+                        stopOpacity={0.8}
+                      />
+                      <stop
+                        offset="95%"
+                        stopColor={NCAL_COLORS[ncal as keyof typeof NCAL_COLORS]}
+                        stopOpacity={0.1}
+                      />
                     </linearGradient>
                   ))}
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                <XAxis dataKey="month" tickLine={false} axisLine={false} tickMargin={8} minTickGap={24} />
-                <YAxis tickLine={false} axisLine={false} tickMargin={8} minTickGap={24} />
-                <Tooltip 
-                  formatter={(value: number) => [formatDurationHMS(value), 'Duration']}
-                />
-                <Legend />
-                {NCAL_ORDER.map(ncal => (
+                {activeNCALCategories.map(ncal => (
                   <Area
                     key={ncal}
-                    type="monotone"
                     dataKey={ncal}
-                    stackId="1"
+                    type="natural"
+                    fill={`url(#fillDuration${ncal})`}
+                    fillOpacity={0.4}
                     stroke={NCAL_COLORS[ncal as keyof typeof NCAL_COLORS]}
-                    fill={`url(#colorDuration${ncal})`}
-                    strokeWidth={3}
+                    stackId="a"
                   />
                 ))}
               </AreaChart>
-            </ResponsiveContainer>
+            </ChartContainer>
           </CardContent>
         </Card>
       </div>
@@ -807,18 +1008,44 @@ export const IncidentAnalytics: React.FC = () => {
             <CardDescription>Distribution of incidents by priority level</CardDescription>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
+            <ChartContainer config={priorityChartConfig}>
               <BarChart 
+                accessibilityLayer 
                 data={priorityData}
-                margin={{ top: 20, right: 30, left: 0, bottom: 0 }}
+                margin={{
+                  top: 20,
+                  right: 30,
+                  left: 20,
+                  bottom: 20,
+                }}
               >
-                <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                <XAxis dataKey="name" tickLine={false} axisLine={false} tickMargin={8} />
-                <YAxis tickLine={false} axisLine={false} tickMargin={8} />
-                <Tooltip />
-                <Bar dataKey="value" fill="#8884d8" radius={[4, 4, 0, 0]} />
+                <CartesianGrid vertical={false} />
+                <XAxis
+                  dataKey="name"
+                  tickLine={false}
+                  tickMargin={10}
+                  axisLine={false}
+                  tickFormatter={(value) =>
+                    priorityChartConfig[value.toLowerCase() as keyof typeof priorityChartConfig]?.label || value
+                  }
+                />
+                <YAxis 
+                  tickLine={false} 
+                  axisLine={false} 
+                  tickMargin={8}
+                  tickFormatter={(value) => value.toLocaleString()}
+                />
+                <ChartTooltip
+                  cursor={false}
+                  content={<ChartTooltipContent hideLabel />}
+                />
+                <Bar
+                  dataKey="value"
+                  strokeWidth={2}
+                  radius={8}
+                />
               </BarChart>
-            </ResponsiveContainer>
+            </ChartContainer>
           </CardContent>
         </Card>
 
@@ -831,19 +1058,50 @@ export const IncidentAnalytics: React.FC = () => {
             <CardDescription>Most affected sites by incident count</CardDescription>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
+            <ChartContainer config={siteChartConfig}>
               <BarChart 
+                accessibilityLayer
                 data={siteData} 
                 layout="horizontal"
-                margin={{ top: 20, right: 30, left: 0, bottom: 0 }}
+                margin={{
+                  top: 20,
+                  right: 30,
+                  left: 20,
+                  bottom: 20,
+                }}
               >
-                <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                <XAxis type="number" tickLine={false} axisLine={false} tickMargin={8} />
-                <YAxis dataKey="name" type="category" width={100} tickLine={false} axisLine={false} tickMargin={8} />
-                <Tooltip />
-                <Bar dataKey="value" fill="#82ca9d" radius={[0, 4, 4, 0]} />
+                <CartesianGrid vertical={false} />
+                <XAxis 
+                  type="number" 
+                  tickLine={false} 
+                  axisLine={false} 
+                  tickMargin={8}
+                  tickFormatter={(value) => value.toLocaleString()}
+                  label={{ value: 'Incident Count', position: 'insideBottom', offset: -5 }}
+                />
+                <YAxis 
+                  dataKey="name" 
+                  type="category" 
+                  width={150} 
+                  tickLine={false} 
+                  axisLine={false} 
+                  tickMargin={8}
+                  tickFormatter={(value) => {
+                    // Truncate long site names
+                    return value.length > 20 ? value.substring(0, 20) + '...' : value;
+                  }}
+                />
+                <ChartTooltip
+                  cursor={false}
+                  content={<ChartTooltipContent hideLabel />}
+                />
+                <Bar 
+                  dataKey="value" 
+                  fill="var(--chart-1)" 
+                  radius={[0, 4, 4, 0]} 
+                />
               </BarChart>
-            </ResponsiveContainer>
+            </ChartContainer>
           </CardContent>
         </Card>
       </div>
@@ -886,30 +1144,56 @@ export const IncidentAnalytics: React.FC = () => {
           </CardContent>
         </Card>
 
-        <Card className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg">
-          <CardHeader>
+                <Card className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg">
+        <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <ConfirmationNumberIcon className="w-5 h-5" />
               Level Distribution
             </CardTitle>
             <CardDescription>Distribution of incidents by level</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={200}>
+        </CardHeader>
+        <CardContent>
+            <ChartContainer config={levelChartConfig}>
               <BarChart 
+                accessibilityLayer 
                 data={levelData}
-                margin={{ top: 20, right: 30, left: 0, bottom: 0 }}
+                margin={{
+                  top: 20,
+                  right: 30,
+                  left: 20,
+                  bottom: 20,
+                }}
               >
-                <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                <XAxis dataKey="name" tickLine={false} axisLine={false} tickMargin={8} />
-                <YAxis tickLine={false} axisLine={false} tickMargin={8} />
-                <Tooltip />
-                <Bar dataKey="value" fill="#ffc658" radius={[4, 4, 0, 0]} />
+                <CartesianGrid vertical={false} />
+                <XAxis
+                  dataKey="name"
+                  tickLine={false}
+                  tickMargin={10}
+                  axisLine={false}
+                  tickFormatter={(value) =>
+                    levelChartConfig[value.toLowerCase().replace(' ', '') as keyof typeof levelChartConfig]?.label || value
+                  }
+                />
+                <YAxis 
+                  tickLine={false} 
+                  axisLine={false} 
+                  tickMargin={8}
+                  tickFormatter={(value) => value.toLocaleString()}
+                />
+                <ChartTooltip
+                  cursor={false}
+                  content={<ChartTooltipContent hideLabel />}
+                />
+                <Bar
+                  dataKey="value"
+                  strokeWidth={2}
+                  radius={8}
+                />
               </BarChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-      </div>
+            </ChartContainer>
+        </CardContent>
+      </Card>
+    </div>
       </div>
     </PageWrapper>
   );
