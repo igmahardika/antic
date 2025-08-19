@@ -109,6 +109,46 @@ export const IncidentAnalytics: React.FC = () => {
     }
   };
 
+  // Debug: Log data for verification
+  useEffect(() => {
+    if (allIncidents && allIncidents.length > 0) {
+      console.log('=== INCIDENT ANALYTICS DEBUG ===');
+      console.log('Total incidents loaded:', allIncidents.length);
+      console.log('Sample incident:', allIncidents[0]);
+      
+      // Check NCAL values
+      const ncalValues = [...new Set(allIncidents.map(i => i.ncal).filter(Boolean))];
+      console.log('Unique NCAL values:', ncalValues);
+      
+      // Check date ranges
+      const dates = allIncidents
+        .filter(i => i.startTime)
+        .map(i => new Date(i.startTime!))
+        .sort((a, b) => a.getTime() - b.getTime());
+      
+      if (dates.length > 0) {
+        console.log('Date range:', {
+          earliest: dates[0].toISOString(),
+          latest: dates[dates.length - 1].toISOString()
+        });
+      }
+      
+      // Check duration values
+      const durations = allIncidents
+        .filter(i => i.durationMin && i.durationMin > 0)
+        .map(i => i.durationMin);
+      
+      console.log('Duration stats:', {
+        totalWithDuration: durations.length,
+        avgDuration: durations.length > 0 ? durations.reduce((a, b) => a + b, 0) / durations.length : 0,
+        minDuration: durations.length > 0 ? Math.min(...durations) : 0,
+        maxDuration: durations.length > 0 ? Math.max(...durations) : 0
+      });
+      
+      console.log('=== END DEBUG ===');
+    }
+  }, [allIncidents]);
+
   // Helper function to format duration
   const formatDurationHMS = (minutes: number): string => {
     if (!minutes || minutes <= 0) return '0:00:00';
@@ -139,11 +179,21 @@ export const IncidentAnalytics: React.FC = () => {
         return allIncidents;
     }
     
-    return allIncidents.filter(incident => {
+    const filtered = allIncidents.filter(incident => {
       if (!incident.startTime) return false;
       const incidentDate = new Date(incident.startTime);
       return incidentDate >= cutoffDate;
     });
+
+    // Debug filtered data
+    console.log(`Filtered incidents for ${selectedPeriod}:`, {
+      total: filtered.length,
+      withStartTime: filtered.filter(i => i.startTime).length,
+      withNCAL: filtered.filter(i => i.ncal).length,
+      withDuration: filtered.filter(i => i.durationMin && i.durationMin > 0).length
+    });
+
+    return filtered;
   }, [allIncidents, selectedPeriod]);
 
   // Calculate comprehensive statistics
@@ -286,6 +336,10 @@ export const IncidentAnalytics: React.FC = () => {
       });
     });
 
+    // Debug monthly NCAL data
+    console.log('Monthly NCAL Count:', byMonthNCAL);
+    console.log('Monthly NCAL Duration:', byMonthNCALDuration);
+
     // Calculate target performance
     const targetPerformance = Object.keys(byNCALDuration).reduce((acc, ncal) => {
       if (NCAL_TARGETS[ncal as keyof typeof NCAL_TARGETS]) {
@@ -383,6 +437,10 @@ export const IncidentAnalytics: React.FC = () => {
       });
       return monthData;
     });
+
+  // Debug chart data
+  console.log('Chart Data - Monthly NCAL Count:', monthlyNCALData);
+  console.log('Chart Data - Monthly NCAL Duration:', monthlyNCALDurationData);
 
   useEffect(() => {
     setIsLoading(false);
@@ -767,6 +825,106 @@ export const IncidentAnalytics: React.FC = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Data Verification Section */}
+      <Card className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <AssignmentIcon className="w-5 h-5" />
+            Data Verification
+          </CardTitle>
+          <CardDescription>Raw data for verification and debugging</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <div className="p-3 bg-gray-50 dark:bg-zinc-800 rounded-lg">
+              <div className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Incidents</div>
+              <div className="text-2xl font-bold">{allIncidents?.length || 0}</div>
+            </div>
+            <div className="p-3 bg-gray-50 dark:bg-zinc-800 rounded-lg">
+              <div className="text-sm font-medium text-gray-600 dark:text-gray-400">With Start Time</div>
+              <div className="text-2xl font-bold">{allIncidents?.filter(i => i.startTime).length || 0}</div>
+            </div>
+            <div className="p-3 bg-gray-50 dark:bg-zinc-800 rounded-lg">
+              <div className="text-sm font-medium text-gray-600 dark:text-gray-400">With NCAL</div>
+              <div className="text-2xl font-bold">{allIncidents?.filter(i => i.ncal).length || 0}</div>
+            </div>
+            <div className="p-3 bg-gray-50 dark:bg-zinc-800 rounded-lg">
+              <div className="text-sm font-medium text-gray-600 dark:text-gray-400">With Duration</div>
+              <div className="text-2xl font-bold">{allIncidents?.filter(i => i.durationMin && i.durationMin > 0).length || 0}</div>
+            </div>
+          </div>
+
+          {/* NCAL Breakdown */}
+          <div className="space-y-4">
+            <h4 className="font-semibold">NCAL Breakdown (Raw Data)</h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+              {NCAL_ORDER.map(ncal => {
+                const count = allIncidents?.filter(i => normalizeNCAL(i.ncal) === ncal).length || 0;
+                const withDuration = allIncidents?.filter(i => 
+                  normalizeNCAL(i.ncal) === ncal && i.durationMin && i.durationMin > 0
+                ).length || 0;
+                const totalDuration = allIncidents?.filter(i => 
+                  normalizeNCAL(i.ncal) === ncal && i.durationMin && i.durationMin > 0
+                ).reduce((sum, i) => sum + (i.durationMin || 0), 0) || 0;
+                const avgDuration = withDuration > 0 ? totalDuration / withDuration : 0;
+
+                return (
+                  <div key={ncal} className="p-3 bg-gray-50 dark:bg-zinc-800 rounded-lg">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div 
+                        className="w-3 h-3 rounded-full" 
+                        style={{ backgroundColor: NCAL_COLORS[ncal as keyof typeof NCAL_COLORS] }}
+                      />
+                      <span className="font-medium">{ncal}</span>
+                    </div>
+                    <div className="text-sm space-y-1">
+                      <div>Total: {count}</div>
+                      <div>With Duration: {withDuration}</div>
+                      <div>Avg Duration: {formatDurationHMS(avgDuration)}</div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Monthly Breakdown */}
+          {Object.keys(stats.byMonthNCAL).length > 0 && (
+            <div className="space-y-4 mt-6">
+              <h4 className="font-semibold">Monthly NCAL Count</h4>
+              <div className="overflow-x-auto">
+                <table className="min-w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-gray-200 dark:border-zinc-700">
+                      <th className="text-left py-2">Month</th>
+                      {NCAL_ORDER.map(ncal => (
+                        <th key={ncal} className="text-center py-2">{ncal}</th>
+                      ))}
+                      <th className="text-center py-2">Total</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {Object.keys(stats.byMonthNCAL).sort().map(month => (
+                      <tr key={month} className="border-b border-gray-100 dark:border-zinc-800">
+                        <td className="py-2 font-medium">{month}</td>
+                        {NCAL_ORDER.map(ncal => (
+                          <td key={ncal} className="text-center py-2">
+                            {stats.byMonthNCAL[month]?.[ncal] || 0}
+                          </td>
+                        ))}
+                        <td className="text-center py-2 font-bold">
+                          {Object.values(stats.byMonthNCAL[month] || {}).reduce((a, b) => a + b, 0)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 };
