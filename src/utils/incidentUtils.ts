@@ -164,25 +164,48 @@ export const parseDateSafe = (dt?: string | Date | null): string | null => {
   
   // Coba parse berbagai format string
   const formats = [
-    /^(\d{1,2})\/(\d{1,2})\/(\d{4})\s+(\d{1,2}):(\d{2})/, // dd/mm/yyyy hh:mm
-    /^(\d{4})-(\d{1,2})-(\d{1,2})\s+(\d{1,2}):(\d{2})/, // yyyy-mm-dd hh:mm
-    /^(\d{1,2})-(\d{1,2})-(\d{4})\s+(\d{1,2}):(\d{2})/, // dd-mm-yyyy hh:mm
+    /^(\d{1,2})\/(\d{1,2})\/(\d{2})\s+(\d{1,2}):(\d{2}):(\d{2})$/, // dd/mm/yy hh:mm:ss (format utama)
+    /^(\d{1,2})\/(\d{1,2})\/(\d{4})\s+(\d{1,2}):(\d{2}):(\d{2})$/, // dd/mm/yyyy hh:mm:ss
+    /^(\d{1,2})\/(\d{1,2})\/(\d{4})\s+(\d{1,2}):(\d{2})$/, // dd/mm/yyyy hh:mm
+    /^(\d{4})-(\d{1,2})-(\d{1,2})\s+(\d{1,2}):(\d{2}):(\d{2})$/, // yyyy-mm-dd hh:mm:ss
+    /^(\d{4})-(\d{1,2})-(\d{1,2})\s+(\d{1,2}):(\d{2})$/, // yyyy-mm-dd hh:mm
+    /^(\d{1,2})-(\d{1,2})-(\d{4})\s+(\d{1,2}):(\d{2}):(\d{2})$/, // dd-mm-yyyy hh:mm:ss
+    /^(\d{1,2})-(\d{1,2})-(\d{4})\s+(\d{1,2}):(\d{2})$/, // dd-mm-yyyy hh:mm
     /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/, // dd/mm/yyyy
+    /^(\d{1,2})\/(\d{1,2})\/(\d{2})$/, // dd/mm/yy
     /^(\d{4})-(\d{1,2})-(\d{1,2})$/, // yyyy-mm-dd
   ];
   
   for (const format of formats) {
     const match = s.match(format);
     if (match) {
-      if (match.length === 6) {
-        // With time
+      if (match.length === 7) {
+        // With time including seconds: dd/mm/yy hh:mm:ss or dd/mm/yyyy hh:mm:ss
+        const [, day, month, year, hour, minute, second] = match;
+        let fullYear = +year;
+        if (fullYear < 100) {
+          // Convert 2-digit year to 4-digit year (assume 20xx for years < 50, 19xx for years >= 50)
+          fullYear = fullYear < 50 ? 2000 + fullYear : 1900 + fullYear;
+        }
+        const date = new Date(fullYear, +month - 1, +day, +hour, +minute, +second);
+        return isNaN(date.getTime()) ? null : date.toISOString();
+      } else if (match.length === 6) {
+        // With time without seconds: dd/mm/yyyy hh:mm
         const [, day, month, year, hour, minute] = match;
-        const date = new Date(+year, +month - 1, +day, +hour, +minute);
+        let fullYear = +year;
+        if (fullYear < 100) {
+          fullYear = fullYear < 50 ? 2000 + fullYear : 1900 + fullYear;
+        }
+        const date = new Date(fullYear, +month - 1, +day, +hour, +minute);
         return isNaN(date.getTime()) ? null : date.toISOString();
       } else if (match.length === 4) {
-        // Date only
+        // Date only: dd/mm/yyyy or dd/mm/yy
         const [, day, month, year] = match;
-        const date = new Date(+year, +month - 1, +day);
+        let fullYear = +year;
+        if (fullYear < 100) {
+          fullYear = fullYear < 50 ? 2000 + fullYear : 1900 + fullYear;
+        }
+        const date = new Date(fullYear, +month - 1, +day);
         return isNaN(date.getTime()) ? null : date.toISOString();
       }
     }
