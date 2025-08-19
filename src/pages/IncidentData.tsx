@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { useToast } from '@/components/ui/use-toast';
 import { 
   Search, 
   Filter, 
@@ -15,10 +16,12 @@ import {
   Upload,
   ChevronLeft,
   ChevronRight,
-  FileSpreadsheet
+  FileSpreadsheet,
+  Trash2
 } from 'lucide-react';
 
 export const IncidentData: React.FC = () => {
+  const { toast } = useToast();
   const [filter, setFilter] = useState<IncidentFilter>({
     page: 1,
     limit: 50
@@ -27,6 +30,7 @@ export const IncidentData: React.FC = () => {
   const [total, setTotal] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [showUpload, setShowUpload] = useState(false);
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
 
   // Get unique values for filter options
   const allIncidents = useLiveQuery(() => 
@@ -123,6 +127,30 @@ export const IncidentData: React.FC = () => {
     URL.revokeObjectURL(url);
   };
 
+  const resetData = async () => {
+    try {
+      await db.incidents.clear();
+      setShowResetConfirm(false);
+      // Refresh data
+      const result = await queryIncidents(filter);
+      setIncidents(result.rows);
+      setTotal(result.total);
+      
+      toast({
+        title: "Data Reset Successfully",
+        description: "All incident data has been deleted from the database.",
+        variant: "default",
+      });
+    } catch (error) {
+      console.error('Error resetting data:', error);
+      toast({
+        title: "Error",
+        description: "Failed to reset data. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
   const formatDuration = (minutes: number | null | undefined) => {
     if (!minutes) return '-';
     const hours = Math.floor(minutes / 60);
@@ -173,11 +201,61 @@ export const IncidentData: React.FC = () => {
             <Download className="w-4 h-4 mr-2" />
             Export CSV
           </Button>
+          <Button 
+            onClick={() => setShowResetConfirm(true)} 
+            variant="destructive"
+            className="bg-red-600 hover:bg-red-700 text-white"
+          >
+            <Trash2 className="w-4 h-4 mr-2" />
+            Reset Data
+          </Button>
         </div>
       </div>
 
       {showUpload && (
         <IncidentUpload />
+      )}
+
+      {/* Reset Confirmation Modal */}
+      {showResetConfirm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full mx-4">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center">
+                <Trash2 className="w-5 h-5 text-red-600 dark:text-red-400" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                  Reset Incident Data
+                </h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  This action cannot be undone
+                </p>
+              </div>
+            </div>
+            
+            <p className="text-gray-700 dark:text-gray-300 mb-6">
+              Are you sure you want to delete all incident data? This will permanently remove all uploaded incidents from the database.
+            </p>
+            
+            <div className="flex gap-3 justify-end">
+              <Button 
+                onClick={() => setShowResetConfirm(false)} 
+                variant="outline"
+              >
+                Cancel
+              </Button>
+              <Button 
+                onClick={resetData} 
+                variant="destructive"
+                className="bg-red-600 hover:bg-red-700 text-white"
+              >
+                <Trash2 className="w-4 h-4 mr-2" />
+                Delete All Data
+              </Button>
+            </div>
+          </div>
+        </div>
       )}
 
       <Card>
