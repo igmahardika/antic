@@ -38,6 +38,26 @@ export const IncidentData: React.FC = () => {
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [selectedMonth, setSelectedMonth] = useState<string>('');
 
+  // Helper function to normalize NCAL values
+  const normalizeNCAL = (ncal: string | null | undefined): string => {
+    if (!ncal) return 'Unknown';
+    const normalized = ncal.trim().toLowerCase();
+    switch (normalized) {
+      case 'blue': return 'Blue';
+      case 'yellow': return 'Yellow';
+      case 'orange': return 'Orange';
+      case 'red': return 'Red';
+      case 'black': return 'Black';
+      default: return ncal.trim(); // Return original if not recognized
+    }
+  };
+
+  // Helper function to get NCAL count with case-insensitive lookup
+  const getNCALCount = (ncalCounts: Record<string, number>, targetNCAL: string): number => {
+    const normalizedTarget = normalizeNCAL(targetNCAL);
+    return ncalCounts[normalizedTarget] || 0;
+  };
+
   // Get unique values for filter options
   const allIncidents = useLiveQuery(() => 
     db.incidents.toArray()
@@ -270,26 +290,6 @@ export const IncidentData: React.FC = () => {
     const s = totalSeconds % 60;
     const pad = (num: number) => num.toString().padStart(2, '0');
     return `${pad(h)}:${pad(m)}:${pad(s)}`;
-  };
-
-  // Helper function to normalize NCAL values
-  const normalizeNCAL = (ncal: string | null | undefined): string => {
-    if (!ncal) return 'Unknown';
-    const normalized = ncal.trim().toLowerCase();
-    switch (normalized) {
-      case 'blue': return 'Blue';
-      case 'yellow': return 'Yellow';
-      case 'orange': return 'Orange';
-      case 'red': return 'Red';
-      case 'black': return 'Black';
-      default: return ncal.trim(); // Return original if not recognized
-    }
-  };
-
-  // Helper function to get NCAL count with case-insensitive lookup
-  const getNCALCount = (ncalCounts: Record<string, number>, targetNCAL: string): number => {
-    const normalizedTarget = normalizeNCAL(targetNCAL);
-    return ncalCounts[normalizedTarget] || 0;
   };
 
   // Definisi kolom untuk tabel incident
