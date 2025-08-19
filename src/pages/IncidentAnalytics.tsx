@@ -41,25 +41,57 @@ import {
 
 // NCAL Color mapping
 const NCAL_COLORS = {
-  'Blue': '#3B82F6',
-  'Yellow': '#F59E0B', 
-  'Orange': '#F97316',
-  'Red': '#EF4444',
-  'Black': '#1F2937'
+  Blue: '#3B82F6',
+  Yellow: '#F59E0B', 
+  Orange: '#F97316',
+  Red: '#EF4444',
+  Black: '#1F2937'
+};
+
+// NCAL Target durations in minutes
+const NCAL_TARGETS = {
+  Blue: 6 * 60,    // 6:00:00
+  Yellow: 5 * 60,  // 5:00:00
+  Orange: 4 * 60,  // 4:00:00
+  Red: 3 * 60,     // 3:00:00
+  Black: 1 * 60    // 1:00:00
 };
 
 const NCAL_ORDER = ['Blue', 'Yellow', 'Orange', 'Red', 'Black'];
 
 export const IncidentAnalytics: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
-  const [selectedPeriod, setSelectedPeriod] = useState<string>('6months'); // 3months, 6months, 1year, all
+  const [selectedPeriod, setSelectedPeriod] = useState<'3m' | '6m' | '1y' | 'all'>('6m');
 
   // Get all incidents for live updates
   const allIncidents = useLiveQuery(() => 
     db.incidents.toArray()
   );
 
-  // Filter incidents based on selected period
+  // Helper function to normalize NCAL values
+  const normalizeNCAL = (ncal: string | null | undefined): string => {
+    if (!ncal) return 'Unknown';
+    const normalized = ncal.trim().toLowerCase();
+    switch (normalized) {
+      case 'blue': return 'Blue';
+      case 'yellow': return 'Yellow';
+      case 'orange': return 'Orange';
+      case 'red': return 'Red';
+      case 'black': return 'Black';
+      default: return ncal.trim();
+    }
+  };
+
+  // Helper function to format duration
+  const formatDurationHMS = (minutes: number): string => {
+    if (!minutes || minutes <= 0) return '0:00:00';
+    const hours = Math.floor(minutes / 60);
+    const mins = Math.floor(minutes % 60);
+    const secs = Math.floor((minutes % 1) * 60);
+    return `${hours}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  // Filter incidents by selected period
   const filteredIncidents = useMemo(() => {
     if (!allIncidents) return [];
     
@@ -67,14 +99,14 @@ export const IncidentAnalytics: React.FC = () => {
     let cutoffDate: Date;
     
     switch (selectedPeriod) {
-      case '3months':
-        cutoffDate = new Date(now.getFullYear(), now.getMonth() - 3, 1);
+      case '3m':
+        cutoffDate = new Date(now.getFullYear(), now.getMonth() - 3, now.getDate());
         break;
-      case '6months':
-        cutoffDate = new Date(now.getFullYear(), now.getMonth() - 6, 1);
+      case '6m':
+        cutoffDate = new Date(now.getFullYear(), now.getMonth() - 6, now.getDate());
         break;
-      case '1year':
-        cutoffDate = new Date(now.getFullYear() - 1, now.getMonth(), 1);
+      case '1y':
+        cutoffDate = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate());
         break;
       default:
         return allIncidents;
@@ -102,9 +134,11 @@ export const IncidentAnalytics: React.FC = () => {
         bySite: {},
         byLevel: {},
         byNCAL: {},
+        byNCALDuration: {},
         byMonth: {},
-        avgDurationByNCAL: {},
-        totalDurationByNCAL: {}
+        byMonthNCAL: {},
+        byMonthNCALDuration: {},
+        targetPerformance: {}
       };
     }
 
@@ -112,22 +146,19 @@ export const IncidentAnalytics: React.FC = () => {
     const open = filteredIncidents.filter(i => i.status?.toLowerCase() !== 'done').length;
     const closed = total - open;
     
-    // Calculate MTTR (Mean Time To Resolution)
-    const resolvedIncidents = filteredIncidents.filter(i => i.durationMin && i.durationMin > 0);
-    const mttrMin = resolvedIncidents.length > 0 
-      ? Math.round(resolvedIncidents.reduce((sum, i) => sum + (i.durationMin || 0), 0) / resolvedIncidents.length)
+    const incidentsWithDuration = filteredIncidents.filter(i => i.durationMin && i.durationMin > 0);
+    const mttrMin = incidentsWithDuration.length > 0 
+      ? incidentsWithDuration.reduce((sum, i) => sum + (i.durationMin || 0), 0) / incidentsWithDuration.length
       : 0;
 
-    // Calculate average vendor duration
-    const vendorIncidents = filteredIncidents.filter(i => i.durationVendorMin && i.durationVendorMin > 0);
-    const avgVendorMin = vendorIncidents.length > 0
-      ? Math.round(vendorIncidents.reduce((sum, i) => sum + (i.durationVendorMin || 0), 0) / vendorIncidents.length)
+    const incidentsWithVendor = filteredIncidents.filter(i => i.durationVendorMin && i.durationVendorMin > 0);
+    const avgVendorMin = incidentsWithVendor.length > 0
+      ? incidentsWithVendor.reduce((sum, i) => sum + (i.durationVendorMin || 0), 0) / incidentsWithVendor.length
       : 0;
 
-    // Calculate pause ratio
+    const totalPauseTime = filteredIncidents.reduce((sum, i) => sum + (i.totalDurationPauseMin || 0), 0);
     const totalDuration = filteredIncidents.reduce((sum, i) => sum + (i.durationMin || 0), 0);
-    const totalPause = filteredIncidents.reduce((sum, i) => sum + (i.totalDurationPauseMin || 0), 0);
-    const pauseRatio = totalDuration > 0 ? totalPause / totalDuration : 0;
+    const pauseRatio = totalDuration > 0 ? totalPauseTime / totalDuration : 0;
 
     // Group by various categories
     const byPriority = filteredIncidents.reduce((acc, incident) => {
@@ -155,155 +186,114 @@ export const IncidentAnalytics: React.FC = () => {
     }, {} as Record<string, number>);
 
     const byNCAL = filteredIncidents.reduce((acc, incident) => {
-      const ncal = incident.ncal || 'Unknown';
+      const ncal = normalizeNCAL(incident.ncal);
       acc[ncal] = (acc[ncal] || 0) + 1;
       return acc;
     }, {} as Record<string, number>);
 
-    // Calculate average duration by NCAL
-    const avgDurationByNCAL = filteredIncidents.reduce((acc, incident) => {
-      const ncal = incident.ncal || 'Unknown';
+    const byNCALDuration = filteredIncidents.reduce((acc, incident) => {
+      const ncal = normalizeNCAL(incident.ncal);
       if (!acc[ncal]) {
-        acc[ncal] = { total: 0, count: 0 };
+        acc[ncal] = { total: 0, count: 0, avg: 0 };
       }
       if (incident.durationMin && incident.durationMin > 0) {
         acc[ncal].total += incident.durationMin;
         acc[ncal].count += 1;
       }
       return acc;
-    }, {} as Record<string, { total: number; count: number }>);
+    }, {} as Record<string, { total: number; count: number; avg: number }>);
 
-    // Convert to average
-    const avgDurationByNCALFinal: Record<string, number> = {};
-    Object.keys(avgDurationByNCAL).forEach(ncal => {
-      const data = avgDurationByNCAL[ncal];
-      avgDurationByNCALFinal[ncal] = data.count > 0 ? Math.round(data.total / data.count) : 0;
+    // Calculate averages
+    Object.keys(byNCALDuration).forEach(ncal => {
+      if (byNCALDuration[ncal].count > 0) {
+        byNCALDuration[ncal].avg = byNCALDuration[ncal].total / byNCALDuration[ncal].count;
+      }
     });
 
-    // Calculate total duration by NCAL
-    const totalDurationByNCAL = filteredIncidents.reduce((acc, incident) => {
-      const ncal = incident.ncal || 'Unknown';
-      acc[ncal] = (acc[ncal] || 0) + (incident.durationMin || 0);
+    // Group by month
+    const byMonth = filteredIncidents.reduce((acc, incident) => {
+      if (!incident.startTime) return acc;
+      const date = new Date(incident.startTime);
+      const monthKey = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`;
+      acc[monthKey] = (acc[monthKey] || 0) + 1;
       return acc;
     }, {} as Record<string, number>);
 
-          return {
-        total,
-        open,
-        closed,
-        mttrMin,
-        avgVendorMin,
-        pauseRatio,
-        byPriority,
-        byKlas,
-        bySite,
-        byLevel,
-        byNCAL,
-        avgDurationByNCAL: avgDurationByNCALFinal,
-        totalDurationByNCAL
-      };
-  }, [filteredIncidents]);
-
-  // Generate monthly data for NCAL charts
-  const monthlyNCALData = useMemo(() => {
-    if (!filteredIncidents) return [];
-
-    const monthlyData: Record<string, Record<string, number>> = {};
-    const monthlyDurationData: Record<string, Record<string, { total: number; count: number }>> = {};
-
-    filteredIncidents.forEach(incident => {
-      if (!incident.startTime) return;
-      
+    // Group by month and NCAL
+    const byMonthNCAL = filteredIncidents.reduce((acc, incident) => {
+      if (!incident.startTime) return acc;
       const date = new Date(incident.startTime);
-      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-      const ncal = incident.ncal || 'Unknown';
+      const monthKey = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`;
+      const ncal = normalizeNCAL(incident.ncal);
       
-      // Count incidents by NCAL per month
-      if (!monthlyData[monthKey]) {
-        monthlyData[monthKey] = {};
-      }
-      monthlyData[monthKey][ncal] = (monthlyData[monthKey][ncal] || 0) + 1;
+      if (!acc[monthKey]) acc[monthKey] = {};
+      acc[monthKey][ncal] = (acc[monthKey][ncal] || 0) + 1;
+      return acc;
+    }, {} as Record<string, Record<string, number>>);
+
+    // Group by month and NCAL duration
+    const byMonthNCALDuration = filteredIncidents.reduce((acc, incident) => {
+      if (!incident.startTime) return acc;
+      const date = new Date(incident.startTime);
+      const monthKey = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`;
+      const ncal = normalizeNCAL(incident.ncal);
       
-      // Calculate average duration by NCAL per month
-      if (!monthlyDurationData[monthKey]) {
-        monthlyDurationData[monthKey] = {};
+      if (!acc[monthKey]) acc[monthKey] = {};
+      if (!acc[monthKey][ncal]) {
+        acc[monthKey][ncal] = { total: 0, count: 0, avg: 0 };
       }
-      if (!monthlyDurationData[monthKey][ncal]) {
-        monthlyDurationData[monthKey][ncal] = { total: 0, count: 0 };
-      }
+      
       if (incident.durationMin && incident.durationMin > 0) {
-        monthlyDurationData[monthKey][ncal].total += incident.durationMin;
-        monthlyDurationData[monthKey][ncal].count += 1;
+        acc[monthKey][ncal].total += incident.durationMin;
+        acc[monthKey][ncal].count += 1;
       }
+      return acc;
+    }, {} as Record<string, Record<string, { total: number; count: number; avg: number }>>);
+
+    // Calculate monthly averages
+    Object.keys(byMonthNCALDuration).forEach(month => {
+      Object.keys(byMonthNCALDuration[month]).forEach(ncal => {
+        if (byMonthNCALDuration[month][ncal].count > 0) {
+          byMonthNCALDuration[month][ncal].avg = byMonthNCALDuration[month][ncal].total / byMonthNCALDuration[month][ncal].count;
+        }
+      });
     });
 
-    // Convert to chart format
-    const sortedMonths = Object.keys(monthlyData).sort();
-    
-    return sortedMonths.map(monthKey => {
-      const [year, month] = monthKey.split('-');
-      const monthName = new Date(parseInt(year), parseInt(month) - 1).toLocaleDateString('id-ID', { 
-        year: 'numeric', 
-        month: 'short' 
-      });
-      
-      const data: any = { month: monthName, monthKey };
-      
-      // Add NCAL counts
-      NCAL_ORDER.forEach(ncal => {
-        data[`${ncal}_count`] = monthlyData[monthKey]?.[ncal] || 0;
-      });
-      
-      // Add NCAL average durations
-      NCAL_ORDER.forEach(ncal => {
-        const durationData = monthlyDurationData[monthKey]?.[ncal];
-        data[`${ncal}_avg_duration`] = durationData && durationData.count > 0 
-          ? Math.round(durationData.total / durationData.count) 
-          : 0;
-      });
-      
-      return data;
-    });
+    // Calculate target performance
+    const targetPerformance = Object.keys(byNCALDuration).reduce((acc, ncal) => {
+      if (NCAL_TARGETS[ncal as keyof typeof NCAL_TARGETS]) {
+        const target = NCAL_TARGETS[ncal as keyof typeof NCAL_TARGETS];
+        const actual = byNCALDuration[ncal].avg;
+        const performance = target > 0 ? (target - actual) / target * 100 : 0;
+        acc[ncal] = {
+          target,
+          actual,
+          performance,
+          status: performance >= 0 ? 'good' : 'poor'
+        };
+      }
+      return acc;
+    }, {} as Record<string, { target: number; actual: number; performance: number; status: 'good' | 'poor' }>);
+
+    return {
+      total,
+      open,
+      closed,
+      mttrMin,
+      avgVendorMin,
+      pauseRatio,
+      byPriority,
+      byKlas,
+      bySite,
+      byLevel,
+      byNCAL,
+      byNCALDuration,
+      byMonth,
+      byMonthNCAL,
+      byMonthNCALDuration,
+      targetPerformance
+    };
   }, [filteredIncidents]);
-
-  useEffect(() => {
-    setIsLoading(false);
-  }, [allIncidents]);
-
-  const formatDurationHMS = (minutes: number): string => {
-    if (!minutes || minutes <= 0) return '0m';
-    const hours = Math.floor(minutes / 60);
-    const mins = minutes % 60;
-    if (hours > 0) {
-      return `${hours}h ${mins}m`;
-    }
-    return `${mins}m`;
-  };
-
-  const formatDurationHours = (minutes: number): string => {
-    if (!minutes || minutes <= 0) return '0';
-    return (minutes / 60).toFixed(1);
-  };
-
-  if (isLoading) {
-    return (
-      <div className="container mx-auto p-6">
-        <div className="flex justify-center items-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-        </div>
-      </div>
-    );
-  }
-
-  if (!allIncidents || allIncidents.length === 0) {
-    return (
-      <div className="container mx-auto p-6">
-        <div className="text-center py-8 text-gray-500">
-          No incident data available for analytics
-        </div>
-      </div>
-    );
-  }
 
   // Prepare chart data
   const priorityData = Object.entries(stats.byPriority).map(([priority, count]) => ({
@@ -333,12 +323,58 @@ export const IncidentAnalytics: React.FC = () => {
     name: ncal,
     value: stats.byNCAL[ncal] || 0,
     color: NCAL_COLORS[ncal as keyof typeof NCAL_COLORS]
-  })).filter(item => item.value > 0);
+  }));
+
+  const ncalDurationData = NCAL_ORDER.map(ncal => {
+    const duration = stats.byNCALDuration[ncal];
+    return {
+      name: ncal,
+      actual: duration?.avg || 0,
+      target: NCAL_TARGETS[ncal as keyof typeof NCAL_TARGETS] || 0,
+      color: NCAL_COLORS[ncal as keyof typeof NCAL_COLORS]
+    };
+  });
+
+  // Prepare monthly NCAL data for area charts
+  const monthlyNCALData = Object.keys(stats.byMonthNCAL)
+    .sort()
+    .map(month => {
+      const monthData: any = { month };
+      NCAL_ORDER.forEach(ncal => {
+        monthData[ncal] = stats.byMonthNCAL[month]?.[ncal] || 0;
+      });
+      return monthData;
+    });
+
+  const monthlyNCALDurationData = Object.keys(stats.byMonthNCALDuration)
+    .sort()
+    .map(month => {
+      const monthData: any = { month };
+      NCAL_ORDER.forEach(ncal => {
+        const duration = stats.byMonthNCALDuration[month]?.[ncal];
+        monthData[ncal] = duration?.avg || 0;
+      });
+      return monthData;
+    });
+
+  useEffect(() => {
+    setIsLoading(false);
+  }, [allIncidents]);
+
+  if (isLoading) {
+    return (
+      <div className="container mx-auto p-6">
+        <div className="flex justify-center items-center h-64">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto p-6 space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Incident Analytics</h1>
           <p className="text-gray-600 dark:text-gray-400 mt-2">
@@ -349,16 +385,24 @@ export const IncidentAnalytics: React.FC = () => {
         {/* Period Filter */}
         <div className="flex items-center gap-2">
           <Filter className="w-4 h-4 text-gray-500" />
-          <select 
-            value={selectedPeriod} 
-            onChange={(e) => setSelectedPeriod(e.target.value)}
-            className="px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm"
-          >
-            <option value="3months">Last 3 Months</option>
-            <option value="6months">Last 6 Months</option>
-            <option value="1year">Last 1 Year</option>
-            <option value="all">All Time</option>
-          </select>
+          <div className="flex bg-gray-100 dark:bg-gray-800 rounded-lg p-1">
+            {[
+              { key: '3m', label: '3M' },
+              { key: '6m', label: '6M' },
+              { key: '1y', label: '1Y' },
+              { key: 'all', label: 'All' }
+            ].map(({ key, label }) => (
+              <Button
+                key={key}
+                variant={selectedPeriod === key ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setSelectedPeriod(key as any)}
+                className="text-xs"
+              >
+                {label}
+              </Button>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -385,7 +429,7 @@ export const IncidentAnalytics: React.FC = () => {
           <CardContent>
             <div className="text-2xl font-bold">{stats.open}</div>
             <p className="text-xs text-muted-foreground">
-              {stats.total > 0 ? `${((stats.open / stats.total) * 100).toFixed(1)}% of total` : 'No data'}
+              {stats.total > 0 ? ((stats.open / stats.total) * 100).toFixed(1) : 0}% of total
             </p>
           </CardContent>
         </Card>
@@ -419,97 +463,50 @@ export const IncidentAnalytics: React.FC = () => {
         </Card>
       </div>
 
-      {/* NCAL Area Charts - Main Feature */}
+      {/* NCAL Target Performance */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* NCAL Count by Month */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <AreaChartIcon className="w-5 h-5" />
-              NCAL Count by Month
+              <Target className="w-5 h-5" />
+              NCAL Target Performance
             </CardTitle>
-            <CardDescription>
-              Number of incidents by NCAL level over time
-            </CardDescription>
+            <CardDescription>Actual vs Target duration for each NCAL level</CardDescription>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <AreaChart data={monthlyNCALData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="month" />
-                <YAxis />
-                <Tooltip 
-                  formatter={(value, name) => [
-                    value, 
-                    String(name).replace('_count', '').replace('_', ' ')
-                  ]}
-                  labelFormatter={(label) => `Month: ${label}`}
-                />
-                <Legend />
-                {NCAL_ORDER.map((ncal, index) => (
-                  <Area
-                    key={ncal}
-                    type="monotone"
-                    dataKey={`${ncal}_count`}
-                    stackId="1"
-                    stroke={NCAL_COLORS[ncal as keyof typeof NCAL_COLORS]}
-                    fill={NCAL_COLORS[ncal as keyof typeof NCAL_COLORS]}
-                    fillOpacity={0.8}
-                  />
-                ))}
-              </AreaChart>
-            </ResponsiveContainer>
+            <div className="space-y-4">
+              {NCAL_ORDER.map(ncal => {
+                const performance = stats.targetPerformance[ncal];
+                if (!performance) return null;
+                
+                return (
+                  <div key={ncal} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <div 
+                        className="w-4 h-4 rounded-full" 
+                        style={{ backgroundColor: NCAL_COLORS[ncal as keyof typeof NCAL_COLORS] }}
+                      />
+                      <span className="font-medium">{ncal}</span>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-sm font-medium">
+                        {formatDurationHMS(performance.actual)} / {formatDurationHMS(performance.target)}
+                      </div>
+                      <div className={`text-xs ${performance.status === 'good' ? 'text-green-600' : 'text-red-600'}`}>
+                        {performance.performance >= 0 ? '+' : ''}{performance.performance.toFixed(1)}%
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </CardContent>
         </Card>
 
-        {/* NCAL Average Duration by Month */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <AreaChartIcon className="w-5 h-5" />
-              NCAL Avg Duration by Month
-            </CardTitle>
-            <CardDescription>
-              Average resolution time by NCAL level over time (hours)
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <AreaChart data={monthlyNCALData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="month" />
-                <YAxis />
-                <Tooltip 
-                  formatter={(value, name) => [
-                    formatDurationHours(Number(value)), 
-                    String(name).replace('_avg_duration', '').replace('_', ' ')
-                  ]}
-                  labelFormatter={(label) => `Month: ${label}`}
-                />
-                <Legend />
-                {NCAL_ORDER.map((ncal, index) => (
-                  <Area
-                    key={ncal}
-                    type="monotone"
-                    dataKey={`${ncal}_avg_duration`}
-                    stroke={NCAL_COLORS[ncal as keyof typeof NCAL_COLORS]}
-                    fill={NCAL_COLORS[ncal as keyof typeof NCAL_COLORS]}
-                    fillOpacity={0.3}
-                  />
-                ))}
-              </AreaChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Distribution Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* NCAL Distribution */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <PieChartIcon className="w-5 h-5" />
+              <BarChart3 className="w-5 h-5" />
               NCAL Distribution
             </CardTitle>
             <CardDescription>Distribution of incidents by NCAL level</CardDescription>
@@ -522,7 +519,7 @@ export const IncidentAnalytics: React.FC = () => {
                   cx="50%"
                   cy="50%"
                   labelLine={false}
-                  label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                  label={({ name, value, percent }) => `${name} ${value} (${(percent * 100).toFixed(0)}%)`}
                   outerRadius={80}
                   fill="#8884d8"
                   dataKey="value"
@@ -531,19 +528,87 @@ export const IncidentAnalytics: React.FC = () => {
                     <Cell key={`cell-${index}`} fill={entry.color} />
                   ))}
                 </Pie>
-                <Tooltip formatter={(value, name) => [value, name]} />
+                <Tooltip />
               </PieChart>
             </ResponsiveContainer>
           </CardContent>
         </Card>
+      </div>
 
-        {/* Priority Distribution */}
+      {/* NCAL Area Charts */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <BarChart3 className="w-5 h-5" />
-              Priority Distribution
+              <AreaChartIcon className="w-5 h-5" />
+              NCAL Count by Month
             </CardTitle>
+            <CardDescription>Monthly incident count by NCAL level</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <AreaChart data={monthlyNCALData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="month" />
+                <YAxis />
+                <Tooltip />
+                <Legend />
+                {NCAL_ORDER.map(ncal => (
+                  <Area
+                    key={ncal}
+                    type="monotone"
+                    dataKey={ncal}
+                    stackId="1"
+                    stroke={NCAL_COLORS[ncal as keyof typeof NCAL_COLORS]}
+                    fill={NCAL_COLORS[ncal as keyof typeof NCAL_COLORS]}
+                    fillOpacity={0.6}
+                  />
+                ))}
+              </AreaChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <AreaChartIcon className="w-5 h-5" />
+              NCAL Duration by Month
+            </CardTitle>
+            <CardDescription>Average duration by NCAL level per month</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <AreaChart data={monthlyNCALDurationData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="month" />
+                <YAxis />
+                <Tooltip 
+                  formatter={(value: number) => [formatDurationHMS(value), 'Duration']}
+                />
+                <Legend />
+                {NCAL_ORDER.map(ncal => (
+                  <Area
+                    key={ncal}
+                    type="monotone"
+                    dataKey={ncal}
+                    stackId="1"
+                    stroke={NCAL_COLORS[ncal as keyof typeof NCAL_COLORS]}
+                    fill={NCAL_COLORS[ncal as keyof typeof NCAL_COLORS]}
+                    fillOpacity={0.6}
+                  />
+                ))}
+              </AreaChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Additional Charts */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Priority Distribution</CardTitle>
             <CardDescription>Distribution of incidents by priority level</CardDescription>
           </CardHeader>
           <CardContent>
@@ -558,11 +623,7 @@ export const IncidentAnalytics: React.FC = () => {
             </ResponsiveContainer>
           </CardContent>
         </Card>
-      </div>
 
-      {/* Additional Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Top Sites */}
         <Card>
           <CardHeader>
             <CardTitle>Top 10 Sites</CardTitle>
@@ -580,76 +641,9 @@ export const IncidentAnalytics: React.FC = () => {
             </ResponsiveContainer>
           </CardContent>
         </Card>
-
-        {/* Klasifikasi Distribution */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Klasifikasi Gangguan</CardTitle>
-            <CardDescription>Distribution of incidents by classification</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={klasifikasiData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" />
-                <YAxis />
-                <Tooltip />
-                <Bar dataKey="value" fill="#ffc658" />
-              </BarChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
       </div>
 
-      {/* NCAL Performance Metrics */}
-      <div className="grid grid-cols-1 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>NCAL Performance Analysis</CardTitle>
-            <CardDescription>Detailed metrics by NCAL level</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-              {NCAL_ORDER.map(ncal => {
-                const count = stats.byNCAL[ncal] || 0;
-                const avgDuration = stats.avgDurationByNCAL[ncal] || 0;
-                const totalDuration = stats.totalDurationByNCAL[ncal] || 0;
-                const percentage = stats.total > 0 ? ((count / stats.total) * 100).toFixed(1) : '0';
-                
-                return (
-                  <div 
-                    key={ncal}
-                    className="p-4 rounded-lg border"
-                    style={{ borderLeftColor: NCAL_COLORS[ncal as keyof typeof NCAL_COLORS], borderLeftWidth: '4px' }}
-                  >
-                    <div className="flex items-center gap-2 mb-2">
-                      <div 
-                        className="w-3 h-3 rounded-full"
-                        style={{ backgroundColor: NCAL_COLORS[ncal as keyof typeof NCAL_COLORS] }}
-                      />
-                      <h3 className="font-semibold text-sm">{ncal}</h3>
-                    </div>
-                    <div className="space-y-1">
-                      <div className="text-2xl font-bold">{count}</div>
-                      <div className="text-xs text-gray-600 dark:text-gray-400">
-                        {percentage}% of total
-                      </div>
-                      <div className="text-xs text-gray-600 dark:text-gray-400">
-                        Avg: {formatDurationHMS(avgDuration)}
-                      </div>
-                      <div className="text-xs text-gray-600 dark:text-gray-400">
-                        Total: {formatDurationHMS(totalDuration)}
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Additional Metrics */}
+      {/* Performance Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card>
           <CardHeader>
@@ -683,16 +677,19 @@ export const IncidentAnalytics: React.FC = () => {
 
         <Card>
           <CardHeader>
-            <CardTitle>Data Period</CardTitle>
-            <CardDescription>Current analysis period</CardDescription>
+            <CardTitle>Level Distribution</CardTitle>
+            <CardDescription>Distribution of incidents by level</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-green-600">
-              {filteredIncidents.length}
-            </div>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
-              Incidents in selected period
-            </p>
+            <ResponsiveContainer width="100%" height={200}>
+              <BarChart data={levelData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="name" />
+                <YAxis />
+                <Tooltip />
+                <Bar dataKey="value" fill="#ffc658" />
+              </BarChart>
+            </ResponsiveContainer>
           </CardContent>
         </Card>
       </div>
