@@ -317,8 +317,22 @@ function parseRowToIncident(headers: string[], row: any[], rowNum: number, sheet
     startTime,
     startEscalationVendor: parseDateSafe(getValue('Start Escalation Vendor')),
     endTime: parseDateSafe(getValue('End')),
-    durationMin: toMinutes(getValue('Duration')),
-    durationVendorMin: toMinutes(getValue('Duration Vendor')),
+    durationMin: (() => {
+      const duration = getValue('Duration');
+      const minutes = toMinutes(duration);
+      if (duration && minutes === 0) {
+        console.warn(`Row ${rowNum} in "${sheetName}": Duration not parsed correctly. Raw value: "${duration}"`);
+      }
+      return minutes;
+    })(),
+    durationVendorMin: (() => {
+      const duration = getValue('Duration Vendor');
+      const minutes = toMinutes(duration);
+      if (duration && minutes === 0) {
+        console.warn(`Row ${rowNum} in "${sheetName}": Duration Vendor not parsed correctly. Raw value: "${duration}"`);
+      }
+      return minutes;
+    })(),
     problem: getValue('Problem') || null,
     penyebab: getValue('Penyebab') || null,
     actionTerakhir: getValue('Action Terakhir') || null,
@@ -330,8 +344,22 @@ function parseRowToIncident(headers: string[], row: any[], rowNum: number, sheet
     endPause1: parseDateSafe(getValue('End Pause')),
     startPause2: parseDateSafe(getValue('Start Pause 2')),
     endPause2: parseDateSafe(getValue('End Pause 2')),
-    totalDurationPauseMin: toMinutes(getValue('Total Duration Pause')),
-    totalDurationVendorMin: toMinutes(getValue('Total Duration Vendor')),
+    totalDurationPauseMin: (() => {
+      const duration = getValue('Total Duration Pause');
+      const minutes = toMinutes(duration);
+      if (duration && minutes === 0) {
+        console.warn(`Row ${rowNum} in "${sheetName}": Total Duration Pause not parsed correctly. Raw value: "${duration}"`);
+      }
+      return minutes;
+    })(),
+    totalDurationVendorMin: (() => {
+      const duration = getValue('Total Duration Vendor');
+      const minutes = toMinutes(duration);
+      if (duration && minutes === 0) {
+        console.warn(`Row ${rowNum} in "${sheetName}": Total Duration Vendor not parsed correctly. Raw value: "${duration}"`);
+      }
+      return minutes;
+    })(),
     netDurationMin: Math.max(
       toMinutes(getValue('Duration')) - toMinutes(getValue('Total Duration Pause')), 
       0

@@ -31,11 +31,80 @@ export const toMinutes = (v: unknown): number => {
   if (v instanceof Date) return v.getUTCHours() * 60 + v.getUTCMinutes() + Math.round(v.getUTCSeconds() / 60);
   
   const s = String(v).trim();
-  const m = /^(\d{1,2}):(\d{2})(?::(\d{2}))?$/.exec(s);
-  if (m) return (+m[1]) * 60 + (+m[2]) + Math.round((+m[3] || 0) / 60);
+  if (!s) return 0;
   
+  // Handle Excel time serial numbers (e.g., 0.5 = 12:00, 0.25 = 6:00)
+  const excelTime = Number(s);
+  if (Number.isFinite(excelTime) && excelTime > 0 && excelTime < 1) {
+    // Excel time: fraction of 24 hours
+    const totalMinutes = Math.round(excelTime * 24 * 60);
+    return totalMinutes;
+  }
+  
+  // Handle various time formats
+  const timeFormats = [
+    /^(\d{1,2}):(\d{2}):(\d{2})$/, // HH:MM:SS
+    /^(\d{1,2}):(\d{2})$/, // HH:MM
+    /^(\d+)h\s*(\d+)m$/, // Xh Ym
+    /^(\d+)h$/, // Xh
+    /^(\d+)m$/, // Xm
+    /^(\d+)\s*hours?\s*(\d+)\s*minutes?$/i, // X hours Y minutes
+    /^(\d+)\s*hours?$/i, // X hours
+    /^(\d+)\s*minutes?$/i, // X minutes
+  ];
+  
+  for (const format of timeFormats) {
+    const match = s.match(format);
+    if (match) {
+      if (format.source.includes('HH:MM:SS') || format.source.includes('\\d{1,2}:\\d{2}:\\d{2}')) {
+        // HH:MM:SS format
+        const [, hours, minutes, seconds] = match;
+        return (+hours) * 60 + (+minutes) + Math.round((+seconds) / 60);
+      } else if (format.source.includes('HH:MM') || format.source.includes('\\d{1,2}:\\d{2}')) {
+        // HH:MM format
+        const [, hours, minutes] = match;
+        return (+hours) * 60 + (+minutes);
+      } else if (format.source.includes('h\\s*\\d+m') || format.source.includes('\\d+h\\s*\\d+m')) {
+        // Xh Ym format
+        const [, hours, minutes] = match;
+        return (+hours) * 60 + (+minutes);
+      } else if (format.source.includes('\\d+h$')) {
+        // Xh format
+        const [, hours] = match;
+        return (+hours) * 60;
+      } else if (format.source.includes('\\d+m$')) {
+        // Xm format
+        const [, minutes] = match;
+        return +minutes;
+      } else if (format.source.includes('hours.*minutes')) {
+        // X hours Y minutes format
+        const [, hours, minutes] = match;
+        return (+hours) * 60 + (+minutes);
+      } else if (format.source.includes('hours')) {
+        // X hours format
+        const [, hours] = match;
+        return (+hours) * 60;
+      } else if (format.source.includes('minutes')) {
+        // X minutes format
+        const [, minutes] = match;
+        return +minutes;
+      }
+    }
+  }
+  
+  // Handle numeric values (assume minutes if reasonable, hours if large)
   const n = Number(s);
-  return Number.isFinite(n) ? Math.round(n) : 0;
+  if (Number.isFinite(n)) {
+    if (n > 0 && n < 1000) {
+      // Likely minutes
+      return Math.round(n);
+    } else if (n >= 1000) {
+      // Likely seconds, convert to minutes
+      return Math.round(n / 60);
+    }
+  }
+  
+  return 0;
 };
 
 // Helper untuk parse tanggal
