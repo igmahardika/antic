@@ -15,7 +15,7 @@ import BarChartIcon from '@mui/icons-material/BarChart';
 import LabelIcon from '@mui/icons-material/Label';
 import WarningIcon from '@mui/icons-material/Warning';
 import ShowChartIcon from '@mui/icons-material/ShowChart';
-import ScheduleIcon from '@mui/icons-material/Schedule';
+
 import AssignmentIcon from '@mui/icons-material/Assignment';
 import TrackChangesIcon from '@mui/icons-material/TrackChanges';
 import { CheckCircle2 as CheckCircleIcon, Clock as ClockIcon } from 'lucide-react';
@@ -34,9 +34,7 @@ type ClassificationDetails = {
   trendPercent?: number;
 };
 
-type ClassificationData = {
-  [key: string]: ClassificationDetails;
-};
+
 
 type TicketAnalyticsProps = {
   data?: any;
@@ -122,13 +120,7 @@ function getShift(dateStr: string) {
 }
 // ====================================================================
 
-// Helper: Median
-function median(arr) {
-  if (!arr.length) return 0;
-  const sorted = [...arr].sort((a, b) => a - b);
-  const mid = Math.floor(sorted.length / 2);
-  return sorted.length % 2 !== 0 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
-}
+
 
 // Automated Insight Generator Hook
 function useInsightFromTicketAnalytics({ monthlyStatsData, classificationData, customerStats }) {
@@ -180,12 +172,7 @@ function formatDurationHMS(hours: number): string {
   return `${pad(h)}:${pad(m)}:${pad(s)}`;
 }
 
-// Helper: tren badge
-function getTrendBadge(value: number) {
-  if (value > 0.5) return <Badge variant="success"><TrendingUpIcon className="w-3 h-3 mr-1" /> {value.toFixed(1)}%</Badge>;
-  if (value < -0.5) return <Badge variant="danger"><TrendingDownIcon className="w-3 h-3 mr-1" /> {Math.abs(value).toFixed(1)}%</Badge>;
-  return <Badge variant="default"><TrendingFlatIcon className="w-3 h-3 mr-1" /> 0%</Badge>;
-}
+
 
 // Helper: status badge (untuk PDF export, harus return style object)
 const pdfStatusBadge = status => {
@@ -196,11 +183,11 @@ const pdfStatusBadge = status => {
   return { backgroundColor: '#f3f4f6', color: '#334155', borderRadius: 4, padding: '2px 6px', fontWeight: 700, fontSize: 9 };
 };
 
-const TicketAnalytics = ({ data: propsData }: TicketAnalyticsProps) => {
+const TicketAnalytics = ({}: TicketAnalyticsProps) => {
   // Semua hook harus di awal
 
 
-  const [viewMode, setViewMode] = useState<'type' | 'category'>('type');
+
   const [normalizePer1000, setNormalizePer1000] = useState(false);
   const {
     ticketAnalyticsData,
@@ -517,12 +504,9 @@ const TicketAnalytics = ({ data: propsData }: TicketAnalyticsProps) => {
     };
   }, [filteredGridData, gridData]);
   // =================================================================
-  const complaintsData = ticketAnalyticsData?.complaintsData || { labels: [], datasets: [] };
   const monthlyStatsData = ticketAnalyticsData?.monthlyStatsChartData || { labels: [], datasets: [] };
   const classificationData = ticketAnalyticsData?.classificationAnalysis || {};
   const topComplaintsTable = ticketAnalyticsData?.topComplaintsTableData || [];
-  const zeroDurationCount = useMemo(() => Array.isArray(filteredGridData) ? filteredGridData.filter(t => t.duration?.rawHours === 0).length : 0, [filteredGridData]);
-  const agentStats = ticketAnalyticsData?.agentAnalyticsData || [];
 
   // --- Repeat-Complainer Analysis ---
   // Agregasi per customer
@@ -541,15 +525,7 @@ const TicketAnalytics = ({ data: propsData }: TicketAnalyticsProps) => {
     return Array.from(map.values());
   }, [gridData]);
 
-  // Ringkasan jumlah dan persentase tiap kelas
-  const repClassSummary = useMemo(() => {
-    const summary = { Normal: 0, Persisten: 0, Kronis: 0, Ekstrem: 0 };
-    (Array.isArray(customerStats) ? customerStats : []).forEach((c: any) => {
-      if (summary[c.repClass] !== undefined) summary[c.repClass] += 1;
-    });
-    const total = customerStats.length;
-    return { ...summary, total };
-  }, [customerStats]);
+
 
   // Export to CSV
   const handleExportCSV = () => {
@@ -617,10 +593,7 @@ const TicketAnalytics = ({ data: propsData }: TicketAnalyticsProps) => {
 
   const pdfPageStyle = { padding: 24, fontFamily: 'Helvetica' };
   const pdfSectionTitle = { fontSize: 13, fontWeight: 700, marginBottom: 6, marginTop: 12, fontFamily: 'Helvetica' };
-  const pdfTableHeaderStyle = { fontWeight: 700, fontSize: 11, backgroundColor: '#f3f4f6', padding: 4, borderBottom: '1px solid #bbb' };
   const pdfTableCellStyle = { fontSize: 10, padding: 6, fontFamily: 'Helvetica' };
-  const pdfTableRowEven = { backgroundColor: '#f9fafb' };
-  const pdfTableRowOdd = { backgroundColor: '#fff' };
   const pdfTableHeaderStyleColor = { fontWeight: 700, fontSize: 11, backgroundColor: '#38bdf8', color: '#fff', padding: 6, borderBottom: '1px solid #38bdf8', fontFamily: 'Helvetica' };
   const pdfTableRowEvenColor = { backgroundColor: '#e0f2fe' };
   const pdfTableRowOddColor = { backgroundColor: '#fff' };
@@ -1249,9 +1222,9 @@ const TicketAnalytics = ({ data: propsData }: TicketAnalyticsProps) => {
               <div className="mt-3 pt-3 border-t border-gray-200 dark:border-zinc-700">
                 <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-2">Automated Recommendations</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                  {insightCards.map((card, idx) => (
+                                    {insightCards.map((card, index) => (
                     <div 
-                      key={idx} 
+                      key={index}   
                       className={`p-2 rounded-lg border transition-all duration-200 ${
                         card.type === 'warning' 
                           ? 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800' 
@@ -2420,7 +2393,7 @@ const TicketAnalytics = ({ data: propsData }: TicketAnalyticsProps) => {
             </div>
             
             <div className="grid gap-4">
-              {topComplaintsTable.slice(0, 10).map((item, index) => {
+                              {topComplaintsTable.slice(0, 10).map((item, index) => {
                 // ====================== IMPACT SCORE SUPPORT (NEW) ======================
                 const { catP90Map, catEscalationRate, impactScore } = (() => {
                   const m: Record<string, number> = {};
@@ -2595,7 +2568,7 @@ const TicketAnalytics = ({ data: propsData }: TicketAnalyticsProps) => {
           </div>
           
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {Object.entries(classificationData).map(([classification, details], idx) => {
+            {Object.entries(classificationData).map(([classification, details]) => {
               const d = details as { count: number, sub: { [key: string]: number }, trendline?: { labels: string[], data: number[] } };
               const trend = (d.trendline && d.trendline.data.length > 1)
                 ? d.trendline.data.map((val, i, arr) => {
@@ -2774,7 +2747,7 @@ const TicketAnalytics = ({ data: propsData }: TicketAnalyticsProps) => {
               
               {/* Shift Cards */}
               <div className="space-y-3">
-                {shiftTrends.map((shift, index) => {
+                {shiftTrends.map((shift) => {
                   const isOutlier = shift.avg > 2 * avgAllShift;
                   const trendColor = shift.trend > 0 ? 'text-red-600 dark:text-red-400' : shift.trend < 0 ? 'text-green-600 dark:text-green-400' : 'text-gray-600 dark:text-gray-400';
                   const trendIcon = shift.trend > 0 ? <TrendingUpIcon className="w-4 h-4" /> : shift.trend < 0 ? <TrendingDownIcon className="w-4 h-4" /> : <TrendingFlatIcon className="w-4 h-4" />;
@@ -2886,7 +2859,7 @@ const TicketAnalytics = ({ data: propsData }: TicketAnalyticsProps) => {
               
               {/* Category Cards */}
               <div className="space-y-3">
-                {catTrends.map((cat, index) => {
+                {catTrends.map((cat) => {
                   const isOutlier = cat.avg > 2 * avgAllCat;
                   const trendColor = cat.trend > 0 ? 'text-red-600 dark:text-red-400' : cat.trend < 0 ? 'text-green-600 dark:text-green-400' : 'text-gray-600 dark:text-gray-400';
                   const trendIcon = cat.trend > 0 ? <TrendingUpIcon className="w-4 h-4" /> : cat.trend < 0 ? <TrendingDownIcon className="w-4 h-4" /> : <TrendingFlatIcon className="w-4 h-4" />;
