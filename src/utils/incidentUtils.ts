@@ -1,6 +1,22 @@
 import { Incident, IncidentStats, IncidentFilter } from '@/types/incident';
 import { db } from '@/lib/db';
 
+// Helper untuk konversi Excel serial date ke JavaScript Date
+const excelSerialToDate = (serial: number): Date => {
+  // Excel serial date: days since January 1, 1900
+  // JavaScript Date: milliseconds since January 1, 1970 (Unix epoch)
+  
+  // Excel epoch: January 1, 1900 = serial 1
+  // Unix epoch: January 1, 1970 = serial 25569
+  const unixEpochSerial = 25569;
+  
+  // Convert days to milliseconds
+  const daysSinceUnixEpoch = serial - unixEpochSerial;
+  const millisecondsSinceUnixEpoch = daysSinceUnixEpoch * 24 * 60 * 60 * 1000;
+  
+  return new Date(millisecondsSinceUnixEpoch);
+};
+
 // Helper untuk membuat ID unik
 export const mkId = (noCase: string, startIso: string | undefined | null): string => {
   const base = `${(noCase || '').trim()}|${(startIso || '').trim()}`;
@@ -30,19 +46,41 @@ export const parseDateSafe = (dt?: string | Date | null): string | null => {
   const s = String(dt).trim();
   if (!s) return null;
   
-  // Coba parse berbagai format
+  // Handle Excel serial date numbers (e.g., 45839, 45735)
+  const excelSerial = Number(s);
+  if (Number.isFinite(excelSerial) && excelSerial > 1000) {
+    try {
+      const date = excelSerialToDate(excelSerial);
+      return isNaN(date.getTime()) ? null : date.toISOString();
+    } catch (error) {
+      console.warn('Failed to convert Excel serial date:', excelSerial, error);
+      return null;
+    }
+  }
+  
+  // Coba parse berbagai format string
   const formats = [
     /^(\d{1,2})\/(\d{1,2})\/(\d{4})\s+(\d{1,2}):(\d{2})/, // dd/mm/yyyy hh:mm
     /^(\d{4})-(\d{1,2})-(\d{1,2})\s+(\d{1,2}):(\d{2})/, // yyyy-mm-dd hh:mm
     /^(\d{1,2})-(\d{1,2})-(\d{4})\s+(\d{1,2}):(\d{2})/, // dd-mm-yyyy hh:mm
+    /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/, // dd/mm/yyyy
+    /^(\d{4})-(\d{1,2})-(\d{1,2})$/, // yyyy-mm-dd
   ];
   
   for (const format of formats) {
     const match = s.match(format);
     if (match) {
-      const [, day, month, year, hour, minute] = match;
-      const date = new Date(+year, +month - 1, +day, +hour, +minute);
-      return isNaN(date.getTime()) ? null : date.toISOString();
+      if (match.length === 6) {
+        // With time
+        const [, day, month, year, hour, minute] = match;
+        const date = new Date(+year, +month - 1, +day, +hour, +minute);
+        return isNaN(date.getTime()) ? null : date.toISOString();
+      } else if (match.length === 4) {
+        // Date only
+        const [, day, month, year] = match;
+        const date = new Date(+year, +month - 1, +day);
+        return isNaN(date.getTime()) ? null : date.toISOString();
+      }
     }
   }
   
