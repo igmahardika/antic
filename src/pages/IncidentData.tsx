@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/components/ui/use-toast';
+import SummaryCard from '@/components/ui/SummaryCard';
 import { 
   Search, 
   Filter, 
@@ -17,7 +18,11 @@ import {
   ChevronLeft,
   ChevronRight,
   FileSpreadsheet,
-  Trash2
+  Trash2,
+  AlertTriangle,
+  Clock,
+  CheckCircle,
+  XCircle
 } from 'lucide-react';
 
 export const IncidentData: React.FC = () => {
@@ -31,11 +36,52 @@ export const IncidentData: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [showUpload, setShowUpload] = useState(false);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const [selectedMonth, setSelectedMonth] = useState<string>('');
 
   // Get unique values for filter options
   const allIncidents = useLiveQuery(() => 
     db.incidents.toArray()
   );
+
+  // Calculate summary data for current month
+  const currentMonthData = React.useMemo(() => {
+    if (!allIncidents) return { total: 0, open: 0, closed: 0, avgDuration: 0 };
+    
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth();
+    
+    const monthIncidents = allIncidents.filter(incident => {
+      if (!incident.startTime) return false;
+      const incidentDate = new Date(incident.startTime);
+      return incidentDate.getFullYear() === currentYear && incidentDate.getMonth() === currentMonth;
+    });
+
+    const total = monthIncidents.length;
+    const open = monthIncidents.filter(i => i.status?.toLowerCase() !== 'done').length;
+    const closed = monthIncidents.filter(i => i.status?.toLowerCase() === 'done').length;
+    const avgDuration = monthIncidents.length > 0 
+      ? Math.round(monthIncidents.reduce((sum, i) => sum + (i.durationMin || 0), 0) / monthIncidents.length)
+      : 0;
+
+    return { total, open, closed, avgDuration };
+  }, [allIncidents]);
+
+  // Get available months from data
+  const availableMonths = React.useMemo(() => {
+    if (!allIncidents) return [];
+    
+    const months = new Set<string>();
+    allIncidents.forEach(incident => {
+      if (incident.startTime) {
+        const date = new Date(incident.startTime);
+        const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+        months.add(monthKey);
+      }
+    });
+    
+    return Array.from(months).sort().reverse();
+  }, [allIncidents]);
 
   const uniqueStatuses = [...new Set(allIncidents?.map(i => i.status).filter(Boolean) || [])];
   const uniquePriorities = [...new Set(allIncidents?.map(i => i.priority).filter(Boolean) || [])];
@@ -71,6 +117,35 @@ export const IncidentData: React.FC = () => {
       ...prev,
       page: newPage
     }));
+  };
+
+  const formatMonthLabel = (monthKey: string) => {
+    const [year, month] = monthKey.split('-');
+    const date = new Date(parseInt(year), parseInt(month) - 1);
+    return date.toLocaleDateString('id-ID', { year: 'numeric', month: 'long' });
+  };
+
+  const handleMonthChange = (monthKey: string) => {
+    setSelectedMonth(monthKey);
+    if (monthKey) {
+      const [year, month] = monthKey.split('-');
+      const startDate = new Date(parseInt(year), parseInt(month) - 1, 1).toISOString();
+      const endDate = new Date(parseInt(year), parseInt(month), 0).toISOString();
+      
+      setFilter(prev => ({
+        ...prev,
+        dateFrom: startDate,
+        dateTo: endDate,
+        page: 1
+      }));
+    } else {
+      setFilter(prev => ({
+        ...prev,
+        dateFrom: undefined,
+        dateTo: undefined,
+        page: 1
+      }));
+    }
   };
 
   const exportToCSV = () => {
@@ -211,6 +286,75 @@ export const IncidentData: React.FC = () => {
           </Button>
         </div>
       </div>
+
+      {/* Summary Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <SummaryCard
+          title="Total Incidents"
+          value={currentMonthData.total}
+          description="This month"
+          icon={<AlertTriangle className="h-4 w-4" />}
+          iconBg="bg-blue-500"
+        />
+        <SummaryCard
+          title="Open Incidents"
+          value={currentMonthData.open}
+          description="Pending resolution"
+          icon={<Clock className="h-4 w-4" />}
+          iconBg="bg-yellow-500"
+        />
+        <SummaryCard
+          title="Closed Incidents"
+          value={currentMonthData.closed}
+          description="Resolved this month"
+          icon={<CheckCircle className="h-4 w-4" />}
+          iconBg="bg-green-500"
+        />
+        <SummaryCard
+          title="Avg Duration"
+          value={formatDuration(currentMonthData.avgDuration)}
+          description="Minutes per incident"
+          icon={<XCircle className="h-4 w-4" />}
+          iconBg="bg-red-500"
+        />
+      </div>
+
+      {/* Month Filter */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Filter className="w-5 h-5" />
+            Filter by Month
+          </CardTitle>
+          <CardDescription>
+            Select a month to view incidents for that period
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex gap-4 items-center">
+            <div className="space-y-2 flex-1">
+              <label className="text-sm font-medium">Select Month</label>
+              <select 
+                value={selectedMonth} 
+                onChange={(e) => handleMonthChange(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">All Months</option>
+                {availableMonths.map(monthKey => (
+                  <option key={monthKey} value={monthKey}>
+                    {formatMonthLabel(monthKey)}
+                  </option>
+                ))}
+              </select>
+            </div>
+            {selectedMonth && (
+              <div className="text-sm text-gray-600 dark:text-gray-400">
+                Showing data for: <span className="font-medium">{formatMonthLabel(selectedMonth)}</span>
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
 
       {showUpload && (
         <IncidentUpload />
