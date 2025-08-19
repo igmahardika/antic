@@ -53,8 +53,16 @@ export const IncidentData: React.FC = () => {
     
     const monthIncidents = allIncidents.filter(incident => {
       if (!incident.startTime) return false;
-      const incidentDate = new Date(incident.startTime);
-      return incidentDate.getFullYear() === currentYear && incidentDate.getMonth() === currentMonth;
+      try {
+        const incidentDate = new Date(incident.startTime);
+        // Validate date and check if it's in current month
+        return !isNaN(incidentDate.getTime()) && 
+               incidentDate.getFullYear() === currentYear && 
+               incidentDate.getMonth() === currentMonth;
+      } catch (error) {
+        console.warn('Invalid startTime for current month calculation:', incident.startTime, 'for incident:', incident.noCase);
+        return false;
+      }
     });
 
     const total = monthIncidents.length;
@@ -67,16 +75,24 @@ export const IncidentData: React.FC = () => {
     return { total, open, closed, avgDuration };
   }, [allIncidents]);
 
-  // Get available months from data
+  // Get available months from data based on startTime column
   const availableMonths = React.useMemo(() => {
     if (!allIncidents) return [];
     
     const months = new Set<string>();
     allIncidents.forEach(incident => {
+      // Use startTime column from Excel data
       if (incident.startTime) {
-        const date = new Date(incident.startTime);
-        const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-        months.add(monthKey);
+        try {
+          const date = new Date(incident.startTime);
+          // Validate that the date is valid
+          if (!isNaN(date.getTime())) {
+            const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+            months.add(monthKey);
+          }
+        } catch (error) {
+          console.warn('Invalid startTime format:', incident.startTime, 'for incident:', incident.noCase);
+        }
       }
     });
     
@@ -129,13 +145,14 @@ export const IncidentData: React.FC = () => {
     setSelectedMonth(monthKey);
     if (monthKey) {
       const [year, month] = monthKey.split('-');
-      const startDate = new Date(parseInt(year), parseInt(month) - 1, 1).toISOString();
-      const endDate = new Date(parseInt(year), parseInt(month), 0).toISOString();
+      // Create date range for the selected month
+      const startDate = new Date(parseInt(year), parseInt(month) - 1, 1);
+      const endDate = new Date(parseInt(year), parseInt(month), 0, 23, 59, 59, 999);
       
       setFilter(prev => ({
         ...prev,
-        dateFrom: startDate,
-        dateTo: endDate,
+        dateFrom: startDate.toISOString(),
+        dateTo: endDate.toISOString(),
         page: 1
       }));
     } else {
@@ -319,42 +336,7 @@ export const IncidentData: React.FC = () => {
         />
       </div>
 
-      {/* Month Filter */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Filter className="w-5 h-5" />
-            Filter by Month
-          </CardTitle>
-          <CardDescription>
-            Select a month to view incidents for that period
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex gap-4 items-center">
-            <div className="space-y-2 flex-1">
-              <label className="text-sm font-medium">Select Month</label>
-              <select 
-                value={selectedMonth} 
-                onChange={(e) => handleMonthChange(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="">All Months</option>
-                {availableMonths.map(monthKey => (
-                  <option key={monthKey} value={monthKey}>
-                    {formatMonthLabel(monthKey)}
-                  </option>
-                ))}
-              </select>
-            </div>
-            {selectedMonth && (
-              <div className="text-sm text-gray-600 dark:text-gray-400">
-                Showing data for: <span className="font-medium">{formatMonthLabel(selectedMonth)}</span>
-              </div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+
 
       {showUpload && (
         <IncidentUpload />
@@ -402,15 +384,35 @@ export const IncidentData: React.FC = () => {
         </div>
       )}
 
+      {/* Combined Filters */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Filter className="w-5 h-5" />
             Filters
           </CardTitle>
+          <CardDescription>
+            Filter incidents by month, status, priority, site, and search terms
+          </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Month</label>
+              <select 
+                value={selectedMonth} 
+                onChange={(e) => handleMonthChange(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">All Months</option>
+                {availableMonths.map(monthKey => (
+                  <option key={monthKey} value={monthKey}>
+                    {formatMonthLabel(monthKey)}
+                  </option>
+                ))}
+              </select>
+            </div>
+
             <div className="space-y-2">
               <label className="text-sm font-medium">Search</label>
               <div className="relative">
@@ -466,6 +468,22 @@ export const IncidentData: React.FC = () => {
               </select>
             </div>
           </div>
+          
+          {selectedMonth && (
+            <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+              <div className="text-sm text-blue-700 dark:text-blue-300">
+                📅 Showing data for: <span className="font-medium">{formatMonthLabel(selectedMonth)}</span>
+              </div>
+            </div>
+          )}
+          
+          {availableMonths.length === 0 && allIncidents && allIncidents.length > 0 && (
+            <div className="mt-4 p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
+              <div className="text-sm text-yellow-700 dark:text-yellow-300">
+                ⚠️ No valid months found in data. Please check that the "Start" column contains valid dates.
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 
