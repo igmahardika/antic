@@ -5,6 +5,7 @@ import { db } from '@/lib/db';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import SummaryCard from '@/components/ui/SummaryCard';
 import { 
   BarChart, 
   Bar, 
@@ -523,59 +524,38 @@ export const IncidentAnalytics: React.FC = () => {
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Incidents</CardTitle>
-            <ErrorOutlineIcon className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.total}</div>
-            <p className="text-xs text-muted-foreground">
-              {selectedPeriod === 'all' ? 'All time' : `Last ${selectedPeriod}`}
-            </p>
-          </CardContent>
-        </Card>
+        <SummaryCard
+          icon={<ErrorOutlineIcon className="w-7 h-7 text-white" />}
+          title="Total Incidents"
+          value={stats.total}
+          description={selectedPeriod === 'all' ? 'All time' : `Last ${selectedPeriod}`}
+          iconBg="bg-blue-700"
+        />
 
-        <Card className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Open Incidents</CardTitle>
-            <AccessTimeIcon className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.open}</div>
-            <p className="text-xs text-muted-foreground">
-              {stats.total > 0 ? ((stats.open / stats.total) * 100).toFixed(1) : 0}% of total
-            </p>
-          </CardContent>
-        </Card>
+        <SummaryCard
+          icon={<AccessTimeIcon className="w-7 h-7 text-white" />}
+          title="Open Incidents"
+          value={stats.open}
+          subvalue={`${stats.total > 0 ? ((stats.open / stats.total) * 100).toFixed(1) : 0}%`}
+          description="of total incidents"
+          iconBg="bg-orange-500"
+        />
 
-        <Card className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">MTTR</CardTitle>
-            <TrackChangesIcon className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{formatDurationHMS(stats.mttrMin)}</div>
-            <p className="text-xs text-muted-foreground">
-              Mean Time To Resolution
-            </p>
-          </CardContent>
-        </Card>
+        <SummaryCard
+          icon={<TrackChangesIcon className="w-7 h-7 text-white" />}
+          title="MTTR"
+          value={formatDurationHMS(stats.mttrMin)}
+          description="Mean Time To Resolution"
+          iconBg="bg-indigo-600"
+        />
 
-        <Card className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Resolution Rate</CardTitle>
-            <HowToRegIcon className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {stats.total > 0 ? ((stats.closed / stats.total) * 100).toFixed(1) : 0}%
-            </div>
-            <p className="text-xs text-muted-foreground">
-              {stats.closed} of {stats.total} resolved
-            </p>
-          </CardContent>
-        </Card>
+        <SummaryCard
+          icon={<HowToRegIcon className="w-7 h-7 text-white" />}
+          title="Resolution Rate"
+          value={`${stats.total > 0 ? ((stats.closed / stats.total) * 100).toFixed(1) : 0}%`}
+          description={`${stats.closed} of ${stats.total} resolved`}
+          iconBg="bg-green-600"
+        />
       </div>
 
       {/* NCAL Target Performance */}
