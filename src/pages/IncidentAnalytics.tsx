@@ -39,6 +39,8 @@ import {
   Filter
 } from 'lucide-react';
 
+import PageWrapper from '@/components/PageWrapper';
+
 // MUI Icons for consistency with project standards
 import BarChartIcon from '@mui/icons-material/BarChart';
 import PieChartIconMUI from '@mui/icons-material/PieChart';
@@ -484,8 +486,9 @@ export const IncidentAnalytics: React.FC = () => {
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      {/* Header */}
+    <PageWrapper>
+      <div className="space-y-6">
+        {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Incident Analytics</h1>
@@ -852,8 +855,7 @@ export const IncidentAnalytics: React.FC = () => {
           </CardContent>
         </Card>
       </div>
-
-
-    </div>
+      </div>
+    </PageWrapper>
   );
 };
