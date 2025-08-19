@@ -1,30 +1,28 @@
 import React, { useState, useMemo } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion"
-import { Download, ArrowUpRight, ArrowDownRight, TicketIcon, ClockIcon, CheckCircleIcon, UserIcon, Ticket, Clock, CheckCircle2, XCircle, AlertTriangle } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useTicketAnalytics } from './TicketAnalyticsContext';
 import SummaryCard from './ui/SummaryCard';
 import TimeFilter from './TimeFilter';
-import DownloadIcon from '@mui/icons-material/Download';
-import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
-import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
 import ConfirmationNumberIcon from '@mui/icons-material/ConfirmationNumber';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
-import PersonIcon from '@mui/icons-material/Person';
 import HowToRegIcon from '@mui/icons-material/HowToReg';
-import CloseIcon from '@mui/icons-material/Close';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Legend as RechartsLegend, Tooltip as RechartsTooltip, PieChart, Pie, Sector, Cell, Label as RechartsLabel, BarChart, Bar, LabelList } from 'recharts';
+import TrendingUpIcon from '@mui/icons-material/TrendingUp';
+import TrendingDownIcon from '@mui/icons-material/TrendingDown';
+import TrendingFlatIcon from '@mui/icons-material/TrendingFlat';
+import BarChartIcon from '@mui/icons-material/BarChart';
+import LabelIcon from '@mui/icons-material/Label';
+import WarningIcon from '@mui/icons-material/Warning';
+import ShowChartIcon from '@mui/icons-material/ShowChart';
+import ScheduleIcon from '@mui/icons-material/Schedule';
+import AssignmentIcon from '@mui/icons-material/Assignment';
+import TrackChangesIcon from '@mui/icons-material/TrackChanges';
+import { CheckCircle2 as CheckCircleIcon, Clock as ClockIcon } from 'lucide-react';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Legend as RechartsLegend, Tooltip as RechartsTooltip, BarChart, Bar } from 'recharts';
 import PageWrapper from './PageWrapper';
-import { PDFDownloadLink, Document, Page, Text, View, StyleSheet } from '@react-pdf/renderer';
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
-import { formatDurationDHM } from '@/lib/utils';
+import { PDFDownloadLink, Document, Page, Text, View } from '@react-pdf/renderer';
+import { ChartContainer, ChartTooltip } from "@/components/ui/chart";
 import { Badge } from './ui/badge';
 import { db } from '@/lib/db';
 import { useLiveQuery } from 'dexie-react-hooks';
@@ -80,19 +78,49 @@ function toRechartsData(labels: string[], datasets: any[]) {
   }));
 }
 
-// Helper: tentukan shift dari jam (logika berbasis menit, prioritas overlap)
-function getShift(dateStr: string) {
-  const d = new Date(dateStr);
-  if (isNaN(d.getTime())) return 'Unknown';
-  const hour = d.getHours();
-  const minute = d.getMinutes();
-  const totalMinutes = hour * 60 + minute;
-  if (totalMinutes >= 0 && totalMinutes < 60) return 'Sore'; // 00:00–00:59
-  if (totalMinutes >= 60 && totalMinutes < 480) return 'Malam'; // 01:00–07:59
-  if (totalMinutes >= 480 && totalMinutes < 1020) return 'Pagi'; // 08:00–16:59
-  if (totalMinutes >= 1020 && totalMinutes < 1440) return 'Sore'; // 17:00–23:59
-  return 'Unknown';
+// ====================== ACCURATE TIME HELPERS (NEW) ======================
+/** Parse Date dengan fallback aman untuk string "YYYY-MM-DD HH:mm:ss" */
+function parseDateSafe(dt?: string | Date | null): Date | null {
+  if (!dt) return null;
+  if (dt instanceof Date) return isNaN(dt.getTime()) ? null : dt;
+  // Jadikan "2025-07-01 08:10:00" valid di semua browser
+  const isoish = dt.includes('T') || dt.includes('Z') ? dt : dt.replace(' ', 'T');
+  const d = new Date(isoish);
+  return isNaN(d.getTime()) ? null : d;
 }
+
+/** Ambil durasi (jam) akurat: pakai duration.rawHours jika ada, fallback ke (close - open) */
+function toRawHours(t: any): number | null {
+  if (t?.duration && typeof t.duration.rawHours === 'number') return t.duration.rawHours;
+  const open = parseDateSafe(t?.openTime);
+  const close = parseDateSafe(t?.closeTime);
+  if (!open || !close) return null;
+  const diffH = (close.getTime() - open.getTime()) / 3_600_000;
+  return Number.isFinite(diffH) ? Math.max(0, diffH) : null;
+}
+
+/** Percentile util (0..1) untuk array angka */
+function percentile(values: number[], p: number): number | null {
+  const v = (values || []).filter(n => Number.isFinite(n)).sort((a,b)=>a-b);
+  if (!v.length) return null;
+  const idx = (v.length - 1) * p;
+  const lo = Math.floor(idx), hi = Math.ceil(idx);
+  if (lo === hi) return v[lo];
+  return v[lo] + (v[hi] - v[lo]) * (idx - lo);
+}
+
+// ====================== SHIFT MAPPING (UPDATE) ======================
+/** Standar: Pagi 06:00–13:59, Sore 14:00–21:59, Malam 22:00–05:59 */
+function getShift(dateStr: string) {
+  const d = parseDateSafe(dateStr);
+  if (!d) return 'Unknown';
+  const h = d.getHours();
+  if (h >= 6 && h < 14) return 'Pagi';
+  if (h >= 14 && h < 22) return 'Sore';
+  // 22:00–23:59 & 00:00–05:59
+  return 'Malam';
+}
+// ====================================================================
 
 // Helper: Median
 function median(arr) {
@@ -154,9 +182,9 @@ function formatDurationHMS(hours: number): string {
 
 // Helper: tren badge
 function getTrendBadge(value: number) {
-  if (value > 0.5) return <Badge variant="success">▲ {value.toFixed(1)}%</Badge>;
-  if (value < -0.5) return <Badge variant="danger">▼ {Math.abs(value).toFixed(1)}%</Badge>;
-  return <Badge variant="default">● 0%</Badge>;
+  if (value > 0.5) return <Badge variant="success"><TrendingUpIcon className="w-3 h-3 mr-1" /> {value.toFixed(1)}%</Badge>;
+  if (value < -0.5) return <Badge variant="danger"><TrendingDownIcon className="w-3 h-3 mr-1" /> {Math.abs(value).toFixed(1)}%</Badge>;
+  return <Badge variant="default"><TrendingFlatIcon className="w-3 h-3 mr-1" /> 0%</Badge>;
 }
 
 // Helper: status badge (untuk PDF export, harus return style object)
@@ -170,9 +198,10 @@ const pdfStatusBadge = status => {
 
 const TicketAnalytics = ({ data: propsData }: TicketAnalyticsProps) => {
   // Semua hook harus di awal
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [modalOpen, setModalOpen] = useState(false);
+
+
   const [viewMode, setViewMode] = useState<'type' | 'category'>('type');
+  const [normalizePer1000, setNormalizePer1000] = useState(false);
   const {
     ticketAnalyticsData,
     gridData, // filtered tickets
@@ -447,6 +476,47 @@ const TicketAnalytics = ({ data: propsData }: TicketAnalyticsProps) => {
       return d.getFullYear() === y && d.getMonth() >= mStart && d.getMonth() <= mEnd;
     });
   }, [gridData, startMonth, endMonth, selectedYear]);
+
+  // ====================== ADVANCED KPIs (NEW) ======================
+  const slaHoursBySeverity: Record<string, number> = { P1: 4, P2: 8, P3: 24, P4: 48 };
+
+  const advancedKpis = useMemo(() => {
+    const periodTickets = Array.isArray(filteredGridData) ? filteredGridData : [];
+    const allTickets = Array.isArray(gridData) ? gridData : [];
+
+    const isClosed = (t: any) => {
+      const s = String(t?.status || '').toLowerCase();
+      return s === 'closed' || !!t?.closeTime;
+    };
+
+    // Close rate (periode)
+    const totalPeriod = periodTickets.length;
+    const closedPeriod = periodTickets.filter(isClosed).length;
+    const closeRatePeriod = totalPeriod ? (closedPeriod / totalPeriod) * 100 : 0;
+
+    // Resolution rate (lifetime)
+    const totalAll = allTickets.length;
+    const closedAll = allTickets.filter(isClosed).length;
+    const resolutionRateLifetime = totalAll ? (closedAll / totalAll) * 100 : 0;
+
+    // SLA attainment (periode, hanya tiket closed)
+    const closedWithDur = periodTickets.filter(t => isClosed(t)).map(t => {
+      const h = toRawHours(t);
+      const sev = (t?.severity || 'P3').toString().toUpperCase();
+      const slaH = slaHoursBySeverity[sev] ?? slaHoursBySeverity['P3'];
+      return { h, slaH };
+    });
+    const slaOK = closedWithDur.filter(x => x.h != null && x.h <= x.slaH).length;
+    const slaDen = closedWithDur.length || 1;
+    const slaAttainment = (slaOK / slaDen) * 100;
+
+    return {
+      closeRatePeriod,
+      resolutionRateLifetime,
+      slaAttainment
+    };
+  }, [filteredGridData, gridData]);
+  // =================================================================
   const complaintsData = ticketAnalyticsData?.complaintsData || { labels: [], datasets: [] };
   const monthlyStatsData = ticketAnalyticsData?.monthlyStatsChartData || { labels: [], datasets: [] };
   const classificationData = ticketAnalyticsData?.classificationAnalysis || {};
@@ -518,7 +588,7 @@ const TicketAnalytics = ({ data: propsData }: TicketAnalyticsProps) => {
   }, [gridData]);
 
   // VALIDASI DISTRIBUSI SHIFT DAN PARSING OPENTIME
-  if (typeof window !== 'undefined') {
+  if (typeof window !== 'undefined' && process.env.NODE_ENV !== 'production') {
     try {
       const shiftCount = { Pagi: 0, Sore: 0, Malam: 0, Unknown: 0 };
       (Array.isArray(gridData) ? gridData : []).forEach(t => {
@@ -531,7 +601,7 @@ const TicketAnalytics = ({ data: propsData }: TicketAnalyticsProps) => {
   }
 
   // VALIDASI LANJUTAN: Print 20 tiket pertama per shift ke console
-  if (typeof window !== 'undefined') {
+  if (typeof window !== 'undefined' && process.env.NODE_ENV !== 'production') {
     try {
       const shiftBuckets = { Pagi: [], Sore: [], Malam: [], Unknown: [] };
       (Array.isArray(gridData) ? gridData : []).forEach(t => {
@@ -563,31 +633,34 @@ const TicketAnalytics = ({ data: propsData }: TicketAnalyticsProps) => {
     { bg: '#ede9fe', color: '#6d28d9' }, // ungu
   ];
 
-  // Agregasi data per shift
-  const shiftMap = { Pagi: [], Sore: [], Malam: [] };
+  // ====================== SHIFT AGG (UPDATE) ======================
+  const shiftMap: Record<'Pagi'|'Sore'|'Malam', number[]> = { Pagi: [], Sore: [], Malam: [] };
   (Array.isArray(gridData) ? gridData : []).forEach(t => {
-    const shift = getShift(t.openTime);
-    if (shiftMap[shift] && t.duration && typeof t.duration.rawHours === 'number') {
-      (shiftMap[shift] as number[]).push(t.duration.rawHours);
-    }
+    const h = toRawHours(t);
+    if (h == null) return;
+    const sh = getShift(t.openTime);
+    if (sh === 'Pagi' || sh === 'Sore' || sh === 'Malam') shiftMap[sh].push(h);
   });
-  const shiftStats = Object.entries(shiftMap).map(([shift, arr]) => ({
+  const shiftStats = (Object.entries(shiftMap) as [string, number[]][])
+    .map(([shift, arr]) => {
+      const avg = arr.length ? arr.reduce((a,b)=>a+b,0)/arr.length : 0;
+      const p50 = percentile(arr, 0.5) ?? 0;
+      const p75 = percentile(arr, 0.75) ?? 0;
+      const p90 = percentile(arr, 0.9) ?? 0;
+      return {
     shift,
-    avg: (arr as number[]).length ? ((arr as number[]).reduce((a, b) => a + b, 0) / (arr as number[]).length) : 0,
-    median: median(arr as number[]),
-    count: (arr as number[]).length,
-    formattedAvg: formatDurationHMS((arr as number[]).length ? ((arr as number[]).reduce((a, b) => a + b, 0) / (arr as number[]).length) : 0),
-    formattedMedian: formatDurationHMS(median(arr as number[])),
-  }));
-  // Untuk chartData, tambahkan formatted label
+        avg, median: p50, count: arr.length, p75, p90,
+        formattedAvg: formatDurationHMS(avg),
+        formattedMedian: formatDurationHMS(p50)
+      };
+    });
+
+  // Chart data tetap sama + tambahkan jika mau dipakai di tooltip:
   const chartData = shiftStats.map(s => ({
-    shift: s.shift,
-    avg: Number(s.avg.toFixed(2)),
-    median: Number(s.median.toFixed(2)),
-    count: s.count,
-    avgLabel: s.formattedAvg,
-    medianLabel: s.formattedMedian,
+    shift: s.shift, avg: Number(s.avg.toFixed(2)), median: Number(s.median.toFixed(2)),
+    count: s.count, avgLabel: s.formattedAvg, medianLabel: s.formattedMedian, p90: s.p90
   }));
+  // =================================================================
   // Chart config warna baru
   const chartConfig = {
     avg: { label: 'Avg Handling Time (h)', color: '#2563eb' }, // biru
@@ -596,30 +669,31 @@ const TicketAnalytics = ({ data: propsData }: TicketAnalyticsProps) => {
   // Insight footer
   const maxAvg = shiftStats.reduce((max, s) => (s.avg > max.avg ? s : max), shiftStats[0] || { shift: '', avg: 0, median: 0, count: 0 });
 
-  // Agregasi data per kategori
+  // ====================== CATEGORY AGG (UPDATE) ======================
   const catMap: Record<string, number[]> = {};
   (Array.isArray(gridData) ? gridData : []).forEach(t => {
-    if (!t.category) return;
-    if (!catMap[t.category]) catMap[t.category] = [];
-    if (t.duration && typeof t.duration.rawHours === 'number') catMap[t.category].push(t.duration.rawHours);
+    if (!t?.category) return;
+    const h = toRawHours(t);
+    if (h == null) return;
+    (catMap[t.category] ||= []).push(h);
   });
-  const catStats = Object.entries(catMap).map(([cat, arr]) => ({
-    cat,
-    avg: arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : 0,
-    median: median(arr),
-    count: arr.length,
-    formattedAvg: formatDurationHMS(arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : 0),
-    formattedMedian: formatDurationHMS(median(arr)),
+  const catStats = Object.entries(catMap).map(([cat, arr]) => {
+    const avg = arr.length ? arr.reduce((a,b)=>a+b,0)/arr.length : 0;
+    const p50 = percentile(arr, 0.5) ?? 0;
+    const p75 = percentile(arr, 0.75) ?? 0;
+    const p90 = percentile(arr, 0.9) ?? 0;
+    return {
+      cat, avg, median: p50, count: arr.length, p75, p90,
+      formattedAvg: formatDurationHMS(avg),
+      formattedMedian: formatDurationHMS(p50),
+    };
+  });
+  const catChartData = catStats.map(s => ({
+    category: s.cat, avg: Number(s.avg.toFixed(2)), median: Number(s.median.toFixed(2)),
+    count: s.count, avgLabel: s.formattedAvg, medianLabel: s.formattedMedian, p90: s.p90
   }));
   const maxAvgCat = catStats.reduce((max, s) => (s.avg > max.avg ? s : max), catStats[0] || { cat: '', avg: 0, median: 0, count: 0 });
-  const catChartData = catStats.map(s => ({
-    category: s.cat,
-    avg: Number(s.avg.toFixed(2)),
-    median: Number(s.median.toFixed(2)),
-    count: s.count,
-    avgLabel: s.formattedAvg,
-    medianLabel: s.formattedMedian,
-  }));
+  // =================================================================
 
   // Hitung tren shift: bandingkan avg shift dengan rata-rata semua shift
   const avgAllShift = shiftStats.reduce((a, s) => a + s.avg, 0) / (shiftStats.length || 1);
@@ -635,7 +709,7 @@ const TicketAnalytics = ({ data: propsData }: TicketAnalyticsProps) => {
   const outlierShift = shiftStats.find(s => s.avg > 2 * avgAllShift);
   if (outlierShift) {
     insightCards.push({
-      icon: <span className="text-red-500">⚠️</span>,
+      icon: <WarningIcon className="text-red-500" />,
       title: `Anomali: Shift ${outlierShift.shift}`,
       description: `Rata-rata handling time shift ${outlierShift.shift} (${outlierShift.formattedAvg}) jauh di atas rata-rata (${formatDurationHMS(avgAllShift)}). Periksa penyebabnya!`,
       type: 'warning',
@@ -646,7 +720,7 @@ const TicketAnalytics = ({ data: propsData }: TicketAnalyticsProps) => {
   const outlierCat = catStats.find(s => s.avg > 2 * avgAllCat);
   if (outlierCat) {
     insightCards.push({
-      icon: <span className="text-red-500">⚠️</span>,
+      icon: <WarningIcon className="text-red-500" />,
       title: `Anomali: Kategori ${outlierCat.cat}`,
       description: `Rata-rata handling time kategori ${outlierCat.cat} (${outlierCat.formattedAvg}) jauh di atas rata-rata (${formatDurationHMS(avgAllCat)}). Periksa penyebabnya!`,
       type: 'warning',
@@ -696,7 +770,7 @@ const TicketAnalytics = ({ data: propsData }: TicketAnalyticsProps) => {
     if (maxUp.delta > 0) narasi += ' Kenaikan terbesar terjadi pada salah satu bulan, menandakan adanya faktor pemicu khusus.';
     if (maxDown.delta < 0) narasi += ' Penurunan terbesar juga tercatat pada periode tertentu, perlu dicermati penyebabnya.';
     insightCards.push({
-      icon: trendType === 'naik' ? <span className="text-green-600">⬆️</span> : trendType === 'turun' ? <span className="text-blue-600">⬇️</span> : <span className="text-gray-500">●</span>,
+      icon: trendType === 'naik' ? <TrendingUpIcon className="text-green-600" /> : trendType === 'turun' ? <TrendingDownIcon className="text-blue-600" /> : <TrendingFlatIcon className="text-gray-500" />,
       title: `Tren Volume Tiket: ${trendType.charAt(0).toUpperCase()+trendType.slice(1)}`,
       description: narasi,
       type: trendType === 'naik' ? 'success' : trendType === 'turun' ? 'info' : 'info',
@@ -706,7 +780,7 @@ const TicketAnalytics = ({ data: propsData }: TicketAnalyticsProps) => {
   // Rekomendasi tindakan
   if (outlierShift || outlierCat) {
     insightCards.push({
-      icon: <span className="text-orange-500">💡</span>,
+      icon: <AssignmentIcon className="text-orange-500" />,
       title: 'Rekomendasi',
       description: 'Segera lakukan investigasi pada shift/kategori yang terdeteksi anomali untuk mencegah penumpukan backlog atau penurunan kualitas layanan.',
       type: 'info',
@@ -815,7 +889,7 @@ const TicketAnalytics = ({ data: propsData }: TicketAnalyticsProps) => {
   }
 
   // DEBUG LOG untuk validasi data customer dan kategori
-  if (typeof window !== 'undefined') {
+  if (typeof window !== 'undefined' && process.env.NODE_ENV !== 'production') {
     console.log('allCustomers:', allCustomers);
     console.log('kategoriList:', kategoriList);
     console.log('customerKategoriMap:', customerKategoriMap);
@@ -842,83 +916,381 @@ const TicketAnalytics = ({ data: propsData }: TicketAnalyticsProps) => {
           onRefresh={refresh}
         />
       </div>
-      {/* Summary Cards - Standardized */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-8 mb-10">
-        {stats.map(s => {
-          // Standardized mapping for icons and backgrounds
-          const titleKey = s.title.trim().toUpperCase();
-          const iconMap: Record<string, { icon: React.ReactNode; iconBg: string }> = {
-            'TOTAL TICKETS': {
-              icon: <ConfirmationNumberIcon className="w-7 h-7 text-white" />, iconBg: "bg-blue-700"
-            },
-            'CLOSED': {
-              icon: <CheckCircleIcon className="w-7 h-7 text-white" />, iconBg: "bg-green-600"
-            },
-            'OPEN': {
-              icon: <ErrorOutlineIcon className="w-7 h-7 text-white" />, iconBg: "bg-orange-500"
-            },
-            'OVERDUE': {
-              icon: <AccessTimeIcon className="w-7 h-7 text-white" />, iconBg: "bg-red-600"
-            },
-            'ESCALATED': {
-              icon: <WarningAmberIcon className="w-7 h-7 text-white" />, iconBg: "bg-yellow-400"
-            },
-          };
-          const { icon, iconBg } = iconMap[titleKey] || {
-            icon: <WarningAmberIcon className="w-7 h-7 text-white" />, iconBg: "bg-gray-500"
-          };
-
-          return (
-            <SummaryCard
-              key={s.title}
-              icon={icon}
-              title={s.title}
-              value={s.value}
-              description={s.description}
-              iconBg={iconBg}
-              className="w-full"
-            />
-          );
-        })}
+      
+      {/* ====================== NORMALIZE TOGGLE (NEW) ====================== */}
+      <div className="flex items-center justify-end mb-4">
+        <label className="inline-flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300 cursor-pointer select-none">
+          <input
+            type="checkbox"
+            checked={normalizePer1000}
+            onChange={(e) => setNormalizePer1000(e.target.checked)}
+            className="h-4 w-4 rounded"
+          />
+          Normalize per 1.000 active clients
+        </label>
+      </div>
+      {/* =================================================================== */}
+      {/* Summary Cards - Top Row (4 cards) */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 mb-6">
+        {/* Total Tickets */}
+        <SummaryCard
+          icon={<ConfirmationNumberIcon className="w-7 h-7 text-white" />}
+          title="Total Tickets"
+          value={stats.find(s => s.title === 'Total Tickets')?.value || '0'}
+          description={stats.find(s => s.title === 'Total Tickets')?.description || ''}
+          iconBg="bg-blue-700"
+        />
+        
+        {/* Closed */}
+        <SummaryCard
+          icon={<CheckCircleIcon className="w-7 h-7 text-white" />}
+          title="Closed"
+          value={stats.find(s => s.title === 'Closed')?.value || '0'}
+          description={stats.find(s => s.title === 'Closed')?.description || ''}
+          iconBg="bg-green-600"
+        />
+        
+        {/* Open */}
+        <SummaryCard
+          icon={<ErrorOutlineIcon className="w-7 h-7 text-white" />}
+          title="Open"
+          value={stats.find(s => s.title === 'Open')?.value || '0'}
+          description={stats.find(s => s.title === 'Open')?.description || ''}
+          iconBg="bg-orange-500"
+        />
+        
+        {/* SLA Attainment */}
+        <SummaryCard
+          icon={<AccessTimeIcon className="w-7 h-7 text-white" />}
+          title="SLA Attainment"
+          value={`${advancedKpis.slaAttainment.toFixed(1)}%`}
+          description="Closed ≤ SLA target (by severity) di periode terpilih"
+          iconBg="bg-indigo-600"
+        />
       </div>
 
+      {/* Summary Cards - Second Row (4 cards) */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 mb-6">
+        {/* Overdue */}
+        <SummaryCard
+          icon={<AccessTimeIcon className="w-7 h-7 text-white" />}
+          title="Overdue"
+          value={stats.find(s => s.title === 'Overdue')?.value || '0'}
+          description={stats.find(s => s.title === 'Overdue')?.description || ''}
+          iconBg="bg-red-600"
+        />
+        
+        {/* Escalated */}
+        <SummaryCard
+          icon={<WarningAmberIcon className="w-7 h-7 text-white" />}
+          title="Escalated"
+          value={stats.find(s => s.title === 'Escalated')?.value || '0'}
+          description={stats.find(s => s.title === 'Escalated')?.description || ''}
+          iconBg="bg-yellow-400"
+        />
+        
+        {/* Close Rate (Periode) */}
+        <SummaryCard
+          icon={<CheckCircleIcon className="w-7 h-7 text-white" />}
+          title="Close Rate (Periode)"
+          value={`${advancedKpis.closeRatePeriod.toFixed(1)}%`}
+          description="Closed / total tiket yang DIBUKA di periode"
+          iconBg="bg-emerald-600"
+        />
+        
+        {/* Resolution Rate (Lifetime) */}
+        <SummaryCard
+          icon={<HowToRegIcon className="w-7 h-7 text-white" />}
+          title="Resolution Rate (Lifetime)"
+          value={`${advancedKpis.resolutionRateLifetime.toFixed(1)}%`}
+          description="Closed / total semua tiket (histori)"
+          iconBg="bg-slate-700"
+        />
+      </div>
+
+      {/* Backlog Cards - Third Row (3 cards) */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+        {(() => {
+          const now = new Date();
+          // Gunakan definisi yang sama dengan Open tickets (logika kompleks)
+          const openTickets = (Array.isArray(gridData) ? gridData : []).filter(t => {
+            // Jika tidak ada closeTime, termasuk tiket open
+            if (!t?.closeTime) return true;
+            
+            const openDate = parseDateSafe(t?.openTime);
+            const closeDate = parseDateSafe(t?.closeTime);
+            
+            if (!openDate || !closeDate) return true;
+            
+            // Fallback 1: jika closeTime di masa depan dari sekarang, anggap open
+            if (closeDate > now) return true;
+            
+            // Fallback 2: jika closeTime di bulan berikutnya dari openTime, anggap open
+            const openMonth = openDate.getMonth();
+            const openYear = openDate.getFullYear();
+            const closeMonth = closeDate.getMonth();
+            const closeYear = closeDate.getFullYear();
+            
+            if (closeYear > openYear || (closeYear === openYear && closeMonth > openMonth)) {
+              return true;
+            }
+            
+            // Fallback 3: jika closeTime lebih dari 30 hari setelah openTime, anggap open
+            const daysDiff = (closeDate.getTime() - openDate.getTime()) / (1000 * 60 * 60 * 24);
+            if (daysDiff > 30) return true;
+            
+            return false;
+          });
+          
+          const agesH = openTickets.map(t => {
+            const open = parseDateSafe(t?.openTime);
+            return open ? (now.getTime() - open.getTime()) / 3_600_000 : null;
+          }).filter(n => Number.isFinite(n)) as number[];
+          const p50 = percentile(agesH, 0.5) ?? 0;
+          const p90 = percentile(agesH, 0.9) ?? 0;
+
+          return (
+            <>
+            <SummaryCard
+                icon={<ErrorOutlineIcon className="w-7 h-7 text-white" />}
+                title="Backlog (Open)"
+                value={openTickets.length.toLocaleString()}
+                description="Tiket open: no closeTime, future closeTime, atau >30 hari"
+                iconBg="bg-amber-600"
+              />
+              <SummaryCard
+                icon={<ClockIcon className="w-7 h-7 text-white" />}
+                title="Backlog Age P50"
+                value={formatDurationHMS(p50)}
+                description="Median umur backlog (jam)"
+                iconBg="bg-sky-600"
+              />
+              <SummaryCard
+                icon={<ClockIcon className="w-7 h-7 text-white" />}
+                title="Backlog Age P90"
+                value={formatDurationHMS(p90)}
+                description="90% backlog lebih muda dari ini"
+                iconBg="bg-indigo-600"
+              />
+            </>
+          );
+        })()}
+      </div>
+
+      {/* Automated Insights - Professional & Informative Design */}
       {insights && (
-        <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg p-6 mb-8">
-          <div className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">Automated Insights</div>
-          <ul className="space-y-2 text-gray-700 dark:text-gray-200 list-disc pl-5">
-            {/* Bulan tersibuk */}
-            {insights.busiestMonth && (
-              <li>Bulan tersibuk: <span className="font-bold text-blue-700 dark:text-blue-300">{insights.busiestMonth.label}</span> dengan <span className="font-bold text-blue-700 dark:text-blue-300">{insights.busiestMonth.count}</span> tiket{insights.busiestMonth.trend && <span className="ml-1 text-xs font-semibold text-blue-500 dark:text-blue-300">({insights.busiestMonth.trend > 0 ? '+' : ''}{insights.busiestMonth.trend}% dari bulan sebelumnya)</span>}.</li>
+        <div className="mb-6">
+          <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg p-3">
+            <div className="flex items-center justify-between mb-2">
+              <div>
+                <h2 className="text-base font-bold text-gray-900 dark:text-gray-100">Automated Insights</h2>
+                <p className="text-xs text-gray-600 dark:text-gray-400">Analisis otomatis berdasarkan data tiket dan performa</p>
+              </div>
+              <div className="flex items-center gap-1">
+                <div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div>
+                <span className="text-xs text-gray-600 dark:text-gray-400">Real-time</span>
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+              {/* Key Metrics */}
+              <div className="space-y-2">
+                <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 border-b border-gray-200 dark:border-zinc-700 pb-1">Key Metrics</h3>
+                
+                {/* Bulan tersibuk */}
+                {insights.busiestMonth && (
+                  <div className="p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                    <div className="flex items-center justify-between mb-1">
+                      <div className="flex items-center gap-1">
+                        <BarChartIcon className="text-blue-500 text-xs" />
+                        <span className="font-semibold text-xs text-gray-900 dark:text-gray-100">Bulan Tersibuk</span>
+                      </div>
+                      <Badge variant="info" className="text-blue-600 text-xs">Peak</Badge>
+                    </div>
+                    <div className="text-sm font-bold text-blue-600 dark:text-blue-400 mb-0.5">
+                      {insights.busiestMonth.label}
+                    </div>
+                    <div className="text-xs text-gray-600 dark:text-gray-400 mb-0.5">
+                      {insights.busiestMonth.count} tiket diproses
+                    </div>
+                    {insights.busiestMonth.trend && (
+                      <div className={`text-xs font-medium ${
+                        insights.busiestMonth.trend > 0 
+                          ? 'text-green-600 dark:text-green-400' 
+                          : 'text-red-600 dark:text-red-400'
+                      }`}>
+                        {insights.busiestMonth.trend > 0 ? <TrendingUpIcon className="w-3 h-3 inline mr-1" /> : <TrendingDownIcon className="w-3 h-3 inline mr-1" />} {Math.abs(insights.busiestMonth.trend)}% dari bulan sebelumnya
+                      </div>
+                    )}
+                  </div>
+                )}
+                
+                {/* Kategori dominan */}
+                {insights.topCategory && (
+                  <div className="p-2 bg-purple-50 dark:bg-purple-900/20 rounded-lg border border-purple-200 dark:border-purple-800">
+                    <div className="flex items-center justify-between mb-1">
+                      <div className="flex items-center gap-1">
+                        <LabelIcon className="text-purple-500 text-xs" />
+                        <span className="font-semibold text-xs text-gray-900 dark:text-gray-100">Kategori Dominan</span>
+                      </div>
+                      <Badge variant="info" className="text-purple-600 text-xs">Top</Badge>
+                    </div>
+                    <div className="text-sm font-bold text-purple-600 dark:text-purple-400 mb-0.5">
+                      {insights.topCategory.cat}
+                    </div>
+                    <div className="text-xs text-gray-600 dark:text-gray-400 mb-0.5">
+                      {insights.topCategory.count} tiket ({((insights.topCategory.count / (Array.isArray(gridData) ? gridData.length : 1)) * 100).toFixed(1)}% dari total)
+                    </div>
+                    {typeof insights.topCategory.trend === 'number' && (
+                      <div className={`text-xs font-medium ${
+                        insights.topCategory.trend > 0 
+                          ? 'text-green-600 dark:text-green-400' 
+                          : 'text-red-600 dark:text-red-400'
+                      }`}>
+                        {insights.topCategory.trend > 0 ? <TrendingUpIcon className="w-3 h-3 inline mr-1" /> : <TrendingDownIcon className="w-3 h-3 inline mr-1" />} {Math.abs(insights.topCategory.trend).toFixed(1)}% tren {insights.topCategory.trend > 0 ? 'naik' : 'turun'}
+                      </div>
+                    )}
+                  </div>
+                )}
+                
+                {/* Pelanggan kronis/ekstrem */}
+                {insights.chronicPercent && (
+                  <div className="p-2 bg-orange-50 dark:bg-orange-900/20 rounded-lg border border-orange-200 dark:border-orange-800">
+                    <div className="flex items-center justify-between mb-1">
+                      <div className="flex items-center gap-1">
+                        <WarningIcon className="text-orange-500 text-xs" />
+                        <span className="font-semibold text-xs text-gray-900 dark:text-gray-100">Pelanggan Kronis/Ekstrem</span>
+                      </div>
+                      <Badge variant="warning" className="text-orange-600 text-xs">Alert</Badge>
+                    </div>
+                    <div className="text-sm font-bold text-orange-600 dark:text-orange-400 mb-0.5">
+                      {insights.chronicPercent}%
+                    </div>
+                    <div className="text-xs text-gray-600 dark:text-gray-400">
+                      Pelanggan dengan &gt;10 tiket (kategori Kronis/Ekstrem)
+                    </div>
+                  </div>
+                )}
+              </div>
+              
+              {/* Performance Insights */}
+              <div className="space-y-2">
+                <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 border-b border-gray-200 dark:border-zinc-700 pb-1">Performance Insights</h3>
+                
+                {/* Complaint Penetration */}
+                {typeof complaintPenetrationByType !== 'undefined' && (
+                  <div className="p-2 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800">
+                    <div className="flex items-center justify-between mb-1">
+                      <div className="flex items-center gap-1">
+                        <ShowChartIcon className="text-red-500 text-xs" />
+                        <span className="font-semibold text-xs text-gray-900 dark:text-gray-100">Rasio Komplain Tertinggi</span>
+                      </div>
+                      <Badge variant="danger" className="text-red-600 text-xs">High</Badge>
+                    </div>
+                    <div className="text-sm font-bold text-red-600 dark:text-red-400 mb-0.5">
+                      {complaintPenetrationByType.maxType}
+                    </div>
+                    <div className="text-xs text-gray-600 dark:text-gray-400">
+                      {complaintPenetrationByType.maxValue}% penetrasi komplain
+                    </div>
+                  </div>
+                )}
+                
+                {/* Handling Time Insights */}
+                <div className="space-y-3">
+                  {typeof safeMaxAvg !== 'undefined' && safeMaxAvg.shift && (
+                    <div className="p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800">
+                      <div className="flex items-center gap-2 mb-1">
+                        <AssignmentIcon className="text-amber-500 text-xs" />
+                        <span className="font-medium text-gray-900 dark:text-gray-100">Handling Time Shift</span>
+                      </div>
+                      <div className="text-sm font-bold text-amber-600 dark:text-amber-400">
+                        {safeMaxAvg.shift}: {safeMaxAvg.formattedAvg}
+                      </div>
+                    </div>
+                  )}
+                  
+                  {typeof safeMaxAvgCat !== 'undefined' && safeMaxAvgCat.cat && (
+                    <div className="p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800">
+                      <div className="flex items-center gap-2 mb-1">
+                        <AssignmentIcon className="text-amber-500 text-xs" />
+                        <span className="font-medium text-gray-900 dark:text-gray-100">Handling Time Kategori</span>
+                      </div>
+                      <div className="text-sm font-bold text-amber-600 dark:text-amber-400">
+                        {safeMaxAvgCat.cat}: {safeMaxAvgCat.formattedAvg}
+                      </div>
+                    </div>
+                  )}
+                </div>
+                
+                {/* Category Penetration */}
+                {typeof complaintPenetrationByCategory !== 'undefined' && (
+                  <div className="p-2 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg border border-indigo-200 dark:border-indigo-800">
+                    <div className="flex items-center justify-between mb-1">
+                      <div className="flex items-center gap-1">
+                        <TrackChangesIcon className="text-indigo-500 text-xs" />
+                        <span className="font-semibold text-xs text-gray-900 dark:text-gray-100">Penetrasi Kategori</span>
+                      </div>
+                      <Badge variant="info" className="text-indigo-600 text-xs">Focus</Badge>
+                    </div>
+                    <div className="text-sm font-bold text-indigo-600 dark:text-indigo-400 mb-0.5">
+                      {complaintPenetrationByCategory.maxCategory}
+                    </div>
+                    <div className="text-xs text-gray-600 dark:text-gray-400">
+                      {complaintPenetrationByCategory.maxValue}% penetrasi komplain
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+            
+            {/* Automated Recommendations */}
+            {insightCards && insightCards.length > 0 && (
+              <div className="mt-3 pt-3 border-t border-gray-200 dark:border-zinc-700">
+                <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-2">Automated Recommendations</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                  {insightCards.map((card, idx) => (
+                    <div 
+                      key={idx} 
+                      className={`p-2 rounded-lg border transition-all duration-200 ${
+                        card.type === 'warning' 
+                          ? 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800' 
+                          : card.type === 'success'
+                          ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800'
+                          : 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800'
+                      }`}
+                    >
+                      <div className="flex items-start gap-1">
+                        <span className={`text-xs ${
+                          card.type === 'warning' 
+                            ? 'text-red-500' 
+                            : card.type === 'success'
+                            ? 'text-green-500'
+                            : 'text-blue-500'
+                        }`}>{card.icon}</span>
+                        <div className="flex-1">
+                          <div className="flex items-center gap-1 mb-0.5">
+                            <h4 className="font-semibold text-xs text-gray-900 dark:text-gray-100">{card.title}</h4>
+                            {card.badge && (
+                              <Badge 
+                                variant={card.type === 'warning' ? 'danger' : card.type === 'success' ? 'success' : 'info'}
+                                className="text-xs"
+                              >
+                                {card.badge}
+                              </Badge>
+                            )}
+                          </div>
+                          <p className="text-xs text-gray-600 dark:text-gray-400 leading-relaxed">
+                            {card.description}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
             )}
-            {/* Kategori dominan */}
-            {insights.topCategory && (
-              <li>Kategori dominan: <span className="font-bold text-blue-700 dark:text-blue-300">{insights.topCategory.cat}</span> (<span className="font-bold text-blue-700 dark:text-blue-300">{insights.topCategory.count}</span> tiket){typeof insights.topCategory.trend === 'number' && <span className="ml-1 text-xs font-semibold text-blue-500 dark:text-blue-300">, tren {insights.topCategory.trend > 0 ? 'naik' : 'turun'} {Math.abs(insights.topCategory.trend).toFixed(1)}%</span>}.</li>
-            )}
-            {/* Pelanggan kronis/ekstrem */}
-            {insights.chronicPercent && (
-              <li><span className="font-bold text-blue-700 dark:text-blue-300">{insights.chronicPercent}%</span> pelanggan termasuk kategori <span className="font-bold text-blue-700 dark:text-blue-300">Kronis/Ekstrem</span> (lebih dari 10 tiket).</li>
-            )}
-            {/* Rasio komplain tertinggi */}
-            {typeof complaintPenetrationByType !== 'undefined' && (
-              <li>Jenis klien dengan rasio komplain tertinggi: <span className="font-bold text-blue-700 dark:text-blue-300">{complaintPenetrationByType.maxType}</span> (<span className="font-bold text-blue-700 dark:text-blue-300">{complaintPenetrationByType.maxValue}%</span>).</li>
-            )}
-            {/* Penetrasi komplain kategori tertinggi */}
-            {typeof complaintPenetrationByCategory !== 'undefined' && (
-              <li>Kategori klien dengan penetrasi komplain tertinggi: <span className="font-bold text-blue-700 dark:text-blue-300">{complaintPenetrationByCategory.maxCategory}</span> (<span className="font-bold text-blue-700 dark:text-blue-300">{complaintPenetrationByCategory.maxValue}%</span>).</li>
-            )}
-            {/* Shift dengan handling time terlama */}
-            {typeof safeMaxAvg !== 'undefined' && safeMaxAvg.shift && (
-              <li>Shift dengan rata-rata handling time terlama: <span className="font-bold text-blue-700 dark:text-blue-300">{safeMaxAvg.shift}</span> (<span className="font-bold text-blue-700 dark:text-blue-300">{safeMaxAvg.formattedAvg}</span>).</li>
-            )}
-            {/* Kategori dengan handling time terlama */}
-            {typeof safeMaxAvgCat !== 'undefined' && safeMaxAvgCat.cat && (
-              <li>Kategori dengan rata-rata handling time terlama: <span className="font-bold text-blue-700 dark:text-blue-300">{safeMaxAvgCat.cat}</span> (<span className="font-bold text-blue-700 dark:text-blue-300">{safeMaxAvgCat.formattedAvg}</span>).</li>
-            )}
-            {/* Rekomendasi otomatis */}
-            {insightCards && insightCards.length > 0 && insightCards.map((card, idx) => (
-              <li key={idx}><span className="font-bold text-orange-500 mr-1">{card.icon}</span>{card.title}: {card.description}</li>
-            ))}
-          </ul>
+          </div>
         </div>
       )}
 
@@ -1220,8 +1592,13 @@ const TicketAnalytics = ({ data: propsData }: TicketAnalyticsProps) => {
                   return months.map(month => {
                     const row: any = { month };
                     jenisKlienList.forEach(jk => {
-                      const obj = customerMonthRowCountByType.get(month) || {};
-                      row[jk] = obj[jk] || 0;
+                      const tickets = (tiketPerJenisKlienPerBulan[month]?.[jk] || 0);
+                      if (normalizePer1000) {
+                        const denom = (customerMonthRowCountByType.get(month)?.[jk] || 0);
+                        row[jk] = denom > 0 ? +(tickets / denom * 1000).toFixed(2) : 0;
+                      } else {
+                        row[jk] = tickets;
+                      }
                     });
                     return row;
                   });
@@ -1268,8 +1645,14 @@ const TicketAnalytics = ({ data: propsData }: TicketAnalyticsProps) => {
                   <tr key={jk}>
                     <td className="px-4 py-2 font-bold text-blue-700 dark:text-blue-300">{jk}</td>
                     {Object.keys(tiketPerJenisKlienPerBulan).sort().map(month => {
-                      const obj = customerMonthRowCountByType.get(month) || {};
-                      return <td key={month} className="px-4 py-2 text-center font-mono">{obj[jk] || 0}</td>;
+                      const tickets = (tiketPerJenisKlienPerBulan[month]?.[jk] || 0);
+                      const val = normalizePer1000
+                        ? (() => {
+                            const denom = (customerMonthRowCountByType.get(month)?.[jk] || 0);
+                            return denom > 0 ? `${(tickets / denom * 1000).toFixed(2)}` : '0';
+                          })()
+                        : `${tickets}`;
+                      return <td key={month} className="px-4 py-2 text-center font-mono">{val}</td>;
                     })}
                   </tr>
                 ))}
@@ -1279,8 +1662,12 @@ const TicketAnalytics = ({ data: propsData }: TicketAnalyticsProps) => {
                   <td className="px-4 py-2 font-bold">Total</td>
                   {Object.keys(tiketPerJenisKlienPerBulan).sort().map(month => {
                     const obj = customerMonthRowCountByType.get(month) || {};
-                    const total = (obj['Dedicated'] || 0) + (obj['Broadband Business'] || 0) + (obj['Broadband'] || 0);
-                    return <td key={month} className="px-4 py-2 text-center font-bold font-mono">{total}</td>;
+                    const totalTickets = jenisKlienList.reduce((s, jk) => s + (tiketPerJenisKlienPerBulan[month]?.[jk] || 0), 0);
+                    const totalActive = (obj['Dedicated']||0)+(obj['Broadband Business']||0)+(obj['Broadband']||0);
+                    const totalVal = normalizePer1000
+                      ? (totalActive > 0 ? (totalTickets / totalActive * 1000).toFixed(2) : '0')
+                      : String(totalTickets);
+                    return <td key={month} className="px-4 py-2 text-center font-bold font-mono">{totalVal}</td>;
                   })}
                 </tr>
               </tfoot>
@@ -1301,8 +1688,13 @@ const TicketAnalytics = ({ data: propsData }: TicketAnalyticsProps) => {
                   return months.map(month => {
                     const row: any = { month };
                     kategoriList.forEach(kat => {
-                      const obj = customerMonthRowCountByCategory.get(month) || {};
-                      row[kat] = obj[kat] || 0;
+                      const tickets = (tiketPerKategoriPerBulan[month]?.[kat] || 0);
+                      if (normalizePer1000) {
+                        const denom = (customerMonthRowCountByCategory.get(month)?.[kat] || 0);
+                        row[kat] = denom > 0 ? +(tickets / denom * 1000).toFixed(2) : 0;
+                      } else {
+                        row[kat] = tickets;
+                      }
                     });
                     return row;
                   });
@@ -1351,8 +1743,14 @@ const TicketAnalytics = ({ data: propsData }: TicketAnalyticsProps) => {
                   <tr key={kat}>
                     <td className="px-4 py-2 font-bold text-blue-700 dark:text-blue-300">{kat}</td>
                     {Object.keys(tiketPerKategoriPerBulan).sort().map(month => {
-                      const obj = customerMonthRowCountByCategory.get(month) || {};
-                      return <td key={month} className="px-4 py-2 text-center font-mono">{obj[kat] || 0}</td>;
+                      const tickets = (tiketPerKategoriPerBulan[month]?.[kat] || 0);
+                      const val = normalizePer1000
+                        ? (() => {
+                            const denom = (customerMonthRowCountByCategory.get(month)?.[kat] || 0);
+                            return denom > 0 ? `${(tickets / denom * 1000).toFixed(2)}` : '0';
+                          })()
+                        : `${tickets}`;
+                      return <td key={month} className="px-4 py-2 text-center font-mono">{val}</td>;
                     })}
                   </tr>
                 ))}
@@ -1362,8 +1760,12 @@ const TicketAnalytics = ({ data: propsData }: TicketAnalyticsProps) => {
                   <td className="px-4 py-2 font-bold">Total</td>
                   {Object.keys(tiketPerKategoriPerBulan).sort().map(month => {
                     const obj = customerMonthRowCountByCategory.get(month) || {};
-                    const total = kategoriList.reduce((s, k) => s + (obj[k] || 0), 0);
-                    return <td key={month} className="px-4 py-2 text-center font-bold font-mono">{total}</td>;
+                    const totalTickets = kategoriList.reduce((s, k) => s + (tiketPerKategoriPerBulan[month]?.[k] || 0), 0);
+                    const totalActive = kategoriList.reduce((s, k) => s + (obj[k] || 0), 0);
+                    const totalVal = normalizePer1000
+                      ? (totalActive > 0 ? (totalTickets / totalActive * 1000).toFixed(2) : '0')
+                      : String(totalTickets);
+                    return <td key={month} className="px-4 py-2 text-center font-bold font-mono">{totalVal}</td>;
                   })}
                 </tr>
               </tfoot>
@@ -1992,44 +2394,68 @@ const TicketAnalytics = ({ data: propsData }: TicketAnalyticsProps) => {
           </Card>
       </div>
 
-      {/* Full-width Hotspot Table */}
+      {/* Category Hotspot Analysis - Professional & Informative Design */}
       {topComplaintsTable && topComplaintsTable.length > 0 && (
         <div className="mb-12">
-          <div className="bg-white dark:bg-zinc-900 rounded-3xl shadow-xl p-8">
-            <h2 className="text-2xl font-extrabold mb-8 text-gray-900 dark:text-gray-100">Category Hotspot Analysis</h2>
-              <div className="overflow-x-auto">
-              <table className="w-full text-base text-left">
-                <thead className="text-xs text-gray-500 dark:text-gray-400 uppercase border-b border-gray-200 dark:border-zinc-800">
-                    <tr>
-                    <th className="px-6 py-3 font-bold text-center">RANK</th>
-                    <th className="px-6 py-3 font-bold">CATEGORY</th>
-                    <th className="px-6 py-3 font-bold text-center">TICKETS</th>
-                    <th className="px-6 py-3 font-bold text-center">AVG DURATION</th>
-                    <th className="px-6 py-3 font-bold text-center">IMPACT SCORE</th>
-                    <th className="px-6 py-3 font-bold text-center">TREND</th>
-                    <th className="px-6 py-3 font-bold text-center">CONTRIB.</th>
-                    <th className="px-6 py-3 font-bold">TOP SUB-CATEGORY</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                  {topComplaintsTable.map((item, index) => {
-                    const rankColors = [
-                      'bg-gradient-to-r from-yellow-400 to-yellow-600 text-white',
-                      'bg-gradient-to-r from-gray-400 to-gray-600 text-white',
-                      'bg-gradient-to-r from-orange-400 to-orange-600 text-white',
-                    ];
+          <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg p-6">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">Category Hotspot Analysis</h2>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Analisis kategori berdasarkan impact score dan volume tiket</p>
+              </div>
+              <div className="flex items-center gap-4 text-xs text-gray-600 dark:text-gray-400">
+                <div className="flex items-center gap-1">
+                  <div className="w-3 h-3 bg-gradient-to-r from-red-400 to-red-600 rounded"></div>
+                  <span>High Impact</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <div className="w-3 h-3 bg-gradient-to-r from-yellow-400 to-yellow-600 rounded"></div>
+                  <span>Medium Impact</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <div className="w-3 h-3 bg-gradient-to-r from-green-400 to-green-600 rounded"></div>
+                  <span>Low Impact</span>
+                </div>
+              </div>
+            </div>
+            
+            <div className="grid gap-4">
+              {topComplaintsTable.slice(0, 10).map((item, index) => {
+                // ====================== IMPACT SCORE SUPPORT (NEW) ======================
+                const { catP90Map, catEscalationRate, impactScore } = (() => {
+                  const m: Record<string, number> = {};
+                  catStats.forEach(cs => { m[cs.cat] = (cs.p90 ?? 0); });
+                  
+                  const mCount: Record<string, {total: number; escal: number}> = {};
+                  (Array.isArray(gridData) ? gridData : []).forEach(t => {
+                    const cat = t?.category || 'Unknown';
+                    (mCount[cat] ||= { total: 0, escal: 0 }).total += 1;
+                    const s = String(t?.status || '').toLowerCase();
+                    if (s === 'escalated') mCount[cat].escal += 1;
+                  });
+                  const out: Record<string, number> = {};
+                  Object.entries(mCount).forEach(([k, v]) => out[k] = v.total ? v.escal / v.total : 0);
+                  
+                  const impactScoreFn = (x: {tickets: number; p90Hours: number; escalRate: number; severityScore: number}, w = {w1:1, w2:2, w3:3, w4:2}) =>
+                    (x.tickets * w.w1) + (x.p90Hours * w.w2) + (x.severityScore * w.w3) + (x.escalRate * 100 * w.w4);
+                  
+                  return { catP90Map: m, catEscalationRate: out, impactScore: impactScoreFn };
+                })();
+                
+                const computedImpact = Number.isFinite(item?.impactScore)
+                  ? item.impactScore
+                  : impactScore({
+                      tickets: item.count || 0,
+                      p90Hours: (catP90Map[item.category] || 0),
+                      escalRate: (catEscalationRate[item.category] || 0),
+                      severityScore: 2 // fallback: P3
+                    });
+                
                     // --- Trend Calculation (MoM) ---
-                    let trendBadge = '-';
                     let trendValue: number | null = null;
-                    let trendColor = 'bg-gray-100 text-gray-700';
-                    let trendIcon = '●';
-                    // Cari trend MoM untuk kategori ini
                     if (monthlyStatsData && monthlyStatsData.labels && monthlyStatsData.labels.length > 1) {
-                      // Ambil data tiket per kategori per bulan
                       const monthKeys = monthlyStatsData.labels;
-                      // Buat mapping bulan -> tiket kategori ini
                       const catTicketsPerMonth: number[] = monthKeys.map((label, i) => {
-                        // Ambil semua tiket di gridData yang category==item.category dan openTime di bulan ini
                         const [monthName, year] = label.split(' ');
                         const monthIdx = ["Jan","Feb","Mar","Apr","Mei","Jun","Jul","Agu","Sep","Okt","Nov","Des"].indexOf(monthName);
                         const tickets = gridData.filter(t => {
@@ -2045,197 +2471,130 @@ const TicketAnalytics = ({ data: propsData }: TicketAnalyticsProps) => {
                         const curr = catTicketsPerMonth[catTicketsPerMonth.length-1];
                         if (prev > 0) {
                           trendValue = ((curr - prev) / Math.abs(prev)) * 100;
-                          trendBadge = `${trendValue > 0 ? '+' : ''}${trendValue.toFixed(1)}%`;
-                          if (trendValue > 0.5) { trendColor = 'bg-green-100 text-green-700'; trendIcon = '▲'; }
-                          else if (trendValue < -0.5) { trendColor = 'bg-red-100 text-red-700'; trendIcon = '▼'; }
-                          else { trendColor = 'bg-gray-100 text-gray-700'; trendIcon = '●'; }
-                        } else if (curr > 0) {
-                          trendBadge = '+∞%'; trendColor = 'bg-green-100 text-green-700'; trendIcon = '▲';
-                        }
-                      }
                     }
+                  }
+                }
+                
                     // --- Contribution Calculation ---
                     const totalTickets = gridData.length;
                     const contrib = totalTickets > 0 ? (item.count / totalTickets) * 100 : 0;
+                
+                // Get impact color based on score
+                const getImpactColor = (score: number, maxScore: number) => {
+                  const ratio = score / maxScore;
+                  if (ratio > 0.7) return 'from-red-400 to-red-600';
+                  if (ratio > 0.4) return 'from-yellow-400 to-yellow-600';
+                  return 'from-green-400 to-green-600';
+                };
+                
+                const maxImpact = topComplaintsTable[0]?.impactScore || computedImpact;
+                const impactColor = getImpactColor(computedImpact, maxImpact);
+                
                     return (
-                      <tr
+                  <div
                         key={index}
-                        className="border-b border-gray-100 dark:border-zinc-800 cursor-pointer hover:bg-blue-50 dark:hover:bg-blue-900/30 transition"
-                        onClick={() => { setSelectedCategory(item.category); setModalOpen(true); }}
-                        title="Click to drilldown"
-                      >
-                        <td className={`px-6 py-4 text-center`}>
-                          <span className={`inline-block rounded-full px-3 py-1 font-bold text-lg shadow-sm ${rankColors[index] || 'bg-gray-200 text-gray-700'}`}>#{index + 1}</span>
-                        </td>
-                        <td className="px-6 py-4 font-semibold text-gray-900 dark:text-gray-100">{item.category}</td>
-                        <td className="px-6 py-4 text-center">
-                          <span className={`inline-block bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-200 rounded-lg px-3 py-1 font-bold text-base shadow-sm`}>{item.count}</span>
-                        </td>
-                        <td className="px-6 py-4 text-center font-mono text-base">{item.avgDurationFormatted}</td>
-                        <td className="px-6 py-4">
-                          <div className="flex items-center gap-2">
-                            <span className="font-extrabold text-lg text-gray-900 dark:text-zinc-100">{item.impactScore.toFixed(2)}</span>
-                            <div className="w-40 h-4 bg-gray-200 dark:bg-zinc-700 rounded-full overflow-hidden">
-                              <div className="bg-gradient-to-r from-red-400 to-red-600 h-4 rounded-full transition-all duration-700" style={{ width: `${(item.impactScore / topComplaintsTable[0].impactScore) * 100}%` }}></div>
+                    className="bg-gray-50 dark:bg-zinc-800/50 rounded-lg p-4 border border-gray-200 dark:border-zinc-700 hover:shadow-md transition-all duration-200"
+                  >
+                    <div className="flex items-start justify-between">
+                      {/* Left: Rank & Category Info */}
+                      <div className="flex items-start gap-4 flex-1">
+                        <div className="flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-r from-blue-500 to-blue-600 text-white font-bold text-sm shadow-sm">
+                          #{index + 1}
                             </div>
+                        <div className="flex-1">
+                          <div className="flex items-center gap-3 mb-2">
+                            <h3 className="font-semibold text-gray-900 dark:text-gray-100 text-lg">{item.category}</h3>
+                            <span className="bg-blue-100 dark:bg-blue-900/50 text-blue-800 dark:text-blue-200 px-2 py-1 rounded-full text-xs font-medium">
+                              {item.count} tiket
+                            </span>
                           </div>
-                        </td>
-                        <td className="px-6 py-4 text-center">
-                          {trendBadge !== '-' ? (
-                            <Badge variant={trendValue > 0.5 ? 'success' : trendValue < -0.5 ? 'danger' : 'default'}>
-                              {trendValue > 0.5 ? '▲' : trendValue < -0.5 ? '▼' : '●'} {trendBadge}
-                            </Badge>
-                          ) : (
-                            <span className="text-gray-400 dark:text-gray-500">-</span>
-                          )}
-                        </td>
-                        <td className="px-6 py-4 text-center">
-                          <span className="inline-block bg-gray-100 text-gray-700 dark:bg-gray-800/50 dark:text-gray-200 rounded-lg px-3 py-1 font-bold text-base shadow-sm">{contrib.toFixed(1)}%</span>
-                        </td>
-                        <td className="px-6 py-4">
-                          <span className="inline-block bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-200 rounded-lg px-3 py-1 font-semibold text-base shadow-sm">{item.topSubCategory}</span>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                  </tbody>
-                </table>
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-3">
+                            <div>
+                              <div className="text-xs text-gray-600 dark:text-gray-400">Avg Duration</div>
+                              <div className="font-mono text-sm font-medium text-gray-900 dark:text-gray-100">{item.avgDurationFormatted}</div>
+                            </div>
+                            <div>
+                              <div className="text-xs text-gray-600 dark:text-gray-400">Contribution</div>
+                              <div className="text-sm font-medium text-gray-900 dark:text-gray-100">{contrib.toFixed(1)}%</div>
+                            </div>
+                            <div>
+                              <div className="text-xs text-gray-600 dark:text-gray-400">Trend (MoM)</div>
+                              <div className="flex items-center gap-1">
+                                {trendValue !== null ? (
+                                  <>
+                                    <span className={`text-xs ${trendValue > 0 ? 'text-green-600 dark:text-green-400' : trendValue < 0 ? 'text-red-600 dark:text-red-400' : 'text-gray-600 dark:text-gray-400'}`}>
+                                      {trendValue > 0 ? <TrendingUpIcon className="w-3 h-3" /> : trendValue < 0 ? <TrendingDownIcon className="w-3 h-3" /> : <TrendingFlatIcon className="w-3 h-3" />}
+                                    </span>
+                                    <span className="text-sm font-medium">{trendValue > 0 ? '+' : ''}{trendValue.toFixed(1)}%</span>
+                                  </>
+                                ) : (
+                                  <span className="text-xs text-gray-400">-</span>
+                                )}
               </div>
           </div>
+                            <div>
+                              <div className="text-xs text-gray-600 dark:text-gray-400">Top Sub</div>
+                              <div className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate" title={item.topSubCategory}>
+                                {item.topSubCategory}
         </div>
-      )}
-      {modalOpen && selectedCategory && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-          <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl p-8 w-full max-w-2xl relative max-h-[90vh] overflow-y-auto">
-            <button
-              className="absolute top-4 right-4 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 text-2xl"
-              onClick={() => setModalOpen(false)}
-              aria-label="Close"
-            >
-              &times;
-            </button>
-            {/* Jangan panggil hook apapun di sini, hanya logic biasa */}
-            {(() => {
-              // Filter tickets by selectedCategory
-              const tickets = gridData.filter(t => t.category === selectedCategory);
-              // Agent breakdown (gunakan openBy)
-              const agentMap = new Map();
-              tickets.forEach(t => {
-                const agent = t.openBy && t.openBy.trim() ? t.openBy : 'Unknown';
-                if (!agentMap.has(agent)) agentMap.set(agent, { count: 0 });
-                agentMap.get(agent).count += 1;
-              });
-              const agentList = Array.from(agentMap.entries()).map(([agent, v]) => ({ agent, count: v.count }));
-              agentList.sort((a, b) => b.count - a.count);
-              // Shift breakdown (pakai getShift global)
-              const shiftMap = { Pagi: 0, Sore: 0, Malam: 0 };
-              tickets.forEach(t => {
-                const shift = getShift(t.openTime);
-                if (shiftMap[shift] !== undefined) shiftMap[shift] += 1;
-              });
-              const shiftList = Object.entries(shiftMap).sort((a, b) => b[1] - a[1]);
-              // Helper: status badge
-              function statusBadge(status) {
-                const s = (status || '').toLowerCase();
-                if (s === 'closed') return <Badge variant="success">Closed</Badge>;
-                if (s === 'open') return <Badge variant="warning">Open</Badge>;
-                if (s === 'escalated') return <Badge variant="danger">Escalated</Badge>;
-                if (s === 'overdue') return <Badge variant="warning">Overdue</Badge>;
-                return <Badge variant="default">{status || '-'}</Badge>;
-              }
-              // Helper: readable time
-              function formatTime(dt) {
-                if (!dt) return '-';
-                const d = new Date(dt);
-                if (isNaN(d.getTime())) return '-';
-                return d.toLocaleString();
-              }
-                  return (
-                <>
-                  <h3 className="text-xl font-bold mb-4 text-gray-900 dark:text-gray-100">Drilldown: {selectedCategory} <span className="ml-2 text-base font-normal text-gray-500 dark:text-gray-400">({tickets.length} tickets)</span></h3>
-                  {/* Agent breakdown */}
-                  <div className="mb-6">
-                    <h4 className="font-semibold text-gray-800 dark:text-gray-200 mb-2">Agent Breakdown</h4>
-                    {agentList.length > 0 ? (
-                      <table className="w-full text-sm mb-2">
-                        <thead>
-                          <tr className="text-xs text-gray-500 dark:text-gray-400 uppercase border-b border-gray-200 dark:border-zinc-800">
-                            <th className="py-1 pr-2 text-left">Agent</th>
-                            <th className="py-1 px-2 text-right">Tickets</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {agentList.map((a, idx) => (
-                            <tr key={a.agent} className={`border-b border-gray-100 dark:border-zinc-800 ${idx === 0 ? 'bg-blue-50/40 dark:bg-blue-900/20' : ''}`}>
-                              <td className="py-1 pr-2 font-medium text-gray-900 dark:text-gray-100">{a.agent}</td>
-                              <td className="py-1 px-2 text-right font-mono font-bold text-blue-700 dark:text-blue-300">{a.count}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-                    ) : <div className="text-gray-400">No agent data.</div>}
                           </div>
-                  {/* Shift breakdown */}
-                  <div className="mb-6">
-                    <h4 className="font-semibold text-gray-800 dark:text-gray-200 mb-2">Shift Breakdown</h4>
-                    <table className="w-full text-sm mb-2">
-                      <thead>
-                        <tr className="text-xs text-gray-500 dark:text-gray-400 uppercase border-b border-gray-200 dark:border-zinc-800">
-                          <th className="py-1 pr-2 text-left">Shift</th>
-                          <th className="py-1 px-2 text-right">Tickets</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {shiftList.map(([shift, count], idx) => (
-                          <tr key={shift} className={idx === 0 ? 'bg-blue-50/40 dark:bg-blue-900/20' : ''}>
-                            <td className="py-1 pr-2 font-medium text-gray-900 dark:text-gray-100">{shift}</td>
-                            <td className="py-1 px-2 text-right font-mono font-bold text-blue-700 dark:text-blue-300">{count}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
                           </div>
-                  {/* Ticket list */}
+                          
+                          {/* Impact Score Bar */}
                   <div>
-                    <h4 className="font-semibold text-gray-800 dark:text-gray-200 mb-2">Ticket List</h4>
-                    <div className="max-h-52 overflow-y-auto border rounded-lg">
-                      <table className="w-full text-xs">
-                        <thead>
-                          <tr className="text-xs text-gray-500 dark:text-gray-400 uppercase border-b border-gray-200 dark:border-zinc-800">
-                            <th className="py-1 px-2 text-left">Subject</th>
-                            <th className="py-1 px-2 text-left">Agent</th>
-                            <th className="py-1 px-2 text-left">Customer</th>
-                            <th className="py-1 px-2 text-left">Open Time</th>
-                            <th className="py-1 px-2 text-left">Status</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {tickets.slice(0, 20).map((t, i) => (
-                            <tr key={i} className="border-b border-gray-100 dark:border-zinc-800">
-                              <td className="py-1 px-2 text-gray-900 dark:text-gray-100">{t.description && t.description.trim() ? t.description : <span className='italic text-gray-400'>No subject</span>}</td>
-                              <td className="py-1 px-2">{t.openBy && t.openBy.trim() ? t.openBy : <span className='italic text-gray-400'>Unknown</span>}</td>
-                              <td className="py-1 px-2">{t.name && t.name.trim() ? t.name : (t.customerId || '-')}</td>
-                              <td className="py-1 px-2">{formatTime(t.openTime)}</td>
-                              <td className="py-1 px-2">{statusBadge(t.status)}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                      {tickets.length > 20 && <div className="text-xs text-gray-400 px-2 py-1">Showing 20 of {tickets.length} tickets...</div>}
+                            <div className="flex items-center justify-between text-xs text-gray-600 dark:text-gray-400 mb-1">
+                              <span>Impact Score</span>
+                              <span className="font-bold text-gray-900 dark:text-gray-100">{computedImpact.toFixed(2)}</span>
                         </div>
+                            <div className="w-full h-2 bg-gray-200 dark:bg-zinc-700 rounded-full overflow-hidden">
+                              <div 
+                                className={`bg-gradient-to-r ${impactColor} h-2 rounded-full transition-all duration-700`}
+                                style={{ width: `${(computedImpact / maxImpact) * 100}%` }}
+                              ></div>
                               </div>
-                </>
-              );
-            })()}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+              
+              {/* Show more button if there are more than 10 items */}
+              {topComplaintsTable.length > 10 && (
+                <div className="text-center pt-4">
+                  <button className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 text-sm font-medium">
+                    Tampilkan {topComplaintsTable.length - 10} kategori lainnya...
+                  </button>
+                </div>
+              )}
+            </div>
                         </div>
         </div>
       )}
 
-      {/* Classification Analytics Redesigned - Compact & Informative */}
+
+      {/* Classification Analytics - Modern & Professional Design */}
       <div className="mb-12">
-        <div className="bg-white dark:bg-zinc-900 rounded-3xl shadow-xl p-8">
-          <h2 className="text-2xl font-extrabold mb-8 text-gray-900 dark:text-gray-100">Classification Analytics</h2>
-          <div className="divide-y divide-gray-100 dark:divide-zinc-800">
+        <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg p-6">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">Classification Analytics</h2>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Analisis klasifikasi pelanggan berdasarkan frekuensi komplain</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+              <span className="text-xs text-gray-600 dark:text-gray-400">Normal</span>
+              <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
+              <span className="text-xs text-gray-600 dark:text-gray-400">Persisten</span>
+              <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
+              <span className="text-xs text-gray-600 dark:text-gray-400">Kronis</span>
+              <div className="w-3 h-3 bg-red-500 rounded-full"></div>
+              <span className="text-xs text-gray-600 dark:text-gray-400">Ekstrem</span>
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {Object.entries(classificationData).map(([classification, details], idx) => {
               const d = details as { count: number, sub: { [key: string]: number }, trendline?: { labels: string[], data: number[] } };
               const trend = (d.trendline && d.trendline.data.length > 1)
@@ -2247,37 +2606,85 @@ const TicketAnalytics = ({ data: propsData }: TicketAnalyticsProps) => {
                     return percent;
                   })
                 : [];
+              
+              // Color mapping untuk setiap klasifikasi
+              const getClassificationColor = (classType: string) => {
+                switch (classType.toLowerCase()) {
+                  case 'normal': return 'bg-green-50 border-green-200 dark:bg-green-900/20 dark:border-green-800';
+                  case 'persisten': return 'bg-yellow-50 border-yellow-200 dark:bg-yellow-900/20 dark:border-yellow-800';
+                  case 'kronis': return 'bg-orange-50 border-orange-200 dark:bg-orange-900/20 dark:border-orange-800';
+                  case 'ekstrem': return 'bg-red-50 border-red-200 dark:bg-red-900/20 dark:border-red-800';
+                  default: return 'bg-gray-50 border-gray-200 dark:bg-gray-900/20 dark:border-gray-800';
+                }
+              };
+              
+              const getClassificationIconColor = (classType: string) => {
+                switch (classType.toLowerCase()) {
+                  case 'normal': return 'text-green-600 dark:text-green-400';
+                  case 'persisten': return 'text-yellow-600 dark:text-yellow-400';
+                  case 'kronis': return 'text-orange-600 dark:text-orange-400';
+                  case 'ekstrem': return 'text-red-600 dark:text-red-400';
+                  default: return 'text-gray-600 dark:text-gray-400';
+                }
+              };
+              
                   return (
-                <div key={classification} className="flex flex-col py-4 border-b border-gray-100 dark:border-zinc-800 last:border-b-0">
-                  <div className="flex items-center">
-                  <span className="font-bold min-w-[180px] text-gray-900 dark:text-gray-100 flex items-center">
-                              {classification}
-                    <span className="ml-2 bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-200 rounded px-2 py-0.5 text-xs font-bold">{d.count} Total</span>
-                            </span>
+                <div key={classification} className={`rounded-xl border p-4 ${getClassificationColor(classification)} transition-all duration-200 hover:shadow-md`}>
+                  {/* Header */}
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-3">
+                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${getClassificationIconColor(classification)} bg-white dark:bg-zinc-800 shadow-sm`}>
+                        <span className="text-sm font-bold">{classification.charAt(0)}</span>
+                      </div>
+                      <div>
+                        <h3 className="font-semibold text-gray-900 dark:text-gray-100">{classification}</h3>
+                        <p className="text-xs text-gray-600 dark:text-gray-400">{d.count} pelanggan</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-lg font-bold text-gray-900 dark:text-gray-100">{d.count}</div>
+                      <div className="text-xs text-gray-600 dark:text-gray-400">total</div>
+                    </div>
+                  </div>
+                  
+                  {/* Trend Data */}
                   {d.trendline && d.trendline.labels.length > 0 && (
-                    <div className="flex-1 flex flex-row gap-4 overflow-x-auto">
+                    <div className="mb-3">
+                      <div className="flex items-center justify-between text-xs text-gray-600 dark:text-gray-400 mb-2">
+                        <span>Tren bulanan</span>
+                        <span>Perubahan</span>
+                      </div>
+                      <div className="space-y-2">
                       {d.trendline.labels.map((label, i) => (
-                        <div key={label} className="flex flex-col items-center min-w-[70px]">
-                          <span className="text-xs text-gray-400 mb-0.5">{label}</span>
-                          <span className="font-mono text-lg font-bold text-gray-900 dark:text-gray-100 mb-0.5">{d.trendline.data[i]}</span>
+                          <div key={label} className="flex items-center justify-between bg-white dark:bg-zinc-800 rounded-lg px-3 py-2">
+                            <div className="flex items-center gap-3">
+                              <span className="text-xs font-medium text-gray-700 dark:text-gray-300 min-w-[40px]">{label}</span>
+                              <span className="font-mono text-sm font-bold text-gray-900 dark:text-gray-100">{d.trendline.data[i]}</span>
+                            </div>
                           {i > 0 && trend[i] !== null && (
-                    <Badge variant={trend[i]! > 0 ? 'success' : trend[i]! < 0 ? 'danger' : 'default'}>
-                      {trend[i]! > 0 ? '▲' : trend[i]! < 0 ? '▼' : '●'} {trend[i]! > 0 ? '+' : ''}{trend[i]!.toFixed(1)}%
-                    </Badge>
+                              <div className={`flex items-center gap-1 text-xs font-medium ${
+                                trend[i]! > 0 ? 'text-green-600 dark:text-green-400' : 
+                                trend[i]! < 0 ? 'text-red-600 dark:text-red-400' : 
+                                'text-gray-600 dark:text-gray-400'
+                              }`}>
+                                <span>{trend[i]! > 0 ? <TrendingUpIcon className="w-3 h-3" /> : trend[i]! < 0 ? <TrendingDownIcon className="w-3 h-3" /> : <TrendingFlatIcon className="w-3 h-3" />}</span>
+                                <span>{trend[i]! > 0 ? '+' : ''}{trend[i]!.toFixed(1)}%</span>
+                              </div>
                           )}
                           </div>
                       ))}
                       </div>
-                    )}
                   </div>
-                  {/* Sub-classification detail */}
+                  )}
+                  
+                  {/* Sub-classification */}
                   {d.sub && Object.keys(d.sub).length > 0 && (
-                    <div className="mt-2 ml-2">
-                      <div className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Sub-klasifikasi:</div>
-                      <div className="flex flex-wrap gap-2">
+                    <div>
+                      <div className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-2">Sub-klasifikasi</div>
+                      <div className="flex flex-wrap gap-1.5">
                         {Object.entries(d.sub).sort((a, b) => b[1] - a[1]).map(([sub, count]) => (
-                          <span key={sub} className="bg-gray-100 dark:bg-zinc-800 rounded-full px-3 py-0.5 text-xs font-mono text-gray-800 dark:text-gray-200 border border-gray-200 dark:border-zinc-700">
-                            {sub}: <span className="font-bold">{count}</span>
+                          <span key={sub} className="bg-white dark:bg-zinc-800 rounded-full px-2 py-1 text-xs font-medium text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-zinc-700">
+                            {sub}: <span className="font-bold text-gray-900 dark:text-gray-100">{count}</span>
                           </span>
                         ))}
                       </div>
@@ -2290,153 +2697,259 @@ const TicketAnalytics = ({ data: propsData }: TicketAnalyticsProps) => {
         </div>
         </div>
         
-      {/* Handling Time Deep Dive */}
-      <div className="mb-10">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Agregasi data per shift */}
-          <Card className="mb-4 h-full flex flex-col bg-white dark:bg-zinc-900 px-2 md:px-4 py-2 md:py-4 shadow-md rounded-2xl">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base">Avg Handling Time per Shift</CardTitle>
-              <CardDescription className="text-xs">Rata-rata & median waktu penanganan per shift (jam)</CardDescription>
-              <div className="mt-1 flex gap-2 flex-wrap">
-                {shiftTrends.map(s => (
-                  <span key={s.shift} className="flex items-center gap-1 text-xs font-medium">
-                    {s.shift} {getTrendBadge(s.trend)}
-                  </span>
-                ))}
+      {/* Handling Time Analytics - Professional & Informative Design */}
+      <div className="mb-12">
+        <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg p-6">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">Handling Time Analytics</h2>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Analisis waktu penanganan berdasarkan shift dan kategori</p>
               </div>
-            </CardHeader>
-            <CardContent className="pb-0">
-              <ChartContainer config={chartConfig} className="w-full" style={{ width: '100%' }}>
-                <BarChart data={chartData} height={85} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-                  <defs>
-                    <linearGradient id="barAvgGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#2563eb" stopOpacity={1} />
-                      <stop offset="100%" stopColor="#60a5fa" stopOpacity={1} />
-                    </linearGradient>
-                    <linearGradient id="barMedianGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#f59e42" stopOpacity={1} />
-                      <stop offset="100%" stopColor="#fde68a" stopOpacity={1} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid vertical={false} />
-                  <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel hideIndicator />} />
-                  <Bar dataKey="avg" fill="url(#barAvgGradient)" radius={[8,8,0,0]} isAnimationActive={true} animationDuration={900}>
-                    <LabelList dataKey="avgLabel" position="top" />
-                    {chartData.map((entry, idx) => (
-                      <Cell key={idx} cursor="pointer" style={{ filter: 'drop-shadow(0 2px 6px #2563eb22)' }} />
-                    ))}
-                  </Bar>
-                  <Bar dataKey="median" fill="url(#barMedianGradient)" radius={[8,8,0,0]} isAnimationActive={true} animationDuration={900}>
-                    <LabelList dataKey="medianLabel" position="top" />
-                    {chartData.map((entry, idx) => (
-                      <Cell key={idx} cursor="pointer" style={{ filter: 'drop-shadow(0 2px 6px #f59e4222)' }} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ChartContainer>
-            </CardContent>
-            <div className="px-3 pb-2">
-              <div className="overflow-x-auto">
-                <table className="w-full text-xs mt-2 border rounded-lg overflow-hidden min-w-[340px]">
-                  <thead>
-                    <tr className="bg-[#2563eb] text-white font-bold">
-                      <th className="px-3 py-2 text-left">Shift</th>
-                      <th className="px-3 py-2 text-right">Avg (h)</th>
-                      <th className="px-3 py-2 text-right">Median (h)</th>
-                      <th className="px-3 py-2 text-right">Tickets</th>
-                      <th className="px-3 py-2 text-right">Trend</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {shiftTrends.map((s, i) => (
-                      <tr key={s.shift} className="bg-white dark:bg-zinc-900 hover:bg-blue-50/60 dark:hover:bg-blue-900/40 transition-colors duration-200 cursor-pointer">
-                        <td className="px-3 py-2 font-semibold">{s.shift}</td>
-                        <td className="px-3 py-2 text-right text-gray-900 dark:text-gray-100">{s.formattedAvg}</td>
-                        <td className="px-3 py-2 text-right text-gray-900 dark:text-gray-100">{s.formattedMedian}</td>
-                        <td className="px-3 py-2 text-right text-gray-900 dark:text-gray-100">{s.count}</td>
-                        <td className="px-3 py-2 text-right">{getTrendBadge(s.trend)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+            <div className="flex items-center gap-4 text-xs text-gray-600 dark:text-gray-400">
+              <div className="flex items-center gap-1">
+                <div className="w-3 h-3 bg-blue-500 rounded"></div>
+                <span>Average</span>
               </div>
-              <div className="mt-2 text-xs text-muted-foreground">Shift tertinggi: <b>{maxAvg?.shift}</b> ({maxAvg?.avg?.toFixed(2)} jam)</div>
+              <div className="flex items-center gap-1">
+                <div className="w-3 h-3 bg-orange-500 rounded"></div>
+                <span>Median</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <div className="w-3 h-3 bg-purple-500 rounded"></div>
+                <span>P90</span>
+              </div>
             </div>
-          </Card>
-          {/* Agregasi data per kategori */}
-          <Card className="mb-4 h-full flex flex-col bg-white dark:bg-zinc-900 px-2 md:px-4 py-2 md:py-4 shadow-md rounded-2xl">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base">Avg Handling Time per Category</CardTitle>
-              <CardDescription className="text-xs">Rata-rata & median waktu penanganan per kategori (jam)</CardDescription>
-              <div className="mt-1 flex gap-2 flex-wrap">
-                {catTrends.map(s => (
-                  <span key={s.cat} className="flex items-center gap-1 text-xs font-medium">
-                    {s.cat} {getTrendBadge(s.trend)}
-                  </span>
-                ))}
-        </div>
-            </CardHeader>
-            <CardContent className="pb-0">
-              <ChartContainer config={chartConfig} className="w-full" style={{ width: '100%' }}>
-                <BarChart data={catChartData} height={85} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+          </div>
+          
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {/* Shift Analysis */}
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Per Shift</h3>
+                <div className="text-xs text-gray-600 dark:text-gray-400">
+                  Rata-rata global: <span className="font-medium">{formatDurationHMS(avgAllShift)}</span>
+                </div>
+              </div>
+              
+              {/* Chart */}
+              <div className="mb-4">
+                <ChartContainer config={chartConfig} className="w-full">
+                  <BarChart data={chartData} height={120} margin={{ top: 20, right: 20, left: 0, bottom: 10 }}>
                   <defs>
-                    <linearGradient id="barAvgGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#2563eb" stopOpacity={1} />
+                      <linearGradient id="shiftAvgGradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#3b82f6" stopOpacity={1} />
                       <stop offset="100%" stopColor="#60a5fa" stopOpacity={1} />
                     </linearGradient>
-                    <linearGradient id="barMedianGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#f59e42" stopOpacity={1} />
-                      <stop offset="100%" stopColor="#fde68a" stopOpacity={1} />
+                      <linearGradient id="shiftMedianGradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#f59e0b" stopOpacity={1} />
+                        <stop offset="100%" stopColor="#fbbf24" stopOpacity={1} />
                     </linearGradient>
                   </defs>
-                  <CartesianGrid vertical={false} />
-                  <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel hideIndicator />} />
-                  <Bar dataKey="avg" fill="url(#barAvgGradient)" radius={[8,8,0,0]} isAnimationActive={true} animationDuration={900}>
-                    <LabelList dataKey="avgLabel" position="top" />
-                    {catChartData.map((entry, idx) => (
-                      <Cell key={idx} cursor="pointer" style={{ filter: 'drop-shadow(0 2px 6px #2563eb22)' }} />
-                    ))}
-                  </Bar>
-                  <Bar dataKey="median" fill="url(#barMedianGradient)" radius={[8,8,0,0]} isAnimationActive={true} animationDuration={900}>
-                    <LabelList dataKey="medianLabel" position="top" />
-                    {catChartData.map((entry, idx) => (
-                      <Cell key={idx} cursor="pointer" style={{ filter: 'drop-shadow(0 2px 6px #f59e4222)' }} />
-                    ))}
-                  </Bar>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                    <XAxis dataKey="shift" axisLine={false} tickLine={false} />
+                    <YAxis axisLine={false} tickLine={false} />
+                    <ChartTooltip 
+                      cursor={false} 
+                      content={({ active, payload, label }) => {
+                        if (active && payload && payload.length) {
+                          return (
+                            <div className="bg-white dark:bg-zinc-800 rounded-lg shadow-lg border border-gray-200 dark:border-zinc-700 p-3">
+                              <p className="font-semibold text-gray-900 dark:text-gray-100 mb-2">{label}</p>
+                              {payload.map((entry, index) => (
+                                <p key={index} className="text-sm text-gray-600 dark:text-gray-400">
+                                  {entry.name}: <span className="font-medium text-gray-900 dark:text-gray-100">{entry.value}</span>
+                                </p>
+                              ))}
+                            </div>
+                          );
+                        }
+                        return null;
+                      }}
+                    />
+                    <Bar dataKey="avg" fill="url(#shiftAvgGradient)" radius={[4,4,0,0]} />
+                    <Bar dataKey="median" fill="url(#shiftMedianGradient)" radius={[4,4,0,0]} />
                 </BarChart>
               </ChartContainer>
-            </CardContent>
-            <div className="px-3 pb-2">
-              <div className="overflow-x-auto">
-                <table className="w-full text-xs mt-2 border rounded-lg overflow-hidden min-w-[340px]">
-                  <thead>
-                    <tr className="bg-[#2563eb] text-white font-bold">
-                      <th className="px-3 py-2 text-left">Category</th>
-                      <th className="px-3 py-2 text-right">Avg (h)</th>
-                      <th className="px-3 py-2 text-right">Median (h)</th>
-                      <th className="px-3 py-2 text-right">Tickets</th>
-                      <th className="px-3 py-2 text-right">Trend</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {catTrends.map((s, i) => (
-                      <tr key={s.cat} className="bg-white dark:bg-zinc-900 hover:bg-blue-50/60 dark:hover:bg-blue-900/40 transition-colors duration-200 cursor-pointer">
-                        <td className="px-3 py-2 font-semibold">{s.cat}</td>
-                        <td className="px-3 py-2 text-right text-gray-900 dark:text-gray-100">{s.formattedAvg}</td>
-                        <td className="px-3 py-2 text-right text-gray-900 dark:text-gray-100">{s.formattedMedian}</td>
-                        <td className="px-3 py-2 text-right text-gray-900 dark:text-gray-100">{s.count}</td>
-                        <td className="px-3 py-2 text-right">{getTrendBadge(s.trend)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+              </div>
+              
+              {/* Shift Cards */}
+              <div className="space-y-3">
+                {shiftTrends.map((shift, index) => {
+                  const isOutlier = shift.avg > 2 * avgAllShift;
+                  const trendColor = shift.trend > 0 ? 'text-red-600 dark:text-red-400' : shift.trend < 0 ? 'text-green-600 dark:text-green-400' : 'text-gray-600 dark:text-gray-400';
+                  const trendIcon = shift.trend > 0 ? <TrendingUpIcon className="w-4 h-4" /> : shift.trend < 0 ? <TrendingDownIcon className="w-4 h-4" /> : <TrendingFlatIcon className="w-4 h-4" />;
+                  
+                  return (
+                    <div 
+                      key={shift.shift} 
+                      className={`p-4 rounded-lg border transition-all duration-200 ${
+                        isOutlier 
+                          ? 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800' 
+                          : 'bg-gray-50 dark:bg-zinc-800/50 border-gray-200 dark:border-zinc-700'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-3">
+                          <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm ${
+                            isOutlier ? 'bg-red-500' : 'bg-blue-500'
+                          }`}>
+                            {shift.shift.charAt(0)}
+            </div>
+                          <div>
+                            <h4 className="font-semibold text-gray-900 dark:text-gray-100">{shift.shift}</h4>
+                            <p className="text-xs text-gray-600 dark:text-gray-400">{shift.count} tiket</p>
+        </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-lg font-bold text-gray-900 dark:text-gray-100">{shift.formattedAvg}</div>
+                          <div className="text-xs text-gray-600 dark:text-gray-400">rata-rata</div>
+                        </div>
+                      </div>
+                      
+                      <div className="grid grid-cols-3 gap-4 text-center">
+                        <div>
+                          <div className="text-xs text-gray-600 dark:text-gray-400">Median</div>
+                          <div className="font-mono text-sm font-medium text-gray-900 dark:text-gray-100">{shift.formattedMedian}</div>
+                        </div>
+                        <div>
+                          <div className="text-xs text-gray-600 dark:text-gray-400">P90</div>
+                          <div className="font-mono text-sm font-medium text-gray-900 dark:text-gray-100">{formatDurationHMS(shift.p90)}</div>
+                        </div>
+                        <div>
+                          <div className="text-xs text-gray-600 dark:text-gray-400">Trend</div>
+                          <div className={`text-sm font-medium ${trendColor}`}>
+                            {trendIcon} {shift.trend > 0 ? '+' : ''}{shift.trend.toFixed(1)}%
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {isOutlier && (
+                        <div className="mt-2 p-2 bg-red-100 dark:bg-red-900/30 rounded text-xs text-red-700 dark:text-red-300">
+                          <WarningIcon className="w-3 h-3 inline mr-1" /> Anomali: {shift.formattedAvg} vs rata-rata {formatDurationHMS(avgAllShift)}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+            
+            {/* Category Analysis */}
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Per Kategori</h3>
+                <div className="text-xs text-gray-600 dark:text-gray-400">
+                  Rata-rata global: <span className="font-medium">{formatDurationHMS(avgAllCat)}</span>
+                </div>
+              </div>
+              
+              {/* Chart */}
+              <div className="mb-4">
+                <ChartContainer config={chartConfig} className="w-full">
+                  <BarChart data={catChartData} height={120} margin={{ top: 20, right: 20, left: 0, bottom: 10 }}>
+                  <defs>
+                      <linearGradient id="catAvgGradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#8b5cf6" stopOpacity={1} />
+                        <stop offset="100%" stopColor="#a78bfa" stopOpacity={1} />
+                    </linearGradient>
+                      <linearGradient id="catMedianGradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#ec4899" stopOpacity={1} />
+                        <stop offset="100%" stopColor="#f472b6" stopOpacity={1} />
+                    </linearGradient>
+                  </defs>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                    <XAxis dataKey="category" axisLine={false} tickLine={false} />
+                    <YAxis axisLine={false} tickLine={false} />
+                    <ChartTooltip 
+                      cursor={false} 
+                      content={({ active, payload, label }) => {
+                        if (active && payload && payload.length) {
+                          return (
+                            <div className="bg-white dark:bg-zinc-800 rounded-lg shadow-lg border border-gray-200 dark:border-zinc-700 p-3">
+                              <p className="font-semibold text-gray-900 dark:text-gray-100 mb-2">{label}</p>
+                              {payload.map((entry, index) => (
+                                <p key={index} className="text-sm text-gray-600 dark:text-gray-400">
+                                  {entry.name}: <span className="font-medium text-gray-900 dark:text-gray-100">{entry.value}</span>
+                                </p>
+                              ))}
+                            </div>
+                          );
+                        }
+                        return null;
+                      }}
+                    />
+                    <Bar dataKey="avg" fill="url(#catAvgGradient)" radius={[4,4,0,0]} />
+                    <Bar dataKey="median" fill="url(#catMedianGradient)" radius={[4,4,0,0]} />
+                </BarChart>
+              </ChartContainer>
       </div>
-              <div className="mt-2 text-xs text-muted-foreground">Kategori tertinggi: <b>{maxAvgCat?.cat}</b> ({maxAvgCat?.avg?.toFixed(2)} jam)</div>
-    </div>
-          </Card>
+              
+              {/* Category Cards */}
+              <div className="space-y-3">
+                {catTrends.map((cat, index) => {
+                  const isOutlier = cat.avg > 2 * avgAllCat;
+                  const trendColor = cat.trend > 0 ? 'text-red-600 dark:text-red-400' : cat.trend < 0 ? 'text-green-600 dark:text-green-400' : 'text-gray-600 dark:text-gray-400';
+                  const trendIcon = cat.trend > 0 ? <TrendingUpIcon className="w-4 h-4" /> : cat.trend < 0 ? <TrendingDownIcon className="w-4 h-4" /> : <TrendingFlatIcon className="w-4 h-4" />;
+                  
+                  return (
+                    <div 
+                      key={cat.cat} 
+                      className={`p-4 rounded-lg border transition-all duration-200 ${
+                        isOutlier 
+                          ? 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800' 
+                          : 'bg-gray-50 dark:bg-zinc-800/50 border-gray-200 dark:border-zinc-700'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-3">
+                          <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm ${
+                            isOutlier ? 'bg-red-500' : 'bg-purple-500'
+                          }`}>
+                            <AssignmentIcon className="text-white text-xs" />
+                        </div>
+                          <div>
+                            <h4 className="font-semibold text-gray-900 dark:text-gray-100 truncate max-w-[120px]" title={cat.cat}>{cat.cat}</h4>
+                            <p className="text-xs text-gray-600 dark:text-gray-400">{cat.count} tiket</p>
         </div>
       </div>
+                        <div className="text-right">
+                          <div className="text-lg font-bold text-gray-900 dark:text-gray-100">{cat.formattedAvg}</div>
+                          <div className="text-xs text-gray-600 dark:text-gray-400">rata-rata</div>
+                        </div>
+                      </div>
+                      
+                      <div className="grid grid-cols-3 gap-4 text-center">
+                        <div>
+                          <div className="text-xs text-gray-600 dark:text-gray-400">Median</div>
+                          <div className="font-mono text-sm font-medium text-gray-900 dark:text-gray-100">{cat.formattedMedian}</div>
+                        </div>
+                        <div>
+                          <div className="text-xs text-gray-600 dark:text-gray-400">P90</div>
+                          <div className="font-mono text-sm font-medium text-gray-900 dark:text-gray-100">{formatDurationHMS(cat.p90)}</div>
+                        </div>
+                        <div>
+                          <div className="text-xs text-gray-600 dark:text-gray-400">Trend</div>
+                          <div className={`text-sm font-medium ${trendColor}`}>
+                            {trendIcon} {cat.trend > 0 ? '+' : ''}{cat.trend.toFixed(1)}%
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {isOutlier && (
+                        <div className="mt-2 p-2 bg-red-100 dark:bg-red-900/30 rounded text-xs text-red-700 dark:text-red-300">
+                          <WarningIcon className="w-3 h-3 inline mr-1" /> Anomali: {cat.formattedAvg} vs rata-rata {formatDurationHMS(avgAllCat)}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+
     </PageWrapper>
   );
 };

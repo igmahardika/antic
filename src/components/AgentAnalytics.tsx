@@ -9,6 +9,10 @@ import BarChartIcon from '@mui/icons-material/BarChart';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import FlashOnIcon from '@mui/icons-material/FlashOn';
 import MenuBookIcon from '@mui/icons-material/MenuBook';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import WarningIcon from '@mui/icons-material/Warning';
+import ErrorIcon from '@mui/icons-material/Error';
+import LightbulbIcon from '@mui/icons-material/Lightbulb';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useAgentStore } from '@/store/agentStore';
@@ -17,7 +21,6 @@ import jsPDF from 'jspdf';
 import SummaryCard from './ui/SummaryCard';
 import TimeFilter from './TimeFilter';
 import { ListAlt as ListAltIcon, TrendingUp as TrendingUpIcon } from '@mui/icons-material';
-import { Lightbulb as LightbulbIcon } from '@mui/icons-material';
 import PageWrapper from './PageWrapper';
 import type { AgentMetric } from '@/utils/agentKpi';
 import { enableBacklogDebug } from '@/utils/agentKpi';
@@ -491,28 +494,28 @@ const AgentAnalytics = () => {
           metric: 'Average Handle Time', 
           value: `${Math.floor(avgAHT/60)}h ${Math.floor(avgAHT%60)}m`, 
           target: '≤24h', 
-          status: avgAHT <= 1440 ? '✅ On Target' : '⚠️ Above Target',
+          status: avgAHT <= 1440 ? 'On Target' : 'Above Target',
           statusColor: avgAHT <= 1440 ? [34, 197, 94] : [245, 158, 11]
         },
         { 
           metric: 'SLA Compliance Rate', 
           value: `${slaRate.toFixed(1)}%`, 
           target: '≥85%', 
-          status: slaRate >= 85 ? '✅ Exceeding' : '⚠️ Below Target',
+          status: slaRate >= 85 ? 'Exceeding' : 'Below Target',
           statusColor: slaRate >= 85 ? [34, 197, 94] : [245, 158, 11]
         },
         { 
           metric: 'FCR Rate', 
           value: `${fcrRate.toFixed(1)}%`, 
           target: '≥75%', 
-          status: fcrRate >= 75 ? '✅ Exceeding' : '⚠️ Below Target',
+          status: fcrRate >= 75 ? 'Exceeding' : 'Below Target',
           statusColor: fcrRate >= 75 ? [34, 197, 94] : [245, 158, 11]
         },
         { 
           metric: 'Escalation Rate', 
           value: `${escalationRate.toFixed(1)}%`, 
           target: '≤10%', 
-          status: escalationRate <= 10 ? '✅ On Target' : '⚠️ Above Target',
+          status: escalationRate <= 10 ? 'On Target' : 'Above Target',
           statusColor: escalationRate <= 10 ? [34, 197, 94] : [245, 158, 11]
         }
       ];
@@ -2476,7 +2479,7 @@ const AgentAnalytics = () => {
                                       <div>• Expected AHT: {formatDurationDHM(expectedAHT)}</div>
                                       <div>• Actual AHT: {formatDurationDHM(avgAHT)}</div>
                                       <div>• Tenure: {tenure} days ({tenureMonths.toFixed(1)} months)</div>
-                                      <div>• Performance: {avgAHT <= expectedAHT ? '✅ Above Expectation' : '⚠️ Below Expectation'}</div>
+                                      <div>• Performance: {avgAHT <= expectedAHT ? 'Above Expectation' : 'Below Expectation'}</div>
                                     </div>
                                   </div>
                                   
@@ -2486,7 +2489,7 @@ const AgentAnalytics = () => {
                                       <div>• SLA Rate: {slaRate.toFixed(1)}% (Weight: 60%)</div>
                                       <div>• FCR Rate: {fcrRate.toFixed(1)}% (Weight: 30%)</div>
                                       <div>• Escalation Quality: {escalationQuality.toFixed(0)} (Weight: 10%)</div>
-                                      <div>• Overall: {qualityScore >= 80 ? '✅ Excellent' : qualityScore >= 60 ? '⚠️ Good' : '❌ Needs Improvement'}</div>
+                                      <div>• Overall: {qualityScore >= 80 ? 'Excellent' : qualityScore >= 60 ? 'Good' : 'Needs Improvement'}</div>
                                     </div>
                                   </div>
                                   
@@ -2496,7 +2499,7 @@ const AgentAnalytics = () => {
                                       <div>• Base FCR: {fcrRate.toFixed(1)}%</div>
                                       <div>• Escalation Penalty: -{escalationPenalty.toFixed(1)}</div>
                                       <div>• Net Score: {resolutionScore.toFixed(0)}</div>
-                                      <div>• Status: {resolutionScore >= 70 ? '✅ Strong' : resolutionScore >= 50 ? '⚠️ Moderate' : '❌ Weak'}</div>
+                                      <div>• Status: {resolutionScore >= 70 ? 'Strong' : resolutionScore >= 50 ? 'Moderate' : 'Weak'}</div>
                                     </div>
                                   </div>
                                 </div>
@@ -2809,7 +2812,7 @@ const AgentAnalytics = () => {
                                           </p>
                                           <div className="bg-white dark:bg-gray-800 rounded p-3">
                                             <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-1">
-                                              💡 Recommendation:
+                                              Recommendation:
                                             </p>
                                             <p className="text-sm text-gray-600 dark:text-gray-400">
                                               {insight.recommendation}
