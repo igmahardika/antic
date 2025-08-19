@@ -1,5 +1,13 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
+import TrackChangesIcon from '@mui/icons-material/TrackChanges';
+import TrendingUpIcon from '@mui/icons-material/TrendingUp';
+import TrendingDownIcon from '@mui/icons-material/TrendingDown';
+import ScheduleIcon from '@mui/icons-material/Schedule';
+import AssignmentIcon from '@mui/icons-material/Assignment';
+import BarChartIcon from '@mui/icons-material/BarChart';
+import LightbulbIcon from '@mui/icons-material/Lightbulb';
+import BalanceIcon from '@mui/icons-material/Balance';
 
 export default function AdminRumus() {
   return (
@@ -48,7 +56,10 @@ export default function AdminRumus() {
             </p>
             
             <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-              <h4 className="font-semibold text-blue-800 dark:text-blue-200 mb-2">🎯 Primary Scoring System (Interface Utama)</h4>
+              <h4 className="font-semibold text-blue-800 dark:text-blue-200 mb-2">
+                <TrackChangesIcon className="inline mr-2" />
+                Primary Scoring System (Interface Utama)
+              </h4>
               <p className="text-sm text-blue-700 dark:text-blue-300">Digunakan di AgentAnalytics.tsx untuk ranking dan display utama</p>
             </div>
             
@@ -80,7 +91,10 @@ export default function AdminRumus() {
               <div className="font-semibold mb-1 text-base">2. Metodologi Normalisasi KPI</div>
               
               <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4 mb-4">
-                <h5 className="font-semibold text-green-800 dark:text-green-200 mb-2">📈 KPI Positif (Semakin tinggi semakin baik)</h5>
+                <h5 className="font-semibold text-green-800 dark:text-green-200 mb-2">
+                  <TrendingUpIcon className="inline mr-2" />
+                  KPI Positif (Semakin tinggi semakin baik)
+                </h5>
                 <div className="text-sm space-y-2">
                   <div><strong>Berlaku untuk:</strong> FCR, SLA, Ticket Volume</div>
                   <div><strong>Rumus:</strong> <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">Skor = min((Aktual / Target) × 100, 120)</code></div>
@@ -90,7 +104,10 @@ export default function AdminRumus() {
               </div>
 
               <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 mb-4">
-                <h5 className="font-semibold text-red-800 dark:text-red-200 mb-2">📉 KPI Negatif (Semakin rendah semakin baik)</h5>
+                <h5 className="font-semibold text-red-800 dark:text-red-200 mb-2">
+                  <TrendingDownIcon className="inline mr-2" />
+                  KPI Negatif (Semakin rendah semakin baik)
+                </h5>
                 <div className="text-sm space-y-2">
                   <div><strong>Berlaku untuk:</strong> FRT, ART</div>
                   <div><strong>Rumus:</strong> <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">Skor = min((Target / Aktual) × 100, 120)</code></div>
@@ -330,7 +347,7 @@ export default function AdminRumus() {
                 <li><strong>Active Clients per Month:</strong> Denominator memakai total baris upload per bulan (<code>customerMonthRowCount</code>), bukan jumlah nama unik.</li>
                 <li><strong>Active per Type/Category:</strong> Denominator memakai agregat baris upload per bulan per tipe/kategori (<code>customerMonthRowCountByType</code>/<code>...ByCategory</code>).</li>
                 <li><strong>Unique Complaining Clients:</strong> Nama dinormalisasi (trim/lowercase), harus aktif di bulan tersebut (<code>customerMonthMap</code> berisi bulan terkait), exclude klasifikasi <em>Di Luar Layanan</em>, <em>Gangguan Diluar Layanan</em>, dan <em>Request</em>.</li>
-                <li><strong>Total (Union):</strong> Baris “Total” di tabel unique adalah <em>union</em> lintas tipe/kategori per bulan (bukan penjumlahan) agar tidak double count.</li>
+                <li><strong>Total (Union):</strong> Baris "Total" di tabel unique adalah <em>union</em> lintas tipe/kategori per bulan (bukan penjumlahan) agar tidak double count.</li>
                 <li><strong>Rasio:</strong> Numerator = unique sesuai definisi; Denominator = agregat baris upload sesuai konteks (total/tipe/kategori).</li>
               </ul>
             </div>
