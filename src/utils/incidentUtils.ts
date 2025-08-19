@@ -17,6 +17,33 @@ const excelSerialToDate = (serial: number): Date => {
   return new Date(millisecondsSinceUnixEpoch);
 };
 
+// Helper untuk memastikan format HH:MM:SS diproses dengan benar
+const parseHHMMSS = (timeString: string): number => {
+  // Remove any extra spaces and ensure proper format
+  const cleanTime = timeString.trim();
+  
+  // Strict HH:MM:SS format validation
+  const hhmmssRegex = /^(\d{1,2}):(\d{2}):(\d{2})$/;
+  const match = cleanTime.match(hhmmssRegex);
+  
+  if (match) {
+    const [, hours, minutes, seconds] = match;
+    const h = parseInt(hours, 10);
+    const m = parseInt(minutes, 10);
+    const s = parseInt(seconds, 10);
+    
+    // Validate ranges
+    if (h >= 0 && h <= 23 && m >= 0 && m <= 59 && s >= 0 && s <= 59) {
+      const totalMinutes = h * 60 + m + Math.round(s / 60);
+      console.log(`Successfully parsed HH:MM:SS: "${timeString}" -> ${h}h ${m}m ${s}s -> ${totalMinutes} minutes`);
+      return totalMinutes;
+    }
+  }
+  
+  console.warn(`Invalid HH:MM:SS format: "${timeString}"`);
+  return 0;
+};
+
 // Helper untuk membuat ID unik
 export const mkId = (noCase: string, startIso: string | undefined | null): string => {
   const base = `${(noCase || '').trim()}|${(startIso || '').trim()}`;
@@ -41,9 +68,14 @@ export const toMinutes = (v: unknown): number => {
     return totalMinutes;
   }
   
+  // First, try to parse as HH:MM:SS format (prioritas utama untuk kolom L, M, Y, Z)
+  const hhmmssResult = parseHHMMSS(s);
+  if (hhmmssResult > 0) {
+    return hhmmssResult;
+  }
+  
   // Handle various time formats
   const timeFormats = [
-    /^(\d{1,2}):(\d{2}):(\d{2})$/, // HH:MM:SS
     /^(\d{1,2}):(\d{2})$/, // HH:MM
     /^(\d+)h\s*(\d+)m$/, // Xh Ym
     /^(\d+)h$/, // Xh
@@ -56,14 +88,12 @@ export const toMinutes = (v: unknown): number => {
   for (const format of timeFormats) {
     const match = s.match(format);
     if (match) {
-      if (format.source.includes('HH:MM:SS') || format.source.includes('\\d{1,2}:\\d{2}:\\d{2}')) {
-        // HH:MM:SS format
-        const [, hours, minutes, seconds] = match;
-        return (+hours) * 60 + (+minutes) + Math.round((+seconds) / 60);
-      } else if (format.source.includes('HH:MM') || format.source.includes('\\d{1,2}:\\d{2}')) {
+      if (format.source.includes('HH:MM') || format.source.includes('\\d{1,2}:\\d{2}')) {
         // HH:MM format
         const [, hours, minutes] = match;
-        return (+hours) * 60 + (+minutes);
+        const totalMinutes = (+hours) * 60 + (+minutes);
+        console.log(`Parsed HH:MM format: "${s}" -> ${hours}h ${minutes}m -> ${totalMinutes} minutes`);
+        return totalMinutes;
       } else if (format.source.includes('h\\s*\\d+m') || format.source.includes('\\d+h\\s*\\d+m')) {
         // Xh Ym format
         const [, hours, minutes] = match;
@@ -97,13 +127,18 @@ export const toMinutes = (v: unknown): number => {
   if (Number.isFinite(n)) {
     if (n > 0 && n < 1000) {
       // Likely minutes
+      console.log(`Parsed numeric as minutes: "${s}" -> ${Math.round(n)} minutes`);
       return Math.round(n);
     } else if (n >= 1000) {
       // Likely seconds, convert to minutes
-      return Math.round(n / 60);
+      const minutes = Math.round(n / 60);
+      console.log(`Parsed numeric as seconds: "${s}" -> ${minutes} minutes`);
+      return minutes;
     }
   }
   
+  // If we reach here, the format wasn't recognized
+  console.warn(`Duration format not recognized: "${s}". Returning 0 minutes.`);
   return 0;
 };
 
