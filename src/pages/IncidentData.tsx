@@ -542,108 +542,128 @@ export const IncidentData: React.FC = () => {
         </div>
       )}
 
-      {/* Combined Filters */}
+      {/* Compact Filters */}
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Filter className="w-5 h-5" />
-            Filters
-          </CardTitle>
-          <CardDescription>
-            Filter incidents by month, status, priority, site, and search terms
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Month</label>
-              <select 
-                value={selectedMonth} 
-                onChange={(e) => handleMonthChange(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-              >
-                <option value="">All Months</option>
-                {availableMonths.map(monthKey => (
-                  <option key={monthKey} value={monthKey}>
-                    {formatMonthLabel(monthKey)}
-                  </option>
-                ))}
-              </select>
+        <CardContent className="p-4">
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <Filter className="w-4 h-4 text-gray-500" />
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Filters:</span>
             </div>
-
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Search</label>
+            
+            <div className="flex-1">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <Input
                   placeholder="Search No Case, Site, Problem..."
                   value={filter.search || ''}
                   onChange={(e) => handleFilterChange('search', e.target.value)}
-                  className="pl-10"
+                  className="pl-10 h-9"
                 />
               </div>
             </div>
 
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Status</label>
-              <select 
-                value={filter.status || ''} 
-                onChange={(e) => handleFilterChange('status', e.target.value || undefined)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-              >
-                <option value="">All Status</option>
-                {uniqueStatuses.map(status => (
-                  <option key={status} value={status}>{status}</option>
-                ))}
-              </select>
-            </div>
+            <select 
+              value={selectedMonth} 
+              onChange={(e) => handleMonthChange(e.target.value)}
+              className="px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm h-9"
+            >
+              <option value="">All Months</option>
+              {availableMonths.map(monthKey => (
+                <option key={monthKey} value={monthKey}>
+                  {formatMonthLabel(monthKey)}
+                </option>
+              ))}
+            </select>
 
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Priority</label>
-              <select 
-                value={filter.priority || ''} 
-                onChange={(e) => handleFilterChange('priority', e.target.value || undefined)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-              >
-                <option value="">All Priority</option>
-                {uniquePriorities.map(priority => (
-                  <option key={priority} value={priority}>{priority}</option>
-                ))}
-              </select>
-            </div>
+            <select 
+              value={filter.ncal || ''} 
+              onChange={(e) => handleFilterChange('ncal', e.target.value || undefined)}
+              className="px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm h-9"
+            >
+              <option value="">All NCAL</option>
+              <option value="Blue">Blue</option>
+              <option value="Yellow">Yellow</option>
+              <option value="Orange">Orange</option>
+              <option value="Red">Red</option>
+              <option value="Black">Black</option>
+            </select>
 
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Site</label>
-              <select 
-                value={filter.site || ''} 
-                onChange={(e) => handleFilterChange('site', e.target.value || undefined)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-              >
-                <option value="">All Sites</option>
-                {uniqueSites.map(site => (
-                  <option key={site} value={site}>{site}</option>
-                ))}
-              </select>
-            </div>
+            <select 
+              value={filter.priority || ''} 
+              onChange={(e) => handleFilterChange('priority', e.target.value || undefined)}
+              className="px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm h-9"
+            >
+              <option value="">All Priority</option>
+              {uniquePriorities.map(priority => (
+                <option key={priority} value={priority}>{priority}</option>
+              ))}
+            </select>
           </div>
-          
-          {selectedMonth && (
-            <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-              <div className="text-sm text-blue-700 dark:text-blue-300">
-                📅 Showing data for: <span className="font-medium">{formatMonthLabel(selectedMonth)}</span>
-              </div>
-            </div>
-          )}
-          
-          {availableMonths.length === 0 && allIncidents && allIncidents.length > 0 && (
-            <div className="mt-4 p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
-              <div className="text-sm text-yellow-700 dark:text-yellow-300">
-                ⚠️ No valid months found in data. Please check that the "Start" column contains valid dates.
-              </div>
-            </div>
-          )}
         </CardContent>
       </Card>
+
+      {selectedMonth && (
+        <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+          <div className="text-sm text-blue-700 dark:text-blue-300">
+            📅 Showing data for: <span className="font-medium">{formatMonthLabel(selectedMonth)}</span>
+          </div>
+        </div>
+      )}
+      
+      {availableMonths.length === 0 && allIncidents && allIncidents.length > 0 && (
+        <div className="mt-4 p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
+          <div className="text-sm text-yellow-700 dark:text-yellow-300">
+            ⚠️ No valid months found in data. Please check that the "Start" column contains valid dates.
+          </div>
+        </div>
+      )}
+
+      {showUpload && (
+        <IncidentUpload />
+      )}
+
+      {/* Reset Confirmation Modal */}
+      {showResetConfirm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full mx-4">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center">
+                <Trash2 className="w-5 h-5 text-red-600 dark:text-red-400" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                  Reset Incident Data
+                </h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  This action cannot be undone
+                </p>
+              </div>
+            </div>
+            
+            <p className="text-gray-700 dark:text-gray-300 mb-6">
+              Are you sure you want to delete all incident data? This will permanently remove all uploaded incidents from the database.
+            </p>
+            
+            <div className="flex gap-3 justify-end">
+              <Button 
+                onClick={() => setShowResetConfirm(false)} 
+                variant="outline"
+              >
+                Cancel
+              </Button>
+              <Button 
+                onClick={resetData} 
+                variant="destructive"
+                className="bg-red-600 hover:bg-red-700 text-white"
+              >
+                <Trash2 className="w-4 h-4 mr-2" />
+                Delete All Data
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <Card>
         <CardHeader>
