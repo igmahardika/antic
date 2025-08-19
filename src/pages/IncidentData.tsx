@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { Incident, IncidentFilter } from '@/types/incident';
-import { queryIncidents, formatDurationForDisplay } from '@/utils/incidentUtils';
+import { queryIncidents } from '@/utils/incidentUtils';
 import { IncidentUpload } from '@/components/IncidentUpload';
 import { db } from '@/lib/db';
 import { Button } from '@/components/ui/button';
@@ -43,37 +43,20 @@ export const IncidentData: React.FC = () => {
     db.incidents.toArray()
   );
 
-  // Calculate summary data for current month
-  const currentMonthData = React.useMemo(() => {
-    if (!allIncidents) return { total: 0, open: 0, closed: 0, avgDuration: 0 };
+  // Calculate summary data based on current filter
+  const summaryData = React.useMemo(() => {
+    if (!incidents) return { total: 0, open: 0, closed: 0, avgDuration: 0 };
     
-    const now = new Date();
-    const currentYear = now.getFullYear();
-    const currentMonth = now.getMonth();
-    
-    const monthIncidents = allIncidents.filter(incident => {
-      if (!incident.startTime) return false;
-      try {
-        const incidentDate = new Date(incident.startTime);
-        // Validate date and check if it's in current month
-        return !isNaN(incidentDate.getTime()) && 
-               incidentDate.getFullYear() === currentYear && 
-               incidentDate.getMonth() === currentMonth;
-      } catch (error) {
-        console.warn('Invalid startTime for current month calculation:', incident.startTime, 'for incident:', incident.noCase);
-        return false;
-      }
-    });
-
-    const total = monthIncidents.length;
-    const open = monthIncidents.filter(i => i.status?.toLowerCase() !== 'done').length;
-    const closed = monthIncidents.filter(i => i.status?.toLowerCase() === 'done').length;
-    const avgDuration = monthIncidents.length > 0 
-      ? Math.round(monthIncidents.reduce((sum, i) => sum + (i.durationMin || 0), 0) / monthIncidents.length)
+    const total = incidents.length;
+    const open = incidents.filter(i => i.status?.toLowerCase() !== 'done').length;
+    const closed = incidents.filter(i => i.status?.toLowerCase() === 'done').length;
+    const incidentsWithDuration = incidents.filter(i => i.durationMin && i.durationMin > 0);
+    const avgDuration = incidentsWithDuration.length > 0 
+      ? Math.round(incidentsWithDuration.reduce((sum, i) => sum + (i.durationMin || 0), 0) / incidentsWithDuration.length)
       : 0;
 
     return { total, open, closed, avgDuration };
-  }, [allIncidents]);
+  }, [incidents]);
 
   // Get available months from data based on startTime column
   const availableMonths = React.useMemo(() => {
@@ -262,7 +245,7 @@ export const IncidentData: React.FC = () => {
     { key: 'noCase', label: 'No Case' },
     { key: 'priority', label: 'Priority', render: (v: string) => v ? <Badge variant={getPriorityBadgeVariant(v)}>{v}</Badge> : '-' },
     { key: 'site', label: 'Site' },
-    { key: 'ncal', label: 'NCAL', render: (v: string) => v ? <Badge variant="secondary">{v}</Badge> : '-' },
+    { key: 'ncal', label: 'NCAL', render: (v: string) => v ? <Badge variant={getNCALBadgeVariant(v)}>{v}</Badge> : '-' },
     { key: 'status', label: 'Status', render: (v: string) => v ? <Badge variant={getStatusBadgeVariant(v)}>{v}</Badge> : '-' },
     { key: 'level', label: 'Level' },
     { key: 'ts', label: 'TS' },
@@ -311,7 +294,18 @@ export const IncidentData: React.FC = () => {
     return 'default';
   };
 
-  const totalPages = Math.ceil(total / (filter.limit || 50));
+  const getNCALBadgeVariant = (ncal: string | null | undefined) => {
+    if (!ncal || typeof ncal !== 'string') return 'secondary';
+    const n = ncal.toLowerCase();
+    if (n === 'black') return 'danger';
+    if (n === 'red') return 'danger';
+    if (n === 'orange') return 'warning';
+    if (n === 'yellow') return 'warning';
+    if (n === 'blue') return 'info';
+    return 'secondary';
+  };
+
+  const totalPages = Math.max(1, Math.ceil(total / (filter.limit || 50)));
 
   return (
     <div className="container mx-auto p-6 space-y-6">
@@ -346,28 +340,28 @@ export const IncidentData: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <SummaryCard
           title="Total Incidents"
-          value={currentMonthData.total}
-          description="This month"
+          value={summaryData.total}
+          description="Filtered results"
           icon={<AlertTriangle className="h-4 w-4" />}
           iconBg="bg-blue-500"
         />
         <SummaryCard
           title="Open Incidents"
-          value={currentMonthData.open}
+          value={summaryData.open}
           description="Pending resolution"
           icon={<Clock className="h-4 w-4" />}
           iconBg="bg-yellow-500"
         />
         <SummaryCard
           title="Closed Incidents"
-          value={currentMonthData.closed}
-          description="Resolved this month"
+          value={summaryData.closed}
+          description="Resolved incidents"
           icon={<CheckCircle className="h-4 w-4" />}
           iconBg="bg-green-500"
         />
         <SummaryCard
           title="Avg Duration"
-          value={formatDuration(currentMonthData.avgDuration)}
+          value={formatDuration(summaryData.avgDuration)}
           description="Minutes per incident"
           icon={<XCircle className="h-4 w-4" />}
           iconBg="bg-red-500"
@@ -440,7 +434,7 @@ export const IncidentData: React.FC = () => {
               <select 
                 value={selectedMonth} 
                 onChange={(e) => handleMonthChange(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
               >
                 <option value="">All Months</option>
                 {availableMonths.map(monthKey => (
@@ -469,7 +463,7 @@ export const IncidentData: React.FC = () => {
               <select 
                 value={filter.status || ''} 
                 onChange={(e) => handleFilterChange('status', e.target.value || undefined)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
               >
                 <option value="">All Status</option>
                 {uniqueStatuses.map(status => (
@@ -483,7 +477,7 @@ export const IncidentData: React.FC = () => {
               <select 
                 value={filter.priority || ''} 
                 onChange={(e) => handleFilterChange('priority', e.target.value || undefined)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
               >
                 <option value="">All Priority</option>
                 {uniquePriorities.map(priority => (
@@ -497,7 +491,7 @@ export const IncidentData: React.FC = () => {
               <select 
                 value={filter.site || ''} 
                 onChange={(e) => handleFilterChange('site', e.target.value || undefined)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
               >
                 <option value="">All Sites</option>
                 {uniqueSites.map(site => (
@@ -596,31 +590,31 @@ export const IncidentData: React.FC = () => {
                   <button 
                     onClick={() => handlePageChange(1)} 
                     disabled={filter.page === 1} 
-                    className="text-gray-400 hover:text-primary p-2 inline-flex items-center gap-2 font-medium rounded-md disabled:opacity-50"
+                    className="text-gray-400 hover:text-blue-600 p-2 inline-flex items-center gap-2 font-medium rounded-md disabled:opacity-50 dark:text-gray-500 dark:hover:text-blue-400"
                   >
                     «
                   </button>
                   <button 
                     onClick={() => handlePageChange((filter.page || 1) - 1)} 
                     disabled={filter.page === 1} 
-                    className="text-gray-400 hover:text-primary p-2 inline-flex items-center gap-2 font-medium rounded-md disabled:opacity-50"
+                    className="text-gray-400 hover:text-blue-600 p-2 inline-flex items-center gap-2 font-medium rounded-md disabled:opacity-50 dark:text-gray-500 dark:hover:text-blue-400"
                   >
                     ‹
                   </button>
-                  <span className="w-10 h-10 bg-primary text-white p-2 inline-flex items-center justify-center text-sm font-medium rounded-full">
+                  <span className="w-10 h-10 bg-blue-600 text-white p-2 inline-flex items-center justify-center text-sm font-medium rounded-full dark:bg-blue-500">
                     {filter.page || 1}
                   </span>
                   <button 
                     onClick={() => handlePageChange((filter.page || 1) + 1)} 
                     disabled={(filter.page || 1) >= totalPages} 
-                    className="text-gray-400 hover:text-primary p-2 inline-flex items-center gap-2 font-medium rounded-md disabled:opacity-50"
+                    className="text-gray-400 hover:text-blue-600 p-2 inline-flex items-center gap-2 font-medium rounded-md disabled:opacity-50 dark:text-gray-500 dark:hover:text-blue-400"
                   >
                     ›
                   </button>
                   <button 
                     onClick={() => handlePageChange(totalPages)} 
                     disabled={(filter.page || 1) >= totalPages} 
-                    className="text-gray-400 hover:text-primary p-2 inline-flex items-center gap-2 font-medium rounded-md disabled:opacity-50"
+                    className="text-gray-400 hover:text-blue-600 p-2 inline-flex items-center gap-2 font-medium rounded-md disabled:opacity-50 dark:text-gray-500 dark:hover:text-blue-400"
                   >
                     »
                   </button>
