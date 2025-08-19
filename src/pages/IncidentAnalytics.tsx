@@ -39,14 +39,41 @@ import {
   Filter
 } from 'lucide-react';
 
-// NCAL Color mapping
+// MUI Icons for consistency with project standards
+import BarChartIcon from '@mui/icons-material/BarChart';
+import PieChartIconMUI from '@mui/icons-material/PieChart';
+import ShowChartIcon from '@mui/icons-material/ShowChart';
+import TrendingUpIcon from '@mui/icons-material/TrendingUp';
+import TrendingDownIcon from '@mui/icons-material/TrendingDown';
+import WarningAmberIcon from '@mui/icons-material/WarningAmber';
+import AccessTimeIcon from '@mui/icons-material/AccessTime';
+import ConfirmationNumberIcon from '@mui/icons-material/ConfirmationNumber';
+import HowToRegIcon from '@mui/icons-material/HowToReg';
+import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
+import AssignmentIcon from '@mui/icons-material/Assignment';
+import TrackChangesIcon from '@mui/icons-material/TrackChanges';
+import LabelIcon from '@mui/icons-material/Label';
+import WarningIcon from '@mui/icons-material/Warning';
+
+// NCAL Color mapping - using project standard colors
 const NCAL_COLORS = {
-  Blue: '#3B82F6',
-  Yellow: '#F59E0B', 
-  Orange: '#F97316',
-  Red: '#EF4444',
-  Black: '#1F2937'
+  Blue: '#3b82f6',    // blue-500
+  Yellow: '#f59e0b',  // amber-500
+  Orange: '#f97316',  // orange-500
+  Red: '#ef4444',     // red-500
+  Black: '#1f2937'    // gray-800
 };
+
+// Area chart colors matching project standards
+const AREA_COLORS = [
+  '#11A69C', // teal/cyan
+  '#0081FE', // biru
+  '#924AF7', // ungu
+  '#FBBF24', // kuning
+  '#FF5383', // merah muda neon
+  '#4ADE80', // hijau segar
+  '#F2681F', // oranye
+];
 
 // NCAL Target durations in minutes
 const NCAL_TARGETS = {
@@ -385,7 +412,7 @@ export const IncidentAnalytics: React.FC = () => {
         {/* Period Filter */}
         <div className="flex items-center gap-2">
           <Filter className="w-4 h-4 text-gray-500" />
-          <div className="flex bg-gray-100 dark:bg-gray-800 rounded-lg p-1">
+          <div className="flex bg-white/80 dark:bg-zinc-900/80 rounded-2xl shadow-lg border border-gray-200 dark:border-zinc-800 p-1">
             {[
               { key: '3m', label: '3M' },
               { key: '6m', label: '6M' },
@@ -397,7 +424,7 @@ export const IncidentAnalytics: React.FC = () => {
                 variant={selectedPeriod === key ? 'default' : 'ghost'}
                 size="sm"
                 onClick={() => setSelectedPeriod(key as any)}
-                className="text-xs"
+                className="text-xs rounded-xl"
               >
                 {label}
               </Button>
@@ -408,10 +435,10 @@ export const IncidentAnalytics: React.FC = () => {
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card>
+        <Card className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Incidents</CardTitle>
-            <AlertTriangle className="h-4 w-4 text-muted-foreground" />
+            <ErrorOutlineIcon className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.total}</div>
@@ -421,10 +448,10 @@ export const IncidentAnalytics: React.FC = () => {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Open Incidents</CardTitle>
-            <Clock className="h-4 w-4 text-muted-foreground" />
+            <AccessTimeIcon className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.open}</div>
@@ -434,10 +461,10 @@ export const IncidentAnalytics: React.FC = () => {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">MTTR</CardTitle>
-            <Target className="h-4 w-4 text-muted-foreground" />
+            <TrackChangesIcon className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{formatDurationHMS(stats.mttrMin)}</div>
@@ -447,10 +474,10 @@ export const IncidentAnalytics: React.FC = () => {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Resolution Rate</CardTitle>
-            <CheckCircle className="h-4 w-4 text-muted-foreground" />
+            <HowToRegIcon className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
@@ -465,10 +492,10 @@ export const IncidentAnalytics: React.FC = () => {
 
       {/* NCAL Target Performance */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card>
+        <Card className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Target className="w-5 h-5" />
+              <AssignmentIcon className="w-5 h-5" />
               NCAL Target Performance
             </CardTitle>
             <CardDescription>Actual vs Target duration for each NCAL level</CardDescription>
@@ -480,7 +507,7 @@ export const IncidentAnalytics: React.FC = () => {
                 if (!performance) return null;
                 
                 return (
-                  <div key={ncal} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                  <div key={ncal} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-zinc-800 rounded-xl border border-gray-200 dark:border-zinc-700">
                     <div className="flex items-center gap-3">
                       <div 
                         className="w-4 h-4 rounded-full" 
@@ -503,10 +530,10 @@ export const IncidentAnalytics: React.FC = () => {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <BarChart3 className="w-5 h-5" />
+              <PieChartIconMUI className="w-5 h-5" />
               NCAL Distribution
             </CardTitle>
             <CardDescription>Distribution of incidents by NCAL level</CardDescription>
@@ -537,20 +564,31 @@ export const IncidentAnalytics: React.FC = () => {
 
       {/* NCAL Area Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card>
+        <Card className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <AreaChartIcon className="w-5 h-5" />
+              <ShowChartIcon className="w-5 h-5" />
               NCAL Count by Month
             </CardTitle>
             <CardDescription>Monthly incident count by NCAL level</CardDescription>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
-              <AreaChart data={monthlyNCALData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="month" />
-                <YAxis />
+              <AreaChart 
+                data={monthlyNCALData}
+                margin={{ top: 20, right: 30, left: 0, bottom: 0 }}
+              >
+                <defs>
+                  {NCAL_ORDER.map(ncal => (
+                    <linearGradient key={ncal} id={`color${ncal}`} x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor={NCAL_COLORS[ncal as keyof typeof NCAL_COLORS]} stopOpacity={0.8}/>
+                      <stop offset="95%" stopColor={NCAL_COLORS[ncal as keyof typeof NCAL_COLORS]} stopOpacity={0.1}/>
+                    </linearGradient>
+                  ))}
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                <XAxis dataKey="month" tickLine={false} axisLine={false} tickMargin={8} minTickGap={24} />
+                <YAxis tickLine={false} axisLine={false} tickMargin={8} minTickGap={24} />
                 <Tooltip />
                 <Legend />
                 {NCAL_ORDER.map(ncal => (
@@ -560,8 +598,8 @@ export const IncidentAnalytics: React.FC = () => {
                     dataKey={ncal}
                     stackId="1"
                     stroke={NCAL_COLORS[ncal as keyof typeof NCAL_COLORS]}
-                    fill={NCAL_COLORS[ncal as keyof typeof NCAL_COLORS]}
-                    fillOpacity={0.6}
+                    fill={`url(#color${ncal})`}
+                    strokeWidth={3}
                   />
                 ))}
               </AreaChart>
@@ -569,20 +607,31 @@ export const IncidentAnalytics: React.FC = () => {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <AreaChartIcon className="w-5 h-5" />
+              <ShowChartIcon className="w-5 h-5" />
               NCAL Duration by Month
             </CardTitle>
             <CardDescription>Average duration by NCAL level per month</CardDescription>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
-              <AreaChart data={monthlyNCALDurationData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="month" />
-                <YAxis />
+              <AreaChart 
+                data={monthlyNCALDurationData}
+                margin={{ top: 20, right: 30, left: 0, bottom: 0 }}
+              >
+                <defs>
+                  {NCAL_ORDER.map(ncal => (
+                    <linearGradient key={ncal} id={`colorDuration${ncal}`} x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor={NCAL_COLORS[ncal as keyof typeof NCAL_COLORS]} stopOpacity={0.8}/>
+                      <stop offset="95%" stopColor={NCAL_COLORS[ncal as keyof typeof NCAL_COLORS]} stopOpacity={0.1}/>
+                    </linearGradient>
+                  ))}
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                <XAxis dataKey="month" tickLine={false} axisLine={false} tickMargin={8} minTickGap={24} />
+                <YAxis tickLine={false} axisLine={false} tickMargin={8} minTickGap={24} />
                 <Tooltip 
                   formatter={(value: number) => [formatDurationHMS(value), 'Duration']}
                 />
@@ -594,8 +643,8 @@ export const IncidentAnalytics: React.FC = () => {
                     dataKey={ncal}
                     stackId="1"
                     stroke={NCAL_COLORS[ncal as keyof typeof NCAL_COLORS]}
-                    fill={NCAL_COLORS[ncal as keyof typeof NCAL_COLORS]}
-                    fillOpacity={0.6}
+                    fill={`url(#colorDuration${ncal})`}
+                    strokeWidth={3}
                   />
                 ))}
               </AreaChart>
@@ -606,37 +655,50 @@ export const IncidentAnalytics: React.FC = () => {
 
       {/* Additional Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card>
+        <Card className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg">
           <CardHeader>
-            <CardTitle>Priority Distribution</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <LabelIcon className="w-5 h-5" />
+              Priority Distribution
+            </CardTitle>
             <CardDescription>Distribution of incidents by priority level</CardDescription>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={priorityData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" />
-                <YAxis />
+              <BarChart 
+                data={priorityData}
+                margin={{ top: 20, right: 30, left: 0, bottom: 0 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                <XAxis dataKey="name" tickLine={false} axisLine={false} tickMargin={8} />
+                <YAxis tickLine={false} axisLine={false} tickMargin={8} />
                 <Tooltip />
-                <Bar dataKey="value" fill="#8884d8" />
+                <Bar dataKey="value" fill="#8884d8" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg">
           <CardHeader>
-            <CardTitle>Top 10 Sites</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <BarChartIcon className="w-5 h-5" />
+              Top 10 Sites
+            </CardTitle>
             <CardDescription>Most affected sites by incident count</CardDescription>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={siteData} layout="horizontal">
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis type="number" />
-                <YAxis dataKey="name" type="category" width={100} />
+              <BarChart 
+                data={siteData} 
+                layout="horizontal"
+                margin={{ top: 20, right: 30, left: 0, bottom: 0 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                <XAxis type="number" tickLine={false} axisLine={false} tickMargin={8} />
+                <YAxis dataKey="name" type="category" width={100} tickLine={false} axisLine={false} tickMargin={8} />
                 <Tooltip />
-                <Bar dataKey="value" fill="#82ca9d" />
+                <Bar dataKey="value" fill="#82ca9d" radius={[0, 4, 4, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
@@ -645,9 +707,12 @@ export const IncidentAnalytics: React.FC = () => {
 
       {/* Performance Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card>
+        <Card className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg">
           <CardHeader>
-            <CardTitle>Vendor Performance</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <AccessTimeIcon className="w-5 h-5" />
+              Vendor Performance
+            </CardTitle>
             <CardDescription>Average vendor response time</CardDescription>
           </CardHeader>
           <CardContent>
@@ -660,9 +725,12 @@ export const IncidentAnalytics: React.FC = () => {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg">
           <CardHeader>
-            <CardTitle>Pause Ratio</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <WarningAmberIcon className="w-5 h-5" />
+              Pause Ratio
+            </CardTitle>
             <CardDescription>Total pause time ratio</CardDescription>
           </CardHeader>
           <CardContent>
@@ -675,19 +743,25 @@ export const IncidentAnalytics: React.FC = () => {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg">
           <CardHeader>
-            <CardTitle>Level Distribution</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <ConfirmationNumberIcon className="w-5 h-5" />
+              Level Distribution
+            </CardTitle>
             <CardDescription>Distribution of incidents by level</CardDescription>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={200}>
-              <BarChart data={levelData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" />
-                <YAxis />
+              <BarChart 
+                data={levelData}
+                margin={{ top: 20, right: 30, left: 0, bottom: 0 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                <XAxis dataKey="name" tickLine={false} axisLine={false} tickMargin={8} />
+                <YAxis tickLine={false} axisLine={false} tickMargin={8} />
                 <Tooltip />
-                <Bar dataKey="value" fill="#ffc658" />
+                <Bar dataKey="value" fill="#ffc658" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
