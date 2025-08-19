@@ -310,6 +310,12 @@ export const formatDurationHMS = (minutes: number): string => {
   return `${pad(h)}:${pad(m)}:${pad(s)}`;
 };
 
+// Format durasi untuk display di tabel (HH:MM:SS)
+export const formatDurationForDisplay = (minutes: number | null | undefined): string => {
+  if (!minutes || minutes === 0) return '-';
+  return formatDurationHMS(minutes);
+};
+
 // Generate UUID untuk batch ID
 export const generateBatchId = (): string => {
   return 'batch-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
