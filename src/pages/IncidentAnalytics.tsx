@@ -209,15 +209,31 @@ export const IncidentAnalytics: React.FC = () => {
       return incidentDate >= cutoffDate;
     });
 
-    // Debug filtered data (background only)
-    console.group(`🔍 FILTERED DATA - ${selectedPeriod.toUpperCase()}`);
-    console.log('📊 Filtered incidents:', {
-      total: filtered.length,
-      withStartTime: filtered.filter(i => i.startTime).length,
-      withNCAL: filtered.filter(i => i.ncal).length,
-      withDuration: filtered.filter(i => i.durationMin && i.durationMin > 0).length
+      // Debug filtered data (background only)
+  console.group(`🔍 FILTERED DATA - ${selectedPeriod.toUpperCase()}`);
+  console.log('📊 Filtered incidents:', {
+    total: filtered.length,
+    withStartTime: filtered.filter(i => i.startTime).length,
+    withNCAL: filtered.filter(i => i.ncal).length,
+    withDuration: filtered.filter(i => i.durationMin && i.durationMin > 0).length,
+    withVendorDuration: filtered.filter(i => i.durationVendorMin && i.durationVendorMin > 0).length,
+    withPauseTime: filtered.filter(i => i.totalDurationPauseMin && i.totalDurationPauseMin > 0).length
+  });
+  
+  // Sample data for verification
+  if (filtered.length > 0) {
+    console.log('📋 Sample incident data:', {
+      priority: filtered[0].priority,
+      site: filtered[0].site,
+      level: filtered[0].level,
+      ncal: filtered[0].ncal,
+      durationMin: filtered[0].durationMin,
+      durationVendorMin: filtered[0].durationVendorMin,
+      totalDurationPauseMin: filtered[0].totalDurationPauseMin,
+      status: filtered[0].status
     });
-    console.groupEnd();
+  }
+  console.groupEnd();
 
     return filtered;
   }, [allIncidents, selectedPeriod]);
@@ -262,6 +278,17 @@ export const IncidentAnalytics: React.FC = () => {
     const totalPauseTime = filteredIncidents.reduce((sum, i) => sum + (i.totalDurationPauseMin || 0), 0);
     const totalDuration = filteredIncidents.reduce((sum, i) => sum + (i.durationMin || 0), 0);
     const pauseRatio = totalDuration > 0 ? totalPauseTime / totalDuration : 0;
+
+    // Ensure we have valid data for calculations
+    console.log('🔍 DATA VALIDATION:', {
+      totalIncidents: total,
+      incidentsWithDuration: incidentsWithDuration.length,
+      incidentsWithVendor: incidentsWithVendor.length,
+      incidentsWithPause: filteredIncidents.filter(i => i.totalDurationPauseMin && i.totalDurationPauseMin > 0).length,
+      totalPauseTime,
+      totalDuration,
+      pauseRatio: pauseRatio * 100
+    });
 
     // Group by various categories
     const byPriority = filteredIncidents.reduce((acc, incident) => {
@@ -368,6 +395,29 @@ export const IncidentAnalytics: React.FC = () => {
     console.log('⏱️ Monthly NCAL Duration:', byMonthNCALDuration);
     console.groupEnd();
 
+    // Debug category breakdowns (background only)
+    console.group('📊 CATEGORY BREAKDOWNS');
+    console.log('Priority Distribution:', Object.entries(byPriority).map(([k, v]) => ({ priority: k, count: v })));
+    console.log('Site Distribution:', Object.entries(bySite).sort((a, b) => b[1] - a[1]).slice(0, 10).map(([k, v]) => ({ site: k, count: v })));
+    console.log('Level Distribution:', Object.entries(byLevel).map(([k, v]) => ({ level: k, count: v })));
+    console.log('NCAL Distribution:', Object.entries(byNCAL).map(([k, v]) => ({ ncal: k, count: v })));
+    console.groupEnd();
+
+    // Debug performance metrics (background only)
+    console.group('⚡ PERFORMANCE METRICS');
+    console.log('📊 Vendor Performance:', {
+      avgVendorMin,
+      incidentsWithVendor: incidentsWithVendor.length,
+      totalIncidents: total
+    });
+    console.log('⏸️ Pause Ratio:', {
+      pauseRatio: pauseRatio * 100,
+      totalPauseTime,
+      totalDuration,
+      incidentsWithPause: filteredIncidents.filter(i => i.totalDurationPauseMin && i.totalDurationPauseMin > 0).length
+    });
+    console.groupEnd();
+
     // Calculate target performance
     const targetPerformance = Object.keys(byNCALDuration).reduce((acc, ncal) => {
       if (NCAL_TARGETS[ncal as keyof typeof NCAL_TARGETS]) {
@@ -405,10 +455,18 @@ export const IncidentAnalytics: React.FC = () => {
   }, [filteredIncidents]);
 
   // Prepare chart data
-  const priorityData = Object.entries(stats.byPriority).map(([priority, count]) => ({
-    name: priority,
-    value: count
-  }));
+  const priorityData = Object.entries(stats.byPriority)
+    .sort((a, b) => {
+      // Sort by priority order: High, Medium, Low, Unknown
+      const priorityOrder = { 'High': 1, 'Medium': 2, 'Low': 3, 'Unknown': 4 };
+      const aOrder = priorityOrder[a[0] as keyof typeof priorityOrder] || 5;
+      const bOrder = priorityOrder[b[0] as keyof typeof priorityOrder] || 5;
+      return aOrder - bOrder;
+    })
+    .map(([priority, count]) => ({
+      name: priority,
+      value: count
+    }));
 
   const klasifikasiData = Object.entries(stats.byKlas).map(([klas, count]) => ({
     name: klas,
@@ -423,10 +481,27 @@ export const IncidentAnalytics: React.FC = () => {
       value: count
     }));
 
-  const levelData = Object.entries(stats.byLevel).map(([level, count]) => ({
-    name: `Level ${level}`,
-    value: count
-  }));
+  const levelData = Object.entries(stats.byLevel)
+    .sort((a, b) => {
+      // Sort by level number, handle "Unknown" at the end
+      const aLevel = a[0] === 'Unknown' ? 999 : parseInt(a[0]) || 999;
+      const bLevel = b[0] === 'Unknown' ? 999 : parseInt(b[0]) || 999;
+      return aLevel - bLevel;
+    })
+    .map(([level, count]) => ({
+      name: `Level ${level}`,
+      value: count
+    }));
+
+  // Debug chart data preparation
+  console.log('📊 CHART DATA PREPARATION:', {
+    priorityData,
+    siteData: siteData.slice(0, 5), // Show first 5 for debugging
+    levelData,
+    totalPriorityData: priorityData.length,
+    totalSiteData: siteData.length,
+    totalLevelData: levelData.length
+  });
 
   const ncalData = NCAL_ORDER.map(ncal => ({
     name: ncal,
@@ -544,7 +619,7 @@ export const IncidentAnalytics: React.FC = () => {
         <SummaryCard
           icon={<TrackChangesIcon className="w-7 h-7 text-white" />}
           title="MTTR"
-          value={formatDurationHMS(stats.mttrMin)}
+          value={stats.mttrMin > 0 ? formatDurationHMS(stats.mttrMin) : '0:00:00'}
           description="Mean Time To Resolution"
           iconBg="bg-indigo-600"
         />
@@ -785,7 +860,7 @@ export const IncidentAnalytics: React.FC = () => {
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold text-blue-600">
-              {formatDurationHMS(stats.avgVendorMin)}
+              {stats.avgVendorMin > 0 ? formatDurationHMS(stats.avgVendorMin) : '0:00:00'}
             </div>
             <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
               Average vendor duration across all incidents
@@ -803,7 +878,7 @@ export const IncidentAnalytics: React.FC = () => {
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold text-orange-600">
-              {(stats.pauseRatio * 100).toFixed(1)}%
+              {stats.pauseRatio > 0 ? (stats.pauseRatio * 100).toFixed(1) : '0.0'}%
             </div>
             <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
               Percentage of total time spent on pause
