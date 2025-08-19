@@ -554,6 +554,23 @@ export const IncidentAnalytics: React.FC = () => {
     return hasCountData || hasDurationData;
   });
 
+  // Create filtered chart data - only include active NCAL categories
+  const filteredMonthlyNCALData = monthlyNCALData.map(month => {
+    const filteredMonth: any = { month: month.month };
+    activeNCALCategories.forEach(ncal => {
+      filteredMonth[ncal] = month[ncal];
+    });
+    return filteredMonth;
+  });
+
+  const filteredMonthlyNCALDurationData = monthlyNCALDurationData.map(month => {
+    const filteredMonth: any = { month: month.month };
+    activeNCALCategories.forEach(ncal => {
+      filteredMonth[ncal] = month[ncal];
+    });
+    return filteredMonth;
+  });
+
   // Chart configurations
   const ncalChartConfig = {
     value: {
@@ -650,30 +667,42 @@ export const IncidentAnalytics: React.FC = () => {
   console.log('🔍 ACTIVE NCAL CATEGORIES:', {
     allNCAL: NCAL_ORDER,
     activeNCAL: activeNCALCategories,
-    monthlyNCALData: monthlyNCALData.map(month => ({
-      month: month.month,
-      totals: NCAL_ORDER.map(ncal => ({ ncal, value: month[ncal] }))
-    })),
-    monthlyNCALDurationData: monthlyNCALDurationData.map(month => ({
-      month: month.month,
-      totals: NCAL_ORDER.map(ncal => ({ ncal, value: month[ncal] }))
-    }))
+    originalData: {
+      monthlyNCALData: monthlyNCALData.map(month => ({
+        month: month.month,
+        totals: NCAL_ORDER.map(ncal => ({ ncal, value: month[ncal] }))
+      })),
+      monthlyNCALDurationData: monthlyNCALDurationData.map(month => ({
+        month: month.month,
+        totals: NCAL_ORDER.map(ncal => ({ ncal, value: month[ncal] }))
+      }))
+    },
+    filteredData: {
+      filteredMonthlyNCALData: filteredMonthlyNCALData.map(month => ({
+        month: month.month,
+        totals: activeNCALCategories.map(ncal => ({ ncal, value: month[ncal] }))
+      })),
+      filteredMonthlyNCALDurationData: filteredMonthlyNCALDurationData.map(month => ({
+        month: month.month,
+        totals: activeNCALCategories.map(ncal => ({ ncal, value: month[ncal] }))
+      }))
+    }
   });
 
   // Validate chart data integrity
   console.log('✅ CHART DATA VALIDATION:', {
     ncalCountChart: {
-      totalMonths: monthlyNCALData.length,
+      totalMonths: filteredMonthlyNCALData.length,
       activeCategories: activeNCALCategories.length,
-      sampleData: monthlyNCALData.slice(0, 2).map(month => ({
+      sampleData: filteredMonthlyNCALData.slice(0, 2).map(month => ({
         month: month.month,
         ncalValues: activeNCALCategories.map(ncal => ({ ncal, value: month[ncal] }))
       }))
     },
     ncalDurationChart: {
-      totalMonths: monthlyNCALDurationData.length,
+      totalMonths: filteredMonthlyNCALDurationData.length,
       activeCategories: activeNCALCategories.length,
-      sampleData: monthlyNCALDurationData.slice(0, 2).map(month => ({
+      sampleData: filteredMonthlyNCALDurationData.slice(0, 2).map(month => ({
         month: month.month,
         ncalValues: activeNCALCategories.map(ncal => ({ ncal, value: month[ncal] }))
       }))
@@ -858,7 +887,7 @@ export const IncidentAnalytics: React.FC = () => {
             <ChartContainer config={ncalAreaChartConfig}>
               <AreaChart 
                 accessibilityLayer
-                data={monthlyNCALData}
+                data={filteredMonthlyNCALData}
                 margin={{
                   top: 20,
                   right: 30,
@@ -931,7 +960,7 @@ export const IncidentAnalytics: React.FC = () => {
             <ChartContainer config={ncalAreaChartConfig}>
               <AreaChart 
                 accessibilityLayer
-                data={monthlyNCALDurationData}
+                data={filteredMonthlyNCALDurationData}
                 margin={{
                   top: 20,
                   right: 30,
