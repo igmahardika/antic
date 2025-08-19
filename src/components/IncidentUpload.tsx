@@ -77,13 +77,18 @@ export const IncidentUpload: React.FC = () => {
           const row = jsonData[i] as any[];
           if (!row || row.length === 0) continue;
 
+          // Skip completely empty rows
+          const hasData = row.some(cell => cell !== null && cell !== undefined && String(cell).trim() !== '');
+          if (!hasData) continue;
+
           try {
             const incident = parseRowToIncident(headers, row, i + 1, sheetName);
             if (incident) {
               allRows.push(incident);
               successCount++;
             } else {
-              failedCount++;
+              // Row was skipped (empty No Case) - don't count as failed
+              console.log(`Row ${i + 1} in "${sheetName}" skipped: empty No Case`);
             }
           } catch (error) {
             errors.push(`Row ${i + 1} in "${sheetName}": ${error}`);
@@ -281,11 +286,22 @@ function parseRowToIncident(headers: string[], row: any[], rowNum: number, sheet
   };
 
   const noCase = getValue('No Case');
-  if (!noCase) {
-    throw new Error('No Case is required');
+  if (!noCase || String(noCase).trim() === '') {
+    return null; // Skip empty rows instead of throwing error
   }
 
-  const startTime = parseDateSafe(getValue('Start'));
+  // Additional validation for required fields
+  const startTimeRaw = getValue('Start');
+  if (!startTimeRaw || String(startTimeRaw).trim() === '') {
+    console.log(`Row ${rowNum} in "${sheetName}" skipped: missing Start time`);
+    return null;
+  }
+
+  const startTime = parseDateSafe(startTimeRaw);
+  if (!startTime) {
+    console.log(`Row ${rowNum} in "${sheetName}" skipped: invalid Start time format`);
+    return null;
+  }
   const id = mkId(noCase, startTime);
 
   const incident: Incident = {
