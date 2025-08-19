@@ -22,7 +22,9 @@ import {
   AlertTriangle,
   Clock,
   CheckCircle,
-  XCircle
+  XCircle,
+  RefreshCw,
+  X
 } from 'lucide-react';
 
 export const IncidentData: React.FC = () => {
@@ -165,6 +167,22 @@ export const IncidentData: React.FC = () => {
       [key]: value,
       page: 1 // Reset to first page when filter changes
     }));
+  };
+
+  const handleRefreshFilters = () => {
+    // Reset all filters to default values
+    setFilter({
+      page: 1,
+      limit: 50
+    });
+    setSelectedMonth('');
+    
+    // Show toast notification
+    toast({
+      title: "Filters Reset",
+      description: "All filters have been cleared and data refreshed.",
+      duration: 2000,
+    });
   };
 
   const handlePageChange = (newPage: number) => {
@@ -599,7 +617,62 @@ export const IncidentData: React.FC = () => {
                 <option key={priority} value={priority}>{priority}</option>
               ))}
             </select>
+
+            <Button
+              onClick={handleRefreshFilters}
+              variant="outline"
+              size="sm"
+              className="h-9 px-3 flex items-center gap-2"
+            >
+              <RefreshCw className="w-4 h-4" />
+              Refresh
+            </Button>
           </div>
+          
+          {/* Active Filters Display */}
+          {(filter.search || selectedMonth || filter.ncal || filter.priority) && (
+            <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-xs text-gray-500 dark:text-gray-400">Active filters:</span>
+                {filter.search && (
+                  <span className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-xs rounded-full">
+                    Search: {filter.search}
+                    <X 
+                      className="w-3 h-3 cursor-pointer hover:text-blue-900 dark:hover:text-blue-100" 
+                      onClick={() => handleFilterChange('search', '')}
+                    />
+                  </span>
+                )}
+                {selectedMonth && (
+                  <span className="inline-flex items-center gap-1 px-2 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 text-xs rounded-full">
+                    Month: {formatMonthLabel(selectedMonth)}
+                    <X 
+                      className="w-3 h-3 cursor-pointer hover:text-green-900 dark:hover:text-green-100" 
+                      onClick={() => handleMonthChange('')}
+                    />
+                  </span>
+                )}
+                {filter.ncal && (
+                  <span className="inline-flex items-center gap-1 px-2 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 text-xs rounded-full">
+                    NCAL: {filter.ncal}
+                    <X 
+                      className="w-3 h-3 cursor-pointer hover:text-purple-900 dark:hover:text-purple-100" 
+                      onClick={() => handleFilterChange('ncal', undefined)}
+                    />
+                  </span>
+                )}
+                {filter.priority && (
+                  <span className="inline-flex items-center gap-1 px-2 py-1 bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 text-xs rounded-full">
+                    Priority: {filter.priority}
+                    <X 
+                      className="w-3 h-3 cursor-pointer hover:text-orange-900 dark:hover:text-orange-100" 
+                      onClick={() => handleFilterChange('priority', undefined)}
+                    />
+                  </span>
+                )}
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 
