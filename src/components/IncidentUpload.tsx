@@ -24,37 +24,13 @@ interface UploadResult {
   preview: Incident[];
 }
 
-// Header mapping untuk berbagai variasi nama kolom
-const HEADER_MAPPING = {
-  'No Case': ['no case', 'no_case', 'case', 'case number', 'case_number'],
-  'Priority': ['priority', 'prioritas', 'urgensi'],
-  'Site': ['site', 'lokasi', 'location'],
-  'NCAL': ['ncal', 'nc_al'],
-  'Status': ['status', 'state'],
-  'Level': ['level', 'tingkat', 'level gangguan'],
-  'TS': ['ts', 'technical support'],
-  'ODP/BTS': ['odp/bts', 'odp bts', 'odp', 'bts'],
-  'Start Time': ['start time', 'start_time', 'waktu mulai', 'jam mulai', 'start'],
-  'Start Escalation Vendor': ['start escalation vendor', 'start_escalation_vendor', 'escalation vendor', 'vendor escalation'],
-  'End Time': ['end time', 'end_time', 'waktu selesai', 'jam selesai', 'end'],
-  'Duration': ['duration', 'durasi', 'lama gangguan'],
-  'Duration Vendor': ['duration vendor', 'duration_vendor', 'durasi vendor'],
-  'Problem': ['problem', 'masalah', 'issue', 'deskripsi'],
-  'Penyebab': ['penyebab', 'cause', 'root cause'],
-  'Action Terakhir': ['action terakhir', 'action_terakhir', 'last action', 'tindakan terakhir'],
-  'Note': ['note', 'catatan', 'keterangan'],
-  'Klasifikasi Gangguan': ['klasifikasi gangguan', 'klasifikasi_gangguan', 'classification', 'jenis gangguan'],
-  'Power Before': ['power before', 'power_before', 'daya sebelum'],
-  'Power After': ['power after', 'power_after', 'daya sesudah'],
-  'Start Pause 1': ['start pause 1', 'start_pause_1', 'pause 1 start', 'mulai pause 1'],
-  'End Pause 1': ['end pause 1', 'end_pause_1', 'pause 1 end', 'selesai pause 1'],
-  'Start Pause 2': ['start pause 2', 'start_pause_2', 'pause 2 start', 'mulai pause 2'],
-  'End Pause 2': ['end pause 2', 'end_pause_2', 'pause 2 end', 'selesai pause 2'],
-  'Total Duration Pause': ['total duration pause', 'total_duration_pause', 'total pause', 'total durasi pause'],
-  'Total Duration Vendor': ['total duration vendor', 'total_duration_vendor', 'total vendor', 'total durasi vendor']
-};
-
-const REQUIRED_HEADERS = Object.keys(HEADER_MAPPING);
+const REQUIRED_HEADERS = [
+  'Priority', 'Site', 'No Case', 'NCAL', 'Status', 'Level', 'TS', 'ODP/BTS',
+  'Start', 'Start Escalation Vendor', 'End', 'Duration', 'Duration Vendor',
+  'Problem', 'Penyebab', 'Action Terakhir', 'Note', 'Klasifikasi Gangguan',
+  'Power Before', 'Power After', 'Start Pause', 'End Pause', 'Start Pause 2', 'End Pause 2',
+  'Total Duration Pause', 'Total Duration Vendor'
+];
 
 export const IncidentUpload: React.FC = () => {
   const [isUploading, setIsUploading] = useState(false);
@@ -86,14 +62,10 @@ export const IncidentUpload: React.FC = () => {
 
         const headers = jsonData[0] as string[];
         
-        // Validate headers dengan mapping yang fleksibel
-        const missingHeaders = REQUIRED_HEADERS.filter(requiredHeader => {
-          const possibleNames = HEADER_MAPPING[requiredHeader];
-          return !headers.some(header => {
-            const headerStr = header?.toString().toLowerCase().trim();
-            return possibleNames.some(name => headerStr.includes(name));
-          });
-        });
+        // Validate headers
+        const missingHeaders = REQUIRED_HEADERS.filter(h => 
+          !headers.some(header => header?.toString().toLowerCase().includes(h.toLowerCase()))
+        );
 
         if (missingHeaders.length > 0) {
           errors.push(`Sheet "${sheetName}": Missing headers: ${missingHeaders.join(', ')}`);
@@ -302,11 +274,9 @@ export const IncidentUpload: React.FC = () => {
 
 function parseRowToIncident(headers: string[], row: any[], rowNum: number, sheetName: string): Incident | null {
   const getValue = (headerName: string) => {
-    const possibleNames = HEADER_MAPPING[headerName] || [headerName.toLowerCase()];
-    const index = headers.findIndex(h => {
-      const headerStr = h?.toString().toLowerCase().trim();
-      return possibleNames.some(name => headerStr.includes(name));
-    });
+    const index = headers.findIndex(h => 
+      h?.toString().toLowerCase().includes(headerName.toLowerCase())
+    );
     return index >= 0 ? row[index] : null;
   };
 
@@ -315,7 +285,7 @@ function parseRowToIncident(headers: string[], row: any[], rowNum: number, sheet
     throw new Error('No Case is required');
   }
 
-  const startTime = parseDateSafe(getValue('Start Time'));
+  const startTime = parseDateSafe(getValue('Start'));
   const id = mkId(noCase, startTime);
 
   const incident: Incident = {
@@ -330,7 +300,7 @@ function parseRowToIncident(headers: string[], row: any[], rowNum: number, sheet
     odpBts: getValue('ODP/BTS') || null,
     startTime,
     startEscalationVendor: parseDateSafe(getValue('Start Escalation Vendor')),
-    endTime: parseDateSafe(getValue('End Time')),
+    endTime: parseDateSafe(getValue('End')),
     durationMin: toMinutes(getValue('Duration')),
     durationVendorMin: toMinutes(getValue('Duration Vendor')),
     problem: getValue('Problem') || null,
@@ -340,8 +310,8 @@ function parseRowToIncident(headers: string[], row: any[], rowNum: number, sheet
     klasifikasiGangguan: getValue('Klasifikasi Gangguan') || null,
     powerBefore: getValue('Power Before') ? Number(getValue('Power Before')) : null,
     powerAfter: getValue('Power After') ? Number(getValue('Power After')) : null,
-    startPause1: parseDateSafe(getValue('Start Pause 1')),
-    endPause1: parseDateSafe(getValue('End Pause 1')),
+    startPause1: parseDateSafe(getValue('Start Pause')),
+    endPause1: parseDateSafe(getValue('End Pause')),
     startPause2: parseDateSafe(getValue('Start Pause 2')),
     endPause2: parseDateSafe(getValue('End Pause 2')),
     totalDurationPauseMin: toMinutes(getValue('Total Duration Pause')),
