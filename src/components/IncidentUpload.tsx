@@ -302,16 +302,52 @@ function parseRowToIncident(headers: string[], row: any[], rowNum: number, sheet
     console.log(`Row ${rowNum} in "${sheetName}" skipped: invalid Start time format`);
     return null;
   }
+  console.log(`Row ${rowNum} in "${sheetName}": Successfully parsed Start time "${startTimeRaw}" -> ${startTime}`);
   const id = mkId(noCase, startTime);
 
   const incident: Incident = {
     id,
     noCase: String(noCase),
-    priority: getValue('Priority') || null,
+    priority: (() => {
+      const priorityValue = getValue('Priority');
+      if (priorityValue) {
+        const validPriorities = ['High', 'Medium', 'Low'];
+        const priorityStr = String(priorityValue).trim();
+        if (validPriorities.includes(priorityStr)) {
+          return priorityStr;
+        } else {
+          console.warn(`Row ${rowNum} in "${sheetName}": Invalid Priority value "${priorityValue}". Expected: High, Medium, Low`);
+        }
+      }
+      return priorityValue || null;
+    })(),
     site: getValue('Site') || null,
-    ncal: getValue('NCAL') || null,
+    ncal: (() => {
+      const ncalValue = getValue('NCAL');
+      if (ncalValue) {
+        const validNCAL = ['Blue', 'Yellow', 'Orange', 'Red', 'Black'];
+        const ncalStr = String(ncalValue).trim();
+        if (validNCAL.includes(ncalStr)) {
+          return ncalStr;
+        } else {
+          console.warn(`Row ${rowNum} in "${sheetName}": Invalid NCAL value "${ncalValue}". Expected: Blue, Yellow, Orange, Red, Black`);
+        }
+      }
+      return ncalValue || null;
+    })(),
     status: getValue('Status') || null,
-    level: getValue('Level') ? Number(getValue('Level')) : null,
+    level: (() => {
+      const levelValue = getValue('Level');
+      if (levelValue) {
+        const levelNum = Number(levelValue);
+        if (Number.isInteger(levelNum) && levelNum >= 1 && levelNum <= 10) {
+          return levelNum;
+        } else {
+          console.warn(`Row ${rowNum} in "${sheetName}": Invalid Level value "${levelValue}". Expected: 1-10`);
+        }
+      }
+      return levelValue ? Number(levelValue) : null;
+    })(),
     ts: getValue('TS') || null,
     odpBts: getValue('ODP/BTS') || null,
     startTime,
@@ -338,8 +374,40 @@ function parseRowToIncident(headers: string[], row: any[], rowNum: number, sheet
     actionTerakhir: getValue('Action Terakhir') || null,
     note: getValue('Note') || null,
     klasifikasiGangguan: getValue('Klasifikasi Gangguan') || null,
-    powerBefore: getValue('Power Before') ? Number(getValue('Power Before')) : null,
-    powerAfter: getValue('Power After') ? Number(getValue('Power After')) : null,
+    powerBefore: (() => {
+      const powerValue = getValue('Power Before');
+      if (powerValue) {
+        const powerNum = Number(powerValue);
+        if (Number.isFinite(powerNum)) {
+          // dBm values typically range from -70 to +10
+          if (powerNum >= -70 && powerNum <= 10) {
+            return powerNum;
+          } else {
+            console.warn(`Row ${rowNum} in "${sheetName}": Power Before value "${powerValue}" dBm is outside typical range (-70 to +10)`);
+          }
+        } else {
+          console.warn(`Row ${rowNum} in "${sheetName}": Invalid Power Before value "${powerValue}". Expected numeric value in dBm`);
+        }
+      }
+      return powerValue ? Number(powerValue) : null;
+    })(),
+    powerAfter: (() => {
+      const powerValue = getValue('Power After');
+      if (powerValue) {
+        const powerNum = Number(powerValue);
+        if (Number.isFinite(powerNum)) {
+          // dBm values typically range from -70 to +10
+          if (powerNum >= -70 && powerNum <= 10) {
+            return powerNum;
+          } else {
+            console.warn(`Row ${rowNum} in "${sheetName}": Power After value "${powerValue}" dBm is outside typical range (-70 to +10)`);
+          }
+        } else {
+          console.warn(`Row ${rowNum} in "${sheetName}": Invalid Power After value "${powerValue}". Expected numeric value in dBm`);
+        }
+      }
+      return powerValue ? Number(powerValue) : null;
+    })(),
     startPause1: parseDateSafe(getValue('Start Pause')),
     endPause1: parseDateSafe(getValue('End Pause')),
     startPause2: parseDateSafe(getValue('Start Pause 2')),
