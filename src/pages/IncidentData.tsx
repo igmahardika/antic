@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/components/ui/use-toast';
 import SummaryCard from '@/components/ui/SummaryCard';
+import PageWrapper from '@/components/PageWrapper';
 import { 
   Search, 
   Filter, 
@@ -382,7 +383,8 @@ export const IncidentData: React.FC = () => {
   const totalPages = Math.max(1, Math.ceil(total / (filter.limit || 50)));
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
+    <PageWrapper>
+      <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Incident Data</h1>
@@ -844,6 +846,7 @@ export const IncidentData: React.FC = () => {
           )}
         </CardContent>
       </Card>
-    </div>
+      </div>
+    </PageWrapper>
   );
 };
