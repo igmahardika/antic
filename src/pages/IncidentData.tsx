@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { Incident, IncidentFilter } from '@/types/incident';
-import { queryIncidents } from '@/utils/incidentUtils';
+import { queryIncidents, formatDurationForDisplay } from '@/utils/incidentUtils';
 import { IncidentUpload } from '@/components/IncidentUpload';
 import { db } from '@/lib/db';
 import { Button } from '@/components/ui/button';
@@ -245,10 +245,48 @@ export const IncidentData: React.FC = () => {
 
   const formatDuration = (minutes: number | null | undefined) => {
     if (!minutes || minutes === 0) return '-';
-    const hours = Math.floor(minutes / 60);
-    const mins = minutes % 60;
-    return `${hours}:${String(mins).padStart(2, '0')}`;
+    const totalSeconds = Math.floor(minutes * 60);
+    const h = Math.floor(totalSeconds / 3600);
+    const m = Math.floor((totalSeconds % 3600) / 60);
+    const s = totalSeconds % 60;
+    const pad = (num: number) => num.toString().padStart(2, '0');
+    return `${pad(h)}:${pad(m)}:${pad(s)}`;
   };
+
+  // Definisi kolom untuk tabel incident
+  const columns: Array<{
+    key: keyof Incident;
+    label: string;
+    render?: (value: any) => React.ReactNode;
+  }> = [
+    { key: 'noCase', label: 'No Case' },
+    { key: 'priority', label: 'Priority', render: (v: string) => v ? <Badge variant={getPriorityBadgeVariant(v)}>{v}</Badge> : '-' },
+    { key: 'site', label: 'Site' },
+    { key: 'ncal', label: 'NCAL', render: (v: string) => v ? <Badge variant="secondary">{v}</Badge> : '-' },
+    { key: 'status', label: 'Status', render: (v: string) => v ? <Badge variant={getStatusBadgeVariant(v)}>{v}</Badge> : '-' },
+    { key: 'level', label: 'Level' },
+    { key: 'ts', label: 'TS' },
+    { key: 'odpBts', label: 'ODP/BTS' },
+    { key: 'startTime', label: 'Start Time', render: (v: string) => formatDate(v) },
+    { key: 'startEscalationVendor', label: 'Start Escalation Vendor', render: (v: string) => formatDate(v) },
+    { key: 'endTime', label: 'End Time', render: (v: string) => formatDate(v) },
+    { key: 'durationMin', label: 'Duration', render: (v: number) => formatDuration(v) },
+    { key: 'durationVendorMin', label: 'Duration Vendor', render: (v: number) => formatDuration(v) },
+    { key: 'problem', label: 'Problem' },
+    { key: 'penyebab', label: 'Penyebab' },
+    { key: 'actionTerakhir', label: 'Action Terakhir' },
+    { key: 'note', label: 'Note' },
+    { key: 'klasifikasiGangguan', label: 'Klasifikasi Gangguan' },
+    { key: 'powerBefore', label: 'Power Before (dBm)' },
+    { key: 'powerAfter', label: 'Power After (dBm)' },
+    { key: 'startPause1', label: 'Start Pause 1', render: (v: string) => formatDate(v) },
+    { key: 'endPause1', label: 'End Pause 1', render: (v: string) => formatDate(v) },
+    { key: 'startPause2', label: 'Start Pause 2', render: (v: string) => formatDate(v) },
+    { key: 'endPause2', label: 'End Pause 2', render: (v: string) => formatDate(v) },
+    { key: 'totalDurationPauseMin', label: 'Total Duration Pause', render: (v: number) => formatDuration(v) },
+    { key: 'totalDurationVendorMin', label: 'Total Duration Vendor', render: (v: number) => formatDuration(v) },
+    { key: 'netDurationMin', label: 'Net Duration', render: (v: number) => formatDuration(v) },
+  ];
 
   const formatDate = (dateString: string | null | undefined) => {
     if (!dateString) return '-';
@@ -505,42 +543,30 @@ export const IncidentData: React.FC = () => {
           ) : (
             <div className="space-y-4">
               <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead className="bg-gray-50 dark:bg-gray-800">
+                <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                  <thead className="bg-gray-50 dark:bg-gray-700">
                     <tr>
-                      <th className="px-4 py-3 text-left font-medium">No Case</th>
-                      <th className="px-4 py-3 text-left font-medium">Site</th>
-                      <th className="px-4 py-3 text-left font-medium">Status</th>
-                      <th className="px-4 py-3 text-left font-medium">Priority</th>
-                      <th className="px-4 py-3 text-left font-medium">Level</th>
-                      <th className="px-4 py-3 text-left font-medium">Start Time</th>
-                      <th className="px-4 py-3 text-left font-medium">Duration</th>
-                      <th className="px-4 py-3 text-left font-medium">Problem</th>
+                      {columns.map(col => (
+                        <th key={col.key} className="px-5 py-3 text-left text-xs font-bold text-gray-500 uppercase whitespace-nowrap">{col.label}</th>
+                      ))}
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                    {incidents.map((incident) => (
-                      <tr key={incident.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
-                        <td className="px-4 py-3 font-medium">{incident.noCase}</td>
-                        <td className="px-4 py-3">{incident.site || '-'}</td>
-                        <td className="px-4 py-3">
-                          <Badge variant={getStatusBadgeVariant(incident.status)}>
-                            {incident.status || 'Unknown'}
-                          </Badge>
-                        </td>
-                        <td className="px-4 py-3">
-                          <Badge variant={getPriorityBadgeVariant(incident.priority)}>
-                            {incident.priority || 'Unknown'}
-                          </Badge>
-                        </td>
-                        <td className="px-4 py-3">{incident.level || '-'}</td>
-                        <td className="px-4 py-3">{formatDate(incident.startTime)}</td>
-                        <td className="px-4 py-3">{formatDuration(incident.durationMin)}</td>
-                        <td className="px-4 py-3 max-w-xs truncate" title={incident.problem || ''}>
-                          {incident.problem || '-'}
-                        </td>
-                      </tr>
-                    ))}
+                    {incidents.length === 0 ? (
+                      <tr><td colSpan={columns.length} className="text-center py-8 text-gray-400">No data found</td></tr>
+                    ) : (
+                      incidents.map((incident, i) => (
+                        <tr key={incident.id} className={
+                          i % 2 === 0 ? 'bg-white dark:bg-gray-900' : 'bg-gray-50 dark:bg-gray-800'
+                        }>
+                          {columns.map(col => (
+                            <td key={col.key} className="px-5 py-3 whitespace-pre-line text-sm text-gray-800 dark:text-gray-200 align-top">
+                              {col.render ? col.render(incident[col.key as keyof Incident]) : incident[col.key as keyof Incident] || '-'}
+                            </td>
+                          ))}
+                        </tr>
+                      ))
+                    )}
                   </tbody>
                 </table>
               </div>
@@ -551,33 +577,56 @@ export const IncidentData: React.FC = () => {
                 </div>
               )}
 
-              {totalPages > 1 && (
-                <div className="flex items-center justify-between">
-                  <div className="text-sm text-gray-600 dark:text-gray-400">
-                    Page {filter.page} of {totalPages}
-                  </div>
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handlePageChange((filter.page || 1) - 1)}
-                      disabled={(filter.page || 1) <= 1}
-                    >
-                      <ChevronLeft className="w-4 h-4" />
-                      Previous
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handlePageChange((filter.page || 1) + 1)}
-                      disabled={(filter.page || 1) >= totalPages}
-                    >
-                      Next
-                      <ChevronRight className="w-4 h-4" />
-                    </Button>
-                  </div>
+              {/* Pagination */}
+              <div className="py-5 px-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm">Page Size:</span>
+                  <select 
+                    value={filter.limit || 50} 
+                    onChange={(e) => handleFilterChange('limit', Number(e.target.value))}
+                    className="border rounded px-2 py-1 text-sm"
+                  >
+                    <option value={10}>10</option>
+                    <option value={25}>25</option>
+                    <option value={50}>50</option>
+                    <option value={100}>100</option>
+                  </select>
                 </div>
-              )}
+                <div className="flex items-center space-x-2">
+                  <button 
+                    onClick={() => handlePageChange(1)} 
+                    disabled={filter.page === 1} 
+                    className="text-gray-400 hover:text-primary p-2 inline-flex items-center gap-2 font-medium rounded-md disabled:opacity-50"
+                  >
+                    «
+                  </button>
+                  <button 
+                    onClick={() => handlePageChange((filter.page || 1) - 1)} 
+                    disabled={filter.page === 1} 
+                    className="text-gray-400 hover:text-primary p-2 inline-flex items-center gap-2 font-medium rounded-md disabled:opacity-50"
+                  >
+                    ‹
+                  </button>
+                  <span className="w-10 h-10 bg-primary text-white p-2 inline-flex items-center justify-center text-sm font-medium rounded-full">
+                    {filter.page || 1}
+                  </span>
+                  <button 
+                    onClick={() => handlePageChange((filter.page || 1) + 1)} 
+                    disabled={(filter.page || 1) >= totalPages} 
+                    className="text-gray-400 hover:text-primary p-2 inline-flex items-center gap-2 font-medium rounded-md disabled:opacity-50"
+                  >
+                    ›
+                  </button>
+                  <button 
+                    onClick={() => handlePageChange(totalPages)} 
+                    disabled={(filter.page || 1) >= totalPages} 
+                    className="text-gray-400 hover:text-primary p-2 inline-flex items-center gap-2 font-medium rounded-md disabled:opacity-50"
+                  >
+                    »
+                  </button>
+                  <span className="text-sm">{`Page ${filter.page || 1} of ${totalPages}`}</span>
+                </div>
+              </div>
             </div>
           )}
         </CardContent>
