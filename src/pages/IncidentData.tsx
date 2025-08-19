@@ -64,11 +64,9 @@ export const IncidentData: React.FC = () => {
       ? Math.round(incidentsWithDuration.reduce((sum, i) => sum + (i.durationMin || 0), 0) / incidentsWithDuration.length)
       : 0;
 
-    // Calculate NCAL distribution
+    // Calculate NCAL distribution with normalized values
     const ncalCounts = allIncidents.reduce((acc, incident) => {
-      const ncal = incident.ncal || 'Unknown';
-      // Normalize case to handle different formats
-      const normalizedNcal = ncal.trim();
+      const normalizedNcal = normalizeNCAL(incident.ncal);
       acc[normalizedNcal] = (acc[normalizedNcal] || 0) + 1;
       return acc;
     }, {} as Record<string, number>);
@@ -274,6 +272,26 @@ export const IncidentData: React.FC = () => {
     return `${pad(h)}:${pad(m)}:${pad(s)}`;
   };
 
+  // Helper function to normalize NCAL values
+  const normalizeNCAL = (ncal: string | null | undefined): string => {
+    if (!ncal) return 'Unknown';
+    const normalized = ncal.trim().toLowerCase();
+    switch (normalized) {
+      case 'blue': return 'Blue';
+      case 'yellow': return 'Yellow';
+      case 'orange': return 'Orange';
+      case 'red': return 'Red';
+      case 'black': return 'Black';
+      default: return ncal.trim(); // Return original if not recognized
+    }
+  };
+
+  // Helper function to get NCAL count with case-insensitive lookup
+  const getNCALCount = (ncalCounts: Record<string, number>, targetNCAL: string): number => {
+    const normalizedTarget = normalizeNCAL(targetNCAL);
+    return ncalCounts[normalizedTarget] || 0;
+  };
+
   // Definisi kolom untuk tabel incident
   const columns: Array<{
     key: keyof Incident;
@@ -417,36 +435,36 @@ export const IncidentData: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-4">
         <SummaryCard
           title="BLUE NCAL"
-          value={allDataSummary.ncalCounts['Blue'] || allDataSummary.ncalCounts['blue'] || 0}
-          description={`${allDataSummary.total > 0 ? (((allDataSummary.ncalCounts['Blue'] || allDataSummary.ncalCounts['blue'] || 0) / allDataSummary.total) * 100).toFixed(1) : 0}% of total`}
+          value={getNCALCount(allDataSummary.ncalCounts, 'Blue')}
+          description={`${allDataSummary.total > 0 ? ((getNCALCount(allDataSummary.ncalCounts, 'Blue') / allDataSummary.total) * 100).toFixed(1) : 0}% of total`}
           icon={<div className="w-4 h-4 bg-blue-500 rounded"></div>}
           iconBg="bg-blue-500"
         />
         <SummaryCard
           title="YELLOW NCAL"
-          value={allDataSummary.ncalCounts['Yellow'] || allDataSummary.ncalCounts['yellow'] || 0}
-          description={`${allDataSummary.total > 0 ? (((allDataSummary.ncalCounts['Yellow'] || allDataSummary.ncalCounts['yellow'] || 0) / allDataSummary.total) * 100).toFixed(1) : 0}% of total`}
+          value={getNCALCount(allDataSummary.ncalCounts, 'Yellow')}
+          description={`${allDataSummary.total > 0 ? ((getNCALCount(allDataSummary.ncalCounts, 'Yellow') / allDataSummary.total) * 100).toFixed(1) : 0}% of total`}
           icon={<div className="w-4 h-4 bg-yellow-500 rounded"></div>}
           iconBg="bg-yellow-500"
         />
         <SummaryCard
           title="ORANGE NCAL"
-          value={allDataSummary.ncalCounts['Orange'] || allDataSummary.ncalCounts['orange'] || 0}
-          description={`${allDataSummary.total > 0 ? (((allDataSummary.ncalCounts['Orange'] || allDataSummary.ncalCounts['orange'] || 0) / allDataSummary.total) * 100).toFixed(1) : 0}% of total`}
+          value={getNCALCount(allDataSummary.ncalCounts, 'Orange')}
+          description={`${allDataSummary.total > 0 ? ((getNCALCount(allDataSummary.ncalCounts, 'Orange') / allDataSummary.total) * 100).toFixed(1) : 0}% of total`}
           icon={<div className="w-4 h-4 bg-orange-500 rounded"></div>}
           iconBg="bg-orange-500"
         />
         <SummaryCard
           title="RED NCAL"
-          value={allDataSummary.ncalCounts['Red'] || allDataSummary.ncalCounts['red'] || 0}
-          description={`${allDataSummary.total > 0 ? (((allDataSummary.ncalCounts['Red'] || allDataSummary.ncalCounts['red'] || 0) / allDataSummary.total) * 100).toFixed(1) : 0}% of total`}
+          value={getNCALCount(allDataSummary.ncalCounts, 'Red')}
+          description={`${allDataSummary.total > 0 ? ((getNCALCount(allDataSummary.ncalCounts, 'Red') / allDataSummary.total) * 100).toFixed(1) : 0}% of total`}
           icon={<div className="w-4 h-4 bg-red-500 rounded"></div>}
           iconBg="bg-red-500"
         />
         <SummaryCard
           title="BLACK NCAL"
-          value={allDataSummary.ncalCounts['Black'] || allDataSummary.ncalCounts['black'] || 0}
-          description={`${allDataSummary.total > 0 ? (((allDataSummary.ncalCounts['Black'] || allDataSummary.ncalCounts['black'] || 0) / allDataSummary.total) * 100).toFixed(1) : 0}% of total`}
+          value={getNCALCount(allDataSummary.ncalCounts, 'Black')}
+          description={`${allDataSummary.total > 0 ? ((getNCALCount(allDataSummary.ncalCounts, 'Black') / allDataSummary.total) * 100).toFixed(1) : 0}% of total`}
           icon={<div className="w-4 h-4 bg-gray-900 rounded"></div>}
           iconBg="bg-gray-900"
         />
