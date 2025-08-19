@@ -244,7 +244,7 @@ export const IncidentData: React.FC = () => {
   };
 
   const formatDuration = (minutes: number | null | undefined) => {
-    if (!minutes) return '-';
+    if (!minutes || minutes === 0) return '-';
     const hours = Math.floor(minutes / 60);
     const mins = minutes % 60;
     return `${hours}:${String(mins).padStart(2, '0')}`;
