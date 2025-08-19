@@ -43,8 +43,30 @@ export const IncidentData: React.FC = () => {
     db.incidents.toArray()
   );
 
-  // Calculate summary data based on current filter
-  const summaryData = React.useMemo(() => {
+  // Calculate summary data for ALL uploaded data (not filtered)
+  const allDataSummary = React.useMemo(() => {
+    if (!allIncidents) return { total: 0, open: 0, closed: 0, avgDuration: 0, ncalCounts: {} };
+    
+    const total = allIncidents.length;
+    const open = allIncidents.filter(i => i.status?.toLowerCase() !== 'done').length;
+    const closed = allIncidents.filter(i => i.status?.toLowerCase() === 'done').length;
+    const incidentsWithDuration = allIncidents.filter(i => i.durationMin && i.durationMin > 0);
+    const avgDuration = incidentsWithDuration.length > 0 
+      ? Math.round(incidentsWithDuration.reduce((sum, i) => sum + (i.durationMin || 0), 0) / incidentsWithDuration.length)
+      : 0;
+
+    // Calculate NCAL distribution
+    const ncalCounts = allIncidents.reduce((acc, incident) => {
+      const ncal = incident.ncal || 'Unknown';
+      acc[ncal] = (acc[ncal] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+
+    return { total, open, closed, avgDuration, ncalCounts };
+  }, [allIncidents]);
+
+  // Calculate summary data for filtered data (for comparison)
+  const filteredDataSummary = React.useMemo(() => {
     if (!incidents) return { total: 0, open: 0, closed: 0, avgDuration: 0 };
     
     const total = incidents.length;
@@ -337,36 +359,97 @@ export const IncidentData: React.FC = () => {
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
         <SummaryCard
           title="Total Incidents"
-          value={summaryData.total}
-          description="Filtered results"
+          value={allDataSummary.total}
+          description="All uploaded data"
           icon={<AlertTriangle className="h-4 w-4" />}
           iconBg="bg-blue-500"
         />
         <SummaryCard
           title="Open Incidents"
-          value={summaryData.open}
+          value={allDataSummary.open}
           description="Pending resolution"
           icon={<Clock className="h-4 w-4" />}
           iconBg="bg-yellow-500"
         />
         <SummaryCard
           title="Closed Incidents"
-          value={summaryData.closed}
+          value={allDataSummary.closed}
           description="Resolved incidents"
           icon={<CheckCircle className="h-4 w-4" />}
           iconBg="bg-green-500"
         />
         <SummaryCard
           title="Avg Duration"
-          value={formatDuration(summaryData.avgDuration)}
+          value={formatDuration(allDataSummary.avgDuration)}
           description="Minutes per incident"
           icon={<XCircle className="h-4 w-4" />}
           iconBg="bg-red-500"
         />
+        <SummaryCard
+          title="NCAL Categories"
+          value={Object.keys(allDataSummary.ncalCounts).length}
+          description={`${Object.entries(allDataSummary.ncalCounts).map(([ncal, count]) => `${ncal}: ${count}`).join(', ')}`}
+          icon={<Filter className="h-4 w-4" />}
+          iconBg="bg-purple-500"
+        />
       </div>
+
+      {/* Filter Status Information */}
+      {filter.dateFrom || filter.status || filter.priority || filter.site || filter.search ? (
+        <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 mb-4">
+          <div className="flex items-center gap-2 mb-2">
+            <Filter className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+            <span className="text-sm font-medium text-blue-800 dark:text-blue-200">Active Filters</span>
+          </div>
+          <div className="text-sm text-blue-700 dark:text-blue-300">
+            Showing {filteredDataSummary.total} of {allDataSummary.total} incidents
+            {filter.dateFrom && (
+              <span className="ml-2">
+                • Date range: {new Date(filter.dateFrom).toLocaleDateString()} - {filter.dateTo ? new Date(filter.dateTo).toLocaleDateString() : 'Now'}
+              </span>
+            )}
+            {filter.status && <span className="ml-2">• Status: {filter.status}</span>}
+            {filter.priority && <span className="ml-2">• Priority: {filter.priority}</span>}
+            {filter.site && <span className="ml-2">• Site: {filter.site}</span>}
+            {filter.search && <span className="ml-2">• Search: "{filter.search}"</span>}
+          </div>
+        </div>
+      ) : null}
+
+      {/* NCAL Breakdown */}
+      {Object.keys(allDataSummary.ncalCounts).length > 0 && (
+        <Card className="mb-4">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Filter className="w-5 h-5" />
+              NCAL Distribution
+            </CardTitle>
+            <CardDescription>
+              Breakdown of incidents by NCAL (Network Criticality Assessment Level)
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+              {Object.entries(allDataSummary.ncalCounts).map(([ncal, count]) => (
+                <div key={ncal} className="text-center p-3 rounded-lg border">
+                  <div className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                    {count}
+                  </div>
+                  <div className="text-sm text-gray-600 dark:text-gray-400">
+                    {ncal}
+                  </div>
+                  <div className="text-xs text-gray-500 dark:text-gray-500">
+                    {((count / allDataSummary.total) * 100).toFixed(1)}%
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
 
 
