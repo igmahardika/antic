@@ -389,11 +389,50 @@ export const IncidentData: React.FC = () => {
           iconBg="bg-red-500"
         />
         <SummaryCard
-          title="NCAL Categories"
+          title="Total NCAL"
           value={Object.keys(allDataSummary.ncalCounts).length}
-          description={`${Object.entries(allDataSummary.ncalCounts).map(([ncal, count]) => `${ncal}: ${count}`).join(', ')}`}
+          description="NCAL categories found"
           icon={<Filter className="h-4 w-4" />}
           iconBg="bg-purple-500"
+        />
+      </div>
+
+      {/* NCAL Category Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-4">
+        <SummaryCard
+          title="BLUE NCAL"
+          value={allDataSummary.ncalCounts['Blue'] || 0}
+          description={`${allDataSummary.total > 0 ? ((allDataSummary.ncalCounts['Blue'] || 0) / allDataSummary.total * 100).toFixed(1) : 0}% of total`}
+          icon={<div className="w-4 h-4 bg-blue-500 rounded"></div>}
+          iconBg="bg-blue-500"
+        />
+        <SummaryCard
+          title="YELLOW NCAL"
+          value={allDataSummary.ncalCounts['Yellow'] || 0}
+          description={`${allDataSummary.total > 0 ? ((allDataSummary.ncalCounts['Yellow'] || 0) / allDataSummary.total * 100).toFixed(1) : 0}% of total`}
+          icon={<div className="w-4 h-4 bg-yellow-500 rounded"></div>}
+          iconBg="bg-yellow-500"
+        />
+        <SummaryCard
+          title="ORANGE NCAL"
+          value={allDataSummary.ncalCounts['Orange'] || 0}
+          description={`${allDataSummary.total > 0 ? ((allDataSummary.ncalCounts['Orange'] || 0) / allDataSummary.total * 100).toFixed(1) : 0}% of total`}
+          icon={<div className="w-4 h-4 bg-orange-500 rounded"></div>}
+          iconBg="bg-orange-500"
+        />
+        <SummaryCard
+          title="RED NCAL"
+          value={allDataSummary.ncalCounts['Red'] || 0}
+          description={`${allDataSummary.total > 0 ? ((allDataSummary.ncalCounts['Red'] || 0) / allDataSummary.total * 100).toFixed(1) : 0}% of total`}
+          icon={<div className="w-4 h-4 bg-red-500 rounded"></div>}
+          iconBg="bg-red-500"
+        />
+        <SummaryCard
+          title="BLACK NCAL"
+          value={allDataSummary.ncalCounts['Black'] || 0}
+          description={`${allDataSummary.total > 0 ? ((allDataSummary.ncalCounts['Black'] || 0) / allDataSummary.total * 100).toFixed(1) : 0}% of total`}
+          icon={<div className="w-4 h-4 bg-gray-900 rounded"></div>}
+          iconBg="bg-gray-900"
         />
       </div>
 
@@ -419,37 +458,7 @@ export const IncidentData: React.FC = () => {
         </div>
       ) : null}
 
-      {/* NCAL Breakdown */}
-      {Object.keys(allDataSummary.ncalCounts).length > 0 && (
-        <Card className="mb-4">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Filter className="w-5 h-5" />
-              NCAL Distribution
-            </CardTitle>
-            <CardDescription>
-              Breakdown of incidents by NCAL (Network Criticality Assessment Level)
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-              {Object.entries(allDataSummary.ncalCounts).map(([ncal, count]) => (
-                <div key={ncal} className="text-center p-3 rounded-lg border">
-                  <div className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-                    {count}
-                  </div>
-                  <div className="text-sm text-gray-600 dark:text-gray-400">
-                    {ncal}
-                  </div>
-                  <div className="text-xs text-gray-500 dark:text-gray-500">
-                    {((count / allDataSummary.total) * 100).toFixed(1)}%
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
+
 
 
 
