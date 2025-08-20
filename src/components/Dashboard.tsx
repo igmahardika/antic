@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 // import { Listbox } from '@headlessui/react';
 // import { Calendar } from 'react-feather';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { db, ITicket } from '@/lib/db';
+import { db } from '@/lib/db';
 import { analyzeKeywords, formatDurationDHM } from '@/lib/utils';
 // import { Button } from '@/components/ui/button';
 // import { ModeToggle } from './mode-toggle';

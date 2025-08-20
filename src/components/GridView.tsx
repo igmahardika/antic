@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { ITicket } from '@/lib/db';
-import { db, ICustomer } from '@/lib/db';
+import { db } from '@/lib/db';
 import { formatDateTimeDDMMYYYY } from '@/lib/utils';
 import { useAnalytics } from './AnalyticsContext';
 import ConfirmationNumberIcon from '@mui/icons-material/ConfirmationNumber';
