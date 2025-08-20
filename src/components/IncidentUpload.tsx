@@ -24,6 +24,10 @@ interface UploadResult {
   preview: Incident[];
 }
 
+interface IncidentUploadProps {
+  onUploadSuccess?: () => void;
+}
+
 const REQUIRED_HEADERS = [
   'Priority', 'Site', 'No Case', 'NCAL', 'Status', 'Level', 'TS', 'ODP/BTS',
   'Start', 'Start Escalation Vendor', 'End', 'Duration', 'Duration Vendor',
@@ -32,7 +36,7 @@ const REQUIRED_HEADERS = [
   'Total Duration Pause', 'Total Duration Vendor'
 ];
 
-export const IncidentUpload: React.FC = () => {
+export const IncidentUpload: React.FC<IncidentUploadProps> = ({ onUploadSuccess }) => {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadResult, setUploadResult] = useState<UploadResult | null>(null);
   const [progress, setProgress] = useState(0);
@@ -46,7 +50,10 @@ export const IncidentUpload: React.FC = () => {
 
     try {
       const file = acceptedFiles[0];
+      console.log('📁 File uploaded:', file.name, 'Size:', file.size);
+      
       const workbook = XLSX.read(await file.arrayBuffer(), { type: 'array' });
+      console.log('📊 Workbook sheets:', workbook.SheetNames);
       
       const allRows: Incident[] = [];
       const errors: string[] = [];
@@ -55,27 +62,45 @@ export const IncidentUpload: React.FC = () => {
 
       // Process all sheets
       for (const sheetName of workbook.SheetNames) {
+        console.log(`📋 Processing sheet: "${sheetName}"`);
         const worksheet = workbook.Sheets[sheetName];
         const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
 
-        if (jsonData.length < 2) continue; // Skip empty sheets
-
-        const headers = jsonData[0] as string[];
-        
-        // Validate headers
-        const missingHeaders = REQUIRED_HEADERS.filter(h => 
-          !headers.some(header => header?.toString().toLowerCase().includes(h.toLowerCase()))
-        );
-
-        if (missingHeaders.length > 0) {
-          errors.push(`Sheet "${sheetName}": Missing headers: ${missingHeaders.join(', ')}`);
+        if (jsonData.length < 2) {
+          console.log(`⚠️ Sheet "${sheetName}" skipped: less than 2 rows`);
           continue;
         }
 
+        const headers = jsonData[0] as string[];
+        console.log(`📋 Headers in "${sheetName}":`, headers);
+        
+        // More flexible header validation - only check for essential headers
+        const ESSENTIAL_HEADERS = ['NCAL']; // Only NCAL is truly required now
+        const missingEssentialHeaders = ESSENTIAL_HEADERS.filter(h => 
+          !headers.some(header => header?.toString().toLowerCase().includes(h.toLowerCase()))
+        );
+
+        if (missingEssentialHeaders.length > 0) {
+          const errorMsg = `Sheet "${sheetName}": Missing essential headers: ${missingEssentialHeaders.join(', ')}`;
+          errors.push(errorMsg);
+          console.error(errorMsg);
+          continue;
+        }
+
+        // Log which optional headers are found
+        const foundHeaders = REQUIRED_HEADERS.filter(h => 
+          headers.some(header => header?.toString().toLowerCase().includes(h.toLowerCase()))
+        );
+        console.log(`✅ Found headers in "${sheetName}":`, foundHeaders);
+
         // Process rows
+        console.log(`📊 Processing ${jsonData.length - 1} rows in "${sheetName}"`);
         for (let i = 1; i < jsonData.length; i++) {
           const row = jsonData[i] as any[];
-          if (!row || row.length === 0) continue;
+          if (!row || row.length === 0) {
+            console.log(`Row ${i + 1} in "${sheetName}" skipped: empty row`);
+            continue;
+          }
 
           // Skip completely empty rows
           const hasData = row.some(cell => cell !== null && cell !== undefined && String(cell).trim() !== '');
@@ -89,26 +114,33 @@ export const IncidentUpload: React.FC = () => {
             if (incident) {
               allRows.push(incident);
               successCount++;
-              console.log(`Row ${i + 1} in "${sheetName}" processed successfully: ${incident.noCase} (NCAL: ${incident.ncal})`);
+              console.log(`✅ Row ${i + 1} in "${sheetName}" processed successfully: ${incident.noCase} (NCAL: ${incident.ncal})`);
             } else {
               // Row was skipped (empty NCAL) - don't count as failed
-              console.log(`Row ${i + 1} in "${sheetName}" skipped: invalid NCAL or empty required fields`);
+              console.log(`⏭️ Row ${i + 1} in "${sheetName}" skipped: invalid NCAL or empty required fields`);
             }
           } catch (error) {
-            errors.push(`Row ${i + 1} in "${sheetName}": ${error}`);
+            const errorMsg = `Row ${i + 1} in "${sheetName}": ${error}`;
+            errors.push(errorMsg);
             failedCount++;
-            console.error(`Row ${i + 1} in "${sheetName}" failed with error:`, error);
+            console.error(`❌ ${errorMsg}`);
           }
         }
 
         setProgress((workbook.SheetNames.indexOf(sheetName) + 1) / workbook.SheetNames.length * 50);
       }
 
+      console.log(`📊 Processing complete: ${allRows.length} incidents ready to save`);
+
       // Save to database
       if (allRows.length > 0) {
         setProgress(60);
+        console.log('💾 Saving incidents to database...');
         await saveIncidentsChunked(allRows);
+        console.log('✅ Incidents saved successfully');
         setProgress(100);
+      } else {
+        console.warn('⚠️ No incidents to save');
       }
 
       setUploadResult({
@@ -118,7 +150,13 @@ export const IncidentUpload: React.FC = () => {
         preview: allRows.slice(0, 20)
       });
 
+      // Call success callback if provided
+      if (onUploadSuccess && successCount > 0) {
+        onUploadSuccess();
+      }
+
     } catch (error) {
+      console.error('❌ Upload failed with error:', error);
       setUploadResult({
         success: 0,
         failed: 1,
@@ -140,11 +178,17 @@ export const IncidentUpload: React.FC = () => {
   });
 
   const downloadTemplate = () => {
-    const templateData = [REQUIRED_HEADERS];
+    // Create a simpler template with only essential headers
+    const templateHeaders = [
+      'NCAL', 'No Case', 'Site', 'Start', 'Status', 'Priority', 'Level',
+      'Problem', 'Penyebab', 'Action Terakhir', 'Note', 'Klasifikasi Gangguan'
+    ];
+    
+    const templateData = [templateHeaders];
     const ws = XLSX.utils.aoa_to_sheet(templateData);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Template');
-    XLSX.writeFile(wb, 'incident_template.xlsx');
+    XLSX.writeFile(wb, 'incident_template_simple.xlsx');
   };
 
   return (
@@ -290,17 +334,27 @@ function parseRowToIncident(headers: string[], row: any[], rowNum: number, sheet
     return index >= 0 ? row[index] : null;
   };
 
+  // Debug: Log the row data for first few rows
+  if (rowNum <= 5) {
+    console.log(`🔍 Row ${rowNum} data:`, row);
+    console.log(`🔍 Row ${rowNum} headers:`, headers);
+  }
+
   // VALIDASI UTAMA: NCAL harus ada dan valid
   const ncalValue = getValue('NCAL');
+  if (rowNum <= 5) {
+    console.log(`🔍 Row ${rowNum} NCAL value:`, ncalValue, `(Type: ${typeof ncalValue})`);
+  }
+  
   if (!ncalValue || String(ncalValue).trim() === '') {
-    console.log(`Row ${rowNum} in "${sheetName}" skipped: NCAL is empty`);
+    console.log(`⏭️ Row ${rowNum} in "${sheetName}" skipped: NCAL is empty`);
     return null;
   }
 
   const validNCAL = ['Blue', 'Yellow', 'Orange', 'Red', 'Black'];
   const ncalStr = String(ncalValue).trim();
   if (!validNCAL.includes(ncalStr)) {
-    console.log(`Row ${rowNum} in "${sheetName}" skipped: Invalid NCAL value "${ncalValue}". Expected: Blue, Yellow, Orange, Red, Black`);
+    console.log(`⏭️ Row ${rowNum} in "${sheetName}" skipped: Invalid NCAL value "${ncalValue}". Expected: Blue, Yellow, Orange, Red, Black`);
     return null;
   }
 
@@ -308,15 +362,20 @@ function parseRowToIncident(headers: string[], row: any[], rowNum: number, sheet
   const noCase = getValue('No Case') || `AUTO-${Date.now()}-${rowNum}`; // Generate auto ID jika kosong
   const startTimeRaw = getValue('Start');
   
+  if (rowNum <= 5) {
+    console.log(`🔍 Row ${rowNum} No Case:`, noCase);
+    console.log(`🔍 Row ${rowNum} Start Time Raw:`, startTimeRaw);
+  }
+  
   // Jika Start Time kosong, gunakan waktu import sebagai fallback
   let startTime: string;
   if (!startTimeRaw || String(startTimeRaw).trim() === '') {
-    console.log(`Row ${rowNum} in "${sheetName}": Start time is empty, using import time as fallback`);
+    console.log(`📝 Row ${rowNum} in "${sheetName}": Start time is empty, using import time as fallback`);
     startTime = new Date().toISOString();
   } else {
     const parsedStartTime = parseDateSafe(startTimeRaw);
     if (!parsedStartTime) {
-      console.log(`Row ${rowNum} in "${sheetName}": Invalid Start time format, using import time as fallback`);
+      console.log(`📝 Row ${rowNum} in "${sheetName}": Invalid Start time format, using import time as fallback`);
       startTime = new Date().toISOString();
     } else {
       startTime = parsedStartTime;
@@ -443,6 +502,16 @@ function parseRowToIncident(headers: string[], row: any[], rowNum: number, sheet
     batchId: generateBatchId(),
     importedAt: new Date().toISOString()
   };
+
+  if (rowNum <= 5) {
+    console.log(`✅ Row ${rowNum} incident created:`, {
+      id: incident.id,
+      noCase: incident.noCase,
+      ncal: incident.ncal,
+      site: incident.site,
+      startTime: incident.startTime
+    });
+  }
 
   return incident;
 }
