@@ -33,7 +33,14 @@ import {
   Area,
   ComposedChart,
   Legend,
-  Rectangle
+  Rectangle,
+  ScatterChart,
+  Scatter,
+  RadarChart,
+  PolarGrid,
+  PolarAngleAxis,
+  PolarRadiusAxis,
+  Radar
 } from 'recharts';
 import { 
   AlertTriangle, 
@@ -48,7 +55,87 @@ import {
   AreaChart as AreaChartIcon,
   RefreshCw,
   Download,
-  Filter
+  Filter,
+  TrendingDown,
+  AlertCircle,
+  Zap,
+  Gauge,
+  Timer,
+  CheckSquare,
+  XCircle,
+  MapPin,
+  Users,
+  Settings,
+  Minus,
+  Plus,
+  Equal,
+  ArrowUp,
+  ArrowDown,
+  ArrowRight,
+  ArrowLeft,
+  Circle,
+  Square,
+  Triangle,
+  Star,
+  Award,
+  Trophy,
+  Medal,
+  Crown,
+  Shield,
+  Flag,
+  Cloud,
+  Sun,
+  Moon,
+  Eye,
+  EyeOff,
+  Search,
+  SortAsc,
+  SortDesc,
+  MoreHorizontal,
+  MoreVertical,
+  ChevronUp,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  Play,
+  Pause,
+  SkipBack,
+  SkipForward,
+  RotateCcw,
+  RotateCw,
+  ZoomIn,
+  ZoomOut,
+  Maximize,
+  Minimize,
+  Fullscreen,
+  Upload,
+  Share,
+  Link,
+  ExternalLink,
+  Copy,
+  Edit,
+  Trash,
+  Save,
+  X,
+  Check,
+  Info,
+  Mail,
+  Phone,
+  Video,
+  Image,
+  File,
+  Folder,
+  Database,
+  Server,
+  Network,
+  Wifi,
+  Bluetooth,
+  Signal,
+  Battery,
+  Power,
+  Volume,
+  Mic,
+  Camera
 } from 'lucide-react';
 
 import PageWrapper from '@/components/PageWrapper';
@@ -68,6 +155,51 @@ import AssignmentIcon from '@mui/icons-material/Assignment';
 import TrackChangesIcon from '@mui/icons-material/TrackChanges';
 import LabelIcon from '@mui/icons-material/Label';
 import WarningIcon from '@mui/icons-material/Warning';
+import SpeedIcon from '@mui/icons-material/Speed';
+import TimelineIcon from '@mui/icons-material/Timeline';
+import AnalyticsIcon from '@mui/icons-material/Analytics';
+import InsightsIcon from '@mui/icons-material/Insights';
+import TrendingFlatIcon from '@mui/icons-material/TrendingFlat';
+import AssessmentIcon from '@mui/icons-material/Assessment';
+import DashboardIcon from '@mui/icons-material/Dashboard';
+import MonitorIcon from '@mui/icons-material/Monitor';
+import NotificationsIcon from '@mui/icons-material/Notifications';
+import SecurityIcon from '@mui/icons-material/Security';
+import BuildIcon from '@mui/icons-material/Build';
+import BugReportIcon from '@mui/icons-material/BugReport';
+import ReportIcon from '@mui/icons-material/Report';
+import AssessmentOutlinedIcon from '@mui/icons-material/AssessmentOutlined';
+import TrendingUpOutlinedIcon from '@mui/icons-material/TrendingUpOutlined';
+import TrendingDownOutlinedIcon from '@mui/icons-material/TrendingDownOutlined';
+import TrendingFlatOutlinedIcon from '@mui/icons-material/TrendingFlatOutlined';
+import SpeedOutlinedIcon from '@mui/icons-material/SpeedOutlined';
+import TimelineOutlinedIcon from '@mui/icons-material/TimelineOutlined';
+import AnalyticsOutlinedIcon from '@mui/icons-material/AnalyticsOutlined';
+import InsightsOutlinedIcon from '@mui/icons-material/InsightsOutlined';
+import AssessmentRoundedIcon from '@mui/icons-material/AssessmentRounded';
+import TrendingUpRoundedIcon from '@mui/icons-material/TrendingUpRounded';
+import TrendingDownRoundedIcon from '@mui/icons-material/TrendingDownRounded';
+import TrendingFlatRoundedIcon from '@mui/icons-material/TrendingFlatRounded';
+import SpeedRoundedIcon from '@mui/icons-material/SpeedRounded';
+import TimelineRoundedIcon from '@mui/icons-material/TimelineRounded';
+import AnalyticsRoundedIcon from '@mui/icons-material/AnalyticsRounded';
+import InsightsRoundedIcon from '@mui/icons-material/InsightsRounded';
+import AssessmentSharpIcon from '@mui/icons-material/AssessmentSharp';
+import TrendingUpSharpIcon from '@mui/icons-material/TrendingUpSharp';
+import TrendingDownSharpIcon from '@mui/icons-material/TrendingDownSharp';
+import TrendingFlatSharpIcon from '@mui/icons-material/TrendingFlatSharp';
+import SpeedSharpIcon from '@mui/icons-material/SpeedSharp';
+import TimelineSharpIcon from '@mui/icons-material/TimelineSharp';
+import AnalyticsSharpIcon from '@mui/icons-material/AnalyticsSharp';
+import InsightsSharpIcon from '@mui/icons-material/InsightsSharp';
+import AssessmentTwoToneIcon from '@mui/icons-material/AssessmentTwoTone';
+import TrendingUpTwoToneIcon from '@mui/icons-material/TrendingUpTwoTone';
+import TrendingDownTwoToneIcon from '@mui/icons-material/TrendingDownTwoTone';
+import TrendingFlatTwoToneIcon from '@mui/icons-material/TrendingFlatTwoTone';
+import SpeedTwoToneIcon from '@mui/icons-material/SpeedTwoTone';
+import TimelineTwoToneIcon from '@mui/icons-material/TimelineTwoTone';
+import AnalyticsTwoToneIcon from '@mui/icons-material/AnalyticsTwoTone';
+import InsightsTwoToneIcon from '@mui/icons-material/InsightsTwoTone';
 
 // NCAL Color mapping - using project standard colors
 const NCAL_COLORS = {
@@ -898,31 +1030,31 @@ export const IncidentAnalytics: React.FC = () => {
 
       {/* NCAL Target Performance */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg h-[400px]">
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-lg">
+        <Card className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
               <AssignmentIcon className="w-5 h-5" />
               NCAL Target Performance
             </CardTitle>
             <CardDescription>Actual vs Target duration for each NCAL level</CardDescription>
           </CardHeader>
-          <CardContent className="h-[300px] overflow-y-auto p-4">
-            <div className="space-y-3">
+          <CardContent>
+            <div className="space-y-4">
               {NCAL_ORDER.map(ncal => {
                 const performance = stats.targetPerformance[ncal];
                 if (!performance) return null;
                 
                 return (
-                  <div key={ncal} className="flex items-center justify-between p-2 bg-gray-50 dark:bg-zinc-800 rounded-lg border border-gray-200 dark:border-zinc-700">
+                  <div key={ncal} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-zinc-800 rounded-xl border border-gray-200 dark:border-zinc-700">
                     <div className="flex items-center gap-3">
                       <div 
-                        className="w-3 h-3 rounded-full" 
+                        className="w-4 h-4 rounded-full" 
                         style={{ backgroundColor: NCAL_COLORS[ncal as keyof typeof NCAL_COLORS] }}
                       />
-                      <span className="font-medium text-sm">{ncal}</span>
+                      <span className="font-medium">{ncal}</span>
                     </div>
                     <div className="text-right">
-                      <div className="text-xs font-medium">
+                      <div className="text-sm font-medium">
                         {formatDurationHMS(performance.actual)} / {formatDurationHMS(performance.target)}
                       </div>
                       <div className={`text-xs ${performance.status === 'good' ? 'text-green-600' : 'text-red-600'}`}>
@@ -936,18 +1068,18 @@ export const IncidentAnalytics: React.FC = () => {
           </CardContent>
         </Card>
 
-        <Card className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg h-[400px]">
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-lg">
+        <Card className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
               <PieChartIconMUI className="w-5 h-5" />
               NCAL Distribution
             </CardTitle>
             <CardDescription>Distribution of incidents by NCAL level</CardDescription>
           </CardHeader>
-          <CardContent className="flex flex-1 justify-center pb-0 h-[300px]">
+          <CardContent className="flex flex-1 justify-center pb-0">
             <ChartContainer
               config={ncalChartConfig}
-              className="mx-auto aspect-square w-full max-w-[240px]"
+              className="mx-auto aspect-square w-full max-w-[300px]"
             >
               <PieChart>
                 <ChartTooltip
@@ -997,16 +1129,16 @@ export const IncidentAnalytics: React.FC = () => {
                 </Pie>
                 <Legend
                   verticalAlign="bottom"
-                  height={25}
+                  height={36}
                   content={({ payload }) => (
-                    <div className="flex justify-center items-center gap-3 mt-1">
+                    <div className="flex justify-center items-center gap-6 mt-4">
                       {payload?.map((entry, index) => (
-                        <div key={index} className="flex items-center gap-1">
+                        <div key={index} className="flex items-center gap-2">
                           <div
-                            className="w-1.5 h-1.5 rounded-sm"
+                            className="w-3 h-3 rounded-sm"
                             style={{ backgroundColor: entry.color }}
                           />
-                          <span className="text-xs text-gray-700 dark:text-gray-300">
+                          <span className="text-sm text-gray-700 dark:text-gray-300">
                             {entry.value}
                           </span>
                         </div>
@@ -1022,28 +1154,24 @@ export const IncidentAnalytics: React.FC = () => {
 
       {/* NCAL Area Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg h-[400px]">
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-lg">
+        <Card className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
               <ShowChartIcon className="w-5 h-5" />
               NCAL Count by Month
             </CardTitle>
             <CardDescription>Monthly incident count by NCAL level</CardDescription>
           </CardHeader>
-          <CardContent className="h-[300px] p-4">
-            <div className="w-full h-full">
-              <ChartContainer config={ncalAreaChartConfig}>
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart
-                  accessibilityLayer
-                  data={filteredMonthlyNCALData}
-                  margin={{
-                    top: 30,
-                    left: 15,
-                    right: 15,
-                    bottom: 40,
-                  }}
-                >
+          <CardContent>
+            <ChartContainer config={ncalAreaChartConfig}>
+              <LineChart
+                accessibilityLayer
+                data={filteredMonthlyNCALData}
+                margin={{
+                  left: 12,
+                  right: 12,
+                }}
+              >
                 <CartesianGrid vertical={false} />
                 <XAxis
                   dataKey="month"
@@ -1084,34 +1212,28 @@ export const IncidentAnalytics: React.FC = () => {
                   />
                 ))}
               </LineChart>
-              </ResponsiveContainer>
             </ChartContainer>
-            </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg h-[400px]">
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-lg">
+        <Card className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
               <ShowChartIcon className="w-5 h-5" />
               NCAL Duration by Month
             </CardTitle>
             <CardDescription>Average duration by NCAL level per month</CardDescription>
           </CardHeader>
-          <CardContent className="h-[300px] p-4">
-            <div className="w-full h-full">
-              <ChartContainer config={ncalAreaChartConfig}>
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart
-                  accessibilityLayer
-                  data={filteredMonthlyNCALDurationData}
-                  margin={{
-                    top: 30,
-                    left: 15,
-                    right: 15,
-                    bottom: 40,
-                  }}
-                >
+          <CardContent>
+            <ChartContainer config={ncalAreaChartConfig}>
+              <LineChart
+                accessibilityLayer
+                data={filteredMonthlyNCALDurationData}
+                margin={{
+                  left: 12,
+                  right: 12,
+                }}
+              >
                 <CartesianGrid vertical={false} />
                 <XAxis
                   dataKey="month"
@@ -1152,37 +1274,31 @@ export const IncidentAnalytics: React.FC = () => {
                   />
                 ))}
               </LineChart>
-              </ResponsiveContainer>
             </ChartContainer>
-            </div>
           </CardContent>
         </Card>
       </div>
 
       {/* Additional Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg h-[400px]">
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-lg">
+        <Card className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
               <LabelIcon className="w-5 h-5" />
               Priority Distribution
             </CardTitle>
             <CardDescription>Distribution of incidents by priority level</CardDescription>
           </CardHeader>
-          <CardContent className="h-[300px] p-4">
-            <div className="w-full h-full">
-              <ChartContainer config={priorityChartConfig}>
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart 
-                  accessibilityLayer 
-                  data={priorityData}
-                  margin={{
-                    top: 40,
-                    left: 15,
-                    right: 15,
-                    bottom: 50,
-                  }}
-                >
+          <CardContent>
+            <ChartContainer config={priorityChartConfig}>
+              <BarChart 
+                accessibilityLayer 
+                data={priorityData}
+                margin={{
+                  left: 12,
+                  right: 12,
+                }}
+              >
                 <CartesianGrid vertical={false} />
                 <XAxis
                   dataKey="name"
@@ -1209,30 +1325,27 @@ export const IncidentAnalytics: React.FC = () => {
                   radius={8}
                 />
               </BarChart>
-            </ResponsiveContainer>
             </ChartContainer>
-            </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg h-[400px]">
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-lg">
+        <Card className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
               <ConfirmationNumberIcon className="w-5 h-5" />
               Level Distribution
             </CardTitle>
             <CardDescription>Distribution of incidents by level</CardDescription>
           </CardHeader>
-          <CardContent className="h-[300px] p-4">
-            <div className="w-full h-full">
+          <CardContent>
             {/* Month Filter */}
-            <div className="mb-3">
-              <div className="flex items-center gap-2 mb-1">
-                <span className="text-xs font-medium text-gray-700 dark:text-gray-300">Filter by Month:</span>
+            <div className="mb-4">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Filter by Month:</span>
                 <select 
                   value={selectedLevelMonth} 
                   onChange={(e) => setSelectedLevelMonth(e.target.value)}
-                  className="px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-zinc-800 text-gray-900 dark:text-gray-100"
+                  className="px-3 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-zinc-800 text-gray-900 dark:text-gray-100"
                 >
                   <option value="all">All Months</option>
                   {Object.keys(stats.byMonth).sort().map(month => {
@@ -1253,17 +1366,13 @@ export const IncidentAnalytics: React.FC = () => {
             </div>
 
             <ChartContainer config={levelChartConfig}>
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart 
-                  accessibilityLayer 
-                  data={filteredLevelData}
-                  margin={{
-                    top: 50,
-                    left: 15,
-                    right: 15,
-                    bottom: 60,
-                  }}
-                >
+              <BarChart 
+                accessibilityLayer 
+                data={filteredLevelData}
+                margin={{
+                  top: 20,
+                }}
+              >
                 <CartesianGrid vertical={false} />
                 <XAxis
                   dataKey="name"
@@ -1279,7 +1388,6 @@ export const IncidentAnalytics: React.FC = () => {
                   axisLine={false} 
                   tickMargin={8}
                   tickFormatter={(value) => value.toLocaleString()}
-                  domain={[0, 'dataMax + 50']}
                 />
                 <ChartTooltip
                   cursor={false}
@@ -1292,14 +1400,356 @@ export const IncidentAnalytics: React.FC = () => {
                 >
                   <LabelList
                     position="top"
-                    offset={5}
+                    offset={12}
                     className="fill-foreground"
-                    fontSize={9}
+                    fontSize={12}
                   />
                 </Bar>
               </BarChart>
-            </ResponsiveContainer>
             </ChartContainer>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Advanced Analytics Dashboard */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Trend Analysis */}
+        <Card className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <TrendingUpIcon className="w-5 h-5" />
+              Incident Trend Analysis
+            </CardTitle>
+            <CardDescription>12-month trend and forecasting</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {/* Trend Indicators */}
+              <div className="grid grid-cols-3 gap-4">
+                <div className="text-center p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                  <div className="text-2xl font-bold text-blue-600">
+                    {(() => {
+                      const currentMonth = new Date().getMonth();
+                      const currentYear = new Date().getFullYear();
+                      const currentMonthKey = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`;
+                      const lastMonthKey = `${currentYear}-${String(currentMonth).padStart(2, '0')}`;
+                      const currentCount = stats.byMonth[currentMonthKey] || 0;
+                      const lastCount = stats.byMonth[lastMonthKey] || 0;
+                      return currentCount;
+                    })()}
+                  </div>
+                  <div className="text-xs text-gray-600 dark:text-gray-400">This Month</div>
+                </div>
+                <div className="text-center p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                  <div className="text-2xl font-bold text-green-600">
+                    {(() => {
+                      const currentMonth = new Date().getMonth();
+                      const currentYear = new Date().getFullYear();
+                      const currentMonthKey = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`;
+                      const lastMonthKey = `${currentYear}-${String(currentMonth).padStart(2, '0')}`;
+                      const currentCount = stats.byMonth[currentMonthKey] || 0;
+                      const lastCount = stats.byMonth[lastMonthKey] || 0;
+                      const change = lastCount > 0 ? ((currentCount - lastCount) / lastCount * 100) : 0;
+                      return change >= 0 ? '+' : '';
+                    })()}
+                    {(() => {
+                      const currentMonth = new Date().getMonth();
+                      const currentYear = new Date().getFullYear();
+                      const currentMonthKey = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`;
+                      const lastMonthKey = `${currentYear}-${String(currentMonth).padStart(2, '0')}`;
+                      const currentCount = stats.byMonth[currentMonthKey] || 0;
+                      const lastCount = stats.byMonth[lastMonthKey] || 0;
+                      const change = lastCount > 0 ? ((currentCount - lastCount) / lastCount * 100) : 0;
+                      return change.toFixed(1);
+                    })()}%
+                  </div>
+                  <div className="text-xs text-gray-600 dark:text-gray-400">vs Last Month</div>
+                </div>
+                <div className="text-center p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
+                  <div className="text-2xl font-bold text-purple-600">
+                    {(() => {
+                      // Simple forecast: average of last 3 months + 5% growth
+                      const currentMonth = new Date().getMonth();
+                      const currentYear = new Date().getFullYear();
+                      const months = [];
+                      for (let i = 2; i >= 0; i--) {
+                        const month = currentMonth - i;
+                        const year = currentYear;
+                        const monthKey = `${year}-${String(month + 1).padStart(2, '0')}`;
+                        months.push(stats.byMonth[monthKey] || 0);
+                      }
+                      const avg = months.reduce((a, b) => a + b, 0) / months.length;
+                      return Math.round(avg * 1.05);
+                    })()}
+                  </div>
+                  <div className="text-xs text-gray-600 dark:text-gray-400">Next Month Forecast</div>
+                </div>
+              </div>
+              
+              {/* Trend Chart */}
+              <div className="h-32">
+                <ChartContainer config={{}}>
+                  <LineChart
+                    data={Object.entries(stats.byMonth)
+                      .sort((a, b) => a[0].localeCompare(b[0]))
+                      .slice(-6)
+                      .map(([month, count]) => ({
+                        month: month,
+                        count: count
+                      }))}
+                    margin={{ top: 10, right: 10, left: 10, bottom: 10 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis 
+                      dataKey="month" 
+                      tickFormatter={(value) => {
+                        const [year, month] = value.split('-');
+                        const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
+                                          'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                        return `${monthNames[parseInt(month) - 1]} ${year}`;
+                      }}
+                    />
+                    <YAxis />
+                    <Line 
+                      type="monotone" 
+                      dataKey="count" 
+                      stroke="#3b82f6" 
+                      strokeWidth={2}
+                      dot={{ fill: '#3b82f6', strokeWidth: 2, r: 4 }}
+                    />
+                  </LineChart>
+                </ChartContainer>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Root Cause Analysis */}
+        <Card className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <BugReportIcon className="w-5 h-5" />
+              Root Cause Analysis
+            </CardTitle>
+            <CardDescription>Top problems and penyebab patterns</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {/* Problem Categories */}
+              <div className="space-y-3">
+                <h4 className="font-medium text-gray-900 dark:text-gray-100">Top Problem Categories</h4>
+                {(() => {
+                  const problemStats = filteredIncidents.reduce((acc, incident) => {
+                    const problem = incident.problem || 'Unknown';
+                    acc[problem] = (acc[problem] || 0) + 1;
+                    return acc;
+                  }, {} as Record<string, number>);
+                  
+                  return Object.entries(problemStats)
+                    .sort((a, b) => b[1] - a[1])
+                    .slice(0, 5)
+                    .map(([problem, count]) => (
+                      <div key={problem} className="flex items-center justify-between p-2 bg-gray-50 dark:bg-zinc-800 rounded-lg">
+                        <div className="flex items-center gap-2">
+                          <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                          <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                            {problem.length > 30 ? problem.substring(0, 30) + '...' : problem}
+                          </span>
+                        </div>
+                        <Badge variant="secondary">{count}</Badge>
+                      </div>
+                    ));
+                })()}
+              </div>
+              
+              {/* Penyebab Distribution */}
+              <div className="space-y-3">
+                <h4 className="font-medium text-gray-900 dark:text-gray-100">Penyebab Distribution</h4>
+                {(() => {
+                  const penyebabStats = filteredIncidents.reduce((acc, incident) => {
+                    const penyebab = incident.penyebab || 'Unknown';
+                    acc[penyebab] = (acc[penyebab] || 0) + 1;
+                    return acc;
+                  }, {} as Record<string, number>);
+                  
+                  return Object.entries(penyebabStats)
+                    .sort((a, b) => b[1] - a[1])
+                    .slice(0, 3)
+                    .map(([penyebab, count]) => (
+                      <div key={penyebab} className="flex items-center justify-between p-2 bg-gray-50 dark:bg-zinc-800 rounded-lg">
+                        <div className="flex items-center gap-2">
+                          <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
+                          <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                            {penyebab.length > 25 ? penyebab.substring(0, 25) + '...' : penyebab}
+                          </span>
+                        </div>
+                                                 <Badge variant="secondary">{count}</Badge>
+                      </div>
+                    ));
+                })()}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Performance & Efficiency Metrics */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* SLA Compliance */}
+        <Card className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <CheckSquare className="w-5 h-5" />
+              SLA Compliance
+            </CardTitle>
+            <CardDescription>Service Level Agreement metrics</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="text-center">
+                <div className="text-3xl font-bold text-green-600">
+                  {(() => {
+                    const slaTarget = 0.95; // 95% SLA target
+                    const compliantIncidents = filteredIncidents.filter(i => {
+                      if (!i.durationMin || !i.startTime) return false;
+                      const ncal = normalizeNCAL(i.ncal);
+                      const target = NCAL_TARGETS[ncal as keyof typeof NCAL_TARGETS] || 0;
+                      return i.durationMin <= target;
+                    }).length;
+                    const complianceRate = filteredIncidents.length > 0 ? compliantIncidents / filteredIncidents.length : 0;
+                    return (complianceRate * 100).toFixed(1);
+                  })}%
+                </div>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                  SLA Compliance Rate
+                </p>
+              </div>
+              
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-gray-600 dark:text-gray-400">Target:</span>
+                  <span className="font-medium">95%</span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-gray-600 dark:text-gray-400">Compliant:</span>
+                  <span className="font-medium text-green-600">
+                    {(() => {
+                      const compliantIncidents = filteredIncidents.filter(i => {
+                        if (!i.durationMin || !i.startTime) return false;
+                        const ncal = normalizeNCAL(i.ncal);
+                        const target = NCAL_TARGETS[ncal as keyof typeof NCAL_TARGETS] || 0;
+                        return i.durationMin <= target;
+                      }).length;
+                      return compliantIncidents;
+                    })()}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-gray-600 dark:text-gray-400">Total:</span>
+                  <span className="font-medium">{filteredIncidents.length}</span>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Efficiency Metrics */}
+        <Card className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Gauge className="w-5 h-5" />
+              Efficiency Metrics
+            </CardTitle>
+            <CardDescription>Operational efficiency indicators</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="text-center p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                  <div className="text-xl font-bold text-blue-600">
+                    {(() => {
+                      const incidentsWithVendor = filteredIncidents.filter(i => i.durationVendorMin && i.durationVendorMin > 0);
+                      const totalVendorTime = incidentsWithVendor.reduce((sum, i) => sum + (i.durationVendorMin || 0), 0);
+                      const totalPauseTime = filteredIncidents.reduce((sum, i) => sum + (i.totalDurationPauseMin || 0), 0);
+                      const efficiency = totalVendorTime > 0 ? ((totalVendorTime - totalPauseTime) / totalVendorTime * 100) : 0;
+                      return efficiency.toFixed(1);
+                    })}%
+                  </div>
+                  <div className="text-xs text-gray-600 dark:text-gray-400">Efficiency Rate</div>
+                </div>
+                <div className="text-center p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                  <div className="text-xl font-bold text-green-600">
+                    {(() => {
+                      const avgResolutionTime = stats.mttrMin;
+                      const targetResolutionTime = 120; // 2 hours target
+                      const performance = targetResolutionTime > 0 ? (targetResolutionTime - avgResolutionTime) / targetResolutionTime * 100 : 0;
+                      return performance.toFixed(1);
+                    })}%
+                  </div>
+                  <div className="text-xs text-gray-600 dark:text-gray-400">Performance</div>
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-gray-600 dark:text-gray-400">Avg Resolution:</span>
+                  <span className="font-medium">{formatDurationHMS(stats.mttrMin)}</span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-gray-600 dark:text-gray-400">Target Time:</span>
+                  <span className="font-medium">2:00:00</span>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Real-time Monitoring */}
+        <Card className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <MonitorIcon className="w-5 h-5" />
+              Real-time Status
+            </CardTitle>
+            <CardDescription>Current incident status</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="text-center p-3 bg-red-50 dark:bg-red-900/20 rounded-lg">
+                  <div className="text-xl font-bold text-red-600">
+                    {stats.open}
+                  </div>
+                  <div className="text-xs text-gray-600 dark:text-gray-400">Active</div>
+                </div>
+                <div className="text-center p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                  <div className="text-xl font-bold text-green-600">
+                    {stats.closed}
+                  </div>
+                  <div className="text-xs text-gray-600 dark:text-gray-400">Resolved</div>
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-gray-600 dark:text-gray-400">High Priority:</span>
+                                     <Badge variant="danger">
+                     {filteredIncidents.filter(i => i.priority?.toLowerCase() === 'high').length}
+                   </Badge>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-gray-600 dark:text-gray-400">Escalated:</span>
+                  <Badge variant="warning">
+                    {filteredIncidents.filter(i => i.startEscalationVendor).length}
+                  </Badge>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-gray-600 dark:text-gray-400">Paused:</span>
+                  <Badge variant="secondary">
+                    {filteredIncidents.filter(i => i.totalDurationPauseMin && i.totalDurationPauseMin > 0).length}
+                  </Badge>
+                </div>
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -1307,42 +1757,37 @@ export const IncidentAnalytics: React.FC = () => {
 
       {/* Performance Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg h-[400px]">
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-lg">
+        <Card className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
               <AccessTimeIcon className="w-5 h-5" />
               Vendor Performance
             </CardTitle>
             <CardDescription>Average vendor response time</CardDescription>
           </CardHeader>
-          <CardContent className="h-[300px] flex flex-col justify-center p-4">
-            <div className="w-full h-full flex flex-col justify-center">
-              <div className="text-center">
-              <div className="text-3xl font-bold text-blue-600">
-                {stats.avgVendorMin > 0 ? formatDurationHMS(stats.avgVendorMin) : '0:00:00'}
+          <CardContent>
+            <div className="text-3xl font-bold text-blue-600">
+              {stats.avgVendorMin > 0 ? formatDurationHMS(stats.avgVendorMin) : '0:00:00'}
                   </div>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
-                Average vendor duration across all incidents
-              </p>
-            </div>
-            </div>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
+              Average vendor duration across all incidents
+            </p>
           </CardContent>
         </Card>
 
-        <Card className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg h-[400px]">
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-lg">
+        <Card className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
               <WarningAmberIcon className="w-5 h-5" />
               Pause Ratio
             </CardTitle>
             <CardDescription>Total pause time ratio</CardDescription>
           </CardHeader>
-          <CardContent className="h-[300px] overflow-y-auto p-4">
-            <div className="w-full h-full">
-              <div className="space-y-3">
+          <CardContent>
+            <div className="space-y-4">
               {/* Main Metric */}
               <div className="text-center">
-                <div className="text-3xl font-bold text-orange-600">
+                <div className="text-4xl font-bold text-orange-600">
                   {stats.pauseRatio > 0 ? (stats.pauseRatio * 100).toFixed(1) : '0.0'}%
                   </div>
                 <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
@@ -1351,15 +1796,15 @@ export const IncidentAnalytics: React.FC = () => {
               </div>
 
               {/* Breakdown */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between p-2 bg-orange-50 dark:bg-orange-900/20 rounded-lg border border-orange-200 dark:border-orange-800">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg border border-orange-200 dark:border-orange-800">
                   <div className="flex items-center gap-2">
                     <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
-                    <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
                       Total Pause Time
                     </span>
                   </div>
-                  <span className="text-xs font-bold text-orange-600">
+                  <span className="text-sm font-bold text-orange-600">
                     {(() => {
                       const totalPauseTime = filteredIncidents.reduce((sum, i) => sum + (i.totalDurationPauseMin || 0), 0);
                       return formatDurationHMS(totalPauseTime);
@@ -1367,14 +1812,14 @@ export const IncidentAnalytics: React.FC = () => {
                   </span>
                 </div>
 
-                <div className="flex items-center justify-between p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                <div className="flex items-center justify-between p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
                   <div className="flex items-center gap-2">
                     <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                    <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
                       Total Duration
                     </span>
             </div>
-                  <span className="text-xs font-bold text-blue-600">
+                  <span className="text-sm font-bold text-blue-600">
                     {(() => {
                       const totalDuration = filteredIncidents.reduce((sum, i) => sum + (i.durationMin || 0), 0);
                       return formatDurationHMS(totalDuration);
@@ -1382,29 +1827,29 @@ export const IncidentAnalytics: React.FC = () => {
                   </span>
       </div>
 
-                <div className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+                <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
                   <div className="flex items-center gap-2">
                     <div className="w-2 h-2 bg-gray-500 rounded-full"></div>
-                    <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
                       Incidents with Pause
                     </span>
               </div>
-                  <span className="text-xs font-bold text-gray-600">
+                  <span className="text-sm font-bold text-gray-600">
                     {filteredIncidents.filter(i => i.totalDurationPauseMin && i.totalDurationPauseMin > 0).length}
                   </span>
             </div>
               </div>
 
               {/* Performance Indicator */}
-              <div className="mt-3 p-2 bg-gradient-to-r from-orange-50 to-red-50 dark:from-orange-900/20 dark:to-red-900/20 rounded-lg border border-orange-200 dark:border-orange-800">
+              <div className="mt-4 p-3 bg-gradient-to-r from-orange-50 to-red-50 dark:from-orange-900/20 dark:to-red-900/20 rounded-lg border border-orange-200 dark:border-orange-800">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <WarningAmberIcon className="w-3 h-3 text-orange-600" />
-                    <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
+                    <WarningAmberIcon className="w-4 h-4 text-orange-600" />
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
                       Performance Impact
                     </span>
             </div>
-                  <span className={`text-xs font-bold ${
+                  <span className={`text-sm font-bold ${
                     stats.pauseRatio > 0.15 ? 'text-red-600' : 
                     stats.pauseRatio > 0.10 ? 'text-orange-600' : 'text-green-600'
                   }`}>
@@ -1417,35 +1862,32 @@ export const IncidentAnalytics: React.FC = () => {
                    stats.pauseRatio > 0.10 ? 'Moderate impact on efficiency' :
                    'Minimal impact on operations'}
                 </p>
-              </div>
             </div>
-            </div>
-          </CardContent>
-        </Card>
+          </div>
+        </CardContent>
+      </Card>
 
-        <Card className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg h-[400px]">
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-lg">
+        <Card className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
               <BarChartIcon className="w-5 h-5" />
               Top 10 Sites
             </CardTitle>
             <CardDescription>Most affected sites by incident count</CardDescription>
           </CardHeader>
-          <CardContent className="h-[300px] p-4">
-            <div className="w-full h-full">
-              <ChartContainer config={siteChartConfig}>
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart 
-                  accessibilityLayer
-                  data={siteData} 
-                  layout="horizontal"
-                  margin={{
-                    top: 25,
-                    left: 15,
-                    right: 15,
-                    bottom: 35,
-                  }}
-                >
+          <CardContent>
+            <ChartContainer config={siteChartConfig}>
+              <BarChart 
+                accessibilityLayer
+                data={siteData} 
+                layout="horizontal"
+                margin={{
+                  top: 20,
+                  right: 30,
+                  left: 20,
+                  bottom: 20,
+                }}
+              >
                 <CartesianGrid vertical={false} />
                 <XAxis 
                   type="number" 
@@ -1458,13 +1900,13 @@ export const IncidentAnalytics: React.FC = () => {
                 <YAxis 
                   dataKey="name" 
                   type="category" 
-                  width={100} 
+                  width={150} 
                   tickLine={false} 
                   axisLine={false} 
                   tickMargin={8}
                   tickFormatter={(value) => {
                     // Truncate long site names
-                    return value.length > 12 ? value.substring(0, 12) + '...' : value;
+                    return value.length > 20 ? value.substring(0, 20) + '...' : value;
                   }}
                 />
                 <ChartTooltip
@@ -1475,15 +1917,13 @@ export const IncidentAnalytics: React.FC = () => {
                   dataKey="value" 
                   fill="var(--chart-1)" 
                   radius={[0, 4, 4, 0]} 
-                                />
+                />
               </BarChart>
-              </ResponsiveContainer>
             </ChartContainer>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+        </CardContent>
+      </Card>
     </div>
+      </div>
     </PageWrapper>
   );
 };
