@@ -59,18 +59,36 @@ export const IncidentData: React.FC = () => {
     if (savedLogs) {
       try {
         const parsedLogs = JSON.parse(savedLogs);
+        console.log('Loading logs from localStorage:', parsedLogs);
+        
         // Convert stored log objects to string format for display
         const logStrings = parsedLogs.map((log: any) => {
-          if (typeof log === 'string') return log;
-          if (log.action === 'DATA_RESET') {
-            return `[${new Date(log.timestamp).toLocaleTimeString()}] 🔄 DATA RESET: ${log.message}. Previous count: ${log.details?.previousCount || 0} incidents.`;
+          if (typeof log === 'string') {
+            console.log('String log:', log);
+            return log;
           }
-          return log.message || log;
+          if (log.action === 'DATA_RESET') {
+            const resetLog = `[${new Date(log.timestamp).toLocaleTimeString()}] 🔄 DATA RESET: ${log.message}. Previous count: ${log.details?.previousCount || 0} incidents.`;
+            console.log('Reset log:', resetLog);
+            return resetLog;
+          }
+          if (log.message) {
+            console.log('Message log:', log.message);
+            return log.message;
+          }
+          console.log('Unknown log format:', log);
+          return JSON.stringify(log);
         });
+        
+        console.log('Final log strings:', logStrings);
         setUploadLogs(logStrings);
       } catch (error) {
         console.error('Error loading logs from localStorage:', error);
+        setUploadLogs([]);
       }
+    } else {
+      console.log('No saved logs found in localStorage');
+      setUploadLogs([]);
     }
   }, []);
 
@@ -91,6 +109,17 @@ export const IncidentData: React.FC = () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [showDataTools]);
+
+  // Debug when log modal is opened
+  React.useEffect(() => {
+    if (showLogs) {
+      console.log('=== LOG MODAL OPENED ===');
+      console.log('uploadLogs state:', uploadLogs);
+      console.log('uploadLogs length:', uploadLogs.length);
+      console.log('localStorage uploadLogs:', localStorage.getItem('uploadLogs'));
+      console.log('lastUploadResult:', lastUploadResult);
+    }
+  }, [showLogs, uploadLogs, lastUploadResult]);
 
   // Helper function to normalize NCAL values
   const normalizeNCAL = (ncal: string | null | undefined): string => {
@@ -390,13 +419,19 @@ export const IncidentData: React.FC = () => {
         }
       };
       
+      // Create reset log message
+      const resetLogMessage = `[${new Date().toLocaleTimeString()}] 🔄 DATA RESET: All incident data has been cleared. Previous count: ${allIncidents?.length || 0} incidents.`;
+      
       // Store reset log in localStorage for persistence
       const existingLogs = JSON.parse(localStorage.getItem('uploadLogs') || '[]');
-      existingLogs.push(resetLog);
+      existingLogs.push(resetLogMessage); // Store as string, not object
       localStorage.setItem('uploadLogs', JSON.stringify(existingLogs));
       
       // Update upload logs state to include reset log
-      setUploadLogs(prev => [...prev, `[${new Date().toLocaleTimeString()}] 🔄 DATA RESET: All incident data has been cleared. Previous count: ${allIncidents?.length || 0} incidents.`]);
+      setUploadLogs(prev => [...prev, resetLogMessage]);
+      
+      console.log('Reset log added:', resetLogMessage);
+      console.log('Updated logs in localStorage:', existingLogs);
       
       toast({
         title: "Data Reset Successfully",
@@ -514,9 +549,12 @@ export const IncidentData: React.FC = () => {
           {/* Logs Management */}
           <Button 
             onClick={() => {
+              console.log('=== LOG MODAL DEBUG ===');
               console.log('View Logs button clicked!');
               console.log('uploadLogs length:', uploadLogs.length);
+              console.log('uploadLogs content:', uploadLogs);
               console.log('lastUploadResult:', lastUploadResult);
+              console.log('localStorage uploadLogs:', localStorage.getItem('uploadLogs'));
               setShowLogs(true);
             }} 
             variant="outline"
@@ -764,16 +802,31 @@ export const IncidentData: React.FC = () => {
         <IncidentUpload 
           onUploadComplete={(logs?: string[], uploadResult?: any) => {
             setShowUpload(false);
+            console.log('onUploadComplete called with:', { logs, uploadResult });
+            
             if (logs && logs.length > 0) {
               // Save logs to localStorage for persistence
               const existingLogs = JSON.parse(localStorage.getItem('uploadLogs') || '[]');
-              const newLogs = [...existingLogs, ...logs];
+              console.log('Existing logs:', existingLogs);
+              
+              // Ensure logs are stored as strings
+              const stringLogs = logs.map(log => typeof log === 'string' ? log : JSON.stringify(log));
+              console.log('String logs to add:', stringLogs);
+              
+              const newLogs = [...existingLogs, ...stringLogs];
+              console.log('New logs array:', newLogs);
+              
               localStorage.setItem('uploadLogs', JSON.stringify(newLogs));
               setUploadLogs(newLogs);
+              
+              console.log('Logs saved to localStorage and state updated');
             }
+            
             if (uploadResult) {
+              console.log('Setting upload result:', uploadResult);
               setLastUploadResult(uploadResult);
             }
+            
             // Data will automatically refresh due to useLiveQuery
             toast({
               title: "Upload Complete",
@@ -1375,13 +1428,13 @@ export const IncidentData: React.FC = () => {
                       Detailed Processing Logs
                     </h4>
                     <div className="space-y-2 font-mono text-sm max-h-[60vh] overflow-y-auto">
-                      {uploadLogs.length > 0 ? (
+                      {uploadLogs && uploadLogs.length > 0 ? (
                         uploadLogs.map((log, index) => (
                           <div key={index} className="text-gray-800 dark:text-gray-200 whitespace-pre-wrap bg-gray-50 dark:bg-gray-700 p-3 rounded border-l-4 border-blue-200 hover:border-blue-300 transition-colors">
                             <div className="flex items-start gap-2">
                               <span className="text-blue-600 font-medium text-xs mt-0.5 flex-shrink-0">[{index + 1}]</span>
                               <div className="flex-1 break-words min-w-0">
-                                {log}
+                                {typeof log === 'string' ? log : JSON.stringify(log)}
                               </div>
                             </div>
                           </div>
