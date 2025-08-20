@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useMemo, useState, useEffect } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { db } from '@/lib/db';
+import { db, ITicket } from '@/lib/db';
 import { formatDurationDHM, analyzeKeywords, generateAnalysisConclusion } from '@/lib/utils';
 import { useAgentStore } from '@/store/agentStore';
 
