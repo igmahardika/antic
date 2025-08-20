@@ -1150,17 +1150,16 @@ export const IncidentAnalytics: React.FC = () => {
         <Card className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <BarChartIcon className="w-5 h-5" />
-              Top 10 Sites
+              <ConfirmationNumberIcon className="w-5 h-5" />
+              Level Distribution
             </CardTitle>
-            <CardDescription>Most affected sites by incident count</CardDescription>
+            <CardDescription>Distribution of incidents by level</CardDescription>
           </CardHeader>
           <CardContent>
-            <ChartContainer config={siteChartConfig}>
+            <ChartContainer config={levelChartConfig}>
               <BarChart 
-                accessibilityLayer
-                data={siteData} 
-                layout="horizontal"
+                accessibilityLayer 
+                data={levelData}
                 margin={{
                   top: 20,
                   right: 30,
@@ -1169,34 +1168,29 @@ export const IncidentAnalytics: React.FC = () => {
                 }}
               >
                 <CartesianGrid vertical={false} />
-                <XAxis 
-                  type="number" 
+                <XAxis
+                  dataKey="name"
+                  tickLine={false}
+                  tickMargin={10}
+                  axisLine={false}
+                  tickFormatter={(value) =>
+                    levelChartConfig[value.toLowerCase().replace(' ', '') as keyof typeof levelChartConfig]?.label || value
+                  }
+                />
+                <YAxis 
                   tickLine={false} 
                   axisLine={false} 
                   tickMargin={8}
                   tickFormatter={(value) => value.toLocaleString()}
-                  label={{ value: 'Incident Count', position: 'insideBottom', offset: -5 }}
-                />
-                <YAxis 
-                  dataKey="name" 
-                  type="category" 
-                  width={150} 
-                  tickLine={false} 
-                  axisLine={false} 
-                  tickMargin={8}
-                  tickFormatter={(value) => {
-                    // Truncate long site names
-                    return value.length > 20 ? value.substring(0, 20) + '...' : value;
-                  }}
                 />
                 <ChartTooltip
                   cursor={false}
                   content={<ChartTooltipContent hideLabel />}
                 />
-                <Bar 
-                  dataKey="value" 
-                  fill="var(--chart-1)" 
-                  radius={[0, 4, 4, 0]} 
+                <Bar
+                  dataKey="value"
+                  strokeWidth={2}
+                  radius={8}
                 />
               </BarChart>
             </ChartContainer>
@@ -1316,19 +1310,20 @@ export const IncidentAnalytics: React.FC = () => {
           </CardContent>
         </Card>
 
-                <Card className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg">
-        <CardHeader>
+        <Card className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg">
+          <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <ConfirmationNumberIcon className="w-5 h-5" />
-              Level Distribution
+              <BarChartIcon className="w-5 h-5" />
+              Top 10 Sites
             </CardTitle>
-            <CardDescription>Distribution of incidents by level</CardDescription>
-        </CardHeader>
-        <CardContent>
-            <ChartContainer config={levelChartConfig}>
+            <CardDescription>Most affected sites by incident count</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ChartContainer config={siteChartConfig}>
               <BarChart 
-                accessibilityLayer 
-                data={levelData}
+                accessibilityLayer
+                data={siteData} 
+                layout="horizontal"
                 margin={{
                   top: 20,
                   right: 30,
@@ -1337,34 +1332,39 @@ export const IncidentAnalytics: React.FC = () => {
                 }}
               >
                 <CartesianGrid vertical={false} />
-                <XAxis
-                  dataKey="name"
-                  tickLine={false}
-                  tickMargin={10}
-                  axisLine={false}
-                  tickFormatter={(value) =>
-                    levelChartConfig[value.toLowerCase().replace(' ', '') as keyof typeof levelChartConfig]?.label || value
-                  }
-                />
-                <YAxis 
+                <XAxis 
+                  type="number" 
                   tickLine={false} 
                   axisLine={false} 
                   tickMargin={8}
                   tickFormatter={(value) => value.toLocaleString()}
+                  label={{ value: 'Incident Count', position: 'insideBottom', offset: -5 }}
+                />
+                <YAxis 
+                  dataKey="name" 
+                  type="category" 
+                  width={150} 
+                  tickLine={false} 
+                  axisLine={false} 
+                  tickMargin={8}
+                  tickFormatter={(value) => {
+                    // Truncate long site names
+                    return value.length > 20 ? value.substring(0, 20) + '...' : value;
+                  }}
                 />
                 <ChartTooltip
                   cursor={false}
                   content={<ChartTooltipContent hideLabel />}
                 />
-                <Bar
-                  dataKey="value"
-                  strokeWidth={2}
-                  radius={8}
+                <Bar 
+                  dataKey="value" 
+                  fill="var(--chart-1)" 
+                  radius={[0, 4, 4, 0]} 
                 />
               </BarChart>
             </ChartContainer>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
     </div>
       </div>
     </PageWrapper>
