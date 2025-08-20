@@ -32,6 +32,8 @@ import MasterDataAgent from './components/MasterDataAgent';
 import CustomerData from './pages/CustomerData';
 import { IncidentData } from './pages/IncidentData';
 import { IncidentAnalytics } from './pages/IncidentAnalytics';
+import TSAnalytics from './pages/TSAnalytics';
+import SiteAnalytics from './pages/SiteAnalytics';
 
 const queryClient = new QueryClient();
 
@@ -158,8 +160,11 @@ function AppLayout() {
             <Route path="/ticket/agent-analytics" element={<AgentAnalyticsProvider><AgentAnalytics /></AgentAnalyticsProvider>} />
             <Route path="/masterdata/data-agent" element={<MasterDataAgent />} />
             <Route path="/masterdata/data-customer" element={<CustomerData />} />
+            {/* Incident Management Routes */}
             <Route path="/incident/data" element={<IncidentData />} />
             <Route path="/incident/analytics" element={<IncidentAnalytics />} />
+            <Route path="/incident/ts-analytics" element={<TSAnalytics />} />
+            <Route path="/incident/site-analytics" element={<SiteAnalytics />} />
             <Route path="/documentation/upload" element={<UploadProcess onUploadComplete={() => {}} />} />
             <Route path="/documentation/admin-rumus" element={<AdminRumus />} />
             {/* Path lama tetap untuk fallback/compatibility */}

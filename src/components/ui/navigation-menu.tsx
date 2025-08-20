@@ -223,6 +223,16 @@ export function SidebarNav({ isMobileOpen, setIsMobileOpen, onCollapseChange }) 
           path: '/incident/analytics',
           icon: <BarChartIcon sx={{ fontSize: 18 }} />,
         },
+        {
+          name: 'Technical Support Analytics',
+          path: '/incident/ts-analytics',
+          icon: <ScienceIcon sx={{ fontSize: 18 }} />,
+        },
+        {
+          name: 'Site Analytics',
+          path: '/incident/site-analytics',
+          icon: <GroupIcon sx={{ fontSize: 18 }} />,
+        },
       ],
     },
     {
