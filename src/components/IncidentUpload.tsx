@@ -28,6 +28,12 @@ interface UploadResult {
   skipped?: number;
   emptyRows?: number;
   invalidRows?: number;
+  skippedDetails?: Array<{
+    row: number;
+    sheet: string;
+    reason: string;
+    data?: any;
+  }>;
 }
 
 const REQUIRED_HEADERS = [
@@ -66,6 +72,12 @@ export const IncidentUpload: React.FC<IncidentUploadProps> = ({ onUploadComplete
       let emptyRowCount = 0;
       let invalidRowCount = 0;
       let totalRowsProcessed = 0;
+      const skippedDetails: Array<{
+        row: number;
+        sheet: string;
+        reason: string;
+        data?: any;
+      }> = [];
 
       console.log(`=== UPLOAD ANALYSIS START ===`);
       console.log(`🔍 VALIDATION STRATEGY: Using NCAL as primary validation field (not No Case)`);
@@ -116,7 +128,14 @@ export const IncidentUpload: React.FC<IncidentUploadProps> = ({ onUploadComplete
           if (!row || row.length === 0) {
             sheetEmptyCount++;
             emptyRowCount++;
-            console.log(`Row ${i + 1} in "${sheetName}": Empty row (no data)`);
+            const reason = "Empty row (no data)";
+            console.log(`Row ${i + 1} in "${sheetName}": ${reason}`);
+            skippedDetails.push({
+              row: i + 1,
+              sheet: sheetName,
+              reason,
+              data: { rowData: row }
+            });
             continue;
           }
 
@@ -125,27 +144,59 @@ export const IncidentUpload: React.FC<IncidentUploadProps> = ({ onUploadComplete
           if (!hasData) {
             sheetEmptyCount++;
             emptyRowCount++;
-            console.log(`Row ${i + 1} in "${sheetName}": Empty row (all cells empty)`);
+            const reason = "Empty row (all cells empty)";
+            console.log(`Row ${i + 1} in "${sheetName}": ${reason}`);
+            skippedDetails.push({
+              row: i + 1,
+              sheet: sheetName,
+              reason,
+              data: { rowData: row, hasData }
+            });
             continue;
           }
 
                       try {
-              const incident = parseRowToIncident(headers, row, i + 1, sheetName);
-              if (incident) {
-                allRows.push(incident);
+              const result = parseRowToIncident(headers, row, i + 1, sheetName);
+              if (result && !result.skipped) {
+                allRows.push(result);
                 successCount++;
                 sheetSuccessCount++;
+              } else if (result && result.skipped) {
+                // Row was skipped with specific reason
+                sheetSkippedCount++;
+                skippedCount++;
+                console.log(`Row ${i + 1} in "${sheetName}" skipped: ${result.reason}`);
+                skippedDetails.push({
+                  row: i + 1,
+                  sheet: sheetName,
+                  reason: result.reason,
+                  data: result.rowData
+                });
               } else {
                 // Row was skipped (empty NCAL or invalid data)
                 sheetSkippedCount++;
                 skippedCount++;
-                console.log(`Row ${i + 1} in "${sheetName}" skipped: empty NCAL or invalid data`);
+                const reason = "Empty NCAL or invalid data";
+                console.log(`Row ${i + 1} in "${sheetName}" skipped: ${reason}`);
+                skippedDetails.push({
+                  row: i + 1,
+                  sheet: sheetName,
+                  reason,
+                  data: { rowData: row }
+                });
               }
             } catch (error) {
               sheetInvalidCount++;
               invalidRowCount++;
-              errors.push(`Row ${i + 1} in "${sheetName}": ${error}`);
+              const errorMsg = `Row ${i + 1} in "${sheetName}": ${error}`;
+              errors.push(errorMsg);
               failedCount++;
+              skippedDetails.push({
+                row: i + 1,
+                sheet: sheetName,
+                reason: `Error: ${error}`,
+                data: { rowData: row, error: error.toString() }
+              });
             }
         }
 
@@ -159,14 +210,38 @@ export const IncidentUpload: React.FC<IncidentUploadProps> = ({ onUploadComplete
         }
 
         console.log(`\n=== UPLOAD ANALYSIS SUMMARY ===`);
-        console.log(`Total rows processed: ${totalRowsProcessed}`);
-        console.log(`Successfully parsed: ${successCount}`);
-        console.log(`Skipped (empty/invalid): ${skippedCount}`);
-        console.log(`Empty rows: ${emptyRowCount}`);
-        console.log(`Invalid rows: ${invalidRowCount}`);
-        console.log(`Failed: ${failedCount}`);
-        console.log(`Total incidents to save: ${allRows.length}`);
-        console.log(`=== UPLOAD ANALYSIS END ===\n`);
+        console.log(`📊 Total rows processed: ${totalRowsProcessed}`);
+        console.log(`✅ Successfully parsed: ${successCount}`);
+        console.log(`⚠️ Skipped (empty/invalid): ${skippedCount}`);
+        console.log(`📭 Empty rows: ${emptyRowCount}`);
+        console.log(`❌ Invalid rows: ${invalidRowCount}`);
+        console.log(`💥 Failed: ${failedCount}`);
+        console.log(`💾 Total incidents to save: ${allRows.length}`);
+        
+        // Log detailed breakdown of skipped rows
+        if (skippedDetails.length > 0) {
+          console.log(`\n📋 DETAILED SKIPPED ROWS BREAKDOWN:`);
+          console.log(`Total skipped rows: ${skippedDetails.length}`);
+          
+          // Group by reason
+          const reasonGroups = skippedDetails.reduce((acc, detail) => {
+            if (!acc[detail.reason]) acc[detail.reason] = [];
+            acc[detail.reason].push(detail);
+            return acc;
+          }, {} as Record<string, typeof skippedDetails>);
+          
+          Object.entries(reasonGroups).forEach(([reason, details]) => {
+            console.log(`\n🔍 "${reason}": ${details.length} rows`);
+            details.slice(0, 10).forEach(detail => {
+              console.log(`   Row ${detail.row} (${detail.sheet})`);
+            });
+            if (details.length > 10) {
+              console.log(`   ... and ${details.length - 10} more rows`);
+            }
+          });
+        }
+        
+        console.log(`\n=== UPLOAD ANALYSIS END ===\n`);
 
       // Save to database
       if (allRows.length > 0) {
@@ -202,7 +277,8 @@ export const IncidentUpload: React.FC<IncidentUploadProps> = ({ onUploadComplete
         totalProcessed: totalRowsProcessed,
         skipped: skippedCount,
         emptyRows: emptyRowCount,
-        invalidRows: invalidRowCount
+        invalidRows: invalidRowCount,
+        skippedDetails
       });
 
       // Log detailed summary
@@ -383,6 +459,52 @@ export const IncidentUpload: React.FC<IncidentUploadProps> = ({ onUploadComplete
                   </div>
                 )}
 
+                {/* Skipped Details */}
+                {uploadResult.skippedDetails && uploadResult.skippedDetails.length > 0 && (
+                  <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
+                    <h4 className="font-medium mb-3 text-red-800 dark:text-red-200">
+                      📋 Skipped Rows Details ({uploadResult.skippedDetails.length} rows):
+                    </h4>
+                    <div className="max-h-60 overflow-y-auto">
+                      <div className="space-y-2">
+                        {uploadResult.skippedDetails.slice(0, 20).map((detail, index) => (
+                          <div key={index} className="text-sm bg-white dark:bg-gray-800 p-2 rounded border">
+                            <div className="flex justify-between items-start">
+                              <span className="font-medium text-red-600 dark:text-red-400">
+                                Row {detail.row} ({detail.sheet})
+                              </span>
+                              <span className="text-xs text-gray-500">
+                                #{index + 1}
+                              </span>
+                            </div>
+                            <div className="text-gray-700 dark:text-gray-300 mt-1">
+                              <span className="font-medium">Reason:</span> {detail.reason}
+                            </div>
+                            {detail.data && (
+                              <div className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                                <details>
+                                  <summary className="cursor-pointer hover:text-gray-800 dark:hover:text-gray-200">
+                                    View Data Details
+                                  </summary>
+                                  <pre className="mt-1 p-2 bg-gray-100 dark:bg-gray-700 rounded text-xs overflow-x-auto">
+                                    {JSON.stringify(detail.data, null, 2)}
+                                  </pre>
+                                </details>
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                        {uploadResult.skippedDetails.length > 20 && (
+                          <div className="text-center text-sm text-gray-600 dark:text-gray-400 py-2">
+                            ... and {uploadResult.skippedDetails.length - 20} more skipped rows. 
+                            Check console for complete details.
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 {uploadResult.errors.length > 0 && (
                   <Alert>
                     <AlertTriangle className="w-4 h-4" />
@@ -479,15 +601,17 @@ function parseRowToIncident(headers: string[], row: any[], rowNum: number, sheet
   // Use NCAL as primary validation instead of No Case
   const ncalValue = getValue('NCAL');
   if (!ncalValue || String(ncalValue).trim() === '') {
-    console.log(`Row ${rowNum} in "${sheetName}" skipped: empty NCAL (primary validation field)`);
-    return null; // Skip empty rows instead of throwing error
+    const reason = "Empty NCAL (primary validation field)";
+    console.log(`Row ${rowNum} in "${sheetName}": ${reason}`);
+    return { skipped: true, reason, rowData: { ncal: ncalValue } };
   }
 
   // Normalize NCAL - remove extra spaces and ensure it's a string
   const normalizedNCAL = String(ncalValue).trim();
   if (normalizedNCAL === '') {
-    console.log(`Row ${rowNum} in "${sheetName}" skipped: NCAL is empty after normalization (primary validation field)`);
-    return null;
+    const reason = "NCAL is empty after normalization (primary validation field)";
+    console.log(`Row ${rowNum} in "${sheetName}": ${reason}`);
+    return { skipped: true, reason, rowData: { ncal: ncalValue, normalizedNCAL } };
   }
 
   // Validate NCAL value
@@ -503,9 +627,10 @@ function parseRowToIncident(headers: string[], row: any[], rowNum: number, sheet
     else if (normalized === 'orange' || normalized === 'o') finalNCAL = 'Orange';
     else if (normalized === 'red' || normalized === 'r') finalNCAL = 'Red';
     else if (normalized === 'black' || normalized === 'bl') finalNCAL = 'Black';
-    else {
-          console.log(`Row ${rowNum} in "${sheetName}" skipped: invalid NCAL value "${ncalValue}" (primary validation field)`);
-    return null;
+        else {
+      const reason = `Invalid NCAL value "${ncalValue}" (primary validation field)`;
+      console.log(`Row ${rowNum} in "${sheetName}": ${reason}`);
+      return { skipped: true, reason, rowData: { ncal: ncalValue, normalizedNCAL } };
     }
   }
 
