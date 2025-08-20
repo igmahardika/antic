@@ -44,6 +44,48 @@ export const IncidentData: React.FC = () => {
   const [uploadLogs, setUploadLogs] = useState<string[]>([]);
   const [lastUploadResult, setLastUploadResult] = useState<any>(null);
 
+  // Add test data for debugging
+  React.useEffect(() => {
+    // Add some test logs if none exist
+    if (uploadLogs.length === 0) {
+      setUploadLogs([
+        '[10:30:15] Starting upload process...',
+        '[10:30:16] File uploaded successfully',
+        '[10:30:17] Processing 1253 rows...',
+        '[10:30:18] Upload completed: 1106 rows processed'
+      ]);
+    }
+    
+    // Add test upload result if none exist
+    if (!lastUploadResult) {
+      setLastUploadResult({
+        totalProcessed: 1253,
+        success: 1106,
+        skipped: 147,
+        failed: 0,
+        emptyRows: 0,
+        errors: [],
+        preview: [
+          {
+            noCase: 'NCAL_Blue_001',
+            site: 'Site A',
+            status: 'Closed',
+            priority: 'High',
+            durationMin: 120
+          }
+        ],
+        skippedDetails: [
+          {
+            row: 181,
+            sheet: 'Januari',
+            reason: 'Empty row (no data)',
+            data: null
+          }
+        ]
+      });
+    }
+  }, []);
+
   // Helper function to normalize NCAL values
   const normalizeNCAL = (ncal: string | null | undefined): string => {
     if (!ncal) return 'Unknown';
@@ -425,10 +467,15 @@ export const IncidentData: React.FC = () => {
             Upload Data
           </Button>
           <Button 
-            onClick={() => setShowLogs(true)} 
+            onClick={() => {
+              console.log('View Logs button clicked!');
+              console.log('uploadLogs length:', uploadLogs.length);
+              console.log('lastUploadResult:', lastUploadResult);
+              setShowLogs(true);
+            }} 
             variant="outline"
             className="border-orange-200 text-orange-700 hover:bg-orange-50"
-            disabled={uploadLogs.length === 0}
+            disabled={uploadLogs.length === 0 && !lastUploadResult}
           >
             <FileSpreadsheet className="w-4 h-4 mr-2" />
             View Logs {uploadLogs.length > 0 && `(${uploadLogs.length})`}
@@ -444,6 +491,17 @@ export const IncidentData: React.FC = () => {
           >
             <Trash2 className="w-4 h-4 mr-2" />
             Reset Data
+          </Button>
+          <Button 
+            onClick={() => {
+              console.log('Test button clicked!');
+              setShowLogs(true);
+            }} 
+            variant="outline"
+            className="border-green-200 text-green-700 hover:bg-green-50"
+          >
+            <FileSpreadsheet className="w-4 h-4 mr-2" />
+            Test Logs
           </Button>
         </div>
       </div>
