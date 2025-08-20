@@ -52,7 +52,27 @@ export const IncidentData: React.FC = () => {
         '[10:30:15] Starting upload process...',
         '[10:30:16] File uploaded successfully',
         '[10:30:17] Processing 1253 rows...',
-        '[10:30:18] Upload completed: 1106 rows processed'
+        '[10:30:18] Row 181 (Januari): SKIPPED - Empty row (no data)',
+        '[10:30:19] Row 182 (Januari): SKIPPED - Empty row (no data)',
+        '[10:30:20] Row 183 (Januari): SKIPPED - Empty row (no data)',
+        '[10:30:21] Row 184 (Januari): SKIPPED - Invalid NCAL value: "invalid_ncal"',
+        '[10:30:22] Row 185 (Januari): SKIPPED - Missing required field: Site is empty',
+        '[10:30:23] Row 186 (Januari): SKIPPED - Invalid date format: "invalid_date"',
+        '[10:30:24] Row 187 (Januari): SKIPPED - Invalid priority value: "invalid_priority"',
+        '[10:30:25] Row 188 (Januari): SKIPPED - Missing required field: Start Time is empty',
+        '[10:30:26] Row 189 (Januari): SKIPPED - Invalid duration format: "invalid_duration"',
+        '[10:30:27] Row 190 (Januari): SKIPPED - Duplicate No Case: "NCAL_Blue_001" already exists',
+        '[10:30:28] Row 191 (Januari): SKIPPED - Invalid status value: "invalid_status"',
+        '[10:30:29] Row 192 (Januari): SKIPPED - Missing required field: Problem is empty',
+        '[10:30:30] Row 193 (Januari): SKIPPED - Invalid NCAL value: "ncal" (should be Blue, Yellow, Orange, Red, or Black)',
+        '[10:30:31] Row 194 (Januari): SKIPPED - Invalid priority value: "p" (should be High, Medium, or Low)',
+        '[10:30:32] Row 195 (Januari): SKIPPED - Invalid level value: "l" (should be 1, 2, or 3)',
+        '[10:30:33] Row 196 (Januari): SKIPPED - Invalid date format: "2024-13-01" (invalid month)',
+        '[10:30:34] Row 197 (Januari): SKIPPED - Invalid time format: "25:00:00" (invalid hour)',
+        '[10:30:35] Row 198 (Januari): SKIPPED - Missing required field: TS is empty',
+        '[10:30:36] Row 199 (Januari): SKIPPED - Invalid duration: negative value "-30"',
+        '[10:30:37] Row 200 (Januari): SKIPPED - Invalid NCAL value: "BLUE" (case sensitive, should be "Blue")',
+        '[10:30:38] Upload completed: 1106 rows processed, 147 rows skipped'
       ]);
     }
     
@@ -63,8 +83,18 @@ export const IncidentData: React.FC = () => {
         success: 1106,
         skipped: 147,
         failed: 0,
-        emptyRows: 0,
-        errors: [],
+        emptyRows: 45,
+        errors: [
+          'Invalid NCAL values found: 23 rows',
+          'Missing required fields: 34 rows',
+          'Invalid date formats: 18 rows',
+          'Invalid priority values: 12 rows',
+          'Duplicate No Case entries: 8 rows',
+          'Invalid duration values: 15 rows',
+          'Invalid status values: 9 rows',
+          'Invalid level values: 7 rows',
+          'Invalid time formats: 11 rows'
+        ],
         preview: [
           {
             noCase: 'NCAL_Blue_001',
@@ -72,6 +102,20 @@ export const IncidentData: React.FC = () => {
             status: 'Closed',
             priority: 'High',
             durationMin: 120
+          },
+          {
+            noCase: 'NCAL_Yellow_002',
+            site: 'Site B',
+            status: 'Open',
+            priority: 'Medium',
+            durationMin: 90
+          },
+          {
+            noCase: 'NCAL_Orange_003',
+            site: 'Site C',
+            status: 'Closed',
+            priority: 'Low',
+            durationMin: 45
           }
         ],
         skippedDetails: [
@@ -79,7 +123,121 @@ export const IncidentData: React.FC = () => {
             row: 181,
             sheet: 'Januari',
             reason: 'Empty row (no data)',
-            data: null
+            data: { ncal: '', site: '', priority: '', startTime: '' }
+          },
+          {
+            row: 182,
+            sheet: 'Januari',
+            reason: 'Empty row (no data)',
+            data: { ncal: '', site: '', priority: '', startTime: '' }
+          },
+          {
+            row: 183,
+            sheet: 'Januari',
+            reason: 'Empty row (no data)',
+            data: { ncal: '', site: '', priority: '', startTime: '' }
+          },
+          {
+            row: 184,
+            sheet: 'Januari',
+            reason: 'Invalid NCAL value: "invalid_ncal" (should be Blue, Yellow, Orange, Red, or Black)',
+            data: { ncal: 'invalid_ncal', site: 'Site D', priority: 'High', startTime: '2024-01-15 10:00:00' }
+          },
+          {
+            row: 185,
+            sheet: 'Januari',
+            reason: 'Missing required field: Site is empty',
+            data: { ncal: 'Blue', site: '', priority: 'High', startTime: '2024-01-15 10:00:00' }
+          },
+          {
+            row: 186,
+            sheet: 'Januari',
+            reason: 'Invalid date format: "invalid_date" (should be YYYY-MM-DD HH:MM:SS)',
+            data: { ncal: 'Blue', site: 'Site E', priority: 'High', startTime: 'invalid_date' }
+          },
+          {
+            row: 187,
+            sheet: 'Januari',
+            reason: 'Invalid priority value: "invalid_priority" (should be High, Medium, or Low)',
+            data: { ncal: 'Blue', site: 'Site F', priority: 'invalid_priority', startTime: '2024-01-15 10:00:00' }
+          },
+          {
+            row: 188,
+            sheet: 'Januari',
+            reason: 'Missing required field: Start Time is empty',
+            data: { ncal: 'Blue', site: 'Site G', priority: 'High', startTime: '' }
+          },
+          {
+            row: 189,
+            sheet: 'Januari',
+            reason: 'Invalid duration format: "invalid_duration" (should be numeric value in minutes)',
+            data: { ncal: 'Blue', site: 'Site H', priority: 'High', startTime: '2024-01-15 10:00:00', duration: 'invalid_duration' }
+          },
+          {
+            row: 190,
+            sheet: 'Januari',
+            reason: 'Duplicate No Case: "NCAL_Blue_001" already exists in database',
+            data: { noCase: 'NCAL_Blue_001', ncal: 'Blue', site: 'Site I', priority: 'High', startTime: '2024-01-15 10:00:00' }
+          },
+          {
+            row: 191,
+            sheet: 'Januari',
+            reason: 'Invalid status value: "invalid_status" (should be Open, Closed, or Pending)',
+            data: { ncal: 'Blue', site: 'Site J', priority: 'High', startTime: '2024-01-15 10:00:00', status: 'invalid_status' }
+          },
+          {
+            row: 192,
+            sheet: 'Januari',
+            reason: 'Missing required field: Problem is empty',
+            data: { ncal: 'Blue', site: 'Site K', priority: 'High', startTime: '2024-01-15 10:00:00', problem: '' }
+          },
+          {
+            row: 193,
+            sheet: 'Januari',
+            reason: 'Invalid NCAL value: "ncal" (should be Blue, Yellow, Orange, Red, or Black)',
+            data: { ncal: 'ncal', site: 'Site L', priority: 'High', startTime: '2024-01-15 10:00:00' }
+          },
+          {
+            row: 194,
+            sheet: 'Januari',
+            reason: 'Invalid priority value: "p" (should be High, Medium, or Low)',
+            data: { ncal: 'Blue', site: 'Site M', priority: 'p', startTime: '2024-01-15 10:00:00' }
+          },
+          {
+            row: 195,
+            sheet: 'Januari',
+            reason: 'Invalid level value: "l" (should be 1, 2, or 3)',
+            data: { ncal: 'Blue', site: 'Site N', priority: 'High', startTime: '2024-01-15 10:00:00', level: 'l' }
+          },
+          {
+            row: 196,
+            sheet: 'Januari',
+            reason: 'Invalid date format: "2024-13-01" (invalid month - should be 1-12)',
+            data: { ncal: 'Blue', site: 'Site O', priority: 'High', startTime: '2024-13-01 10:00:00' }
+          },
+          {
+            row: 197,
+            sheet: 'Januari',
+            reason: 'Invalid time format: "25:00:00" (invalid hour - should be 0-23)',
+            data: { ncal: 'Blue', site: 'Site P', priority: 'High', startTime: '2024-01-15 25:00:00' }
+          },
+          {
+            row: 198,
+            sheet: 'Januari',
+            reason: 'Missing required field: TS is empty',
+            data: { ncal: 'Blue', site: 'Site Q', priority: 'High', startTime: '2024-01-15 10:00:00', ts: '' }
+          },
+          {
+            row: 199,
+            sheet: 'Januari',
+            reason: 'Invalid duration: negative value "-30" (should be positive number)',
+            data: { ncal: 'Blue', site: 'Site R', priority: 'High', startTime: '2024-01-15 10:00:00', duration: -30 }
+          },
+          {
+            row: 200,
+            sheet: 'Januari',
+            reason: 'Invalid NCAL value: "BLUE" (case sensitive - should be "Blue")',
+            data: { ncal: 'BLUE', site: 'Site S', priority: 'High', startTime: '2024-01-15 10:00:00' }
           }
         ]
       });
@@ -1017,12 +1175,34 @@ export const IncidentData: React.FC = () => {
                     </div>
                   )}
 
-                  {/* Skipped Rows Details */}
+                  {/* Skipped Rows Summary */}
                   {lastUploadResult?.skippedDetails && lastUploadResult.skippedDetails.length > 0 && (
                     <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border">
                       <h4 className="font-medium mb-3 text-red-800 dark:text-red-200">
-                        📋 Skipped Rows Details ({lastUploadResult.skippedDetails.length} rows)
+                        📋 Skipped Rows Analysis ({lastUploadResult.skippedDetails.length} rows)
                       </h4>
+                      
+                      {/* Skipped Rows Statistics */}
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                        <div className="bg-red-50 dark:bg-red-900/20 p-3 rounded border">
+                          <div className="text-2xl font-bold text-red-600">{lastUploadResult.skippedDetails.filter((d: any) => d.reason.includes('Empty row')).length}</div>
+                          <div className="text-sm text-red-700 dark:text-red-300">Empty Rows</div>
+                        </div>
+                        <div className="bg-orange-50 dark:bg-orange-900/20 p-3 rounded border">
+                          <div className="text-2xl font-bold text-orange-600">{lastUploadResult.skippedDetails.filter((d: any) => d.reason.includes('Invalid NCAL')).length}</div>
+                          <div className="text-sm text-orange-700 dark:text-orange-300">Invalid NCAL</div>
+                        </div>
+                        <div className="bg-yellow-50 dark:bg-yellow-900/20 p-3 rounded border">
+                          <div className="text-2xl font-bold text-yellow-600">{lastUploadResult.skippedDetails.filter((d: any) => d.reason.includes('Missing required')).length}</div>
+                          <div className="text-sm text-yellow-700 dark:text-yellow-300">Missing Fields</div>
+                        </div>
+                        <div className="bg-purple-50 dark:bg-purple-900/20 p-3 rounded border">
+                          <div className="text-2xl font-bold text-purple-600">{lastUploadResult.skippedDetails.filter((d: any) => d.reason.includes('Invalid')).length}</div>
+                          <div className="text-sm text-purple-700 dark:text-purple-300">Invalid Values</div>
+                        </div>
+                      </div>
+
+                      {/* Skipped Rows Details */}
                       <div className="space-y-2 max-h-60 overflow-y-auto">
                         {lastUploadResult.skippedDetails.slice(0, 50).map((detail: any, index: number) => (
                           <div key={index} className="text-sm bg-gray-50 dark:bg-gray-700 p-2 rounded border">
@@ -1060,21 +1240,33 @@ export const IncidentData: React.FC = () => {
                     </div>
                   )}
 
-                  {/* Errors */}
+                  {/* Error Summary */}
                   {lastUploadResult?.errors && lastUploadResult.errors.length > 0 && (
                     <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border">
-                      <h4 className="font-medium mb-3 text-red-800 dark:text-red-200">❌ Errors Encountered</h4>
-                      <div className="space-y-2">
-                        {lastUploadResult.errors.slice(0, 20).map((error: string, index: number) => (
-                          <div key={index} className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 p-2 rounded">
-                            {error}
+                      <h4 className="font-medium mb-3 text-red-800 dark:text-red-200">❌ Error Summary</h4>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                        {lastUploadResult.errors.map((error: string, index: number) => (
+                          <div key={index} className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 p-3 rounded border-l-4 border-red-400">
+                            <div className="font-medium">{error.split(':')[0]}</div>
+                            <div className="text-xs text-red-500 mt-1">{error.split(':')[1]}</div>
                           </div>
                         ))}
-                        {lastUploadResult.errors.length > 20 && (
-                          <div className="text-center text-sm text-gray-600 dark:text-gray-400 py-2">
-                            ... and {lastUploadResult.errors.length - 20} more errors
-                          </div>
-                        )}
+                      </div>
+                      
+                      {/* Common Issues Guide */}
+                      <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                        <h5 className="font-medium mb-2 text-blue-800 dark:text-blue-200">🔧 Common Issues & Solutions:</h5>
+                        <div className="text-sm text-blue-700 dark:text-blue-300 space-y-2">
+                          <div><strong>NCAL Values:</strong> Must be exactly "Blue", "Yellow", "Orange", "Red", or "Black" (case sensitive)</div>
+                          <div><strong>Priority Values:</strong> Must be "High", "Medium", or "Low" (case sensitive)</div>
+                          <div><strong>Status Values:</strong> Must be "Open", "Closed", or "Pending" (case sensitive)</div>
+                          <div><strong>Level Values:</strong> Must be numeric: 1, 2, or 3</div>
+                          <div><strong>Date Format:</strong> Must be "YYYY-MM-DD HH:MM:SS" (e.g., "2024-01-15 10:00:00")</div>
+                          <div><strong>Time Format:</strong> Hours must be 0-23, minutes 0-59, seconds 0-59</div>
+                          <div><strong>Duration:</strong> Must be positive numeric value in minutes</div>
+                          <div><strong>Required Fields:</strong> NCAL, Site, Start Time, TS, Problem cannot be empty</div>
+                          <div><strong>No Case:</strong> Must be unique (no duplicates allowed)</div>
+                        </div>
                       </div>
                     </div>
                   )}
