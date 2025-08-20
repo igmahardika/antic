@@ -35,6 +35,7 @@ interface UploadResult {
     reason: string;
     data?: any;
   }>;
+  logs?: string[];
 }
 
 const REQUIRED_HEADERS = [
@@ -53,6 +54,16 @@ export const IncidentUpload: React.FC<IncidentUploadProps> = ({ onUploadComplete
   const [isUploading, setIsUploading] = useState(false);
   const [uploadResult, setUploadResult] = useState<UploadResult | null>(null);
   const [progress, setProgress] = useState(0);
+  const [showLogs, setShowLogs] = useState(false);
+  const [logs, setLogs] = useState<string[]>([]);
+
+  // Function to capture console logs
+  const captureLog = useCallback((message: string) => {
+    const timestamp = new Date().toLocaleTimeString();
+    const logEntry = `[${timestamp}] ${message}`;
+    setLogs(prev => [...prev, logEntry]);
+    console.log(message); // Still log to console
+  }, []);
 
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
     if (acceptedFiles.length === 0) return;
@@ -60,6 +71,7 @@ export const IncidentUpload: React.FC<IncidentUploadProps> = ({ onUploadComplete
     setIsUploading(true);
     setProgress(0);
     setUploadResult(null);
+    setLogs([]); // Clear previous logs
 
     try {
       const file = acceptedFiles[0];
@@ -80,27 +92,27 @@ export const IncidentUpload: React.FC<IncidentUploadProps> = ({ onUploadComplete
         data?: any;
       }> = [];
 
-      console.log(`=== UPLOAD ANALYSIS START ===`);
-      console.log(`🔍 VALIDATION STRATEGY: Using NCAL as primary validation field (not No Case)`);
-      console.log(`📊 Total sheets found: ${workbook.SheetNames.length}`);
-      console.log(`📋 Sheet names: ${workbook.SheetNames.join(', ')}`);
+      captureLog(`=== UPLOAD ANALYSIS START ===`);
+      captureLog(`🔍 VALIDATION STRATEGY: Using NCAL as primary validation field (not No Case)`);
+      captureLog(`📊 Total sheets found: ${workbook.SheetNames.length}`);
+      captureLog(`📋 Sheet names: ${workbook.SheetNames.join(', ')}`);
 
       // Process all sheets
       for (const sheetName of workbook.SheetNames) {
         const worksheet = workbook.Sheets[sheetName];
         const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
 
-        console.log(`\n--- Processing Sheet: "${sheetName}" ---`);
-        console.log(`Total rows in sheet: ${jsonData.length}`);
+        captureLog(`\n--- Processing Sheet: "${sheetName}" ---`);
+        captureLog(`Total rows in sheet: ${jsonData.length}`);
 
         if (jsonData.length < 2) {
-          console.log(`Sheet "${sheetName}" skipped: less than 2 rows`);
+          captureLog(`Sheet "${sheetName}" skipped: less than 2 rows`);
           continue;
         }
 
         const headers = jsonData[0] as string[];
-        console.log(`Headers found: ${headers.length}`);
-        console.log(`Header names: ${headers.join(', ')}`);
+        captureLog(`Headers found: ${headers.length}`);
+        captureLog(`Header names: ${headers.join(', ')}`);
         
         // Validate headers
         const missingHeaders = REQUIRED_HEADERS.filter(h => 
@@ -110,11 +122,11 @@ export const IncidentUpload: React.FC<IncidentUploadProps> = ({ onUploadComplete
         if (missingHeaders.length > 0) {
           const errorMsg = `Sheet "${sheetName}": Missing headers: ${missingHeaders.join(', ')}`;
           errors.push(errorMsg);
-          console.error(errorMsg);
+          captureLog(`❌ ERROR: ${errorMsg}`);
           continue;
         }
 
-        console.log(`All required headers found in sheet "${sheetName}"`);
+        captureLog(`✅ All required headers found in sheet "${sheetName}"`);
 
         // Process rows
         let sheetSuccessCount = 0;
@@ -130,7 +142,7 @@ export const IncidentUpload: React.FC<IncidentUploadProps> = ({ onUploadComplete
             sheetEmptyCount++;
             emptyRowCount++;
             const reason = "Empty row (no data)";
-            console.log(`Row ${i + 1} in "${sheetName}": ${reason}`);
+            captureLog(`Row ${i + 1} in "${sheetName}": ${reason}`);
             skippedDetails.push({
               row: i + 1,
               sheet: sheetName,
@@ -146,7 +158,7 @@ export const IncidentUpload: React.FC<IncidentUploadProps> = ({ onUploadComplete
             sheetEmptyCount++;
             emptyRowCount++;
             const reason = "Empty row (all cells empty)";
-            console.log(`Row ${i + 1} in "${sheetName}": ${reason}`);
+            captureLog(`Row ${i + 1} in "${sheetName}": ${reason}`);
             skippedDetails.push({
               row: i + 1,
               sheet: sheetName,
@@ -166,7 +178,7 @@ export const IncidentUpload: React.FC<IncidentUploadProps> = ({ onUploadComplete
                 // Row was skipped with specific reason
                 sheetSkippedCount++;
                 skippedCount++;
-                console.log(`Row ${i + 1} in "${sheetName}" skipped: ${result.reason}`);
+                captureLog(`Row ${i + 1} in "${sheetName}" skipped: ${result.reason}`);
                 skippedDetails.push({
                   row: i + 1,
                   sheet: sheetName,
@@ -178,7 +190,7 @@ export const IncidentUpload: React.FC<IncidentUploadProps> = ({ onUploadComplete
                 sheetSkippedCount++;
                 skippedCount++;
                 const reason = "Empty NCAL or invalid data";
-                console.log(`Row ${i + 1} in "${sheetName}" skipped: ${reason}`);
+                captureLog(`Row ${i + 1} in "${sheetName}" skipped: ${reason}`);
                 skippedDetails.push({
                   row: i + 1,
                   sheet: sheetName,
@@ -201,28 +213,28 @@ export const IncidentUpload: React.FC<IncidentUploadProps> = ({ onUploadComplete
             }
         }
 
-                  console.log(`Sheet "${sheetName}" results:`);
-          console.log(`  - Success: ${sheetSuccessCount}`);
-          console.log(`  - Skipped: ${sheetSkippedCount}`);
-          console.log(`  - Empty: ${sheetEmptyCount}`);
-          console.log(`  - Invalid: ${sheetInvalidCount}`);
+                  captureLog(`Sheet "${sheetName}" results:`);
+          captureLog(`  - Success: ${sheetSuccessCount}`);
+          captureLog(`  - Skipped: ${sheetSkippedCount}`);
+          captureLog(`  - Empty: ${sheetEmptyCount}`);
+          captureLog(`  - Invalid: ${sheetInvalidCount}`);
 
           setProgress((workbook.SheetNames.indexOf(sheetName) + 1) / workbook.SheetNames.length * 50);
         }
 
-        console.log(`\n=== UPLOAD ANALYSIS SUMMARY ===`);
-        console.log(`📊 Total rows processed: ${totalRowsProcessed}`);
-        console.log(`✅ Successfully parsed: ${successCount}`);
-        console.log(`⚠️ Skipped (empty/invalid): ${skippedCount}`);
-        console.log(`📭 Empty rows: ${emptyRowCount}`);
-        console.log(`❌ Invalid rows: ${invalidRowCount}`);
-        console.log(`💥 Failed: ${failedCount}`);
-        console.log(`💾 Total incidents to save: ${allRows.length}`);
+        captureLog(`\n=== UPLOAD ANALYSIS SUMMARY ===`);
+        captureLog(`📊 Total rows processed: ${totalRowsProcessed}`);
+        captureLog(`✅ Successfully parsed: ${successCount}`);
+        captureLog(`⚠️ Skipped (empty/invalid): ${skippedCount}`);
+        captureLog(`📭 Empty rows: ${emptyRowCount}`);
+        captureLog(`❌ Invalid rows: ${invalidRowCount}`);
+        captureLog(`💥 Failed: ${failedCount}`);
+        captureLog(`💾 Total incidents to save: ${allRows.length}`);
         
         // Log detailed breakdown of skipped rows
         if (skippedDetails.length > 0) {
-          console.log(`\n📋 DETAILED SKIPPED ROWS BREAKDOWN:`);
-          console.log(`Total skipped rows: ${skippedDetails.length}`);
+          captureLog(`\n📋 DETAILED SKIPPED ROWS BREAKDOWN:`);
+          captureLog(`Total skipped rows: ${skippedDetails.length}`);
           
           // Group by reason
           const reasonGroups = skippedDetails.reduce((acc, detail) => {
@@ -232,30 +244,30 @@ export const IncidentUpload: React.FC<IncidentUploadProps> = ({ onUploadComplete
           }, {} as Record<string, typeof skippedDetails>);
           
           Object.entries(reasonGroups).forEach(([reason, details]) => {
-            console.log(`\n🔍 "${reason}": ${details.length} rows`);
+            captureLog(`\n🔍 "${reason}": ${details.length} rows`);
             details.slice(0, 10).forEach(detail => {
-              console.log(`   Row ${detail.row} (${detail.sheet})`);
+              captureLog(`   Row ${detail.row} (${detail.sheet})`);
             });
             if (details.length > 10) {
-              console.log(`   ... and ${details.length - 10} more rows`);
+              captureLog(`   ... and ${details.length - 10} more rows`);
             }
           });
         }
         
-        console.log(`\n=== UPLOAD ANALYSIS END ===\n`);
+        captureLog(`\n=== UPLOAD ANALYSIS END ===\n`);
 
       // Save to database
       if (allRows.length > 0) {
         setProgress(60);
-        console.log(`Saving ${allRows.length} incidents to database...`);
+        captureLog(`💾 Saving ${allRows.length} incidents to database...`);
         
         try {
           await saveIncidentsChunked(allRows);
-          console.log(`Successfully saved ${allRows.length} incidents to database`);
+          captureLog(`✅ Successfully saved ${allRows.length} incidents to database`);
           
           // Verify data was saved
           const savedCount = await db.incidents.count();
-          console.log(`Total incidents in database after save: ${savedCount}`);
+          captureLog(`📊 Total incidents in database after save: ${savedCount}`);
           
           if (savedCount === 0) {
             throw new Error('Data was not saved to database - count is 0');
@@ -263,11 +275,11 @@ export const IncidentUpload: React.FC<IncidentUploadProps> = ({ onUploadComplete
           
           setProgress(100);
         } catch (error) {
-          console.error('Error saving to database:', error);
+          captureLog(`❌ ERROR: Error saving to database: ${error}`);
           throw new Error(`Failed to save data to database: ${error}`);
         }
       } else {
-        console.warn('No valid incidents to save');
+        captureLog(`⚠️ WARNING: No valid incidents to save`);
       }
 
       setUploadResult({
@@ -279,38 +291,39 @@ export const IncidentUpload: React.FC<IncidentUploadProps> = ({ onUploadComplete
         skipped: skippedCount,
         emptyRows: emptyRowCount,
         invalidRows: invalidRowCount,
-        skippedDetails
+        skippedDetails,
+        logs
       });
 
       // Log detailed summary
-      console.log(`\n=== FINAL UPLOAD SUMMARY ===`);
-      console.log(`Expected rows: ${totalRowsProcessed}`);
-      console.log(`Successfully uploaded: ${successCount}`);
-      console.log(`Skipped (empty/invalid): ${skippedCount}`);
-      console.log(`Empty rows: ${emptyRowCount}`);
-      console.log(`Invalid rows: ${invalidRowCount}`);
-      console.log(`Failed: ${failedCount}`);
-      console.log(`Total incidents saved: ${allRows.length}`);
+      captureLog(`\n=== FINAL UPLOAD SUMMARY ===`);
+      captureLog(`Expected rows: ${totalRowsProcessed}`);
+      captureLog(`Successfully uploaded: ${successCount}`);
+      captureLog(`Skipped (empty/invalid): ${skippedCount}`);
+      captureLog(`Empty rows: ${emptyRowCount}`);
+      captureLog(`Invalid rows: ${invalidRowCount}`);
+      captureLog(`Failed: ${failedCount}`);
+      captureLog(`Total incidents saved: ${allRows.length}`);
       
       if (successCount < totalRowsProcessed) {
-        console.warn(`⚠️  WARNING: Only ${successCount} out of ${totalRowsProcessed} rows were successfully uploaded!`);
-        console.warn(`Missing data: ${totalRowsProcessed - successCount} rows`);
-        console.warn(`Check the logs above for details on skipped/failed rows.`);
+        captureLog(`⚠️  WARNING: Only ${successCount} out of ${totalRowsProcessed} rows were successfully uploaded!`);
+        captureLog(`Missing data: ${totalRowsProcessed - successCount} rows`);
+        captureLog(`Check the logs above for details on skipped/failed rows.`);
       } else {
-        console.log(`✅ SUCCESS: All ${successCount} rows were successfully uploaded!`);
+        captureLog(`✅ SUCCESS: All ${successCount} rows were successfully uploaded!`);
       }
-      console.log(`=== END SUMMARY ===\n`);
+      captureLog(`=== END SUMMARY ===\n`);
 
       // Call callback if provided and upload was successful
       // Add delay to ensure logs are visible before closing modal
       if (onUploadComplete && successCount > 0) {
-        console.log(`\n🔄 Calling onUploadComplete callback in 3 seconds to allow log review...`);
+        captureLog(`\n🔄 Calling onUploadComplete callback in 3 seconds to allow log review...`);
         setTimeout(() => {
-          console.log(`✅ Executing onUploadComplete callback now`);
+          captureLog(`✅ Executing onUploadComplete callback now`);
           onUploadComplete();
         }, 3000); // 3 second delay
       } else if (onUploadComplete && successCount === 0) {
-        console.log(`\n⚠️ Upload completed but no data was uploaded. Callback will not be called.`);
+        captureLog(`\n⚠️ Upload completed but no data was uploaded. Callback will not be called.`);
       }
 
     } catch (error) {
@@ -401,19 +414,6 @@ export const IncidentUpload: React.FC<IncidentUploadProps> = ({ onUploadComplete
 
             {uploadResult && (
               <div className="space-y-4">
-                {/* Log Information */}
-                <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
-                  <div className="flex items-center gap-2">
-                    <AlertTriangle className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-                    <span className="text-sm font-medium text-blue-800 dark:text-blue-200">
-                      📋 Detailed Logs Available
-                    </span>
-                  </div>
-                  <p className="text-xs text-blue-700 dark:text-blue-300 mt-1">
-                    Press <strong>F12</strong> → <strong>Console</strong> tab to view detailed upload analysis and skipped rows information.
-                  </p>
-                </div>
-                
                 <div className="flex gap-4">
                   <Badge variant="success" className="flex items-center gap-1">
                     <CheckCircle className="w-4 h-4" />
@@ -469,17 +469,14 @@ export const IncidentUpload: React.FC<IncidentUploadProps> = ({ onUploadComplete
                         </div>
                       )}
                     </div>
-                                    {uploadResult.success < uploadResult.totalProcessed && (
-                  <div className="mt-3 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
-                    <p className="text-yellow-800 dark:text-yellow-200 text-sm">
-                      ⚠️ Only {uploadResult.success} out of {uploadResult.totalProcessed} rows were successfully uploaded. 
-                      Check the console for detailed information about skipped/failed rows.
-                    </p>
-                    <p className="text-yellow-700 dark:text-yellow-300 text-xs mt-2">
-                      💡 <strong>How to view logs:</strong> Press F12 → Console tab → Look for "UPLOAD ANALYSIS" messages
-                    </p>
-                  </div>
-                )}
+                                                        {uploadResult.success < uploadResult.totalProcessed && (
+                      <div className="mt-3 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+                        <p className="text-yellow-800 dark:text-yellow-200 text-sm">
+                          ⚠️ Only {uploadResult.success} out of {uploadResult.totalProcessed} rows were successfully uploaded. 
+                          Click "View Logs" button to see detailed information about skipped/failed rows.
+                        </p>
+                      </div>
+                    )}
                   </div>
                 )}
 
@@ -606,6 +603,16 @@ export const IncidentUpload: React.FC<IncidentUploadProps> = ({ onUploadComplete
                   </Button>
                   
                   <Button 
+                    onClick={() => setShowLogs(true)}
+                    variant="outline" 
+                    size="sm"
+                    className="border-orange-200 text-orange-700 hover:bg-orange-50"
+                  >
+                    <FileSpreadsheet className="w-4 h-4 mr-2" />
+                    View Logs ({logs.length})
+                  </Button>
+                  
+                  <Button 
                     onClick={() => {
                       console.log('🔄 Manual close button clicked - calling onUploadComplete immediately');
                       if (onUploadComplete) {
@@ -625,6 +632,81 @@ export const IncidentUpload: React.FC<IncidentUploadProps> = ({ onUploadComplete
           </div>
         </CardContent>
       </Card>
+
+      {/* Logs Modal */}
+      {showLogs && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-4xl w-full mx-4 max-h-[80vh] flex flex-col">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-orange-100 dark:bg-orange-900/30 rounded-full flex items-center justify-center">
+                  <FileSpreadsheet className="w-5 h-5 text-orange-600 dark:text-orange-400" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                    Upload Logs
+                  </h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    Detailed upload analysis and processing logs
+                  </p>
+                </div>
+              </div>
+              <Button 
+                onClick={() => setShowLogs(false)}
+                variant="outline" 
+                size="sm"
+              >
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+            
+            <div className="flex-1 overflow-hidden">
+              <div className="bg-gray-100 dark:bg-gray-900 rounded-lg p-4 h-full overflow-y-auto">
+                <div className="space-y-2 font-mono text-sm">
+                  {logs.length > 0 ? (
+                    logs.map((log, index) => (
+                      <div key={index} className="text-gray-800 dark:text-gray-200 whitespace-pre-wrap">
+                        {log}
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-gray-500 dark:text-gray-400 text-center py-8">
+                      No logs available
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+            
+            <div className="flex justify-between items-center mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+              <div className="text-sm text-gray-600 dark:text-gray-400">
+                {logs.length} log entries
+              </div>
+              <div className="flex gap-2">
+                <Button 
+                  onClick={() => {
+                    const logText = logs.join('\n');
+                    navigator.clipboard.writeText(logText);
+                    alert('Logs copied to clipboard!');
+                  }}
+                  variant="outline" 
+                  size="sm"
+                >
+                  <Download className="w-4 h-4 mr-2" />
+                  Copy Logs
+                </Button>
+                <Button 
+                  onClick={() => setShowLogs(false)}
+                  variant="default"
+                  size="sm"
+                >
+                  Close
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
