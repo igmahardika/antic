@@ -95,6 +95,8 @@ export const IncidentUpload: React.FC<IncidentUploadProps> = ({ onUploadComplete
       captureLog(`🔍 VALIDATION STRATEGY: Using NCAL as primary validation field (not No Case)`);
       captureLog(`📊 Total sheets found: ${workbook.SheetNames.length}`);
       captureLog(`📋 Sheet names: ${workbook.SheetNames.join(', ')}`);
+      captureLog(`🎯 GOAL: Upload ALL valid data, skip only truly invalid/empty rows`);
+      captureLog(`📝 LOGGING: Detailed logging for all skipped rows with specific reasons`);
 
       // Process all sheets
       for (const sheetName of workbook.SheetNames) {
@@ -178,12 +180,12 @@ export const IncidentUpload: React.FC<IncidentUploadProps> = ({ onUploadComplete
                 allRows.push(result);
                 successCount++;
                 sheetSuccessCount++;
-                captureLog(`Row ${i + 1} in "${sheetName}": Successfully processed`);
+                captureLog(`Row ${i + 1} in "${sheetName}": ✅ Successfully processed - ID: ${result.id}, NCAL: ${result.ncal}, Site: ${result.site}`);
               } else if (result && result.skipped) {
                 // Row was skipped with specific reason
                 sheetSkippedCount++;
                 skippedCount++;
-                captureLog(`Row ${i + 1} in "${sheetName}" skipped: ${result.reason}`);
+                captureLog(`Row ${i + 1} in "${sheetName}" ⚠️ SKIPPED: ${result.reason}`);
                 skippedDetails.push({
                   row: i + 1,
                   sheet: sheetName,
@@ -195,7 +197,7 @@ export const IncidentUpload: React.FC<IncidentUploadProps> = ({ onUploadComplete
                 sheetSkippedCount++;
                 skippedCount++;
                 const reason = "Row processing returned null (unknown error)";
-                captureLog(`Row ${i + 1} in "${sheetName}" skipped: ${reason}`);
+                captureLog(`Row ${i + 1} in "${sheetName}" ❌ SKIPPED: ${reason}`);
                 skippedDetails.push({
                   row: i + 1,
                   sheet: sheetName,
@@ -348,6 +350,16 @@ export const IncidentUpload: React.FC<IncidentUploadProps> = ({ onUploadComplete
         captureLog(`This indicates a bug in the processing logic.`);
       } else {
         captureLog(`✅ DATA CONSISTENCY: All rows properly accounted for!`);
+      }
+      
+      // Upload success validation
+      captureLog(`\n=== UPLOAD SUCCESS VALIDATION ===`);
+      if (successCount > 0) {
+        captureLog(`✅ SUCCESS: ${successCount} valid incidents uploaded successfully!`);
+        captureLog(`📊 Upload success rate: ${((successCount / totalRowsProcessed) * 100).toFixed(1)}%`);
+      } else {
+        captureLog(`❌ FAILURE: No valid incidents were uploaded!`);
+        captureLog(`🔍 Check the skipped rows details above for issues.`);
       }
       
       if (successCount < totalRowsProcessed) {
@@ -551,7 +563,7 @@ function parseRowToIncident(headers: string[], row: any[], rowNum: number, sheet
     return { skipped: true, reason, rowData: { ncal: ncalValue, normalizedNCAL } };
   }
 
-  // Validate NCAL value
+  // Validate NCAL value with more flexible normalization
   const validNCAL = ['Blue', 'Yellow', 'Orange', 'Red', 'Black'];
   const ncalStr = normalizedNCAL;
   let finalNCAL = ncalStr;
@@ -559,13 +571,13 @@ function parseRowToIncident(headers: string[], row: any[], rowNum: number, sheet
   if (!validNCAL.includes(ncalStr)) {
     // Try to normalize common variations
     const normalized = ncalStr.toLowerCase();
-    if (normalized === 'blue' || normalized === 'b') finalNCAL = 'Blue';
-    else if (normalized === 'yellow' || normalized === 'y') finalNCAL = 'Yellow';
-    else if (normalized === 'orange' || normalized === 'o') finalNCAL = 'Orange';
+    if (normalized === 'blue' || normalized === 'b' || normalized === 'blu') finalNCAL = 'Blue';
+    else if (normalized === 'yellow' || normalized === 'y' || normalized === 'yel') finalNCAL = 'Yellow';
+    else if (normalized === 'orange' || normalized === 'o' || normalized === 'ora') finalNCAL = 'Orange';
     else if (normalized === 'red' || normalized === 'r') finalNCAL = 'Red';
-    else if (normalized === 'black' || normalized === 'bl') finalNCAL = 'Black';
-        else {
-      const reason = `Invalid NCAL value "${ncalValue}" (primary validation field)`;
+    else if (normalized === 'black' || normalized === 'bl' || normalized === 'bla') finalNCAL = 'Black';
+    else {
+      const reason = `Invalid NCAL value "${ncalValue}" (primary validation field) - Expected: Blue, Yellow, Orange, Red, or Black`;
       console.log(`Row ${rowNum} in "${sheetName}": ${reason}`);
       return { skipped: true, reason, rowData: { ncal: ncalValue, normalizedNCAL } };
     }
@@ -586,6 +598,23 @@ function parseRowToIncident(headers: string[], row: any[], rowNum: number, sheet
     const reason = "Missing Start time (required field)";
     console.log(`Row ${rowNum} in "${sheetName}": ${reason}`);
     return { skipped: true, reason, rowData: { startTimeRaw } };
+  }
+  
+  // Validate other critical fields but don't skip if they're missing
+  const siteValue = getValue('Site');
+  const tsValue = getValue('TS');
+  const problemValue = getValue('Problem');
+  
+  if (!siteValue || String(siteValue).trim() === '') {
+    console.warn(`Row ${rowNum} in "${sheetName}": Site is empty - will use default value`);
+  }
+  
+  if (!tsValue || String(tsValue).trim() === '') {
+    console.warn(`Row ${rowNum} in "${sheetName}": TS is empty - will use default value`);
+  }
+  
+  if (!problemValue || String(problemValue).trim() === '') {
+    console.warn(`Row ${rowNum} in "${sheetName}": Problem is empty - will use default value`);
   }
 
   const startTime = parseDateSafe(startTimeRaw);
@@ -620,16 +649,16 @@ function parseRowToIncident(headers: string[], row: any[], rowNum: number, sheet
           console.warn(`Row ${rowNum} in "${sheetName}": Invalid Priority value "${priorityValue}". Expected: High, Medium, Low`);
           // Try to normalize common variations
           const normalized = priorityStr.toLowerCase();
-          if (normalized === 'high' || normalized === 'h') return 'High';
-          if (normalized === 'medium' || normalized === 'med' || normalized === 'm') return 'Medium';
-          if (normalized === 'low' || normalized === 'l') return 'Low';
+          if (normalized === 'high' || normalized === 'h' || normalized === 'hi') return 'High';
+          if (normalized === 'medium' || normalized === 'med' || normalized === 'm' || normalized === 'mid') return 'Medium';
+          if (normalized === 'low' || normalized === 'l' || normalized === 'lo') return 'Low';
         }
       }
       return priorityValue ? String(priorityValue).trim() : null;
     })(),
     site: (() => {
       const siteValue = getValue('Site');
-      return siteValue ? String(siteValue).trim() : null;
+      return siteValue ? String(siteValue).trim() : 'Unknown Site';
     })(),
     // NCAL is already processed above
     status: (() => {
@@ -644,13 +673,18 @@ function parseRowToIncident(headers: string[], row: any[], rowNum: number, sheet
           return levelNum;
         } else {
           console.warn(`Row ${rowNum} in "${sheetName}": Invalid Level value "${levelValue}". Expected: 1-10`);
+          // Try to normalize common variations
+          const levelStr = String(levelValue).toLowerCase().trim();
+          if (levelStr === '1' || levelStr === 'one' || levelStr === 'i') return 1;
+          if (levelStr === '2' || levelStr === 'two' || levelStr === 'ii') return 2;
+          if (levelStr === '3' || levelStr === 'three' || levelStr === 'iii') return 3;
         }
       }
       return levelValue ? Number(levelValue) : null;
     })(),
     ts: (() => {
       const tsValue = getValue('TS');
-      return tsValue ? String(tsValue).trim() : null;
+      return tsValue ? String(tsValue).trim() : 'Unknown TS';
     })(),
     odpBts: (() => {
       const odpValue = getValue('ODP/BTS');
@@ -677,7 +711,7 @@ function parseRowToIncident(headers: string[], row: any[], rowNum: number, sheet
     })(),
     problem: (() => {
       const problemValue = getValue('Problem');
-      return problemValue ? String(problemValue).trim() : null;
+      return problemValue ? String(problemValue).trim() : 'No Problem Description';
     })(),
     penyebab: (() => {
       const penyebabValue = getValue('Penyebab');
