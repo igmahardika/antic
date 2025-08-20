@@ -577,6 +577,52 @@ export const IncidentData: React.FC = () => {
               <Database className="w-3 h-3 mr-1" />
               Validate Data
             </Button>
+            
+            <Button 
+              onClick={async () => {
+                if (confirm('Are you sure you want to fix data inconsistency? This will update the upload result to match the actual database count.')) {
+                  const dbCount = allIncidents?.length || 0;
+                  const logCount = lastUploadResult?.success || 0;
+                  
+                  if (dbCount !== logCount && lastUploadResult) {
+                    // Update the upload result to match database count
+                    const updatedResult = {
+                      ...lastUploadResult,
+                      success: dbCount,
+                      actualSaved: dbCount,
+                      originalReported: logCount,
+                      inconsistencyFixed: true
+                    };
+                    
+                    setLastUploadResult(updatedResult);
+                    
+                    // Add a log entry about the fix
+                    const fixLog = `[${new Date().toLocaleTimeString()}] 🔧 DATA INCONSISTENCY FIXED: Updated upload result from ${logCount} to ${dbCount} to match database count.`;
+                    const newLogs = [...uploadLogs, fixLog];
+                    setUploadLogs(newLogs);
+                    
+                    // Save to localStorage
+                    localStorage.setItem('uploadLogs', JSON.stringify(newLogs));
+                    
+                    toast({
+                      title: "Data Inconsistency Fixed",
+                      description: `Upload result updated to match database count (${dbCount}).`,
+                    });
+                  } else {
+                    toast({
+                      title: "No Inconsistency Found",
+                      description: "Data is already consistent.",
+                    });
+                  }
+                }
+              }} 
+              variant="outline"
+              size="sm"
+              className="border-green-200 text-green-700 hover:bg-green-50"
+            >
+              <CheckCircle className="w-3 h-3 mr-1" />
+              Fix Inconsistency
+            </Button>
         </div>
       </div>
 
@@ -1075,6 +1121,9 @@ export const IncidentData: React.FC = () => {
                         <div>
                           <span className="text-gray-600 dark:text-gray-400">Successfully Uploaded:</span>
                           <span className="ml-2 font-medium text-green-600">{lastUploadResult.success}</span>
+                          {lastUploadResult.inconsistencyFixed && (
+                            <span className="ml-2 text-xs text-orange-600">(Fixed from {lastUploadResult.originalReported})</span>
+                          )}
                         </div>
                         <div>
                           <span className="text-gray-600 dark:text-gray-400">Currently in Database:</span>
@@ -1114,6 +1163,23 @@ export const IncidentData: React.FC = () => {
                           </div>
                           <div className="text-xs text-red-600 dark:text-red-400 mt-2">
                             Possible causes: Duplicate uploads, data loss, or test data interference.
+                            <br />
+                            <span className="font-medium">Use "Fix Inconsistency" button to update the upload result to match database count.</span>
+                          </div>
+                        </div>
+                      )}
+                      
+                      {/* Data Consistency Fixed */}
+                      {lastUploadResult.inconsistencyFixed && (
+                        <div className="mt-4 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+                          <div className="flex items-center gap-2 text-green-800 dark:text-green-200">
+                            <CheckCircle className="w-4 h-4" />
+                            <span className="font-medium">Data Inconsistency Fixed</span>
+                          </div>
+                          <div className="text-sm text-green-700 dark:text-green-300 mt-1">
+                            Upload result has been updated to match database count.
+                            <br />
+                            <span className="font-medium">Original: {lastUploadResult.originalReported} → Fixed: {lastUploadResult.success}</span>
                           </div>
                         </div>
                       )}
