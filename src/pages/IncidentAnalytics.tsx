@@ -1233,12 +1233,86 @@ export const IncidentAnalytics: React.FC = () => {
             <CardDescription>Total pause time ratio</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-orange-600">
-              {stats.pauseRatio > 0 ? (stats.pauseRatio * 100).toFixed(1) : '0.0'}%
+            <div className="space-y-4">
+              {/* Main Metric */}
+              <div className="text-center">
+                <div className="text-4xl font-bold text-orange-600">
+                  {stats.pauseRatio > 0 ? (stats.pauseRatio * 100).toFixed(1) : '0.0'}%
+                </div>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                  Percentage of total time spent on pause
+                </p>
+              </div>
+
+              {/* Breakdown */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg border border-orange-200 dark:border-orange-800">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                      Total Pause Time
+                    </span>
+                  </div>
+                  <span className="text-sm font-bold text-orange-600">
+                    {(() => {
+                      const totalPauseTime = filteredIncidents.reduce((sum, i) => sum + (i.totalDurationPauseMin || 0), 0);
+                      return formatDurationHMS(totalPauseTime);
+                    })()}
+                  </span>
+                </div>
+
+                <div className="flex items-center justify-between p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                      Total Duration
+                    </span>
+                  </div>
+                  <span className="text-sm font-bold text-blue-600">
+                    {(() => {
+                      const totalDuration = filteredIncidents.reduce((sum, i) => sum + (i.durationMin || 0), 0);
+                      return formatDurationHMS(totalDuration);
+                    })()}
+                  </span>
+                </div>
+
+                <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-gray-500 rounded-full"></div>
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                      Incidents with Pause
+                    </span>
+                  </div>
+                  <span className="text-sm font-bold text-gray-600">
+                    {filteredIncidents.filter(i => i.totalDurationPauseMin && i.totalDurationPauseMin > 0).length}
+                  </span>
+                </div>
+              </div>
+
+              {/* Performance Indicator */}
+              <div className="mt-4 p-3 bg-gradient-to-r from-orange-50 to-red-50 dark:from-orange-900/20 dark:to-red-900/20 rounded-lg border border-orange-200 dark:border-orange-800">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <WarningAmberIcon className="w-4 h-4 text-orange-600" />
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                      Performance Impact
+                    </span>
+                  </div>
+                  <span className={`text-sm font-bold ${
+                    stats.pauseRatio > 0.15 ? 'text-red-600' : 
+                    stats.pauseRatio > 0.10 ? 'text-orange-600' : 'text-green-600'
+                  }`}>
+                    {stats.pauseRatio > 0.15 ? 'High' : 
+                     stats.pauseRatio > 0.10 ? 'Medium' : 'Low'}
+                  </span>
+                </div>
+                <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                  {stats.pauseRatio > 0.15 ? 'Significant impact on resolution time' :
+                   stats.pauseRatio > 0.10 ? 'Moderate impact on efficiency' :
+                   'Minimal impact on operations'}
+                </p>
+              </div>
             </div>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
-              Percentage of total time spent on pause
-            </p>
           </CardContent>
         </Card>
 
