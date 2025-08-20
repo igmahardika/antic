@@ -79,20 +79,25 @@ export const IncidentUpload: React.FC = () => {
 
           // Skip completely empty rows
           const hasData = row.some(cell => cell !== null && cell !== undefined && String(cell).trim() !== '');
-          if (!hasData) continue;
+          if (!hasData) {
+            console.log(`Row ${i + 1} in "${sheetName}" skipped: completely empty row`);
+            continue;
+          }
 
           try {
             const incident = parseRowToIncident(headers, row, i + 1, sheetName);
             if (incident) {
               allRows.push(incident);
               successCount++;
+              console.log(`Row ${i + 1} in "${sheetName}" processed successfully: ${incident.noCase} (NCAL: ${incident.ncal})`);
             } else {
-              // Row was skipped (empty No Case) - don't count as failed
-              console.log(`Row ${i + 1} in "${sheetName}" skipped: empty No Case`);
+              // Row was skipped (empty NCAL) - don't count as failed
+              console.log(`Row ${i + 1} in "${sheetName}" skipped: invalid NCAL or empty required fields`);
             }
           } catch (error) {
             errors.push(`Row ${i + 1} in "${sheetName}": ${error}`);
             failedCount++;
+            console.error(`Row ${i + 1} in "${sheetName}" failed with error:`, error);
           }
         }
 
@@ -207,7 +212,7 @@ export const IncidentUpload: React.FC = () => {
                     {uploadResult.success} Success
                   </Badge>
                   {uploadResult.failed > 0 && (
-                    <Badge variant="destructive" className="flex items-center gap-1">
+                    <Badge variant="danger" className="flex items-center gap-1">
                       <XCircle className="w-4 h-4" />
                       {uploadResult.failed} Failed
                     </Badge>
@@ -285,24 +290,39 @@ function parseRowToIncident(headers: string[], row: any[], rowNum: number, sheet
     return index >= 0 ? row[index] : null;
   };
 
-  const noCase = getValue('No Case');
-  if (!noCase || String(noCase).trim() === '') {
-    return null; // Skip empty rows instead of throwing error
+  // VALIDASI UTAMA: NCAL harus ada dan valid
+  const ncalValue = getValue('NCAL');
+  if (!ncalValue || String(ncalValue).trim() === '') {
+    console.log(`Row ${rowNum} in "${sheetName}" skipped: NCAL is empty`);
+    return null;
   }
 
-  // Additional validation for required fields
+  const validNCAL = ['Blue', 'Yellow', 'Orange', 'Red', 'Black'];
+  const ncalStr = String(ncalValue).trim();
+  if (!validNCAL.includes(ncalStr)) {
+    console.log(`Row ${rowNum} in "${sheetName}" skipped: Invalid NCAL value "${ncalValue}". Expected: Blue, Yellow, Orange, Red, Black`);
+    return null;
+  }
+
+  // Jika NCAL valid, lanjutkan dengan data yang ada
+  const noCase = getValue('No Case') || `AUTO-${Date.now()}-${rowNum}`; // Generate auto ID jika kosong
   const startTimeRaw = getValue('Start');
+  
+  // Jika Start Time kosong, gunakan waktu import sebagai fallback
+  let startTime: string;
   if (!startTimeRaw || String(startTimeRaw).trim() === '') {
-    console.log(`Row ${rowNum} in "${sheetName}" skipped: missing Start time`);
-    return null;
+    console.log(`Row ${rowNum} in "${sheetName}": Start time is empty, using import time as fallback`);
+    startTime = new Date().toISOString();
+  } else {
+    const parsedStartTime = parseDateSafe(startTimeRaw);
+    if (!parsedStartTime) {
+      console.log(`Row ${rowNum} in "${sheetName}": Invalid Start time format, using import time as fallback`);
+      startTime = new Date().toISOString();
+    } else {
+      startTime = parsedStartTime;
+    }
   }
 
-  const startTime = parseDateSafe(startTimeRaw);
-  if (!startTime) {
-    console.log(`Row ${rowNum} in "${sheetName}" skipped: invalid Start time format`);
-    return null;
-  }
-  console.log(`Row ${rowNum} in "${sheetName}": Successfully parsed Start time "${startTimeRaw}" -> ${startTime}`);
   const id = mkId(noCase, startTime);
 
   const incident: Incident = {
@@ -322,19 +342,7 @@ function parseRowToIncident(headers: string[], row: any[], rowNum: number, sheet
       return priorityValue || null;
     })(),
     site: getValue('Site') || null,
-    ncal: (() => {
-      const ncalValue = getValue('NCAL');
-      if (ncalValue) {
-        const validNCAL = ['Blue', 'Yellow', 'Orange', 'Red', 'Black'];
-        const ncalStr = String(ncalValue).trim();
-        if (validNCAL.includes(ncalStr)) {
-          return ncalStr;
-        } else {
-          console.warn(`Row ${rowNum} in "${sheetName}": Invalid NCAL value "${ncalValue}". Expected: Blue, Yellow, Orange, Red, Black`);
-        }
-      }
-      return ncalValue || null;
-    })(),
+    ncal: ncalStr, // Sudah divalidasi di atas
     status: getValue('Status') || null,
     level: (() => {
       const levelValue = getValue('Level');
