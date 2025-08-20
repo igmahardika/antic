@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 
 import SummaryCard from '@/components/ui/SummaryCard';
-import {
+import { 
   ChartConfig,
   ChartContainer,
   ChartTooltip,
@@ -228,8 +228,8 @@ export const IncidentAnalytics: React.FC = () => {
                 <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
                   {isDuration ? formatDurationHMS(value) : value.toLocaleString()}
                 </span>
-              </div>
-            );
+      </div>
+    );
           })}
         </div>
       </div>
@@ -1030,8 +1030,9 @@ export const IncidentAnalytics: React.FC = () => {
             </CardTitle>
             <CardDescription>Monthly incident count by NCAL level</CardDescription>
           </CardHeader>
-          <CardContent className="h-[300px]">
-            <ChartContainer config={ncalAreaChartConfig}>
+          <CardContent className="h-[300px] p-4">
+            <div className="w-full h-full">
+              <ChartContainer config={ncalAreaChartConfig}>
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart
                   accessibilityLayer
@@ -1085,6 +1086,7 @@ export const IncidentAnalytics: React.FC = () => {
               </LineChart>
               </ResponsiveContainer>
             </ChartContainer>
+            </div>
           </CardContent>
         </Card>
 
@@ -1096,8 +1098,9 @@ export const IncidentAnalytics: React.FC = () => {
             </CardTitle>
             <CardDescription>Average duration by NCAL level per month</CardDescription>
           </CardHeader>
-          <CardContent className="h-[300px]">
-            <ChartContainer config={ncalAreaChartConfig}>
+          <CardContent className="h-[300px] p-4">
+            <div className="w-full h-full">
+              <ChartContainer config={ncalAreaChartConfig}>
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart
                   accessibilityLayer
@@ -1151,6 +1154,7 @@ export const IncidentAnalytics: React.FC = () => {
               </LineChart>
               </ResponsiveContainer>
             </ChartContainer>
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -1165,8 +1169,9 @@ export const IncidentAnalytics: React.FC = () => {
             </CardTitle>
             <CardDescription>Distribution of incidents by priority level</CardDescription>
           </CardHeader>
-          <CardContent className="h-[300px]">
-            <ChartContainer config={priorityChartConfig}>
+          <CardContent className="h-[300px] p-4">
+            <div className="w-full h-full">
+              <ChartContainer config={priorityChartConfig}>
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart 
                   accessibilityLayer 
@@ -1204,8 +1209,9 @@ export const IncidentAnalytics: React.FC = () => {
                   radius={8}
                 />
               </BarChart>
-              </ResponsiveContainer>
+            </ResponsiveContainer>
             </ChartContainer>
+            </div>
           </CardContent>
         </Card>
 
@@ -1217,7 +1223,8 @@ export const IncidentAnalytics: React.FC = () => {
             </CardTitle>
             <CardDescription>Distribution of incidents by level</CardDescription>
           </CardHeader>
-          <CardContent className="h-[300px]">
+          <CardContent className="h-[300px] p-4">
+            <div className="w-full h-full">
             {/* Month Filter */}
             <div className="mb-3">
               <div className="flex items-center gap-2 mb-1">
@@ -1291,8 +1298,9 @@ export const IncidentAnalytics: React.FC = () => {
                   />
                 </Bar>
               </BarChart>
-              </ResponsiveContainer>
+            </ResponsiveContainer>
             </ChartContainer>
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -1307,14 +1315,16 @@ export const IncidentAnalytics: React.FC = () => {
             </CardTitle>
             <CardDescription>Average vendor response time</CardDescription>
           </CardHeader>
-          <CardContent className="h-[300px] flex flex-col justify-center">
-            <div className="text-center">
+          <CardContent className="h-[300px] flex flex-col justify-center p-4">
+            <div className="w-full h-full flex flex-col justify-center">
+              <div className="text-center">
               <div className="text-3xl font-bold text-blue-600">
                 {stats.avgVendorMin > 0 ? formatDurationHMS(stats.avgVendorMin) : '0:00:00'}
-              </div>
+                  </div>
               <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
                 Average vendor duration across all incidents
               </p>
+            </div>
             </div>
           </CardContent>
         </Card>
@@ -1328,12 +1338,13 @@ export const IncidentAnalytics: React.FC = () => {
             <CardDescription>Total pause time ratio</CardDescription>
           </CardHeader>
           <CardContent className="h-[300px] overflow-y-auto p-4">
-            <div className="space-y-3">
+            <div className="w-full h-full">
+              <div className="space-y-3">
               {/* Main Metric */}
               <div className="text-center">
                 <div className="text-3xl font-bold text-orange-600">
                   {stats.pauseRatio > 0 ? (stats.pauseRatio * 100).toFixed(1) : '0.0'}%
-                </div>
+                  </div>
                 <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
                   Percentage of total time spent on pause
                 </p>
@@ -1362,14 +1373,14 @@ export const IncidentAnalytics: React.FC = () => {
                     <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
                       Total Duration
                     </span>
-                  </div>
+            </div>
                   <span className="text-xs font-bold text-blue-600">
                     {(() => {
                       const totalDuration = filteredIncidents.reduce((sum, i) => sum + (i.durationMin || 0), 0);
                       return formatDurationHMS(totalDuration);
                     })()}
                   </span>
-                </div>
+      </div>
 
                 <div className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
                   <div className="flex items-center gap-2">
@@ -1377,11 +1388,11 @@ export const IncidentAnalytics: React.FC = () => {
                     <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
                       Incidents with Pause
                     </span>
-                  </div>
+              </div>
                   <span className="text-xs font-bold text-gray-600">
                     {filteredIncidents.filter(i => i.totalDurationPauseMin && i.totalDurationPauseMin > 0).length}
                   </span>
-                </div>
+            </div>
               </div>
 
               {/* Performance Indicator */}
@@ -1392,7 +1403,7 @@ export const IncidentAnalytics: React.FC = () => {
                     <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
                       Performance Impact
                     </span>
-                  </div>
+            </div>
                   <span className={`text-xs font-bold ${
                     stats.pauseRatio > 0.15 ? 'text-red-600' : 
                     stats.pauseRatio > 0.10 ? 'text-orange-600' : 'text-green-600'
@@ -1400,13 +1411,14 @@ export const IncidentAnalytics: React.FC = () => {
                     {stats.pauseRatio > 0.15 ? 'High' : 
                      stats.pauseRatio > 0.10 ? 'Medium' : 'Low'}
                   </span>
-                </div>
+              </div>
                 <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
                   {stats.pauseRatio > 0.15 ? 'Significant impact on resolution time' :
                    stats.pauseRatio > 0.10 ? 'Moderate impact on efficiency' :
                    'Minimal impact on operations'}
                 </p>
               </div>
+            </div>
             </div>
           </CardContent>
         </Card>
@@ -1419,8 +1431,9 @@ export const IncidentAnalytics: React.FC = () => {
             </CardTitle>
             <CardDescription>Most affected sites by incident count</CardDescription>
           </CardHeader>
-          <CardContent className="h-[300px]">
-            <ChartContainer config={siteChartConfig}>
+          <CardContent className="h-[300px] p-4">
+            <div className="w-full h-full">
+              <ChartContainer config={siteChartConfig}>
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart 
                   accessibilityLayer
@@ -1466,10 +1479,11 @@ export const IncidentAnalytics: React.FC = () => {
               </BarChart>
               </ResponsiveContainer>
             </ChartContainer>
+            </div>
           </CardContent>
         </Card>
       </div>
-      </div>
+    </div>
     </PageWrapper>
   );
 };
