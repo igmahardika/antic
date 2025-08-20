@@ -24,6 +24,9 @@ interface UploadResult {
   failed: number;
   errors: string[];
   preview: Incident[];
+  totalProcessed?: number;
+  skipped?: number;
+  emptyRows?: number;
 }
 
 const REQUIRED_HEADERS = [
@@ -58,15 +61,30 @@ export const IncidentUpload: React.FC<IncidentUploadProps> = ({ onUploadComplete
       const errors: string[] = [];
       let successCount = 0;
       let failedCount = 0;
+      let skippedCount = 0;
+      let emptyRowCount = 0;
+      let totalRowsProcessed = 0;
+
+      console.log(`=== UPLOAD ANALYSIS START ===`);
+      console.log(`Total sheets found: ${workbook.SheetNames.length}`);
+      console.log(`Sheet names: ${workbook.SheetNames.join(', ')}`);
 
       // Process all sheets
       for (const sheetName of workbook.SheetNames) {
         const worksheet = workbook.Sheets[sheetName];
         const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
 
-        if (jsonData.length < 2) continue; // Skip empty sheets
+        console.log(`\n--- Processing Sheet: "${sheetName}" ---`);
+        console.log(`Total rows in sheet: ${jsonData.length}`);
+
+        if (jsonData.length < 2) {
+          console.log(`Sheet "${sheetName}" skipped: less than 2 rows`);
+          continue;
+        }
 
         const headers = jsonData[0] as string[];
+        console.log(`Headers found: ${headers.length}`);
+        console.log(`Header names: ${headers.join(', ')}`);
         
         // Validate headers
         const missingHeaders = REQUIRED_HEADERS.filter(h => 
@@ -74,27 +92,48 @@ export const IncidentUpload: React.FC<IncidentUploadProps> = ({ onUploadComplete
         );
 
         if (missingHeaders.length > 0) {
-          errors.push(`Sheet "${sheetName}": Missing headers: ${missingHeaders.join(', ')}`);
+          const errorMsg = `Sheet "${sheetName}": Missing headers: ${missingHeaders.join(', ')}`;
+          errors.push(errorMsg);
+          console.error(errorMsg);
           continue;
         }
 
+        console.log(`All required headers found in sheet "${sheetName}"`);
+
         // Process rows
+        let sheetSuccessCount = 0;
+        let sheetSkippedCount = 0;
+        let sheetEmptyCount = 0;
+
         for (let i = 1; i < jsonData.length; i++) {
+          totalRowsProcessed++;
           const row = jsonData[i] as any[];
-          if (!row || row.length === 0) continue;
+          
+          if (!row || row.length === 0) {
+            sheetEmptyCount++;
+            emptyRowCount++;
+            continue;
+          }
 
           // Skip completely empty rows
           const hasData = row.some(cell => cell !== null && cell !== undefined && String(cell).trim() !== '');
-          if (!hasData) continue;
+          if (!hasData) {
+            sheetEmptyCount++;
+            emptyRowCount++;
+            continue;
+          }
 
           try {
             const incident = parseRowToIncident(headers, row, i + 1, sheetName);
             if (incident) {
               allRows.push(incident);
               successCount++;
+              sheetSuccessCount++;
             } else {
-              // Row was skipped (empty No Case) - don't count as failed
-              console.log(`Row ${i + 1} in "${sheetName}" skipped: empty No Case`);
+              // Row was skipped (empty No Case or invalid data)
+              sheetSkippedCount++;
+              skippedCount++;
+              console.log(`Row ${i + 1} in "${sheetName}" skipped: empty No Case or invalid data`);
             }
           } catch (error) {
             errors.push(`Row ${i + 1} in "${sheetName}": ${error}`);
@@ -102,8 +141,23 @@ export const IncidentUpload: React.FC<IncidentUploadProps> = ({ onUploadComplete
           }
         }
 
+        console.log(`Sheet "${sheetName}" results:`);
+        console.log(`  - Success: ${sheetSuccessCount}`);
+        console.log(`  - Skipped: ${sheetSkippedCount}`);
+        console.log(`  - Empty: ${sheetEmptyCount}`);
+        console.log(`  - Failed: ${failedCount}`);
+
         setProgress((workbook.SheetNames.indexOf(sheetName) + 1) / workbook.SheetNames.length * 50);
       }
+
+      console.log(`\n=== UPLOAD ANALYSIS SUMMARY ===`);
+      console.log(`Total rows processed: ${totalRowsProcessed}`);
+      console.log(`Successfully parsed: ${successCount}`);
+      console.log(`Skipped (empty/invalid): ${skippedCount}`);
+      console.log(`Empty rows: ${emptyRowCount}`);
+      console.log(`Failed: ${failedCount}`);
+      console.log(`Total incidents to save: ${allRows.length}`);
+      console.log(`=== UPLOAD ANALYSIS END ===\n`);
 
       // Save to database
       if (allRows.length > 0) {
@@ -135,8 +189,29 @@ export const IncidentUpload: React.FC<IncidentUploadProps> = ({ onUploadComplete
         success: successCount,
         failed: failedCount,
         errors,
-        preview: allRows.slice(0, 20)
+        preview: allRows.slice(0, 20),
+        totalProcessed: totalRowsProcessed,
+        skipped: skippedCount,
+        emptyRows: emptyRowCount
       });
+
+      // Log detailed summary
+      console.log(`\n=== FINAL UPLOAD SUMMARY ===`);
+      console.log(`Expected rows: ${totalRowsProcessed}`);
+      console.log(`Successfully uploaded: ${successCount}`);
+      console.log(`Skipped (empty/invalid): ${skippedCount}`);
+      console.log(`Empty rows: ${emptyRowCount}`);
+      console.log(`Failed: ${failedCount}`);
+      console.log(`Total incidents saved: ${allRows.length}`);
+      
+      if (successCount < totalRowsProcessed) {
+        console.warn(`⚠️  WARNING: Only ${successCount} out of ${totalRowsProcessed} rows were successfully uploaded!`);
+        console.warn(`Missing data: ${totalRowsProcessed - successCount} rows`);
+        console.warn(`Check the logs above for details on skipped/failed rows.`);
+      } else {
+        console.log(`✅ SUCCESS: All ${successCount} rows were successfully uploaded!`);
+      }
+      console.log(`=== END SUMMARY ===\n`);
 
       // Call callback if provided and upload was successful
       if (onUploadComplete && successCount > 0) {
@@ -242,11 +317,60 @@ export const IncidentUpload: React.FC<IncidentUploadProps> = ({ onUploadComplete
                       {uploadResult.failed} Failed
                     </Badge>
                   )}
+                  {uploadResult.skipped && uploadResult.skipped > 0 && (
+                    <Badge variant="secondary" className="flex items-center gap-1">
+                      <AlertTriangle className="w-4 h-4" />
+                      {uploadResult.skipped} Skipped
+                    </Badge>
+                  )}
+                  {uploadResult.emptyRows && uploadResult.emptyRows > 0 && (
+                    <Badge variant="outline" className="flex items-center gap-1">
+                      <X className="w-4 h-4" />
+                      {uploadResult.emptyRows} Empty
+                    </Badge>
+                  )}
                   <Badge variant="outline" className="flex items-center gap-1">
                     <FileSpreadsheet className="w-4 h-4" />
                     {uploadResult.preview.length} Preview
                   </Badge>
                 </div>
+
+                {/* Detailed Summary */}
+                {uploadResult.totalProcessed && (
+                  <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
+                    <h4 className="font-medium mb-2">Upload Summary:</h4>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                      <div>
+                        <span className="text-gray-600 dark:text-gray-400">Total Processed:</span>
+                        <span className="ml-2 font-medium">{uploadResult.totalProcessed}</span>
+                      </div>
+                      <div>
+                        <span className="text-gray-600 dark:text-gray-400">Successfully Uploaded:</span>
+                        <span className="ml-2 font-medium text-green-600">{uploadResult.success}</span>
+                      </div>
+                      {uploadResult.skipped && uploadResult.skipped > 0 && (
+                        <div>
+                          <span className="text-gray-600 dark:text-gray-400">Skipped:</span>
+                          <span className="ml-2 font-medium text-yellow-600">{uploadResult.skipped}</span>
+                        </div>
+                      )}
+                      {uploadResult.emptyRows && uploadResult.emptyRows > 0 && (
+                        <div>
+                          <span className="text-gray-600 dark:text-gray-400">Empty Rows:</span>
+                          <span className="ml-2 font-medium text-gray-600">{uploadResult.emptyRows}</span>
+                        </div>
+                      )}
+                    </div>
+                    {uploadResult.success < uploadResult.totalProcessed && (
+                      <div className="mt-3 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+                        <p className="text-yellow-800 dark:text-yellow-200 text-sm">
+                          ⚠️ Only {uploadResult.success} out of {uploadResult.totalProcessed} rows were successfully uploaded. 
+                          Check the console for detailed information about skipped/failed rows.
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 {uploadResult.errors.length > 0 && (
                   <Alert>
@@ -360,7 +484,6 @@ function parseRowToIncident(headers: string[], row: any[], rowNum: number, sheet
     return null;
   }
   
-  console.log(`Row ${rowNum} in "${sheetName}": Successfully parsed Start time "${startTimeRaw}" -> ${startTime}`);
   const id = mkId(noCase, startTime);
   
   // Validate ID generation
@@ -368,6 +491,9 @@ function parseRowToIncident(headers: string[], row: any[], rowNum: number, sheet
     console.error(`Row ${rowNum} in "${sheetName}": Failed to generate ID for No Case: "${noCase}"`);
     return null;
   }
+
+  // Log successful parsing for debugging
+  console.log(`Row ${rowNum} in "${sheetName}": Successfully parsed - No Case: "${noCase}", Start: "${startTimeRaw}" -> ${startTime}, ID: ${id}`);
 
   const incident: Incident = {
     id,
