@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useMemo, useState, useEffect } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { db, ITicket } from '@/lib/db';
+import { db } from '@/lib/db';
 import { formatDurationDHM, analyzeKeywords, generateAnalysisConclusion } from '@/lib/utils';
 
 // Struktur context
@@ -18,10 +18,10 @@ export const AnalyticsProvider = ({ children }) => {
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   // Data dari IndexedDB
-  const allTickets = useLiveQuery(() => db.tickets.toArray(), [refreshTrigger]);
+  const allIncidents = useLiveQuery(() => db.incidents.toArray(), [refreshTrigger]);
   useEffect(() => {
-    console.log('[DEBUG] allTickets from IndexedDB:', allTickets);
-  }, [allTickets]);
+    console.log('[DEBUG] allIncidents from IndexedDB:', allIncidents);
+  }, [allIncidents]);
 
   useEffect(() => {
     if (allTickets && allTickets.length > 0 && (!startMonth || !endMonth || !selectedYear)) {
