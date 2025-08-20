@@ -1389,11 +1389,11 @@ export const IncidentAnalytics: React.FC = () => {
                           <div className="flex-1">
                             <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
                               {klasifikasi.length > 35 ? klasifikasi.substring(0, 35) + '...' : klasifikasi}
-                            </span>
+                    </span>
                             <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                               {((count / filteredIncidents.length) * 100).toFixed(1)}% of total incidents
-                            </div>
-                          </div>
+                  </div>
+                </div>
                         </div>
                         <Badge variant="secondary" className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
                           {count}
