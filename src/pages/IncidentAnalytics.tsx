@@ -68,7 +68,7 @@ import WarningIcon from '@mui/icons-material/Warning';
 // NCAL Color mapping - using project standard colors
 const NCAL_COLORS = {
   Blue: '#3b82f6',    // blue-500
-  Yellow: '#f59e0b',  // amber-500
+  Yellow: '#eab308',  // yellow-500
   Orange: '#f97316',  // orange-500
   Red: '#ef4444',     // red-500
   Black: '#1f2937'    // gray-800
