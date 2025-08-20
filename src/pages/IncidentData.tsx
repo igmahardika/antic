@@ -661,8 +661,8 @@ export const IncidentData: React.FC = () => {
           </p>
         </div>
         <div className="flex gap-2">
-          <Button onClick={() => setShowUpload(!showUpload)} variant="outline">
-            <Upload className="w-4 h-4 mr-2" />
+          <Button onClick={() => setShowUpload(!showUpload)} variant="outline" size="sm">
+            <Upload className="w-3 h-3 mr-1" />
             Upload Data
           </Button>
           <Button 
@@ -673,22 +673,24 @@ export const IncidentData: React.FC = () => {
               setShowLogs(true);
             }} 
             variant="outline"
+            size="sm"
             className="border-orange-200 text-orange-700 hover:bg-orange-50"
             disabled={uploadLogs.length === 0 && !lastUploadResult}
           >
-            <FileSpreadsheet className="w-4 h-4 mr-2" />
+            <FileSpreadsheet className="w-3 h-3 mr-1" />
             View Logs {uploadLogs.length > 0 && `(${uploadLogs.length})`}
           </Button>
-          <Button onClick={exportToCSV} variant="outline">
-            <Download className="w-4 h-4 mr-2" />
+          <Button onClick={exportToCSV} variant="outline" size="sm">
+            <Download className="w-3 h-3 mr-1" />
             Export CSV
           </Button>
           <Button 
             onClick={() => setShowResetConfirm(true)} 
             variant="destructive"
+            size="sm"
             className="bg-red-600 hover:bg-red-700 text-white"
           >
-            <Trash2 className="w-4 h-4 mr-2" />
+            <Trash2 className="w-3 h-3 mr-1" />
             Reset Data
           </Button>
           <Button 
@@ -697,9 +699,10 @@ export const IncidentData: React.FC = () => {
               setShowLogs(true);
             }} 
             variant="outline"
+            size="sm"
             className="border-green-200 text-green-700 hover:bg-green-50"
           >
-            <FileSpreadsheet className="w-4 h-4 mr-2" />
+            <FileSpreadsheet className="w-3 h-3 mr-1" />
             Test Logs
           </Button>
           <Button 
@@ -715,10 +718,11 @@ export const IncidentData: React.FC = () => {
               }
             }} 
             variant="outline"
+            size="sm"
             className="border-gray-200 text-gray-700 hover:bg-gray-50"
             disabled={uploadLogs.length === 0}
           >
-            <X className="w-4 h-4 mr-2" />
+            <X className="w-3 h-3 mr-1" />
             Clear Logs
           </Button>
         </div>
@@ -1197,7 +1201,7 @@ export const IncidentData: React.FC = () => {
                 variant="outline" 
                 size="sm"
               >
-                <X className="w-4 h-4" />
+                <X className="w-3 h-3" />
               </Button>
             </div>
             
@@ -1416,7 +1420,7 @@ export const IncidentData: React.FC = () => {
                   size="sm"
                   disabled={uploadLogs.length === 0}
                 >
-                  <Download className="w-4 h-4 mr-2" />
+                  <Download className="w-3 h-3 mr-1" />
                   Copy Logs
                 </Button>
                 <Button 
