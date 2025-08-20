@@ -301,8 +301,15 @@ export const IncidentUpload: React.FC<IncidentUploadProps> = ({ onUploadComplete
       console.log(`=== END SUMMARY ===\n`);
 
       // Call callback if provided and upload was successful
+      // Add delay to ensure logs are visible before closing modal
       if (onUploadComplete && successCount > 0) {
-        onUploadComplete();
+        console.log(`\n🔄 Calling onUploadComplete callback in 3 seconds to allow log review...`);
+        setTimeout(() => {
+          console.log(`✅ Executing onUploadComplete callback now`);
+          onUploadComplete();
+        }, 3000); // 3 second delay
+      } else if (onUploadComplete && successCount === 0) {
+        console.log(`\n⚠️ Upload completed but no data was uploaded. Callback will not be called.`);
       }
 
     } catch (error) {
@@ -393,6 +400,19 @@ export const IncidentUpload: React.FC<IncidentUploadProps> = ({ onUploadComplete
 
             {uploadResult && (
               <div className="space-y-4">
+                {/* Log Information */}
+                <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
+                  <div className="flex items-center gap-2">
+                    <AlertTriangle className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                    <span className="text-sm font-medium text-blue-800 dark:text-blue-200">
+                      📋 Detailed Logs Available
+                    </span>
+                  </div>
+                  <p className="text-xs text-blue-700 dark:text-blue-300 mt-1">
+                    Press <strong>F12</strong> → <strong>Console</strong> tab to view detailed upload analysis and skipped rows information.
+                  </p>
+                </div>
+                
                 <div className="flex gap-4">
                   <Badge variant="success" className="flex items-center gap-1">
                     <CheckCircle className="w-4 h-4" />
@@ -448,14 +468,17 @@ export const IncidentUpload: React.FC<IncidentUploadProps> = ({ onUploadComplete
                         </div>
                       )}
                     </div>
-                    {uploadResult.success < uploadResult.totalProcessed && (
-                      <div className="mt-3 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
-                        <p className="text-yellow-800 dark:text-yellow-200 text-sm">
-                          ⚠️ Only {uploadResult.success} out of {uploadResult.totalProcessed} rows were successfully uploaded. 
-                          Check the console for detailed information about skipped/failed rows.
-                        </p>
-                      </div>
-                    )}
+                                    {uploadResult.success < uploadResult.totalProcessed && (
+                  <div className="mt-3 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+                    <p className="text-yellow-800 dark:text-yellow-200 text-sm">
+                      ⚠️ Only {uploadResult.success} out of {uploadResult.totalProcessed} rows were successfully uploaded. 
+                      Check the console for detailed information about skipped/failed rows.
+                    </p>
+                    <p className="text-yellow-700 dark:text-yellow-300 text-xs mt-2">
+                      💡 <strong>How to view logs:</strong> Press F12 → Console tab → Look for "UPLOAD ANALYSIS" messages
+                    </p>
+                  </div>
+                )}
                   </div>
                 )}
 
@@ -560,7 +583,7 @@ export const IncidentUpload: React.FC<IncidentUploadProps> = ({ onUploadComplete
                   </div>
                 )}
                 
-                {/* Data Verification */}
+                {/* Data Verification and Manual Close */}
                 <div className="flex gap-2">
                   <Button 
                     onClick={async () => {
@@ -579,6 +602,21 @@ export const IncidentUpload: React.FC<IncidentUploadProps> = ({ onUploadComplete
                   >
                     <RefreshCw className="w-4 h-4 mr-2" />
                     Verify Database
+                  </Button>
+                  
+                  <Button 
+                    onClick={() => {
+                      console.log('🔄 Manual close button clicked - calling onUploadComplete immediately');
+                      if (onUploadComplete) {
+                        onUploadComplete();
+                      }
+                    }}
+                    variant="default" 
+                    size="sm"
+                    className="bg-blue-600 hover:bg-blue-700"
+                  >
+                    <CheckCircle className="w-4 h-4 mr-2" />
+                    Close & Continue
                   </Button>
                 </div>
               </div>
