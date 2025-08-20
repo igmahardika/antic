@@ -5,6 +5,7 @@ import { db } from '@/lib/db';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+
 import SummaryCard from '@/components/ui/SummaryCard';
 import {
   ChartConfig,
@@ -23,6 +24,8 @@ import {
   PieChart,
   Pie,
   Cell,
+  Sector,
+  Label,
   LineChart,
   Line,
   AreaChart,
@@ -891,24 +894,57 @@ export const IncidentAnalytics: React.FC = () => {
             </CardTitle>
             <CardDescription>Distribution of incidents by NCAL level</CardDescription>
           </CardHeader>
-          <CardContent>
-            <ChartContainer config={ncalChartConfig}>
+          <CardContent className="flex flex-1 justify-center pb-0">
+            <ChartContainer
+              config={ncalChartConfig}
+              className="mx-auto aspect-square w-full max-w-[300px]"
+            >
               <PieChart>
+                <ChartTooltip
+                  cursor={false}
+                  content={<ChartTooltipContent hideLabel />}
+                />
                 <Pie
                   data={ncalData}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  label={({ name, value, percent }) => `${name} ${value} (${(percent * 100).toFixed(0)}%)`}
-                  outerRadius={80}
-                  fill="#8884d8"
                   dataKey="value"
+                  nameKey="name"
+                  innerRadius={60}
+                  strokeWidth={5}
                 >
                   {ncalData.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={entry.color} />
                   ))}
+                  <Label
+                    content={({ viewBox }) => {
+                      if (viewBox && "cx" in viewBox && "cy" in viewBox) {
+                        const total = ncalData.reduce((sum, item) => sum + item.value, 0);
+                        return (
+                          <text
+                            x={viewBox.cx}
+                            y={viewBox.cy}
+                            textAnchor="middle"
+                            dominantBaseline="middle"
+                          >
+                            <tspan
+                              x={viewBox.cx}
+                              y={viewBox.cy}
+                              className="fill-foreground text-3xl font-bold"
+                            >
+                              {total.toLocaleString()}
+                            </tspan>
+                            <tspan
+                              x={viewBox.cx}
+                              y={(viewBox.cy || 0) + 24}
+                              className="fill-muted-foreground"
+                            >
+                              Incidents
+                            </tspan>
+                          </text>
+                        )
+                      }
+                    }}
+                  />
                 </Pie>
-                <ChartTooltip content={<ChartTooltipContent />} />
               </PieChart>
             </ChartContainer>
           </CardContent>
