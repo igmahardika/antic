@@ -478,6 +478,7 @@ export const SiteAnalytics: React.FC = () => {
     count: site.count,
     avgDuration: site.avgDuration,
     resolutionRate: site.resolutionRate,
+    targetCompliance: site.targetCompliance || 0,
     rank: index + 1
   })) : [];
 
@@ -700,7 +701,7 @@ export const SiteAnalytics: React.FC = () => {
                             {site}
                           </span>
                           <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                            {data.level} Risk • {data.complianceScore.toFixed(1)}% compliance
+                            {data.level} Risk • {data.complianceScore ? data.complianceScore.toFixed(1) : '0.0'}% compliance
                           </div>
                         </div>
                       </div>
