@@ -1187,18 +1187,18 @@ export const IncidentData: React.FC = () => {
       {/* Logs Modal */}
       {showLogs && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-lg w-full max-w-6xl max-h-[90vh] flex flex-col">
-            <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+          <div className="bg-white dark:bg-gray-800 rounded-lg w-full max-w-7xl max-h-[95vh] flex flex-col">
+            <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-orange-100 dark:bg-orange-900/30 rounded-full flex items-center justify-center">
                   <FileSpreadsheet className="w-5 h-5 text-orange-600 dark:text-orange-400" />
                 </div>
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                    Upload Logs
+                    Upload Logs & Analysis
                   </h3>
                   <p className="text-sm text-gray-600 dark:text-gray-400">
-                    Detailed upload analysis and processing logs
+                    Detailed upload analysis and processing logs with scrollable content
                   </p>
                 </div>
               </div>
@@ -1211,9 +1211,9 @@ export const IncidentData: React.FC = () => {
               </Button>
             </div>
             
-            <div className="flex-1 overflow-hidden p-6">
-              <div className="bg-gray-100 dark:bg-gray-900 rounded-lg p-4 h-full overflow-y-auto">
-                <div className="space-y-4">
+            <div className="flex-1 overflow-hidden">
+              <div className="h-full overflow-y-auto p-6">
+                <div className="space-y-6 max-w-none">
                   {/* Upload Summary */}
                   {lastUploadResult && (
                     <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border">
@@ -1296,8 +1296,8 @@ export const IncidentData: React.FC = () => {
                       </div>
 
                       {/* Skipped Rows Details */}
-                      <div className="space-y-2 max-h-80 overflow-y-auto">
-                        {lastUploadResult.skippedDetails.slice(0, 50).map((detail: any, index: number) => (
+                      <div className="space-y-2 max-h-96 overflow-y-auto">
+                        {lastUploadResult.skippedDetails.slice(0, 100).map((detail: any, index: number) => (
                           <div key={index} className="text-sm bg-gray-50 dark:bg-gray-700 p-3 rounded border-l-4 border-red-200 hover:border-red-300 transition-colors">
                             <div className="flex justify-between items-start mb-2">
                               <span className="font-medium text-red-600 dark:text-red-400 flex items-center gap-2">
@@ -1314,7 +1314,7 @@ export const IncidentData: React.FC = () => {
                                   <summary className="cursor-pointer hover:text-gray-800 dark:hover:text-gray-200 font-medium">
                                     📋 View Data Details
                                   </summary>
-                                  <pre className="mt-2 p-3 bg-gray-100 dark:bg-gray-700 rounded text-xs overflow-x-auto border">
+                                  <pre className="mt-2 p-3 bg-gray-100 dark:bg-gray-700 rounded text-xs overflow-x-auto border max-h-40 overflow-y-auto">
                                     {JSON.stringify(detail.data, null, 2)}
                                   </pre>
                                 </details>
@@ -1322,9 +1322,9 @@ export const IncidentData: React.FC = () => {
                             )}
                           </div>
                         ))}
-                        {lastUploadResult.skippedDetails.length > 50 && (
+                        {lastUploadResult.skippedDetails.length > 100 && (
                           <div className="text-center text-sm text-gray-600 dark:text-gray-400 py-3 bg-gray-100 dark:bg-gray-700 rounded border">
-                            ... and {lastUploadResult.skippedDetails.length - 50} more skipped rows
+                            ... and {lastUploadResult.skippedDetails.length - 100} more skipped rows
                           </div>
                         )}
                       </div>
@@ -1410,13 +1410,13 @@ export const IncidentData: React.FC = () => {
                       <FileText className="w-4 h-4 text-gray-600" />
                       Detailed Processing Logs
                     </h4>
-                    <div className="space-y-2 font-mono text-sm max-h-96 overflow-y-auto">
+                    <div className="space-y-2 font-mono text-sm max-h-[60vh] overflow-y-auto">
                       {uploadLogs.length > 0 ? (
                         uploadLogs.map((log, index) => (
                           <div key={index} className="text-gray-800 dark:text-gray-200 whitespace-pre-wrap bg-gray-50 dark:bg-gray-700 p-3 rounded border-l-4 border-blue-200 hover:border-blue-300 transition-colors">
                             <div className="flex items-start gap-2">
-                              <span className="text-blue-600 font-medium text-xs mt-0.5">[{index + 1}]</span>
-                              <div className="flex-1 break-words">
+                              <span className="text-blue-600 font-medium text-xs mt-0.5 flex-shrink-0">[{index + 1}]</span>
+                              <div className="flex-1 break-words min-w-0">
                                 {log}
                               </div>
                             </div>
