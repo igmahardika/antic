@@ -1348,7 +1348,7 @@ export const IncidentAnalytics: React.FC = () => {
                     />
                   </LineChart>
                 </ChartContainer>
-              </div>
+                  </div>
             </div>
           </CardContent>
         </Card>
@@ -1571,7 +1571,7 @@ export const IncidentAnalytics: React.FC = () => {
                     const complianceRate = filteredIncidents.length > 0 ? compliantIncidents / filteredIncidents.length : 0;
                     return (complianceRate * 100).toFixed(1);
                   })()}%
-                </div>
+                  </div>
                 <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
                   SLA Compliance Rate
                 </p>
@@ -1594,8 +1594,8 @@ export const IncidentAnalytics: React.FC = () => {
                       }).length;
                       return compliantIncidents;
                     })()}
-                  </span>
-                </div>
+                    </span>
+                  </div>
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-gray-600 dark:text-gray-400">Total:</span>
                   <span className="font-medium">{filteredIncidents.length}</span>
@@ -1640,8 +1640,8 @@ export const IncidentAnalytics: React.FC = () => {
                   </div>
                   <div className="text-xs text-gray-600 dark:text-gray-400">Performance</div>
                 </div>
-              </div>
-              
+      </div>
+
               <div className="space-y-2">
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-gray-600 dark:text-gray-400">Avg Resolution:</span>
@@ -1658,14 +1658,14 @@ export const IncidentAnalytics: React.FC = () => {
 
         {/* Real-time Monitoring */}
         <Card className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg">
-          <CardHeader>
+        <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <MonitorIcon className="w-5 h-5" />
               Real-time Status
             </CardTitle>
             <CardDescription>Current incident status</CardDescription>
-          </CardHeader>
-          <CardContent>
+        </CardHeader>
+        <CardContent>
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="text-center p-3 bg-red-50 dark:bg-red-900/20 rounded-lg">
@@ -1708,7 +1708,7 @@ export const IncidentAnalytics: React.FC = () => {
       </div>
 
       {/* Performance Metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -1738,14 +1738,14 @@ export const IncidentAnalytics: React.FC = () => {
           <CardContent>
             <div className="space-y-4">
               {/* Main Metric */}
-              <div className="text-center">
+            <div className="text-center">
                 <div className="text-4xl font-bold text-orange-600">
                   {stats.pauseRatio > 0 ? (stats.pauseRatio * 100).toFixed(1) : '0.0'}%
-                  </div>
+              </div>
                 <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
                   Percentage of total time spent on pause
                 </p>
-              </div>
+            </div>
 
               {/* Breakdown */}
               <div className="space-y-3">
@@ -1755,14 +1755,14 @@ export const IncidentAnalytics: React.FC = () => {
                     <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
                       Total Pause Time
                     </span>
-                  </div>
+              </div>
                   <span className="text-sm font-bold text-orange-600">
                     {(() => {
                       const totalPauseTime = filteredIncidents.reduce((sum, i) => sum + (i.totalDurationPauseMin || 0), 0);
                       return formatDurationHMS(totalPauseTime);
                     })()}
                   </span>
-                </div>
+            </div>
 
                 <div className="flex items-center justify-between p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
                   <div className="flex items-center gap-2">
@@ -1770,7 +1770,7 @@ export const IncidentAnalytics: React.FC = () => {
                     <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
                       Total Duration
                     </span>
-            </div>
+              </div>
                   <span className="text-sm font-bold text-blue-600">
                     {(() => {
                       const totalDuration = filteredIncidents.reduce((sum, i) => sum + (i.durationMin || 0), 0);
