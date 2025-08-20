@@ -218,10 +218,57 @@ export const parseDateSafe = (dt?: string | Date | null): string | null => {
 
 // Simpan ke Dexie (chunked)
 export async function saveIncidentsChunked(rows: Incident[], chunkSize = 2000) {
+  console.log(`Starting to save ${rows.length} incidents in chunks of ${chunkSize}`);
+  
+  let totalSaved = 0;
+  const chunks = Math.ceil(rows.length / chunkSize);
+  
   for (let i = 0; i < rows.length; i += chunkSize) {
     const part = rows.slice(i, i + chunkSize);
-    await db.incidents.bulkPut(part);
+    const chunkNumber = Math.floor(i / chunkSize) + 1;
+    
+    console.log(`Saving chunk ${chunkNumber}/${chunks} with ${part.length} incidents`);
+    
+    try {
+      // Validate each incident before saving
+      const validIncidents = part.filter(incident => {
+        if (!incident.id) {
+          console.error('Invalid incident: missing ID', incident);
+          return false;
+        }
+        if (!incident.noCase) {
+          console.error('Invalid incident: missing No Case', incident);
+          return false;
+        }
+        if (!incident.startTime) {
+          console.error('Invalid incident: missing Start Time', incident);
+          return false;
+        }
+        return true;
+      });
+      
+      if (validIncidents.length !== part.length) {
+        console.warn(`Chunk ${chunkNumber}: ${part.length - validIncidents.length} invalid incidents filtered out`);
+      }
+      
+      if (validIncidents.length > 0) {
+        await db.incidents.bulkPut(validIncidents);
+        totalSaved += validIncidents.length;
+        console.log(`Chunk ${chunkNumber} saved successfully: ${validIncidents.length} incidents`);
+      }
+    } catch (error) {
+      console.error(`Error saving chunk ${chunkNumber}:`, error);
+      throw error;
+    }
   }
+  
+  console.log(`Total incidents saved: ${totalSaved}/${rows.length}`);
+  
+  // Verify final count
+  const finalCount = await db.incidents.count();
+  console.log(`Final database count: ${finalCount}`);
+  
+  return totalSaved;
 }
 
 // Compute stats dari data incident
