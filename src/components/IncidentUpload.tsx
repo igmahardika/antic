@@ -33,7 +33,11 @@ const REQUIRED_HEADERS = [
   'Total Duration Pause', 'Total Duration Vendor'
 ];
 
-export const IncidentUpload: React.FC = () => {
+interface IncidentUploadProps {
+  onUploadComplete?: () => void;
+}
+
+export const IncidentUpload: React.FC<IncidentUploadProps> = ({ onUploadComplete }) => {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadResult, setUploadResult] = useState<UploadResult | null>(null);
   const [progress, setProgress] = useState(0);
@@ -132,6 +136,11 @@ export const IncidentUpload: React.FC = () => {
         errors,
         preview: allRows.slice(0, 20)
       });
+
+      // Call callback if provided and upload was successful
+      if (onUploadComplete && successCount > 0) {
+        onUploadComplete();
+      }
 
     } catch (error) {
       setUploadResult({
