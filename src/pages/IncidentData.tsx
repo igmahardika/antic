@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { Incident, IncidentFilter } from '@/types/incident';
 import { queryIncidents } from '@/utils/incidentUtils';
-import { IncidentDataUpload } from '@/pages/incident/IncidentDataUpload';
+import { IncidentUpload } from '@/components/IncidentUpload';
 import { db } from '@/lib/db';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -18,7 +18,6 @@ import {
   Upload,
   ChevronLeft,
   ChevronRight,
-  ChevronDown,
   FileSpreadsheet,
   Trash2,
   AlertTriangle,
@@ -26,13 +25,7 @@ import {
   CheckCircle,
   XCircle,
   RefreshCw,
-  X,
-  BarChart3,
-  Database,
-  AlertCircle,
-  Eye,
-  FileText,
-  Settings
+  X
 } from 'lucide-react';
 
 export const IncidentData: React.FC = () => {
@@ -47,79 +40,6 @@ export const IncidentData: React.FC = () => {
   const [showUpload, setShowUpload] = useState(false);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [selectedMonth, setSelectedMonth] = useState<string>('');
-  const [showLogs, setShowLogs] = useState(false);
-  const [uploadLogs, setUploadLogs] = useState<string[]>([]);
-  const [lastUploadResult, setLastUploadResult] = useState<any>(null);
-  const [showDataTools, setShowDataTools] = useState(false);
-
-  // Load logs from localStorage
-  React.useEffect(() => {
-    // Load existing logs from localStorage
-    const savedLogs = localStorage.getItem('uploadLogs');
-    if (savedLogs) {
-      try {
-        const parsedLogs = JSON.parse(savedLogs);
-        console.log('Loading logs from localStorage:', parsedLogs);
-        
-        // Convert stored log objects to string format for display
-        const logStrings = parsedLogs.map((log: any) => {
-          if (typeof log === 'string') {
-            console.log('String log:', log);
-            return log;
-          }
-          if (log.action === 'DATA_RESET') {
-            const resetLog = `[${new Date(log.timestamp).toLocaleTimeString()}] 🔄 DATA RESET: ${log.message}. Previous count: ${log.details?.previousCount || 0} incidents.`;
-            console.log('Reset log:', resetLog);
-            return resetLog;
-          }
-          if (log.message) {
-            console.log('Message log:', log.message);
-            return log.message;
-          }
-          console.log('Unknown log format:', log);
-          return JSON.stringify(log);
-        });
-        
-        console.log('Final log strings:', logStrings);
-        setUploadLogs(logStrings);
-      } catch (error) {
-        console.error('Error loading logs from localStorage:', error);
-        setUploadLogs([]);
-      }
-    } else {
-      console.log('No saved logs found in localStorage');
-      setUploadLogs([]);
-    }
-  }, []);
-
-  // Close data tools dropdown when clicking outside
-  React.useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      const target = event.target as Element;
-      if (!target.closest('.data-tools-dropdown')) {
-        setShowDataTools(false);
-      }
-    };
-
-    if (showDataTools) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [showDataTools]);
-
-  // Debug when log modal is opened
-  React.useEffect(() => {
-    if (showLogs) {
-      console.log('=== LOG MODAL OPENED ===');
-      console.log('uploadLogs state:', uploadLogs);
-      console.log('uploadLogs length:', uploadLogs.length);
-      console.log('localStorage uploadLogs:', localStorage.getItem('uploadLogs'));
-      console.log('lastUploadResult:', lastUploadResult);
-    }
-  }, [showLogs, uploadLogs, lastUploadResult]);
 
   // Helper function to normalize NCAL values
   const normalizeNCAL = (ncal: string | null | undefined): string => {
@@ -148,51 +68,12 @@ export const IncidentData: React.FC = () => {
 
   // Debug: Log when allIncidents changes
   React.useEffect(() => {
-    console.log('=== INCIDENT DATA DEBUG ===');
     console.log('AllIncidents updated:', allIncidents?.length || 0);
-    
     if (allIncidents && allIncidents.length > 0) {
       console.log('Sample incident:', allIncidents[0]);
       console.log('NCAL values in data:', [...new Set(allIncidents.map(i => i.ncal))]);
-      console.log('Sites in data:', [...new Set(allIncidents.map(i => i.site))].slice(0, 10));
-      console.log('Status values:', [...new Set(allIncidents.map(i => i.status))]);
-      console.log('Priority values:', [...new Set(allIncidents.map(i => i.priority))]);
-      
-      // Check for data quality issues
-      const issues = [];
-      const missingNoCase = allIncidents.filter(i => !i.noCase).length;
-      const missingStartTime = allIncidents.filter(i => !i.startTime).length;
-      const missingSite = allIncidents.filter(i => !i.site).length;
-      
-      if (missingNoCase > 0) issues.push(`${missingNoCase} incidents missing No Case`);
-      if (missingStartTime > 0) issues.push(`${missingStartTime} incidents missing Start Time`);
-      if (missingSite > 0) issues.push(`${missingSite} incidents missing Site`);
-      
-      if (issues.length > 0) {
-        console.warn('Data quality issues found:', issues);
-      } else {
-        console.log('✅ No data quality issues found');
-      }
-      
-      // Validate data consistency with upload result
-      if (lastUploadResult && lastUploadResult.success !== allIncidents.length) {
-        console.warn(`⚠️ DATA INCONSISTENCY DETECTED!`);
-        console.warn(`Upload result shows: ${lastUploadResult.success} incidents`);
-        console.warn(`Database actually has: ${allIncidents.length} incidents`);
-        console.warn(`Difference: ${Math.abs(lastUploadResult.success - allIncidents.length)} incidents`);
-        console.warn('Possible causes:');
-        console.warn('- Duplicate uploads (same data uploaded multiple times)');
-        console.warn('- Data loss during save process');
-        console.warn('- Database corruption or sync issues');
-        console.warn('- Test data interference');
-      } else if (lastUploadResult) {
-        console.log(`✅ Data consistency verified: ${lastUploadResult.success} incidents match database count`);
-      }
-    } else {
-      console.log('No incidents found in database');
     }
-    console.log('=== END DEBUG ===');
-  }, [allIncidents, lastUploadResult]);
+  }, [allIncidents]);
 
   // Calculate summary data for ALL uploaded data (not filtered)
   const allDataSummary = React.useMemo(() => {
@@ -398,44 +279,16 @@ export const IncidentData: React.FC = () => {
 
   const resetData = async () => {
     try {
-      // Clear only incident data, keep logs
       await db.incidents.clear();
       setShowResetConfirm(false);
-      
-      // Clear current state but keep logs
-      setIncidents([]);
-      setTotal(0);
-      
-      // Add reset log entry
-      const resetLog = {
-        id: Date.now().toString(),
-        timestamp: new Date().toISOString(),
-        action: 'DATA_RESET',
-        message: 'All incident data has been reset by user',
-        details: {
-          previousCount: allIncidents?.length || 0,
-          resetBy: 'User',
-          resetTime: new Date().toLocaleString()
-        }
-      };
-      
-      // Create reset log message
-      const resetLogMessage = `[${new Date().toLocaleTimeString()}] 🔄 DATA RESET: All incident data has been cleared. Previous count: ${allIncidents?.length || 0} incidents.`;
-      
-      // Store reset log in localStorage for persistence
-      const existingLogs = JSON.parse(localStorage.getItem('uploadLogs') || '[]');
-      existingLogs.push(resetLogMessage); // Store as string, not object
-      localStorage.setItem('uploadLogs', JSON.stringify(existingLogs));
-      
-      // Update upload logs state to include reset log
-      setUploadLogs(prev => [...prev, resetLogMessage]);
-      
-      console.log('Reset log added:', resetLogMessage);
-      console.log('Updated logs in localStorage:', existingLogs);
+      // Refresh data
+      const result = await queryIncidents(filter);
+      setIncidents(result.rows);
+      setTotal(result.total);
       
       toast({
         title: "Data Reset Successfully",
-        description: "All incident data has been deleted from the database. Upload logs are preserved.",
+        description: "All incident data has been deleted from the database.",
         variant: "default",
       });
     } catch (error) {
@@ -539,158 +392,23 @@ export const IncidentData: React.FC = () => {
             Manage and view incident data with filtering and search capabilities
           </p>
         </div>
-                <div className="flex gap-2">
-          {/* Primary Actions */}
-          <Button onClick={() => setShowUpload(!showUpload)} variant="outline" size="sm">
-            <Upload className="w-3 h-3 mr-1" />
+        <div className="flex gap-2">
+          <Button onClick={() => setShowUpload(!showUpload)} variant="outline">
+            <Upload className="w-4 h-4 mr-2" />
             Upload Data
           </Button>
-          
-          {/* Logs Management */}
-          <Button 
-            onClick={() => {
-              console.log('=== LOG MODAL DEBUG ===');
-              console.log('View Logs button clicked!');
-              console.log('uploadLogs length:', uploadLogs.length);
-              console.log('uploadLogs content:', uploadLogs);
-              console.log('lastUploadResult:', lastUploadResult);
-              console.log('localStorage uploadLogs:', localStorage.getItem('uploadLogs'));
-              setShowLogs(true);
-            }} 
-            variant="outline"
-            size="sm"
-            className="border-orange-200 text-orange-700 hover:bg-orange-50"
-            disabled={uploadLogs.length === 0 && !lastUploadResult}
-          >
-            <FileSpreadsheet className="w-3 h-3 mr-1" />
-            Logs {uploadLogs.length > 0 && `(${uploadLogs.length})`}
-          </Button>
-          
-          {/* Data Export */}
-          <Button onClick={exportToCSV} variant="outline" size="sm">
-            <Download className="w-3 h-3 mr-1" />
+          <Button onClick={exportToCSV} variant="outline">
+            <Download className="w-4 h-4 mr-2" />
             Export CSV
           </Button>
-          
-          {/* Data Management */}
           <Button 
             onClick={() => setShowResetConfirm(true)} 
             variant="destructive"
-            size="sm"
             className="bg-red-600 hover:bg-red-700 text-white"
           >
-            <Trash2 className="w-3 h-3 mr-1" />
+            <Trash2 className="w-4 h-4 mr-2" />
             Reset Data
           </Button>
-          
-          {/* Data Tools Dropdown */}
-          <div className="relative data-tools-dropdown">
-            <Button 
-              onClick={() => setShowDataTools(!showDataTools)} 
-              variant="outline"
-              size="sm"
-              className="border-blue-200 text-blue-700 hover:bg-blue-50"
-            >
-              <Settings className="w-3 h-3 mr-1" />
-              Data Tools
-              <ChevronDown className="w-3 h-3 ml-1" />
-            </Button>
-            
-            {showDataTools && (
-              <div className="absolute right-0 top-full mt-1 w-48 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-10">
-                <div className="py-1">
-                  <button
-                    onClick={() => {
-                      if (confirm('Are you sure you want to validate data consistency? This will check if upload logs match database data.')) {
-                        const dbCount = allIncidents?.length || 0;
-                        const logCount = lastUploadResult?.success || 0;
-                        
-                        if (dbCount !== logCount) {
-                          toast({
-                            title: "Data Inconsistency Detected",
-                            description: `Database has ${dbCount} incidents but logs show ${logCount} uploaded. Check console for details.`,
-                            variant: "destructive",
-                          });
-                        } else {
-                          toast({
-                            title: "Data Consistency Verified",
-                            description: `Database count (${dbCount}) matches upload logs (${logCount}).`,
-                          });
-                        }
-                      }
-                      setShowDataTools(false);
-                    }}
-                    className="w-full px-3 py-2 text-left text-sm text-blue-700 dark:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 flex items-center"
-                  >
-                    <Database className="w-3 h-3 mr-2" />
-                    Validate Data
-                  </button>
-                  
-                  <button
-                    onClick={async () => {
-                      if (confirm('Are you sure you want to fix data inconsistency? This will update the upload result to match the actual database count.')) {
-                        const dbCount = allIncidents?.length || 0;
-                        const logCount = lastUploadResult?.success || 0;
-                        
-                        if (dbCount !== logCount && lastUploadResult) {
-                          const updatedResult = {
-                            ...lastUploadResult,
-                            success: dbCount,
-                            actualSaved: dbCount,
-                            originalReported: logCount,
-                            inconsistencyFixed: true
-                          };
-                          
-                          setLastUploadResult(updatedResult);
-                          
-                          const fixLog = `[${new Date().toLocaleTimeString()}] 🔧 DATA INCONSISTENCY FIXED: Updated upload result from ${logCount} to ${dbCount} to match database count.`;
-                          const newLogs = [...uploadLogs, fixLog];
-                          setUploadLogs(newLogs);
-                          
-                          localStorage.setItem('uploadLogs', JSON.stringify(newLogs));
-                          
-                          toast({
-                            title: "Data Inconsistency Fixed",
-                            description: `Upload result updated to match database count (${dbCount}).`,
-                          });
-                        } else {
-                          toast({
-                            title: "No Inconsistency Found",
-                            description: "Data is already consistent.",
-                          });
-                        }
-                      }
-                      setShowDataTools(false);
-                    }}
-                    className="w-full px-3 py-2 text-left text-sm text-green-700 dark:text-green-300 hover:bg-green-50 dark:hover:bg-green-900/20 flex items-center"
-                  >
-                    <CheckCircle className="w-3 h-3 mr-2" />
-                    Fix Inconsistency
-                  </button>
-                  
-                  <button
-                    onClick={() => {
-                      if (confirm('Are you sure you want to clear all upload logs? This action cannot be undone.')) {
-                        localStorage.removeItem('uploadLogs');
-                        setUploadLogs([]);
-                        setLastUploadResult(null);
-                        toast({
-                          title: "Logs Cleared",
-                          description: "All upload logs have been cleared.",
-                        });
-                      }
-                      setShowDataTools(false);
-                    }}
-                    className="w-full px-3 py-2 text-left text-sm text-red-700 dark:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center"
-                    disabled={uploadLogs.length === 0}
-                  >
-                    <X className="w-3 h-3 mr-2" />
-                    Clear Logs
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
         </div>
       </div>
 
@@ -798,26 +516,8 @@ export const IncidentData: React.FC = () => {
 
 
 
-            {showUpload && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-lg w-full max-w-6xl max-h-[95vh] flex flex-col">
-            <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                Upload Incident Data
-              </h3>
-              <Button 
-                onClick={() => setShowUpload(false)}
-                variant="outline" 
-                size="sm"
-              >
-                <X className="w-3 h-3" />
-              </Button>
-            </div>
-            <div className="flex-1 overflow-y-auto">
-              <IncidentDataUpload />
-            </div>
-          </div>
-        </div>
+      {showUpload && (
+        <IncidentUpload />
       )}
 
       {/* Reset Confirmation Modal */}
@@ -994,6 +694,10 @@ export const IncidentData: React.FC = () => {
         </div>
       )}
 
+      {showUpload && (
+        <IncidentUpload />
+      )}
+
       {/* Reset Confirmation Modal */}
       {showResetConfirm && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -1142,328 +846,6 @@ export const IncidentData: React.FC = () => {
           )}
         </CardContent>
       </Card>
-
-      {/* Logs Modal */}
-      {showLogs && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-lg w-full max-w-7xl max-h-[95vh] flex flex-col">
-            <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-orange-100 dark:bg-orange-900/30 rounded-full flex items-center justify-center">
-                  <FileSpreadsheet className="w-5 h-5 text-orange-600 dark:text-orange-400" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                    Upload Logs & Analysis
-                  </h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
-                    Detailed upload analysis and processing logs with scrollable content
-                  </p>
-                </div>
-              </div>
-              <Button 
-                onClick={() => setShowLogs(false)}
-                variant="outline" 
-                size="sm"
-              >
-                <X className="w-3 h-3" />
-              </Button>
-            </div>
-            
-            <div className="flex-1 overflow-hidden">
-              <div className="h-full overflow-y-auto p-6">
-                <div className="space-y-6 max-w-none">
-                  {/* Upload Summary */}
-                  {lastUploadResult && (
-                    <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border">
-                      <h4 className="font-medium mb-3 text-gray-900 dark:text-gray-100 flex items-center gap-2">
-                        <BarChart3 className="w-4 h-4 text-blue-600" />
-                        Upload Summary
-                      </h4>
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                        <div>
-                          <span className="text-gray-600 dark:text-gray-400">Total Processed:</span>
-                          <span className="ml-2 font-medium">{lastUploadResult.totalProcessed}</span>
-                        </div>
-                        <div>
-                          <span className="text-gray-600 dark:text-gray-400">Successfully Uploaded:</span>
-                          <span className="ml-2 font-medium text-green-600">{lastUploadResult.success}</span>
-                          {lastUploadResult.inconsistencyFixed && (
-                            <span className="ml-2 text-xs text-orange-600">(Fixed from {lastUploadResult.originalReported})</span>
-                          )}
-                        </div>
-                        <div>
-                          <span className="text-gray-600 dark:text-gray-400">Currently in Database:</span>
-                          <span className="ml-2 font-medium text-blue-600">{allIncidents?.length || 0}</span>
-                        </div>
-                        {lastUploadResult.skipped && lastUploadResult.skipped > 0 && (
-                          <div>
-                            <span className="text-gray-600 dark:text-gray-400">Skipped:</span>
-                            <span className="ml-2 font-medium text-yellow-600">{lastUploadResult.skipped}</span>
-                          </div>
-                        )}
-                        {lastUploadResult.emptyRows && lastUploadResult.emptyRows > 0 && (
-                          <div>
-                            <span className="text-gray-600 dark:text-gray-400">Empty Rows:</span>
-                            <span className="ml-2 font-medium text-gray-600">{lastUploadResult.emptyRows}</span>
-                          </div>
-                        )}
-                        {lastUploadResult.failed > 0 && (
-                          <div>
-                            <span className="text-gray-600 dark:text-gray-400">Failed:</span>
-                            <span className="ml-2 font-medium text-red-600">{lastUploadResult.failed}</span>
-                          </div>
-                        )}
-                      </div>
-                      
-                      {/* Data Consistency Check */}
-                      {lastUploadResult.success !== (allIncidents?.length || 0) && (
-                        <div className="mt-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-                          <div className="flex items-center gap-2 text-red-800 dark:text-red-200">
-                            <AlertTriangle className="w-4 h-4" />
-                            <span className="font-medium">Data Inconsistency Detected</span>
-                          </div>
-                          <div className="text-sm text-red-700 dark:text-red-300 mt-1">
-                            Upload logs show {lastUploadResult.success} incidents, but database contains {allIncidents?.length || 0} incidents.
-                            <br />
-                            <span className="font-medium">Difference: {Math.abs(lastUploadResult.success - (allIncidents?.length || 0))} incidents</span>
-                          </div>
-                          <div className="text-xs text-red-600 dark:text-red-400 mt-2">
-                            Possible causes: Duplicate uploads, data loss, or test data interference.
-                            <br />
-                            <span className="font-medium">Use "Fix Inconsistency" button to update the upload result to match database count.</span>
-                          </div>
-                        </div>
-                      )}
-                      
-                      {/* Data Consistency Fixed */}
-                      {lastUploadResult.inconsistencyFixed && (
-                        <div className="mt-4 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
-                          <div className="flex items-center gap-2 text-green-800 dark:text-green-200">
-                            <CheckCircle className="w-4 h-4" />
-                            <span className="font-medium">Data Inconsistency Fixed</span>
-                          </div>
-                          <div className="text-sm text-green-700 dark:text-green-300 mt-1">
-                            Upload result has been updated to match database count.
-                            <br />
-                            <span className="font-medium">Original: {lastUploadResult.originalReported} → Fixed: {lastUploadResult.success}</span>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Log Persistence Info */}
-                  <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-                    <h4 className="font-medium mb-2 text-blue-800 dark:text-blue-200 flex items-center gap-2">
-                      <Database className="w-4 h-4 text-blue-600" />
-                      Log Persistence
-                    </h4>
-                    <div className="text-sm text-blue-700 dark:text-blue-300 space-y-1">
-                      <div>✅ <strong>Logs are preserved</strong> even when data is reset</div>
-                      <div>✅ <strong>Logs are stored</strong> in browser localStorage</div>
-                      <div>✅ <strong>Logs persist</strong> across browser sessions</div>
-                      <div>✅ <strong>Reset operations</strong> are logged for audit trail</div>
-                      <div>⚠️ <strong>Clear Logs</strong> button will permanently delete all logs</div>
-                    </div>
-                  </div>
-
-                  {/* Skipped Rows Summary */}
-                  {lastUploadResult?.skippedDetails && lastUploadResult.skippedDetails.length > 0 && (
-                    <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border">
-                      <h4 className="font-medium mb-3 text-red-800 dark:text-red-200 flex items-center gap-2">
-                        <AlertCircle className="w-4 h-4 text-red-600" />
-                        Skipped Rows Analysis ({lastUploadResult.skippedDetails.length} rows)
-                      </h4>
-                      
-                      {/* Skipped Rows Statistics */}
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-                        <div className="bg-red-50 dark:bg-red-900/20 p-3 rounded border">
-                          <div className="text-2xl font-bold text-red-600">{lastUploadResult.skippedDetails.filter((d: any) => d.reason.includes('Empty row')).length}</div>
-                          <div className="text-sm text-red-700 dark:text-red-300">Empty Rows</div>
-                        </div>
-                        <div className="bg-orange-50 dark:bg-orange-900/20 p-3 rounded border">
-                          <div className="text-2xl font-bold text-orange-600">{lastUploadResult.skippedDetails.filter((d: any) => d.reason.includes('Invalid NCAL')).length}</div>
-                          <div className="text-sm text-orange-700 dark:text-orange-300">Invalid NCAL</div>
-                        </div>
-                        <div className="bg-yellow-50 dark:bg-yellow-900/20 p-3 rounded border">
-                          <div className="text-2xl font-bold text-yellow-600">{lastUploadResult.skippedDetails.filter((d: any) => d.reason.includes('Missing required')).length}</div>
-                          <div className="text-sm text-yellow-700 dark:text-yellow-300">Missing Fields</div>
-                        </div>
-                        <div className="bg-purple-50 dark:bg-purple-900/20 p-3 rounded border">
-                          <div className="text-2xl font-bold text-purple-600">{lastUploadResult.skippedDetails.filter((d: any) => d.reason.includes('Invalid')).length}</div>
-                          <div className="text-sm text-purple-700 dark:text-purple-300">Invalid Values</div>
-                        </div>
-                      </div>
-
-                      {/* Skipped Rows Details */}
-                      <div className="space-y-2 max-h-96 overflow-y-auto">
-                        {lastUploadResult.skippedDetails.slice(0, 100).map((detail: any, index: number) => (
-                          <div key={index} className="text-sm bg-gray-50 dark:bg-gray-700 p-3 rounded border-l-4 border-red-200 hover:border-red-300 transition-colors">
-                            <div className="flex justify-between items-start mb-2">
-                              <span className="font-medium text-red-600 dark:text-red-400 flex items-center gap-2">
-                                <span className="text-blue-600 font-medium text-xs">#{index + 1}</span>
-                                Row {detail.row} ({detail.sheet})
-                              </span>
-                            </div>
-                            <div className="text-gray-700 dark:text-gray-300 mb-2">
-                              <span className="font-medium">Reason:</span> {detail.reason}
-                            </div>
-                            {detail.data && (
-                              <div className="text-xs text-gray-600 dark:text-gray-400">
-                                <details className="mt-2">
-                                  <summary className="cursor-pointer hover:text-gray-800 dark:hover:text-gray-200 font-medium">
-                                    📋 View Data Details
-                                  </summary>
-                                  <pre className="mt-2 p-3 bg-gray-100 dark:bg-gray-700 rounded text-xs overflow-x-auto border max-h-40 overflow-y-auto">
-                                    {JSON.stringify(detail.data, null, 2)}
-                                  </pre>
-                                </details>
-                              </div>
-                            )}
-                          </div>
-                        ))}
-                        {lastUploadResult.skippedDetails.length > 100 && (
-                          <div className="text-center text-sm text-gray-600 dark:text-gray-400 py-3 bg-gray-100 dark:bg-gray-700 rounded border">
-                            ... and {lastUploadResult.skippedDetails.length - 100} more skipped rows
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Error Summary */}
-                  {lastUploadResult?.errors && lastUploadResult.errors.length > 0 && (
-                    <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border">
-                      <h4 className="font-medium mb-3 text-red-800 dark:text-red-200 flex items-center gap-2">
-                        <XCircle className="w-4 h-4 text-red-600" />
-                        Error Summary
-                      </h4>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                        {lastUploadResult.errors.map((error: string, index: number) => (
-                          <div key={index} className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 p-3 rounded border-l-4 border-red-400">
-                            <div className="font-medium">{error.split(':')[0]}</div>
-                            <div className="text-xs text-red-500 mt-1">{error.split(':')[1]}</div>
-                          </div>
-                        ))}
-                      </div>
-                      
-                      {/* Common Issues Guide */}
-                      <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-                        <h5 className="font-medium mb-2 text-blue-800 dark:text-blue-200 flex items-center gap-2">
-                          <Settings className="w-4 h-4 text-blue-600" />
-                          Common Issues & Solutions:
-                        </h5>
-                        <div className="text-sm text-blue-700 dark:text-blue-300 space-y-2">
-                          <div><strong>NCAL Values:</strong> Must be exactly "Blue", "Yellow", "Orange", "Red", or "Black" (case sensitive)</div>
-                          <div><strong>Priority Values:</strong> Must be "High", "Medium", or "Low" (case sensitive)</div>
-                          <div><strong>Status Values:</strong> Must be "Open", "Closed", or "Pending" (case sensitive)</div>
-                          <div><strong>Level Values:</strong> Must be numeric: 1, 2, or 3</div>
-                          <div><strong>Date Format:</strong> Must be "YYYY-MM-DD HH:MM:SS" (e.g., "2024-01-15 10:00:00")</div>
-                          <div><strong>Time Format:</strong> Hours must be 0-23, minutes 0-59, seconds 0-59</div>
-                          <div><strong>Duration:</strong> Must be positive numeric value in minutes</div>
-                          <div><strong>Required Fields:</strong> NCAL, Site, Start Time, TS, Problem cannot be empty</div>
-                          <div><strong>No Case:</strong> Must be unique (no duplicates allowed)</div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Data Preview */}
-                  {lastUploadResult?.preview && lastUploadResult.preview.length > 0 && (
-                    <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border">
-                      <h4 className="font-medium mb-3 text-gray-900 dark:text-gray-100 flex items-center gap-2">
-                        <Eye className="w-4 h-4 text-gray-600" />
-                        Data Preview (first 20 rows)
-                      </h4>
-                      <div className="overflow-x-auto">
-                        <table className="w-full text-sm">
-                          <thead className="bg-gray-50 dark:bg-gray-700">
-                            <tr>
-                              <th className="px-3 py-2 text-left">No Case</th>
-                              <th className="px-3 py-2 text-left">Site</th>
-                              <th className="px-3 py-2 text-left">Status</th>
-                              <th className="px-3 py-2 text-left">Priority</th>
-                              <th className="px-3 py-2 text-left">Duration</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {lastUploadResult.preview.map((incident: any, index: number) => (
-                              <tr key={index} className="border-t">
-                                <td className="px-3 py-2">{incident.noCase}</td>
-                                <td className="px-3 py-2">{incident.site}</td>
-                                <td className="px-3 py-2">{incident.status}</td>
-                                <td className="px-3 py-2">{incident.priority}</td>
-                                <td className="px-3 py-2">
-                                  {incident.durationMin ? `${Math.floor(incident.durationMin / 60)}:${String(incident.durationMin % 60).padStart(2, '0')}` : '-'}
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Detailed Logs */}
-                  <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border">
-                    <h4 className="font-medium mb-3 text-gray-900 dark:text-gray-100 flex items-center gap-2">
-                      <FileText className="w-4 h-4 text-gray-600" />
-                      Detailed Processing Logs
-                    </h4>
-                    <div className="space-y-2 font-mono text-sm max-h-[60vh] overflow-y-auto">
-                      {uploadLogs && uploadLogs.length > 0 ? (
-                        uploadLogs.map((log, index) => (
-                          <div key={index} className="text-gray-800 dark:text-gray-200 whitespace-pre-wrap bg-gray-50 dark:bg-gray-700 p-3 rounded border-l-4 border-blue-200 hover:border-blue-300 transition-colors">
-                            <div className="flex items-start gap-2">
-                              <span className="text-blue-600 font-medium text-xs mt-0.5 flex-shrink-0">[{index + 1}]</span>
-                              <div className="flex-1 break-words min-w-0">
-                                {typeof log === 'string' ? log : JSON.stringify(log)}
-                              </div>
-                            </div>
-                          </div>
-                        ))
-                      ) : (
-                        <div className="text-gray-500 dark:text-gray-400 text-center py-8">
-                          No logs available. Upload some data first to see logs.
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-            <div className="flex justify-between items-center p-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
-              <div className="text-sm text-gray-600 dark:text-gray-400">
-                {uploadLogs.length} log entries
-              </div>
-              <div className="flex gap-2">
-                <Button 
-                  onClick={() => {
-                    const logText = uploadLogs.join('\n');
-                    navigator.clipboard.writeText(logText);
-                    alert('Logs copied to clipboard!');
-                  }}
-                  variant="outline" 
-                  size="sm"
-                  disabled={uploadLogs.length === 0}
-                >
-                  <Download className="w-3 h-3 mr-1" />
-                  Copy Logs
-                </Button>
-                <Button 
-                  onClick={() => setShowLogs(false)}
-                  variant="default"
-                  size="sm"
-                >
-                  Close
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
       </div>
     </PageWrapper>
   );
