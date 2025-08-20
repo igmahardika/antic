@@ -949,7 +949,7 @@ export const IncidentAnalytics: React.FC = () => {
                   verticalAlign="bottom"
                   height={36}
                   content={({ payload }) => (
-                    <div className="flex flex-wrap justify-center gap-4 mt-4">
+                    <div className="flex justify-center items-center gap-6 mt-4">
                       {payload?.map((entry, index) => (
                         <div key={index} className="flex items-center gap-2">
                           <div
