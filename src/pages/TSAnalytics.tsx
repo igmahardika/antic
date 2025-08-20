@@ -422,6 +422,7 @@ export const TSAnalytics: React.FC = () => {
     avgDuration: ts.avgDuration,
     escalationRate: ts.escalationRate,
     efficiency: ts.efficiency,
+    targetCompliance: ts.targetCompliance || 0,
     rank: index + 1,
     fill: index < 3 ? '#3b82f6' : index < 7 ? '#6b7280' : '#d1d5db'
   })) : [];
@@ -565,9 +566,9 @@ export const TSAnalytics: React.FC = () => {
                       <Badge variant="secondary" className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
                         {ts.count}
                       </Badge>
-                      <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                        {ts.targetCompliance.toFixed(1)}% compliance
-                      </div>
+                                              <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                          {ts.targetCompliance ? ts.targetCompliance.toFixed(1) : '0.0'}% compliance
+                        </div>
                     </div>
                   </div>
                 )) : (
