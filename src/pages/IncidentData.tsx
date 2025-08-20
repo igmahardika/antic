@@ -25,7 +25,13 @@ import {
   CheckCircle,
   XCircle,
   RefreshCw,
-  X
+  X,
+  BarChart3,
+  Database,
+  AlertCircle,
+  Eye,
+  FileText,
+  Settings
 } from 'lucide-react';
 
 export const IncidentData: React.FC = () => {
@@ -1180,9 +1186,9 @@ export const IncidentData: React.FC = () => {
 
       {/* Logs Modal */}
       {showLogs && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-4xl w-full mx-4 max-h-[80vh] flex flex-col">
-            <div className="flex items-center justify-between mb-4">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-lg w-full max-w-6xl max-h-[90vh] flex flex-col">
+            <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-orange-100 dark:bg-orange-900/30 rounded-full flex items-center justify-center">
                   <FileSpreadsheet className="w-5 h-5 text-orange-600 dark:text-orange-400" />
@@ -1205,13 +1211,16 @@ export const IncidentData: React.FC = () => {
               </Button>
             </div>
             
-            <div className="flex-1 overflow-hidden">
+            <div className="flex-1 overflow-hidden p-6">
               <div className="bg-gray-100 dark:bg-gray-900 rounded-lg p-4 h-full overflow-y-auto">
                 <div className="space-y-4">
                   {/* Upload Summary */}
                   {lastUploadResult && (
                     <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border">
-                      <h4 className="font-medium mb-3 text-gray-900 dark:text-gray-100">📊 Upload Summary</h4>
+                      <h4 className="font-medium mb-3 text-gray-900 dark:text-gray-100 flex items-center gap-2">
+                        <BarChart3 className="w-4 h-4 text-blue-600" />
+                        Upload Summary
+                      </h4>
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                         <div>
                           <span className="text-gray-600 dark:text-gray-400">Total Processed:</span>
@@ -1245,7 +1254,10 @@ export const IncidentData: React.FC = () => {
 
                   {/* Log Persistence Info */}
                   <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-                    <h4 className="font-medium mb-2 text-blue-800 dark:text-blue-200">💾 Log Persistence</h4>
+                    <h4 className="font-medium mb-2 text-blue-800 dark:text-blue-200 flex items-center gap-2">
+                      <Database className="w-4 h-4 text-blue-600" />
+                      Log Persistence
+                    </h4>
                     <div className="text-sm text-blue-700 dark:text-blue-300 space-y-1">
                       <div>✅ <strong>Logs are preserved</strong> even when data is reset</div>
                       <div>✅ <strong>Logs are stored</strong> in browser localStorage</div>
@@ -1258,8 +1270,9 @@ export const IncidentData: React.FC = () => {
                   {/* Skipped Rows Summary */}
                   {lastUploadResult?.skippedDetails && lastUploadResult.skippedDetails.length > 0 && (
                     <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border">
-                      <h4 className="font-medium mb-3 text-red-800 dark:text-red-200">
-                        📋 Skipped Rows Analysis ({lastUploadResult.skippedDetails.length} rows)
+                      <h4 className="font-medium mb-3 text-red-800 dark:text-red-200 flex items-center gap-2">
+                        <AlertCircle className="w-4 h-4 text-red-600" />
+                        Skipped Rows Analysis ({lastUploadResult.skippedDetails.length} rows)
                       </h4>
                       
                       {/* Skipped Rows Statistics */}
@@ -1283,27 +1296,25 @@ export const IncidentData: React.FC = () => {
                       </div>
 
                       {/* Skipped Rows Details */}
-                      <div className="space-y-2 max-h-60 overflow-y-auto">
+                      <div className="space-y-2 max-h-80 overflow-y-auto">
                         {lastUploadResult.skippedDetails.slice(0, 50).map((detail: any, index: number) => (
-                          <div key={index} className="text-sm bg-gray-50 dark:bg-gray-700 p-2 rounded border">
-                            <div className="flex justify-between items-start">
-                              <span className="font-medium text-red-600 dark:text-red-400">
+                          <div key={index} className="text-sm bg-gray-50 dark:bg-gray-700 p-3 rounded border-l-4 border-red-200 hover:border-red-300 transition-colors">
+                            <div className="flex justify-between items-start mb-2">
+                              <span className="font-medium text-red-600 dark:text-red-400 flex items-center gap-2">
+                                <span className="text-blue-600 font-medium text-xs">#{index + 1}</span>
                                 Row {detail.row} ({detail.sheet})
                               </span>
-                              <span className="text-xs text-gray-500">
-                                #{index + 1}
-                              </span>
                             </div>
-                            <div className="text-gray-700 dark:text-gray-300 mt-1">
+                            <div className="text-gray-700 dark:text-gray-300 mb-2">
                               <span className="font-medium">Reason:</span> {detail.reason}
                             </div>
                             {detail.data && (
-                              <div className="text-xs text-gray-600 dark:text-gray-400 mt-1">
-                                <details>
-                                  <summary className="cursor-pointer hover:text-gray-800 dark:hover:text-gray-200">
-                                    View Data Details
+                              <div className="text-xs text-gray-600 dark:text-gray-400">
+                                <details className="mt-2">
+                                  <summary className="cursor-pointer hover:text-gray-800 dark:hover:text-gray-200 font-medium">
+                                    📋 View Data Details
                                   </summary>
-                                  <pre className="mt-1 p-2 bg-gray-100 dark:bg-gray-700 rounded text-xs overflow-x-auto">
+                                  <pre className="mt-2 p-3 bg-gray-100 dark:bg-gray-700 rounded text-xs overflow-x-auto border">
                                     {JSON.stringify(detail.data, null, 2)}
                                   </pre>
                                 </details>
@@ -1312,7 +1323,7 @@ export const IncidentData: React.FC = () => {
                           </div>
                         ))}
                         {lastUploadResult.skippedDetails.length > 50 && (
-                          <div className="text-center text-sm text-gray-600 dark:text-gray-400 py-2">
+                          <div className="text-center text-sm text-gray-600 dark:text-gray-400 py-3 bg-gray-100 dark:bg-gray-700 rounded border">
                             ... and {lastUploadResult.skippedDetails.length - 50} more skipped rows
                           </div>
                         )}
@@ -1323,7 +1334,10 @@ export const IncidentData: React.FC = () => {
                   {/* Error Summary */}
                   {lastUploadResult?.errors && lastUploadResult.errors.length > 0 && (
                     <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border">
-                      <h4 className="font-medium mb-3 text-red-800 dark:text-red-200">❌ Error Summary</h4>
+                      <h4 className="font-medium mb-3 text-red-800 dark:text-red-200 flex items-center gap-2">
+                        <XCircle className="w-4 h-4 text-red-600" />
+                        Error Summary
+                      </h4>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                         {lastUploadResult.errors.map((error: string, index: number) => (
                           <div key={index} className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 p-3 rounded border-l-4 border-red-400">
@@ -1335,7 +1349,10 @@ export const IncidentData: React.FC = () => {
                       
                       {/* Common Issues Guide */}
                       <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-                        <h5 className="font-medium mb-2 text-blue-800 dark:text-blue-200">🔧 Common Issues & Solutions:</h5>
+                        <h5 className="font-medium mb-2 text-blue-800 dark:text-blue-200 flex items-center gap-2">
+                          <Settings className="w-4 h-4 text-blue-600" />
+                          Common Issues & Solutions:
+                        </h5>
                         <div className="text-sm text-blue-700 dark:text-blue-300 space-y-2">
                           <div><strong>NCAL Values:</strong> Must be exactly "Blue", "Yellow", "Orange", "Red", or "Black" (case sensitive)</div>
                           <div><strong>Priority Values:</strong> Must be "High", "Medium", or "Low" (case sensitive)</div>
@@ -1354,7 +1371,10 @@ export const IncidentData: React.FC = () => {
                   {/* Data Preview */}
                   {lastUploadResult?.preview && lastUploadResult.preview.length > 0 && (
                     <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border">
-                      <h4 className="font-medium mb-3 text-gray-900 dark:text-gray-100">👀 Data Preview (first 20 rows)</h4>
+                      <h4 className="font-medium mb-3 text-gray-900 dark:text-gray-100 flex items-center gap-2">
+                        <Eye className="w-4 h-4 text-gray-600" />
+                        Data Preview (first 20 rows)
+                      </h4>
                       <div className="overflow-x-auto">
                         <table className="w-full text-sm">
                           <thead className="bg-gray-50 dark:bg-gray-700">
@@ -1386,12 +1406,20 @@ export const IncidentData: React.FC = () => {
 
                   {/* Detailed Logs */}
                   <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border">
-                    <h4 className="font-medium mb-3 text-gray-900 dark:text-gray-100">📝 Detailed Processing Logs</h4>
-                    <div className="space-y-2 font-mono text-sm">
+                    <h4 className="font-medium mb-3 text-gray-900 dark:text-gray-100 flex items-center gap-2">
+                      <FileText className="w-4 h-4 text-gray-600" />
+                      Detailed Processing Logs
+                    </h4>
+                    <div className="space-y-2 font-mono text-sm max-h-96 overflow-y-auto">
                       {uploadLogs.length > 0 ? (
                         uploadLogs.map((log, index) => (
-                          <div key={index} className="text-gray-800 dark:text-gray-200 whitespace-pre-wrap bg-gray-50 dark:bg-gray-700 p-2 rounded">
-                            {log}
+                          <div key={index} className="text-gray-800 dark:text-gray-200 whitespace-pre-wrap bg-gray-50 dark:bg-gray-700 p-3 rounded border-l-4 border-blue-200 hover:border-blue-300 transition-colors">
+                            <div className="flex items-start gap-2">
+                              <span className="text-blue-600 font-medium text-xs mt-0.5">[{index + 1}]</span>
+                              <div className="flex-1 break-words">
+                                {log}
+                              </div>
+                            </div>
                           </div>
                         ))
                       ) : (
@@ -1405,7 +1433,7 @@ export const IncidentData: React.FC = () => {
               </div>
             </div>
             
-            <div className="flex justify-between items-center mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+            <div className="flex justify-between items-center p-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
               <div className="text-sm text-gray-600 dark:text-gray-400">
                 {uploadLogs.length} log entries
               </div>
