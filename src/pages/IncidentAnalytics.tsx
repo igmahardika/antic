@@ -189,6 +189,48 @@ export const IncidentAnalytics: React.FC = () => {
     return `${hours}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
+  // Custom Tooltip Component for NCAL Charts
+  const NCALTooltip = ({ active, payload, label, isDuration = false }: any) => {
+    if (!active || !payload || !payload.length) return null;
+
+    return (
+      <div className="bg-white dark:bg-zinc-900 rounded-lg shadow-lg border border-gray-200 dark:border-zinc-700 p-3">
+        <div className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
+          {(() => {
+            const [year, month] = label.split('-');
+            const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
+                              'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            return `${monthNames[parseInt(month) - 1]} ${year}`;
+          })()}
+        </div>
+        <div className="space-y-1">
+          {payload.map((entry: any, index: number) => {
+            const ncal = entry.dataKey;
+            const value = entry.value;
+            const color = NCAL_COLORS[ncal as keyof typeof NCAL_COLORS];
+            
+            return (
+              <div key={index} className="flex items-center justify-between gap-4">
+                <div className="flex items-center gap-2">
+                  <div 
+                    className="w-3 h-3 rounded-sm" 
+                    style={{ backgroundColor: color }}
+                  />
+                  <span className="text-sm text-gray-700 dark:text-gray-300">
+                    {ncal}
+                  </span>
+                </div>
+                <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                  {isDuration ? formatDurationHMS(value) : value.toLocaleString()}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  };
+
   // Filter incidents by selected period
   const filteredIncidents = useMemo(() => {
     if (!allIncidents) return [];
@@ -915,7 +957,7 @@ export const IncidentAnalytics: React.FC = () => {
                 />
                 <ChartTooltip
                   cursor={false}
-                  content={<ChartTooltipContent hideLabel />}
+                  content={<NCALTooltip isDuration={false} />}
                 />
                 {activeNCALCategories.map(ncal => (
                   <Line
@@ -977,8 +1019,7 @@ export const IncidentAnalytics: React.FC = () => {
                 />
                 <ChartTooltip
                   cursor={false}
-                  content={<ChartTooltipContent hideLabel />}
-                  formatter={(value: number) => [formatDurationHMS(value), 'Duration']}
+                  content={<NCALTooltip isDuration={true} />}
                 />
                 {activeNCALCategories.map(ncal => (
                   <Line
