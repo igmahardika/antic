@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { Incident, IncidentFilter } from '@/types/incident';
-
-import { IncidentUpload } from '@/components/IncidentUpload';
+import { queryIncidents } from '@/utils/incidentUtils';
+import { IncidentDataUpload } from '@/pages/incident/IncidentDataUpload';
 import { db } from '@/lib/db';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -51,9 +51,6 @@ export const IncidentData: React.FC = () => {
   const [uploadLogs, setUploadLogs] = useState<string[]>([]);
   const [lastUploadResult, setLastUploadResult] = useState<any>(null);
   const [showDataTools, setShowDataTools] = useState(false);
-
-  // Use useLiveQuery for real-time data updates
-  const allIncidents = useLiveQuery(() => db.incidents.toArray());
 
   // Load logs from localStorage
   React.useEffect(() => {
@@ -144,7 +141,10 @@ export const IncidentData: React.FC = () => {
     return ncalCounts[normalizedTarget] || 0;
   };
 
-
+  // Get unique values for filter options
+  const allIncidents = useLiveQuery(() => 
+    db.incidents.toArray()
+  );
 
   // Debug: Log when allIncidents changes
   React.useEffect(() => {
@@ -265,77 +265,21 @@ export const IncidentData: React.FC = () => {
   const uniqueSites = [...new Set(allIncidents?.map(i => i.site).filter(Boolean) || [])];
 
   useEffect(() => {
-    if (allIncidents) {
+    const loadData = async () => {
       setIsLoading(true);
       try {
-        // Apply filters
-        let filteredIncidents = [...allIncidents];
-
-        // Date range filter
-        if (filter.dateFrom && filter.dateTo) {
-          filteredIncidents = filteredIncidents.filter(incident => {
-            if (!incident.startTime) return false;
-            const incidentDate = new Date(incident.startTime);
-            const fromDate = new Date(filter.dateFrom);
-            const toDate = new Date(filter.dateTo);
-            return incidentDate >= fromDate && incidentDate <= toDate;
-          });
-        }
-
-        // Other filters
-        if (filter.status) {
-          filteredIncidents = filteredIncidents.filter(i => i.status === filter.status);
-        }
-        if (filter.priority) {
-          filteredIncidents = filteredIncidents.filter(i => i.priority === filter.priority);
-        }
-        if (filter.level !== undefined) {
-          filteredIncidents = filteredIncidents.filter(i => i.level === filter.level);
-        }
-        if (filter.site) {
-          filteredIncidents = filteredIncidents.filter(i => i.site === filter.site);
-        }
-        if (filter.ncal) {
-          filteredIncidents = filteredIncidents.filter(i => i.ncal === filter.ncal);
-        }
-        if (filter.klasifikasiGangguan) {
-          filteredIncidents = filteredIncidents.filter(i => i.klasifikasiGangguan === filter.klasifikasiGangguan);
-        }
-
-        // Search filter
-        if (filter.search) {
-          const searchLower = filter.search.toLowerCase();
-          filteredIncidents = filteredIncidents.filter(i =>
-            (i.noCase || '').toLowerCase().includes(searchLower) ||
-            (i.site || '').toLowerCase().includes(searchLower) ||
-            (i.problem || '').toLowerCase().includes(searchLower)
-          );
-        }
-
-        // Sort by startTime descending
-        filteredIncidents.sort((a, b) => {
-          if (!a.startTime || !b.startTime) return 0;
-          return new Date(b.startTime).getTime() - new Date(a.startTime).getTime();
-        });
-
-        const total = filteredIncidents.length;
-
-        // Pagination
-        const page = filter.page || 1;
-        const limit = filter.limit || 50;
-        const startIndex = (page - 1) * limit;
-        const endIndex = startIndex + limit;
-        const paginatedIncidents = filteredIncidents.slice(startIndex, endIndex);
-
-        setIncidents(paginatedIncidents);
-        setTotal(total);
+        const result = await queryIncidents(filter);
+        setIncidents(result.rows);
+        setTotal(result.total);
       } catch (error) {
-        console.error('Error processing incidents:', error);
+        console.error('Error loading incidents:', error);
       } finally {
         setIsLoading(false);
       }
-    }
-  }, [allIncidents, filter]);
+    };
+
+    loadData();
+  }, [filter]);
 
   const handleFilterChange = (key: keyof IncidentFilter, value: any) => {
     setFilter(prev => ({
@@ -402,11 +346,11 @@ export const IncidentData: React.FC = () => {
     if (incidents.length === 0) return;
 
     const headers = [
-      'Priority', 'Site', 'No Case', 'NCAL', 'Status', 'Level', 'TS', 'ODP/BTS',
-      'Start', 'Start Escalation Vendor', 'End', 'Duration', 'Duration Vendor',
+      'No Case', 'Priority', 'Site', 'NCAL', 'Status', 'Level', 'TS', 'ODP/BTS',
+      'Start Time', 'Start Escalation Vendor', 'End Time', 'Duration', 'Duration Vendor',
       'Problem', 'Penyebab', 'Action Terakhir', 'Note', 'Klasifikasi Gangguan',
-      'Power Before', 'Power After', 'Start Pause', 'End Pause', 'Start Pause 2', 'End Pause 2',
-      'Total Duration Pause', 'Total Duration Vendor'
+      'Power Before', 'Power After', 'Start Pause 1', 'End Pause 1', 'Start Pause 2', 'End Pause 2',
+      'Total Duration Pause', 'Total Duration Vendor', 'Net Duration'
     ];
 
     const data = incidents.map(incident => [
@@ -854,42 +798,26 @@ export const IncidentData: React.FC = () => {
 
 
 
-      {showUpload && (
-        <IncidentUpload 
-          onUploadComplete={(logs?: string[], uploadResult?: any) => {
-            setShowUpload(false);
-            console.log('onUploadComplete called with:', { logs, uploadResult });
-            
-            if (logs && logs.length > 0) {
-              // Save logs to localStorage for persistence
-              const existingLogs = JSON.parse(localStorage.getItem('uploadLogs') || '[]');
-              console.log('Existing logs:', existingLogs);
-              
-              // Ensure logs are stored as strings
-              const stringLogs = logs.map(log => typeof log === 'string' ? log : JSON.stringify(log));
-              console.log('String logs to add:', stringLogs);
-              
-              const newLogs = [...existingLogs, ...stringLogs];
-              console.log('New logs array:', newLogs);
-              
-              localStorage.setItem('uploadLogs', JSON.stringify(newLogs));
-              setUploadLogs(newLogs);
-              
-              console.log('Logs saved to localStorage and state updated');
-            }
-            
-            if (uploadResult) {
-              console.log('Setting upload result:', uploadResult);
-              setLastUploadResult(uploadResult);
-            }
-            
-            // Data will automatically refresh due to useLiveQuery
-            toast({
-              title: "Upload Complete",
-              description: "Incident data has been uploaded successfully and is now available.",
-            });
-          }} 
-        />
+            {showUpload && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-lg w-full max-w-6xl max-h-[95vh] flex flex-col">
+            <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                Upload Incident Data
+              </h3>
+              <Button 
+                onClick={() => setShowUpload(false)}
+                variant="outline" 
+                size="sm"
+              >
+                <X className="w-3 h-3" />
+              </Button>
+            </div>
+            <div className="flex-1 overflow-y-auto">
+              <IncidentDataUpload />
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Reset Confirmation Modal */}

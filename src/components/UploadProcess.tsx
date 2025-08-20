@@ -7,7 +7,7 @@ import { Badge } from './ui/badge';
 import Papa from 'papaparse';
 import * as ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
-import { db } from '@/lib/db';
+import { db, ITicket } from '@/lib/db';
 import { formatDurationDHM } from '@/lib/utils';
 import SummaryCard from './ui/SummaryCard';
 import { useLiveQuery } from 'dexie-react-hooks';

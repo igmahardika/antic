@@ -2,7 +2,7 @@ import React, { useState, useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
 import * as XLSX from 'xlsx';
 import { Incident } from '@/types/incident';
-import { mkId, toMinutes, parseDateSafe, saveIncidentsChunked, normalizeNCAL } from '@/utils/incidentUtils';
+import { mkId, toMinutes, parseDateSafe, saveIncidentsChunked, generateBatchId } from '@/utils/incidentUtils';
 import { db } from '@/lib/db';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -92,7 +92,7 @@ export const IncidentUpload: React.FC<IncidentUploadProps> = ({ onUploadComplete
       }> = [];
 
       captureLog(`=== UPLOAD ANALYSIS START ===`);
-      captureLog(`🔍 VALIDATION STRATEGY: NCAL as primary (No Case optional/autogen). Fallback NCAL = column D.`);
+      captureLog(`🔍 VALIDATION STRATEGY: Using NCAL as primary validation field (not No Case)`);
       captureLog(`📊 Total sheets found: ${workbook.SheetNames.length}`);
       captureLog(`📋 Sheet names: ${workbook.SheetNames.join(', ')}`);
       captureLog(`🎯 GOAL: Upload ALL valid data, skip only truly invalid/empty rows`);
@@ -176,16 +176,27 @@ export const IncidentUpload: React.FC<IncidentUploadProps> = ({ onUploadComplete
 
                       try {
               const result = parseRowToIncident(headers, row, i + 1, sheetName);
-              if (result) {
+              if (result && !result.skipped) {
                 allRows.push(result);
                 successCount++;
                 sheetSuccessCount++;
                 captureLog(`Row ${i + 1} in "${sheetName}": ✅ Successfully processed - ID: ${result.id}, NCAL: ${result.ncal}, Site: ${result.site}`);
+              } else if (result && result.skipped) {
+                // Row was skipped with specific reason
+                sheetSkippedCount++;
+                skippedCount++;
+                captureLog(`Row ${i + 1} in "${sheetName}" ⚠️ SKIPPED: ${result.reason}`);
+                skippedDetails.push({
+                  row: i + 1,
+                  sheet: sheetName,
+                  reason: result.reason,
+                  data: result.rowData
+                });
               } else {
                 // Row was skipped (null result)
                 sheetSkippedCount++;
                 skippedCount++;
-                const reason = "Row skipped due to invalid NCAL or Start time";
+                const reason = "Row processing returned null (unknown error)";
                 captureLog(`Row ${i + 1} in "${sheetName}" ❌ SKIPPED: ${reason}`);
                 skippedDetails.push({
                   row: i + 1,
@@ -376,10 +387,17 @@ export const IncidentUpload: React.FC<IncidentUploadProps> = ({ onUploadComplete
       }
       captureLog(`=== END SUMMARY ===\n`);
 
-      // Call callback if provided
-      if (onUploadComplete) {
-        captureLog(`\n🔄 Calling onUploadComplete callback...`);
-        onUploadComplete(logs, uploadResult);
+      // Call callback if provided and upload was successful
+      // Add delay to ensure logs are visible before closing modal
+      if (onUploadComplete && successCount > 0) {
+        captureLog(`\n🔄 Calling onUploadComplete callback in 3 seconds to allow log review...`);
+        setTimeout(() => {
+          captureLog(`✅ Executing onUploadComplete callback now`);
+          onUploadComplete(logs, uploadResult);
+        }, 3000); // 3 second delay
+      } else if (onUploadComplete && successCount === 0) {
+        captureLog(`\n⚠️ Upload completed but no data was uploaded. Callback will not be called.`);
+        onUploadComplete(logs, uploadResult); // Still send logs even if no data uploaded
       }
 
     } catch (error) {
@@ -537,83 +555,265 @@ export const IncidentUpload: React.FC<IncidentUploadProps> = ({ onUploadComplete
   );
 };
 
-function parseRowToIncident(headers: string[], row: any[], rowNum: number, sheetName: string) {
-  const getValue = (name: string) => {
-    const idx = headers.findIndex(h => String(h).trim().toLowerCase() === name.toLowerCase());
-    return idx >= 0 ? row[idx] : null;
+function parseRowToIncident(headers: string[], row: any[], rowNum: number, sheetName: string): Incident | null {
+  const getValue = (headerName: string) => {
+    const index = headers.findIndex(h => 
+      h?.toString().toLowerCase().includes(headerName.toLowerCase())
+    );
+    return index >= 0 ? row[index] : null;
   };
 
-  // --- NCAL PRIMARY (fallback kolom D = index 3)
-  const ncalRaw = (getValue('NCAL') ?? row[3] ?? null);
-  const ncal = normalizeNCAL(ncalRaw);
-  if (!ncal) {
-    console.log(`[UPLOAD][skip] ${sheetName} row ${rowNum}: NCAL kosong/tidak valid ("${ncalRaw}")`);
-    return null; // skip baris
+  // Use NCAL as primary validation instead of No Case
+  const ncalValue = getValue('NCAL');
+  if (!ncalValue || String(ncalValue).trim() === '') {
+    const reason = "Empty NCAL (primary validation field)";
+    console.log(`Row ${rowNum} in "${sheetName}": ${reason}`);
+    return { skipped: true, reason, rowData: { ncal: ncalValue } };
   }
 
-  // Start wajib (DD/MM/YY HH:MM:SS / Excel serial)
-  const startTime = parseDateSafe(getValue('Start'));
+  // Normalize NCAL - remove extra spaces and ensure it's a string
+  const normalizedNCAL = String(ncalValue).trim();
+  if (normalizedNCAL === '') {
+    const reason = "NCAL is empty after normalization (primary validation field)";
+    console.log(`Row ${rowNum} in "${sheetName}": ${reason}`);
+    return { skipped: true, reason, rowData: { ncal: ncalValue, normalizedNCAL } };
+  }
+
+  // Validate NCAL value with more flexible normalization
+  const validNCAL = ['Blue', 'Yellow', 'Orange', 'Red', 'Black'];
+  const ncalStr = normalizedNCAL;
+  let finalNCAL = ncalStr;
+  
+  if (!validNCAL.includes(ncalStr)) {
+    // Try to normalize common variations
+    const normalized = ncalStr.toLowerCase();
+    if (normalized === 'blue' || normalized === 'b' || normalized === 'blu') finalNCAL = 'Blue';
+    else if (normalized === 'yellow' || normalized === 'y' || normalized === 'yel') finalNCAL = 'Yellow';
+    else if (normalized === 'orange' || normalized === 'o' || normalized === 'ora') finalNCAL = 'Orange';
+    else if (normalized === 'red' || normalized === 'r') finalNCAL = 'Red';
+    else if (normalized === 'black' || normalized === 'bl' || normalized === 'bla') finalNCAL = 'Black';
+    else {
+      const reason = `Invalid NCAL value "${ncalValue}" (primary validation field) - Expected: Blue, Yellow, Orange, Red, or Black`;
+      console.log(`Row ${rowNum} in "${sheetName}": ${reason}`);
+      return { skipped: true, reason, rowData: { ncal: ncalValue, normalizedNCAL } };
+    }
+  }
+
+  const noCase = getValue('No Case');
+  // Normalize No Case - remove extra spaces and ensure it's a string
+  const normalizedNoCase = noCase ? String(noCase).trim() : `NCAL_${finalNCAL}_${rowNum}`;
+  
+  // Log if No Case was auto-generated
+  if (!noCase || String(noCase).trim() === '') {
+    console.log(`Row ${rowNum} in "${sheetName}": Auto-generated No Case "${normalizedNoCase}" for NCAL "${finalNCAL}"`);
+  }
+
+  // Additional validation for required fields
+  const startTimeRaw = getValue('Start');
+  if (!startTimeRaw || String(startTimeRaw).trim() === '') {
+    const reason = "Missing Start time (required field)";
+    console.log(`Row ${rowNum} in "${sheetName}": ${reason}`);
+    return { skipped: true, reason, rowData: { startTimeRaw } };
+  }
+  
+  // Validate other critical fields but don't skip if they're missing
+  const siteValue = getValue('Site');
+  const tsValue = getValue('TS');
+  const problemValue = getValue('Problem');
+  
+  if (!siteValue || String(siteValue).trim() === '') {
+    console.warn(`Row ${rowNum} in "${sheetName}": Site is empty - will use default value`);
+  }
+  
+  if (!tsValue || String(tsValue).trim() === '') {
+    console.warn(`Row ${rowNum} in "${sheetName}": TS is empty - will use default value`);
+  }
+  
+  if (!problemValue || String(problemValue).trim() === '') {
+    console.warn(`Row ${rowNum} in "${sheetName}": Problem is empty - will use default value`);
+  }
+
+  const startTime = parseDateSafe(startTimeRaw);
   if (!startTime) {
-    console.log(`[UPLOAD][skip] ${sheetName} row ${rowNum}: Start invalid`);
-    return null; // skip
+    const reason = `Invalid Start time format: "${startTimeRaw}"`;
+    console.log(`Row ${rowNum} in "${sheetName}": ${reason}`);
+    return { skipped: true, reason, rowData: { startTimeRaw } };
+  }
+  
+  console.log(`Row ${rowNum} in "${sheetName}": Successfully parsed Start time "${startTimeRaw}" -> ${startTime}`);
+  const id = mkId(noCase, startTime);
+  
+  // Validate ID generation
+  if (!id) {
+    const reason = `Failed to generate ID for No Case: "${noCase}"`;
+    console.error(`Row ${rowNum} in "${sheetName}": ${reason}`);
+    return { skipped: true, reason, rowData: { noCase, startTime } };
   }
 
-  // No Case opsional → auto-generate bila kosong
-  const noCaseRaw = getValue('No Case');
-  const siteStr = (getValue('Site') ?? '').toString().trim();
-  const noCase = noCaseRaw && String(noCaseRaw).trim() !== ''
-    ? String(noCaseRaw).trim()
-    : `NCAL_${ncal}_${rowNum}`;
-  if (!noCaseRaw || String(noCaseRaw).trim()==='') {
-    console.log(`[UPLOAD][info] ${sheetName} row ${rowNum}: Auto NoCase -> ${noCase}`);
-  }
-
-  // ID: NCAL|Start|Site
-  const id = mkId(`${ncal}|${startTime}|${siteStr}`);
-
-  const incident = {
+  const incident: Incident = {
     id,
-    noCase,
-    ncal,
-    site: getValue('Site') || null,
-    priority: getValue('Priority') || null,
-    status: getValue('Status') || null,
-    level: getValue('Level') ? Number(getValue('Level')) : null,
-    ts: getValue('TS') || null,
-    odpBts: getValue('ODP/BTS') || null,
-
+    noCase: normalizedNoCase,
+    ncal: finalNCAL,
+    priority: (() => {
+      const priorityValue = getValue('Priority');
+      if (priorityValue) {
+        const validPriorities = ['High', 'Medium', 'Low'];
+        const priorityStr = String(priorityValue).trim();
+        if (validPriorities.includes(priorityStr)) {
+          return priorityStr;
+        } else {
+          console.warn(`Row ${rowNum} in "${sheetName}": Invalid Priority value "${priorityValue}". Expected: High, Medium, Low`);
+          // Try to normalize common variations
+          const normalized = priorityStr.toLowerCase();
+          if (normalized === 'high' || normalized === 'h' || normalized === 'hi') return 'High';
+          if (normalized === 'medium' || normalized === 'med' || normalized === 'm' || normalized === 'mid') return 'Medium';
+          if (normalized === 'low' || normalized === 'l' || normalized === 'lo') return 'Low';
+        }
+      }
+      return priorityValue ? String(priorityValue).trim() : null;
+    })(),
+    site: (() => {
+      const siteValue = getValue('Site');
+      return siteValue ? String(siteValue).trim() : 'Unknown Site';
+    })(),
+    // NCAL is already processed above
+    status: (() => {
+      const statusValue = getValue('Status');
+      return statusValue ? String(statusValue).trim() : null;
+    })(),
+    level: (() => {
+      const levelValue = getValue('Level');
+      if (levelValue) {
+        const levelNum = Number(levelValue);
+        if (Number.isInteger(levelNum) && levelNum >= 1 && levelNum <= 10) {
+          return levelNum;
+        } else {
+          console.warn(`Row ${rowNum} in "${sheetName}": Invalid Level value "${levelValue}". Expected: 1-10`);
+          // Try to normalize common variations
+          const levelStr = String(levelValue).toLowerCase().trim();
+          if (levelStr === '1' || levelStr === 'one' || levelStr === 'i') return 1;
+          if (levelStr === '2' || levelStr === 'two' || levelStr === 'ii') return 2;
+          if (levelStr === '3' || levelStr === 'three' || levelStr === 'iii') return 3;
+        }
+      }
+      return levelValue ? Number(levelValue) : null;
+    })(),
+    ts: (() => {
+      const tsValue = getValue('TS');
+      return tsValue ? String(tsValue).trim() : 'Unknown TS';
+    })(),
+    odpBts: (() => {
+      const odpValue = getValue('ODP/BTS');
+      return odpValue ? String(odpValue).trim() : null;
+    })(),
     startTime,
     startEscalationVendor: parseDateSafe(getValue('Start Escalation Vendor')),
     endTime: parseDateSafe(getValue('End')),
-
-    durationMin: toMinutes(getValue('Duration')),
-    durationVendorMin: toMinutes(getValue('Duration Vendor')),
-
-    problem: getValue('Problem') || null,
-    penyebab: getValue('Penyebab') || null,
-    actionTerakhir: getValue('Action Terakhir') || null,
-    note: getValue('Note') || null,
-    klasifikasiGangguan: getValue('Klasifikasi Gangguan') || null,
-
-    powerBefore: getValue('Power Before') ? Number(getValue('Power Before')) : null,
-    powerAfter:  getValue('Power After')  ? Number(getValue('Power After'))  : null,
-
+    durationMin: (() => {
+      const duration = getValue('Duration');
+      const minutes = toMinutes(duration);
+      if (duration && minutes === 0) {
+        console.warn(`Row ${rowNum} in "${sheetName}": Duration not parsed correctly. Raw value: "${duration}"`);
+      }
+      return minutes;
+    })(),
+    durationVendorMin: (() => {
+      const duration = getValue('Duration Vendor');
+      const minutes = toMinutes(duration);
+      if (duration && minutes === 0) {
+        console.warn(`Row ${rowNum} in "${sheetName}": Duration Vendor not parsed correctly. Raw value: "${duration}"`);
+      }
+      return minutes;
+    })(),
+    problem: (() => {
+      const problemValue = getValue('Problem');
+      return problemValue ? String(problemValue).trim() : 'No Problem Description';
+    })(),
+    penyebab: (() => {
+      const penyebabValue = getValue('Penyebab');
+      return penyebabValue ? String(penyebabValue).trim() : null;
+    })(),
+    actionTerakhir: (() => {
+      const actionValue = getValue('Action Terakhir');
+      return actionValue ? String(actionValue).trim() : null;
+    })(),
+    note: (() => {
+      const noteValue = getValue('Note');
+      return noteValue ? String(noteValue).trim() : null;
+    })(),
+    klasifikasiGangguan: (() => {
+      const klasValue = getValue('Klasifikasi Gangguan');
+      return klasValue ? String(klasValue).trim() : null;
+    })(),
+    powerBefore: (() => {
+      const powerValue = getValue('Power Before');
+      if (powerValue) {
+        const powerNum = Number(powerValue);
+        if (Number.isFinite(powerNum)) {
+          // dBm values typically range from -70 to +10
+          if (powerNum >= -70 && powerNum <= 10) {
+            return powerNum;
+          } else {
+            console.warn(`Row ${rowNum} in "${sheetName}": Power Before value "${powerValue}" dBm is outside typical range (-70 to +10)`);
+          }
+        } else {
+          console.warn(`Row ${rowNum} in "${sheetName}": Invalid Power Before value "${powerValue}". Expected numeric value in dBm`);
+        }
+      }
+      return powerValue ? Number(powerValue) : null;
+    })(),
+    powerAfter: (() => {
+      const powerValue = getValue('Power After');
+      if (powerValue) {
+        const powerNum = Number(powerValue);
+        if (Number.isFinite(powerNum)) {
+          // dBm values typically range from -70 to +10
+          if (powerNum >= -70 && powerNum <= 10) {
+            return powerNum;
+          } else {
+            console.warn(`Row ${rowNum} in "${sheetName}": Power After value "${powerValue}" dBm is outside typical range (-70 to +10)`);
+          }
+        } else {
+          console.warn(`Row ${rowNum} in "${sheetName}": Invalid Power After value "${powerValue}". Expected numeric value in dBm`);
+        }
+      }
+      return powerValue ? Number(powerValue) : null;
+    })(),
     startPause1: parseDateSafe(getValue('Start Pause')),
-    endPause1:   parseDateSafe(getValue('End Pause')),
+    endPause1: parseDateSafe(getValue('End Pause')),
     startPause2: parseDateSafe(getValue('Start Pause 2')),
-    endPause2:   parseDateSafe(getValue('End Pause 2')),
-
-    totalDurationPauseMin:  toMinutes(getValue('Total Duration Pause')),
-    totalDurationVendorMin: toMinutes(getValue('Total Duration Vendor')),
-
+    endPause2: parseDateSafe(getValue('End Pause 2')),
+    totalDurationPauseMin: (() => {
+      const duration = getValue('Total Duration Pause');
+      const minutes = toMinutes(duration);
+      if (duration && minutes === 0) {
+        console.warn(`Row ${rowNum} in "${sheetName}": Total Duration Pause not parsed correctly. Raw value: "${duration}"`);
+      }
+      return minutes;
+    })(),
+    totalDurationVendorMin: (() => {
+      const duration = getValue('Total Duration Vendor');
+      const minutes = toMinutes(duration);
+      if (duration && minutes === 0) {
+        console.warn(`Row ${rowNum} in "${sheetName}": Total Duration Vendor not parsed correctly. Raw value: "${duration}"`);
+      }
+      return minutes;
+    })(),
     netDurationMin: Math.max(
-      toMinutes(getValue('Duration')) - toMinutes(getValue('Total Duration Pause')),
+      toMinutes(getValue('Duration')) - toMinutes(getValue('Total Duration Pause')), 
       0
     ),
+    batchId: generateBatchId(),
+    importedAt: new Date().toISOString()
+  };
 
-    batchId: 'batch-' + Date.now(),
-    importedAt: new Date().toISOString(),
-  } as const;
+  // Final validation before returning
+  if (!incident.id || !incident.noCase || !incident.startTime) {
+    const reason = `Invalid incident object created - missing required fields`;
+    console.error(`Row ${rowNum} in "${sheetName}": ${reason}`, incident);
+    return { skipped: true, reason, rowData: { incident } };
+  }
 
+  console.log(`Row ${rowNum} in "${sheetName}": Successfully created incident with ID: ${incident.id}`);
   return incident;
 }

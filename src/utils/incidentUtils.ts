@@ -1,58 +1,514 @@
+import { Incident, IncidentFilter, IncidentRecord, IncidentStats } from '@/types/incident';
 import { db } from '@/lib/db';
-import type { Incident } from '@/types/incident';
 
-export const normalizeNCAL = (v: unknown): string | null => {
-  if (v == null) return null;
-  const s = String(v).trim().toLowerCase();
-  if (['blue','b'].includes(s)) return 'Blue';
-  if (['yellow','y'].includes(s)) return 'Yellow';
-  if (['orange','o'].includes(s)) return 'Orange';
-  if (['red','r'].includes(s)) return 'Red';
-  if (['black','bl'].includes(s)) return 'Black';
-  return null;
+// Helper untuk konversi Excel serial date ke JavaScript Date
+const excelSerialToDate = (serial: number): Date => {
+  // Excel serial date: days since January 1, 1900
+  // JavaScript Date: milliseconds since January 1, 1970 (Unix epoch)
+  
+  // Excel epoch: January 1, 1900 = serial 1
+  // Unix epoch: January 1, 1970 = serial 25569
+  const unixEpochSerial = 25569;
+  
+  // Convert days to milliseconds
+  const daysSinceUnixEpoch = serial - unixEpochSerial;
+  const millisecondsSinceUnixEpoch = daysSinceUnixEpoch * 24 * 60 * 60 * 1000;
+  
+  return new Date(millisecondsSinceUnixEpoch);
 };
 
+// Helper untuk memastikan format HH:MM:SS diproses dengan benar
+const parseHHMMSS = (timeString: string): number => {
+  // Remove any extra spaces and ensure proper format
+  const cleanTime = timeString.trim();
+  
+  // Strict HH:MM:SS format validation
+  const hhmmssRegex = /^(\d{1,2}):(\d{2}):(\d{2})$/;
+  const match = cleanTime.match(hhmmssRegex);
+  
+  if (match) {
+    const [, hours, minutes, seconds] = match;
+    const h = parseInt(hours, 10);
+    const m = parseInt(minutes, 10);
+    const s = parseInt(seconds, 10);
+    
+    // Validate ranges
+    if (h >= 0 && h <= 23 && m >= 0 && m <= 59 && s >= 0 && s <= 59) {
+      const totalMinutes = h * 60 + m + Math.round(s / 60);
+      console.log(`Successfully parsed HH:MM:SS: "${timeString}" -> ${h}h ${m}m ${s}s -> ${totalMinutes} minutes`);
+      return totalMinutes;
+    }
+  }
+  
+  console.warn(`Invalid HH:MM:SS format: "${timeString}"`);
+  return 0;
+};
+
+// Helper untuk membuat ID unik
+export const mkId = (noCase: string, startIso: string | undefined | null): string => {
+  const base = `${(noCase || '').trim()}|${(startIso || '').trim()}`;
+  // Simple hash function untuk browser
+  const hash = Array.from(base).reduce((a, c) => ((a << 5) - a + c.charCodeAt(0)) | 0, 0);
+  return 'INC-' + Math.abs(hash).toString(36) + '-' + base.length;
+};
+
+// Helper untuk konversi durasi ke menit
 export const toMinutes = (v: unknown): number => {
   if (v == null || v === '') return 0;
-  if (v instanceof Date) return v.getUTCHours()*60 + v.getUTCMinutes() + Math.round(v.getUTCSeconds()/60);
+  if (v instanceof Date) return v.getUTCHours() * 60 + v.getUTCMinutes() + Math.round(v.getUTCSeconds() / 60);
+  
   const s = String(v).trim();
-  const m = /^(\d{1,2}):(\d{2})(?::(\d{2}))?$/.exec(s);
-  if (m) return (+m[1])*60 + (+m[2]) + Math.round((+m[3]||0)/60);
+  if (!s) return 0;
+  
+  // Handle Excel time serial numbers (e.g., 0.5 = 12:00, 0.25 = 6:00)
+  const excelTime = Number(s);
+  if (Number.isFinite(excelTime) && excelTime > 0 && excelTime < 1) {
+    // Excel time: fraction of 24 hours
+    const totalMinutes = Math.round(excelTime * 24 * 60);
+    return totalMinutes;
+  }
+  
+  // First, try to parse as HH:MM:SS format (prioritas utama untuk kolom L, M, Y, Z)
+  const hhmmssResult = parseHHMMSS(s);
+  if (hhmmssResult > 0) {
+    return hhmmssResult;
+  }
+  
+  // Handle various time formats
+  const timeFormats = [
+    /^(\d{1,2}):(\d{2})$/, // HH:MM
+    /^(\d+)h\s*(\d+)m$/, // Xh Ym
+    /^(\d+)h$/, // Xh
+    /^(\d+)m$/, // Xm
+    /^(\d+)\s*hours?\s*(\d+)\s*minutes?$/i, // X hours Y minutes
+    /^(\d+)\s*hours?$/i, // X hours
+    /^(\d+)\s*minutes?$/i, // X minutes
+  ];
+  
+  for (const format of timeFormats) {
+    const match = s.match(format);
+    if (match) {
+      if (format.source.includes('HH:MM') || format.source.includes('\\d{1,2}:\\d{2}')) {
+        // HH:MM format
+        const [, hours, minutes] = match;
+        const totalMinutes = (+hours) * 60 + (+minutes);
+        console.log(`Parsed HH:MM format: "${s}" -> ${hours}h ${minutes}m -> ${totalMinutes} minutes`);
+        return totalMinutes;
+      } else if (format.source.includes('h\\s*\\d+m') || format.source.includes('\\d+h\\s*\\d+m')) {
+        // Xh Ym format
+        const [, hours, minutes] = match;
+        return (+hours) * 60 + (+minutes);
+      } else if (format.source.includes('\\d+h$')) {
+        // Xh format
+        const [, hours] = match;
+        return (+hours) * 60;
+      } else if (format.source.includes('\\d+m$')) {
+        // Xm format
+        const [, minutes] = match;
+        return +minutes;
+      } else if (format.source.includes('hours.*minutes')) {
+        // X hours Y minutes format
+        const [, hours, minutes] = match;
+        return (+hours) * 60 + (+minutes);
+      } else if (format.source.includes('hours')) {
+        // X hours format
+        const [, hours] = match;
+        return (+hours) * 60;
+      } else if (format.source.includes('minutes')) {
+        // X minutes format
+        const [, minutes] = match;
+        return +minutes;
+      }
+    }
+  }
+  
+  // Handle numeric values (assume minutes if reasonable, hours if large)
   const n = Number(s);
-  return Number.isFinite(n) ? Math.round(n) : 0;
+  if (Number.isFinite(n)) {
+    if (n > 0 && n < 1000) {
+      // Likely minutes
+      console.log(`Parsed numeric as minutes: "${s}" -> ${Math.round(n)} minutes`);
+      return Math.round(n);
+    } else if (n >= 1000) {
+      // Likely seconds, convert to minutes
+      const minutes = Math.round(n / 60);
+      console.log(`Parsed numeric as seconds: "${s}" -> ${minutes} minutes`);
+      return minutes;
+    }
+  }
+  
+  // If we reach here, the format wasn't recognized
+  console.warn(`Duration format not recognized: "${s}". Returning 0 minutes.`);
+  return 0;
 };
 
-// Mendukung: Date | Excel serial (number) | "DD/MM/YY[YY] HH:MM[:SS]" | string ISO
-export const parseDateSafe = (v: any): string | null => {
-  if (v == null || v === '') return null;
-  if (v instanceof Date) return new Date(v).toISOString();
-  if (typeof v === 'number') {
-    // Excel serial date: days since 1899-12-30 UTC
-    const base = new Date(Date.UTC(1899, 11, 30));
-    return new Date(base.getTime() + v * 86400000).toISOString();
-    // catatan: jika v termasuk fraksi, tetap akurat ke jam/menit
+// Helper untuk parse tanggal
+export const parseDateSafe = (dt?: string | Date | null): string | null => {
+  if (!dt) return null;
+  if (dt instanceof Date) return isNaN(dt.getTime()) ? null : dt.toISOString();
+  
+  const s = String(dt).trim();
+  if (!s) return null;
+  
+  // Handle Excel serial date numbers (e.g., 45839, 45735)
+  const excelSerial = Number(s);
+  if (Number.isFinite(excelSerial) && excelSerial > 1000) {
+    try {
+      const date = excelSerialToDate(excelSerial);
+      return isNaN(date.getTime()) ? null : date.toISOString();
+    } catch (error) {
+      console.warn('Failed to convert Excel serial date:', excelSerial, error);
+      return null;
+    }
   }
-  const str = String(v).trim();
-  const m = /^(\d{1,2})\/(\d{1,2})\/(\d{2,4})(?:\s+(\d{1,2}):(\d{2})(?::(\d{2}))?)?$/.exec(str);
-  if (m) {
-    const d = +m[1], mo = +m[2]-1, yr = +m[3] < 100 ? 2000 + (+m[3]) : +m[3];
-    const hh = +(m[4]||0), mm = +(m[5]||0), ss = +(m[6]||0);
-    return new Date(Date.UTC(yr, mo, d, hh, mm, ss)).toISOString();
+  
+  // Coba parse berbagai format string
+  const formats = [
+    /^(\d{1,2})\/(\d{1,2})\/(\d{2})\s+(\d{1,2}):(\d{2}):(\d{2})$/, // dd/mm/yy hh:mm:ss (format utama)
+    /^(\d{1,2})\/(\d{1,2})\/(\d{4})\s+(\d{1,2}):(\d{2}):(\d{2})$/, // dd/mm/yyyy hh:mm:ss
+    /^(\d{1,2})\/(\d{1,2})\/(\d{4})\s+(\d{1,2}):(\d{2})$/, // dd/mm/yyyy hh:mm
+    /^(\d{4})-(\d{1,2})-(\d{1,2})\s+(\d{1,2}):(\d{2}):(\d{2})$/, // yyyy-mm-dd hh:mm:ss
+    /^(\d{4})-(\d{1,2})-(\d{1,2})\s+(\d{1,2}):(\d{2})$/, // yyyy-mm-dd hh:mm
+    /^(\d{1,2})-(\d{1,2})-(\d{4})\s+(\d{1,2}):(\d{2}):(\d{2})$/, // dd-mm-yyyy hh:mm:ss
+    /^(\d{1,2})-(\d{1,2})-(\d{4})\s+(\d{1,2}):(\d{2})$/, // dd-mm-yyyy hh:mm
+    /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/, // dd/mm/yyyy
+    /^(\d{1,2})\/(\d{1,2})\/(\d{2})$/, // dd/mm/yy
+    /^(\d{4})-(\d{1,2})-(\d{1,2})$/, // yyyy-mm-dd
+  ];
+  
+  for (const format of formats) {
+    const match = s.match(format);
+    if (match) {
+      if (match.length === 7) {
+        // With time including seconds: dd/mm/yy hh:mm:ss or dd/mm/yyyy hh:mm:ss
+        const [, day, month, year, hour, minute, second] = match;
+        let fullYear = +year;
+        if (fullYear < 100) {
+          // Convert 2-digit year to 4-digit year (assume 20xx for years < 50, 19xx for years >= 50)
+          fullYear = fullYear < 50 ? 2000 + fullYear : 1900 + fullYear;
+        }
+        const date = new Date(fullYear, +month - 1, +day, +hour, +minute, +second);
+        return isNaN(date.getTime()) ? null : date.toISOString();
+      } else if (match.length === 6) {
+        // With time without seconds: dd/mm/yyyy hh:mm
+        const [, day, month, year, hour, minute] = match;
+        let fullYear = +year;
+        if (fullYear < 100) {
+          fullYear = fullYear < 50 ? 2000 + fullYear : 1900 + fullYear;
+        }
+        const date = new Date(fullYear, +month - 1, +day, +hour, +minute);
+        return isNaN(date.getTime()) ? null : date.toISOString();
+      } else if (match.length === 4) {
+        // Date only: dd/mm/yyyy or dd/mm/yy
+        const [, day, month, year] = match;
+        let fullYear = +year;
+        if (fullYear < 100) {
+          fullYear = fullYear < 50 ? 2000 + fullYear : 1900 + fullYear;
+        }
+        const date = new Date(fullYear, +month - 1, +day);
+        return isNaN(date.getTime()) ? null : date.toISOString();
+      }
+    }
   }
-  const dt = new Date(str);
-  return isNaN(+dt) ? null : dt.toISOString();
+  
+  // Fallback ke Date constructor
+  const date = new Date(s);
+  return isNaN(date.getTime()) ? null : date.toISOString();
 };
 
-// ID berbasis NCAL|Start|Site (No Case tidak dijadikan acuan unik)
-export const mkId = (base: string) =>
-  'INC-' + Array.from(base).reduce((a,c)=>((a<<5)-a)+c.charCodeAt(0)|0,0) + '-' + base.length;
-
-// Simpan chunked + verifikasi
+// Simpan ke Dexie (chunked)
 export async function saveIncidentsChunked(rows: Incident[], chunkSize = 2000) {
+  console.log(`Starting to save ${rows.length} incidents in chunks of ${chunkSize}`);
+  
+  let totalSaved = 0;
+  const chunks = Math.ceil(rows.length / chunkSize);
+  
   for (let i = 0; i < rows.length; i += chunkSize) {
-    await db.incidents.bulkPut(rows.slice(i, i + chunkSize));
+    const part = rows.slice(i, i + chunkSize);
+    const chunkNumber = Math.floor(i / chunkSize) + 1;
+    
+    console.log(`Saving chunk ${chunkNumber}/${chunks} with ${part.length} incidents`);
+    
+    try {
+      // Validate each incident before saving
+      const validIncidents = part.filter(incident => {
+        if (!incident.id) {
+          console.error('Invalid incident: missing ID', incident);
+          return false;
+        }
+        if (!incident.noCase) {
+          console.error('Invalid incident: missing No Case', incident);
+          return false;
+        }
+        if (!incident.startTime) {
+          console.error('Invalid incident: missing Start Time', incident);
+          return false;
+        }
+        return true;
+      });
+      
+      if (validIncidents.length !== part.length) {
+        console.warn(`Chunk ${chunkNumber}: ${part.length - validIncidents.length} invalid incidents filtered out`);
+      }
+      
+      if (validIncidents.length > 0) {
+        await db.incidents.bulkPut(validIncidents);
+        totalSaved += validIncidents.length;
+        console.log(`Chunk ${chunkNumber} saved successfully: ${validIncidents.length} incidents`);
+      }
+    } catch (error) {
+      console.error(`Error saving chunk ${chunkNumber}:`, error);
+      throw error;
+    }
   }
+  
+  console.log(`Total incidents saved: ${totalSaved}/${rows.length}`);
+  
+  // Verify final count
   const finalCount = await db.incidents.count();
-  console.log(`[INCIDENT IMPORT] Final DB count: ${finalCount}`);
-  return finalCount;
+  console.log(`Final database count: ${finalCount}`);
+  
+  return totalSaved;
 }
+
+// Compute stats dari data incident
+export async function computeStats(range?: { from: string; to: string; }): Promise<IncidentStats> {
+  const rows = range
+    ? await db.incidents.where('startTime').between(range.from, range.to, true, true).toArray()
+    : await db.incidents.toArray();
+
+  const total = rows.length;
+  const open = rows.filter(r => (r.status || '').toLowerCase() !== 'done').length;
+
+  const closed = rows.filter(r => r.endTime && (r.durationMin ?? 0) > 0);
+  const mttrMin = closed.length ? Math.round(closed.reduce((a, b) => a + (b.durationMin || 0), 0) / closed.length) : 0;
+
+  const withVendor = rows.filter(r => (r.durationVendorMin ?? 0) > 0);
+  const avgVendorMin = withVendor.length ? Math.round(withVendor.reduce((a, b) => a + (b.durationVendorMin || 0), 0) / withVendor.length) : 0;
+
+  const durSum = rows.reduce((a, b) => a + (b.durationMin || 0), 0);
+  const pauseSum = rows.reduce((a, b) => a + (b.totalDurationPauseMin || 0), 0);
+  const pauseRatio = durSum > 0 ? +(pauseSum / durSum).toFixed(3) : 0;
+
+  const byPriority: Record<string, number> = {};
+  const byKlas: Record<string, number> = {};
+  const bySite: Record<string, number> = {};
+  const byLevel: Record<string, number> = {};
+  
+  rows.forEach(r => {
+    const p = (r.priority || 'N/A'); byPriority[p] = (byPriority[p] || 0) + 1;
+    const k = (r.klasifikasiGangguan || 'N/A'); byKlas[k] = (byKlas[k] || 0) + 1;
+    const s = (r.site || 'N/A'); bySite[s] = (bySite[s] || 0) + 1;
+    const l = (r.level || 'N/A').toString(); byLevel[l] = (byLevel[l] || 0) + 1;
+  });
+
+  return { total, open, mttrMin, avgVendorMin, pauseRatio, byPriority, byKlas, bySite, byLevel };
+}
+
+// Fungsi untuk query incident lama (untuk backward compatibility)
+export async function queryIncidents(filter: IncidentFilter) {
+  const allIncidents = await db.incidents.toArray();
+  
+  // Apply filters
+  let filteredIncidents = [...allIncidents];
+
+  // Date range filter
+  if (filter.dateFrom && filter.dateTo) {
+    filteredIncidents = filteredIncidents.filter(incident => {
+      if (!incident.startTime) return false;
+      const incidentDate = new Date(incident.startTime);
+      const fromDate = new Date(filter.dateFrom);
+      const toDate = new Date(filter.dateTo);
+      return incidentDate >= fromDate && incidentDate <= toDate;
+    });
+  }
+
+  // Other filters
+  if (filter.status) {
+    filteredIncidents = filteredIncidents.filter(i => i.status === filter.status);
+  }
+  if (filter.priority) {
+    filteredIncidents = filteredIncidents.filter(i => i.priority === filter.priority);
+  }
+  if (filter.level !== undefined) {
+    filteredIncidents = filteredIncidents.filter(i => i.level === filter.level);
+  }
+  if (filter.site) {
+    filteredIncidents = filteredIncidents.filter(i => i.site === filter.site);
+  }
+  if (filter.ncal) {
+    filteredIncidents = filteredIncidents.filter(i => i.ncal === filter.ncal);
+  }
+  if (filter.klasifikasiGangguan) {
+    filteredIncidents = filteredIncidents.filter(i => i.klasifikasiGangguan === filter.klasifikasiGangguan);
+  }
+
+  // Search filter
+  if (filter.search) {
+    const searchLower = filter.search.toLowerCase();
+    filteredIncidents = filteredIncidents.filter(i =>
+      (i.noCase || '').toLowerCase().includes(searchLower) ||
+      (i.site || '').toLowerCase().includes(searchLower) ||
+      (i.problem || '').toLowerCase().includes(searchLower)
+    );
+  }
+
+  // Sort by startTime descending
+  filteredIncidents.sort((a, b) => {
+    if (!a.startTime || !b.startTime) return 0;
+    return new Date(b.startTime).getTime() - new Date(a.startTime).getTime();
+  });
+
+  const total = filteredIncidents.length;
+
+  // Pagination
+  const page = filter.page || 1;
+  const limit = filter.limit || 50;
+  const startIndex = (page - 1) * limit;
+  const endIndex = startIndex + limit;
+  const paginatedIncidents = filteredIncidents.slice(startIndex, endIndex);
+
+  return {
+    rows: paginatedIncidents,
+    total
+  };
+}
+
+// Fungsi untuk query incident record baru
+export async function queryIncidentRecords(filter: IncidentFilter) {
+  const allRecords = await db.incident.toArray();
+  
+  // Apply filters
+  let filteredRecords = [...allRecords];
+
+  // Date range filter
+  if (filter.dateFrom && filter.dateTo) {
+    filteredRecords = filteredRecords.filter(record => {
+      if (!record.openTime) return false;
+      const recordDate = new Date(record.openTime);
+      const fromDate = new Date(filter.dateFrom);
+      const toDate = new Date(filter.dateTo);
+      return recordDate >= fromDate && recordDate <= toDate;
+    });
+  }
+
+  // Other filters
+  if (filter.status) {
+    filteredRecords = filteredRecords.filter(r => r.status === filter.status);
+  }
+  if (filter.priority) {
+    filteredRecords = filteredRecords.filter(r => r.priority === filter.priority);
+  }
+  if (filter.level !== undefined) {
+    filteredRecords = filteredRecords.filter(r => r.level === filter.level);
+  }
+  if (filter.site) {
+    filteredRecords = filteredRecords.filter(r => r.site === filter.site);
+  }
+  if (filter.ncal) {
+    filteredRecords = filteredRecords.filter(r => r.ncal === filter.ncal);
+  }
+  if (filter.klasifikasiGangguan) {
+    filteredRecords = filteredRecords.filter(r => r.klasifikasiGangguan === filter.klasifikasiGangguan);
+  }
+
+  // Search filter
+  if (filter.search) {
+    const searchLower = filter.search.toLowerCase();
+    filteredRecords = filteredRecords.filter(r =>
+      (r.noCase || '').toLowerCase().includes(searchLower) ||
+      (r.site || '').toLowerCase().includes(searchLower) ||
+      (r.problem || '').toLowerCase().includes(searchLower)
+    );
+  }
+
+  // Sort by openTime descending
+  filteredRecords.sort((a, b) => {
+    if (!a.openTime || !b.openTime) return 0;
+    return new Date(b.openTime).getTime() - new Date(a.openTime).getTime();
+  });
+
+  const total = filteredRecords.length;
+
+  // Pagination
+  const page = filter.page || 1;
+  const limit = filter.limit || 50;
+  const startIndex = (page - 1) * limit;
+  const endIndex = startIndex + limit;
+  const paginatedRecords = filteredRecords.slice(startIndex, endIndex);
+
+  return {
+    rows: paginatedRecords,
+    total
+  };
+}
+
+// Fungsi untuk mendefinisikan status "Open" (konsisten di semua analytics)
+export function isOpenIncident(record: IncidentRecord | Incident): boolean {
+  // Jika ada closeTime, berarti sudah closed
+  if ('closeTime' in record && record.closeTime) {
+    return false;
+  }
+  
+  // Jika ada endTime, berarti sudah closed
+  if ('endTime' in record && record.endTime) {
+    return false;
+  }
+  
+  // Jika status adalah 'Closed', 'Done', atau 'Resolved'
+  const status = record.status?.toLowerCase();
+  if (status === 'closed' || status === 'done' || status === 'resolved') {
+    return false;
+  }
+  
+  // Default: open
+  return true;
+}
+
+// Fungsi untuk mendapatkan semua incident records (untuk analytics)
+export async function getAllIncidentRecords(): Promise<IncidentRecord[]> {
+  return await db.incident.toArray();
+}
+
+// Fungsi untuk mendapatkan incident records yang open
+export async function getOpenIncidentRecords(): Promise<IncidentRecord[]> {
+  const allRecords = await db.incident.toArray();
+  return allRecords.filter(isOpenIncident);
+}
+
+// Fungsi untuk mendapatkan incident records berdasarkan NCAL
+export async function getIncidentRecordsByNCAL(ncal: string): Promise<IncidentRecord[]> {
+  return await db.incident.where('ncal').equals(ncal).toArray();
+}
+
+// Fungsi untuk mendapatkan incident records berdasarkan site
+export async function getIncidentRecordsBySite(site: string): Promise<IncidentRecord[]> {
+  return await db.incident.where('site').equals(site).toArray();
+}
+
+// Fungsi untuk mendapatkan incident records berdasarkan TS
+export async function getIncidentRecordsByTS(ts: string): Promise<IncidentRecord[]> {
+  return await db.incident.where('ts').equals(ts).toArray();
+}
+
+// Format durasi dari menit ke HH:MM:SS
+export const formatDurationHMS = (minutes: number): string => {
+  if (!minutes || isNaN(minutes) || minutes < 0) return '00:00:00';
+  const totalSeconds = Math.floor(minutes * 60);
+  const h = Math.floor(totalSeconds / 3600);
+  const m = Math.floor((totalSeconds % 3600) / 60);
+  const s = totalSeconds % 60;
+  const pad = (num: number) => num.toString().padStart(2, '0');
+  return `${pad(h)}:${pad(m)}:${pad(s)}`;
+};
+
+// Format durasi untuk display di tabel (HH:MM:SS)
+export const formatDurationForDisplay = (minutes: number | null | undefined): string => {
+  if (!minutes || minutes === 0) return '-';
+  return formatDurationHMS(minutes);
+};
+
+// Generate UUID untuk batch ID
+export const generateBatchId = (): string => {
+  return 'batch-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+};
