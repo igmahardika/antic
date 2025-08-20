@@ -549,10 +549,11 @@ export const IncidentAnalytics: React.FC = () => {
     .map(([level, count]) => ({
       name: `Level ${level}`,
       value: count,
-      fill: level === '8' ? 'var(--color-level8)' :
-            level === '17' ? 'var(--color-level17)' :
-            level === '27' ? 'var(--color-level27)' :
-            level === '46' ? 'var(--color-level46)' : 'var(--color-levelunknown)'
+      fill: level === '8' ? '#dbeafe' :      // blue-100 (lightest)
+            level === '17' ? '#93c5fd' :     // blue-300 (light)
+            level === '27' ? '#3b82f6' :     // blue-500 (medium)
+            level === '46' ? '#1d4ed8' :     // blue-700 (dark)
+            '#1e3a8a'                        // blue-900 (darkest) for unknown
     }));
 
   // Filtered level data based on selected month
@@ -586,10 +587,11 @@ export const IncidentAnalytics: React.FC = () => {
       .map(([level, count]) => ({
         name: `Level ${level}`,
         value: count,
-        fill: level === '8' ? 'var(--color-level8)' :
-              level === '17' ? 'var(--color-level17)' :
-              level === '27' ? 'var(--color-level27)' :
-              level === '46' ? 'var(--color-level46)' : 'var(--color-levelunknown)'
+        fill: level === '8' ? '#dbeafe' :      // blue-100 (lightest)
+              level === '17' ? '#93c5fd' :     // blue-300 (light)
+              level === '27' ? '#3b82f6' :     // blue-500 (medium)
+              level === '46' ? '#1d4ed8' :     // blue-700 (dark)
+              '#1e3a8a'                        // blue-900 (darkest) for unknown
       }));
   }, [selectedLevelMonth, filteredIncidents, levelData]);
 
@@ -720,23 +722,23 @@ export const IncidentAnalytics: React.FC = () => {
     },
     level8: {
       label: "Level 8",
-      color: "#3b82f6", // blue-500
+      color: "#dbeafe", // blue-100 (lightest)
     },
     level17: {
       label: "Level 17",
-      color: "#8b5cf6", // violet-500
+      color: "#93c5fd", // blue-300 (light)
     },
     level27: {
       label: "Level 27",
-      color: "#06b6d4", // cyan-500
+      color: "#3b82f6", // blue-500 (medium)
     },
     level46: {
       label: "Level 46",
-      color: "#10b981", // emerald-500
+      color: "#1d4ed8", // blue-700 (dark)
     },
     levelunknown: {
       label: "Level Unknown",
-      color: "#6b7280", // gray-500
+      color: "#1e3a8a", // blue-900 (darkest)
     },
   } satisfies ChartConfig;
 
