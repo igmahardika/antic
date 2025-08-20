@@ -885,14 +885,12 @@ export const IncidentAnalytics: React.FC = () => {
           </CardHeader>
           <CardContent>
             <ChartContainer config={ncalAreaChartConfig}>
-              <AreaChart 
+              <LineChart
                 accessibilityLayer
                 data={filteredMonthlyNCALData}
                 margin={{
-                  top: 20,
-                  right: 30,
-                  left: 20,
-                  bottom: 20,
+                  left: 12,
+                  right: 12,
                 }}
               >
                 <CartesianGrid vertical={false} />
@@ -915,35 +913,26 @@ export const IncidentAnalytics: React.FC = () => {
                   tickMargin={8}
                   tickFormatter={(value) => value.toLocaleString()}
                 />
-                <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
-                <defs>
-                  {activeNCALCategories.map(ncal => (
-                    <linearGradient key={ncal} id={`fill${ncal}`} x1="0" y1="0" x2="0" y2="1">
-                      <stop
-                        offset="5%"
-                        stopColor={NCAL_COLORS[ncal as keyof typeof NCAL_COLORS]}
-                        stopOpacity={0.8}
-                      />
-                      <stop
-                        offset="95%"
-                        stopColor={NCAL_COLORS[ncal as keyof typeof NCAL_COLORS]}
-                        stopOpacity={0.1}
-                      />
-                    </linearGradient>
-                  ))}
-                </defs>
+                <ChartTooltip
+                  cursor={false}
+                  content={<ChartTooltipContent hideLabel />}
+                />
                 {activeNCALCategories.map(ncal => (
-                  <Area
+                  <Line
                     key={ncal}
                     dataKey={ncal}
                     type="natural"
-                    fill={`url(#fill${ncal})`}
-                    fillOpacity={0.4}
                     stroke={NCAL_COLORS[ncal as keyof typeof NCAL_COLORS]}
-                    stackId="a"
+                    strokeWidth={2}
+                    dot={{
+                      fill: NCAL_COLORS[ncal as keyof typeof NCAL_COLORS],
+                    }}
+                    activeDot={{
+                      r: 6,
+                    }}
                   />
                 ))}
-              </AreaChart>
+              </LineChart>
             </ChartContainer>
           </CardContent>
         </Card>
@@ -958,14 +947,12 @@ export const IncidentAnalytics: React.FC = () => {
           </CardHeader>
           <CardContent>
             <ChartContainer config={ncalAreaChartConfig}>
-              <AreaChart 
+              <LineChart
                 accessibilityLayer
                 data={filteredMonthlyNCALDurationData}
                 margin={{
-                  top: 20,
-                  right: 30,
-                  left: 20,
-                  bottom: 20,
+                  left: 12,
+                  right: 12,
                 }}
               >
                 <CartesianGrid vertical={false} />
@@ -988,39 +975,27 @@ export const IncidentAnalytics: React.FC = () => {
                   tickMargin={8}
                   tickFormatter={(value) => formatDurationHMS(value)}
                 />
-                <ChartTooltip 
-                  cursor={false} 
-                  content={<ChartTooltipContent />}
+                <ChartTooltip
+                  cursor={false}
+                  content={<ChartTooltipContent hideLabel />}
                   formatter={(value: number) => [formatDurationHMS(value), 'Duration']}
                 />
-                <defs>
-                  {activeNCALCategories.map(ncal => (
-                    <linearGradient key={ncal} id={`fillDuration${ncal}`} x1="0" y1="0" x2="0" y2="1">
-                      <stop
-                        offset="5%"
-                        stopColor={NCAL_COLORS[ncal as keyof typeof NCAL_COLORS]}
-                        stopOpacity={0.8}
-                      />
-                      <stop
-                        offset="95%"
-                        stopColor={NCAL_COLORS[ncal as keyof typeof NCAL_COLORS]}
-                        stopOpacity={0.1}
-                      />
-                    </linearGradient>
-                  ))}
-                </defs>
                 {activeNCALCategories.map(ncal => (
-                  <Area
+                  <Line
                     key={ncal}
                     dataKey={ncal}
                     type="natural"
-                    fill={`url(#fillDuration${ncal})`}
-                    fillOpacity={0.4}
                     stroke={NCAL_COLORS[ncal as keyof typeof NCAL_COLORS]}
-                    stackId="a"
+                    strokeWidth={2}
+                    dot={{
+                      fill: NCAL_COLORS[ncal as keyof typeof NCAL_COLORS],
+                    }}
+                    activeDot={{
+                      r: 6,
+                    }}
                   />
                 ))}
-              </AreaChart>
+              </LineChart>
             </ChartContainer>
           </CardContent>
         </Card>
