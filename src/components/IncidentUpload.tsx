@@ -14,7 +14,8 @@ import {
   CheckCircle, 
   XCircle, 
   AlertTriangle,
-  Download
+  Download,
+  RefreshCw
 } from 'lucide-react';
 
 interface UploadResult {
@@ -102,8 +103,27 @@ export const IncidentUpload: React.FC = () => {
       // Save to database
       if (allRows.length > 0) {
         setProgress(60);
-        await saveIncidentsChunked(allRows);
-        setProgress(100);
+        console.log(`Saving ${allRows.length} incidents to database...`);
+        
+        try {
+          await saveIncidentsChunked(allRows);
+          console.log(`Successfully saved ${allRows.length} incidents to database`);
+          
+          // Verify data was saved
+          const savedCount = await db.incidents.count();
+          console.log(`Total incidents in database after save: ${savedCount}`);
+          
+          if (savedCount === 0) {
+            throw new Error('Data was not saved to database - count is 0');
+          }
+          
+          setProgress(100);
+        } catch (error) {
+          console.error('Error saving to database:', error);
+          throw new Error(`Failed to save data to database: ${error}`);
+        }
+      } else {
+        console.warn('No valid incidents to save');
       }
 
       setUploadResult({
@@ -212,6 +232,10 @@ export const IncidentUpload: React.FC = () => {
                       {uploadResult.failed} Failed
                     </Badge>
                   )}
+                  <Badge variant="outline" className="flex items-center gap-1">
+                    <FileSpreadsheet className="w-4 h-4" />
+                    {uploadResult.preview.length} Preview
+                  </Badge>
                 </div>
 
                 {uploadResult.errors.length > 0 && (
@@ -268,6 +292,28 @@ export const IncidentUpload: React.FC = () => {
                     </div>
                   </div>
                 )}
+                
+                {/* Data Verification */}
+                <div className="flex gap-2">
+                  <Button 
+                    onClick={async () => {
+                      try {
+                        const totalCount = await db.incidents.count();
+                        const sampleData = await db.incidents.limit(5).toArray();
+                        console.log('Database verification:', { totalCount, sampleData });
+                        alert(`Database contains ${totalCount} incidents. Check console for details.`);
+                      } catch (error) {
+                        console.error('Error verifying database:', error);
+                        alert('Error verifying database. Check console for details.');
+                      }
+                    }}
+                    variant="outline" 
+                    size="sm"
+                  >
+                    <RefreshCw className="w-4 h-4 mr-2" />
+                    Verify Database
+                  </Button>
+                </div>
               </div>
             )}
           </div>
@@ -287,6 +333,7 @@ function parseRowToIncident(headers: string[], row: any[], rowNum: number, sheet
 
   const noCase = getValue('No Case');
   if (!noCase || String(noCase).trim() === '') {
+    console.log(`Row ${rowNum} in "${sheetName}" skipped: empty No Case`);
     return null; // Skip empty rows instead of throwing error
   }
 
@@ -299,11 +346,18 @@ function parseRowToIncident(headers: string[], row: any[], rowNum: number, sheet
 
   const startTime = parseDateSafe(startTimeRaw);
   if (!startTime) {
-    console.log(`Row ${rowNum} in "${sheetName}" skipped: invalid Start time format`);
+    console.log(`Row ${rowNum} in "${sheetName}" skipped: invalid Start time format: "${startTimeRaw}"`);
     return null;
   }
+  
   console.log(`Row ${rowNum} in "${sheetName}": Successfully parsed Start time "${startTimeRaw}" -> ${startTime}`);
   const id = mkId(noCase, startTime);
+  
+  // Validate ID generation
+  if (!id) {
+    console.error(`Row ${rowNum} in "${sheetName}": Failed to generate ID for No Case: "${noCase}"`);
+    return null;
+  }
 
   const incident: Incident = {
     id,
@@ -436,5 +490,12 @@ function parseRowToIncident(headers: string[], row: any[], rowNum: number, sheet
     importedAt: new Date().toISOString()
   };
 
+  // Final validation before returning
+  if (!incident.id || !incident.noCase || !incident.startTime) {
+    console.error(`Row ${rowNum} in "${sheetName}": Invalid incident object created`, incident);
+    return null;
+  }
+
+  console.log(`Row ${rowNum} in "${sheetName}": Successfully created incident with ID: ${incident.id}`);
   return incident;
 }

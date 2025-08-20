@@ -68,11 +68,35 @@ export const IncidentData: React.FC = () => {
 
   // Debug: Log when allIncidents changes
   React.useEffect(() => {
+    console.log('=== INCIDENT DATA DEBUG ===');
     console.log('AllIncidents updated:', allIncidents?.length || 0);
+    
     if (allIncidents && allIncidents.length > 0) {
       console.log('Sample incident:', allIncidents[0]);
       console.log('NCAL values in data:', [...new Set(allIncidents.map(i => i.ncal))]);
+      console.log('Sites in data:', [...new Set(allIncidents.map(i => i.site))].slice(0, 10));
+      console.log('Status values:', [...new Set(allIncidents.map(i => i.status))]);
+      console.log('Priority values:', [...new Set(allIncidents.map(i => i.priority))]);
+      
+      // Check for data quality issues
+      const issues = [];
+      const missingNoCase = allIncidents.filter(i => !i.noCase).length;
+      const missingStartTime = allIncidents.filter(i => !i.startTime).length;
+      const missingSite = allIncidents.filter(i => !i.site).length;
+      
+      if (missingNoCase > 0) issues.push(`${missingNoCase} incidents missing No Case`);
+      if (missingStartTime > 0) issues.push(`${missingStartTime} incidents missing Start Time`);
+      if (missingSite > 0) issues.push(`${missingSite} incidents missing Site`);
+      
+      if (issues.length > 0) {
+        console.warn('Data quality issues found:', issues);
+      } else {
+        console.log('✅ No data quality issues found');
+      }
+    } else {
+      console.log('No incidents found in database');
     }
+    console.log('=== END DEBUG ===');
   }, [allIncidents]);
 
   // Calculate summary data for ALL uploaded data (not filtered)
