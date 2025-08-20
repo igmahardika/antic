@@ -26,6 +26,7 @@ import {
   Cell,
   Sector,
   Label,
+  LabelList,
   LineChart,
   Line,
   AreaChart,
@@ -672,23 +673,23 @@ export const IncidentAnalytics: React.FC = () => {
     },
     level8: {
       label: "Level 8",
-      color: "var(--chart-1)",
+      color: "#3b82f6", // blue-500
     },
     level17: {
       label: "Level 17",
-      color: "var(--chart-2)",
+      color: "#8b5cf6", // violet-500
     },
     level27: {
       label: "Level 27",
-      color: "var(--chart-3)",
+      color: "#06b6d4", // cyan-500
     },
     level46: {
       label: "Level 46",
-      color: "var(--chart-4)",
+      color: "#10b981", // emerald-500
     },
     levelunknown: {
       label: "Level Unknown",
-      color: "var(--chart-5)",
+      color: "#6b7280", // gray-500
     },
   } satisfies ChartConfig;
 
@@ -1162,9 +1163,6 @@ export const IncidentAnalytics: React.FC = () => {
                 data={levelData}
                 margin={{
                   top: 20,
-                  right: 30,
-                  left: 20,
-                  bottom: 20,
                 }}
               >
                 <CartesianGrid vertical={false} />
@@ -1187,11 +1185,18 @@ export const IncidentAnalytics: React.FC = () => {
                   cursor={false}
                   content={<ChartTooltipContent hideLabel />}
                 />
-                <Bar
-                  dataKey="value"
-                  strokeWidth={2}
+                <Bar 
+                  dataKey="value" 
+                  fill="var(--color-level)" 
                   radius={8}
-                />
+                >
+                  <LabelList
+                    position="top"
+                    offset={12}
+                    className="fill-foreground"
+                    fontSize={12}
+                  />
+                </Bar>
               </BarChart>
             </ChartContainer>
           </CardContent>
