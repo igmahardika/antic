@@ -1,8 +1,9 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { useDropzone } from 'react-dropzone';
 import * as XLSX from 'xlsx';
 import { Incident } from '@/types/incident';
 import { mkId, toMinutes, parseDateSafe, saveIncidentsChunked, generateBatchId } from '@/utils/incidentUtils';
+import { db } from '@/lib/db';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -40,6 +41,31 @@ export const IncidentUpload: React.FC<IncidentUploadProps> = ({ onUploadSuccess 
   const [isUploading, setIsUploading] = useState(false);
   const [uploadResult, setUploadResult] = useState<UploadResult | null>(null);
   const [progress, setProgress] = useState(0);
+  const [dbStatus, setDbStatus] = useState<{ total: number; lastUpdate: string }>({ total: 0, lastUpdate: '' });
+
+  // Check database status on component mount
+  useEffect(() => {
+    const checkDbStatus = async () => {
+      try {
+        const total = await db.incidents.count();
+        setDbStatus({ total, lastUpdate: new Date().toLocaleString() });
+      } catch (error) {
+        console.error('Error checking database status:', error);
+      }
+    };
+    checkDbStatus();
+  }, []);
+
+  // Function to refresh database status
+  const refreshDbStatus = async () => {
+    try {
+      const total = await db.incidents.count();
+      setDbStatus({ total, lastUpdate: new Date().toLocaleString() });
+      console.log(`📊 Database status refreshed: ${total} incidents`);
+    } catch (error) {
+      console.error('Error refreshing database status:', error);
+    }
+  };
 
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
     if (acceptedFiles.length === 0) return;
@@ -74,24 +100,33 @@ export const IncidentUpload: React.FC<IncidentUploadProps> = ({ onUploadSuccess 
         const headers = jsonData[0] as string[];
         console.log(`📋 Headers in "${sheetName}":`, headers);
         
-        // More flexible header validation - only check for essential headers
-        const ESSENTIAL_HEADERS = ['NCAL']; // Only NCAL is truly required now
-        const missingEssentialHeaders = ESSENTIAL_HEADERS.filter(h => 
-          !headers.some(header => header?.toString().toLowerCase().includes(h.toLowerCase()))
+        // SUPER FLEXIBLE header validation - accept any headers and try to match
+        console.log(`🔍 Checking for NCAL in headers...`);
+        const hasNCAL = headers.some(header => 
+          header?.toString().toLowerCase().includes('ncal')
         );
-
-        if (missingEssentialHeaders.length > 0) {
-          const errorMsg = `Sheet "${sheetName}": Missing essential headers: ${missingEssentialHeaders.join(', ')}`;
+        
+        if (!hasNCAL) {
+          const errorMsg = `Sheet "${sheetName}": No NCAL column found. Available headers: ${headers.join(', ')}`;
           errors.push(errorMsg);
           console.error(errorMsg);
+          console.log(`❌ Skipping sheet "${sheetName}" due to missing NCAL column`);
           continue;
         }
 
-        // Log which optional headers are found
+        console.log(`✅ NCAL column found in "${sheetName}"`);
+        
+        // Log which headers are found (for debugging)
         const foundHeaders = REQUIRED_HEADERS.filter(h => 
           headers.some(header => header?.toString().toLowerCase().includes(h.toLowerCase()))
         );
-        console.log(`✅ Found headers in "${sheetName}":`, foundHeaders);
+        console.log(`✅ Found matching headers in "${sheetName}":`, foundHeaders);
+        
+        // Log missing headers (for debugging)
+        const missingHeaders = REQUIRED_HEADERS.filter(h => 
+          !headers.some(header => header?.toString().toLowerCase().includes(h.toLowerCase()))
+        );
+        console.log(`⚠️ Missing headers in "${sheetName}":`, missingHeaders);
 
         // Process rows
         console.log(`📊 Processing ${jsonData.length - 1} rows in "${sheetName}"`);
@@ -136,11 +171,28 @@ export const IncidentUpload: React.FC<IncidentUploadProps> = ({ onUploadSuccess 
       if (allRows.length > 0) {
         setProgress(60);
         console.log('💾 Saving incidents to database...');
-        await saveIncidentsChunked(allRows);
-        console.log('✅ Incidents saved successfully');
+        console.log('📋 Sample incident to save:', allRows[0]);
+        
+        try {
+          await saveIncidentsChunked(allRows);
+          console.log('✅ Incidents saved successfully');
+          
+          // Verify the save by checking database
+          // const savedCount = await db.incidents.count();
+          // console.log(`📊 Total incidents in database after save: ${savedCount}`);
+          
+        } catch (saveError) {
+          console.error('❌ Error saving incidents:', saveError);
+          errors.push(`Failed to save incidents: ${saveError}`);
+        }
+        
         setProgress(100);
       } else {
         console.warn('⚠️ No incidents to save');
+        console.log('🔍 Debugging info:');
+        console.log('- Success count:', successCount);
+        console.log('- Failed count:', failedCount);
+        console.log('- All rows array length:', allRows.length);
       }
 
       setUploadResult({
@@ -149,6 +201,9 @@ export const IncidentUpload: React.FC<IncidentUploadProps> = ({ onUploadSuccess 
         errors,
         preview: allRows.slice(0, 20)
       });
+
+      // Refresh database status after upload
+      await refreshDbStatus();
 
       // Call success callback if provided
       if (onUploadSuccess && successCount > 0) {
@@ -178,13 +233,17 @@ export const IncidentUpload: React.FC<IncidentUploadProps> = ({ onUploadSuccess 
   });
 
   const downloadTemplate = () => {
-    // Create a simpler template with only essential headers
+    // Create a very simple template with only essential headers
     const templateHeaders = [
-      'NCAL', 'No Case', 'Site', 'Start', 'Status', 'Priority', 'Level',
-      'Problem', 'Penyebab', 'Action Terakhir', 'Note', 'Klasifikasi Gangguan'
+      'NCAL', 'No Case', 'Site', 'Start', 'Status', 'Problem'
     ];
     
-    const templateData = [templateHeaders];
+    // Add sample data row
+    const sampleData = [
+      'Blue', 'CASE-001', 'Site A', '2024-01-15 10:00:00', 'Open', 'Network issue'
+    ];
+    
+    const templateData = [templateHeaders, sampleData];
     const ws = XLSX.utils.aoa_to_sheet(templateData);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Template');
@@ -236,6 +295,12 @@ export const IncidentUpload: React.FC<IncidentUploadProps> = ({ onUploadSuccess 
                 <Download className="w-4 h-4 mr-2" />
                 Download Template
               </Button>
+              
+              {/* Database Status */}
+              <div className="text-sm text-gray-600 dark:text-gray-400">
+                <span className="font-medium">Database:</span> {dbStatus.total} incidents
+                <span className="ml-2 text-xs">(Updated: {dbStatus.lastUpdate})</span>
+              </div>
             </div>
 
             {isUploading && (
@@ -328,9 +393,18 @@ export const IncidentUpload: React.FC<IncidentUploadProps> = ({ onUploadSuccess 
 
 function parseRowToIncident(headers: string[], row: any[], rowNum: number, sheetName: string): Incident | null {
   const getValue = (headerName: string) => {
-    const index = headers.findIndex(h => 
-      h?.toString().toLowerCase().includes(headerName.toLowerCase())
+    // More flexible header matching - try exact match first, then partial match
+    let index = headers.findIndex(h => 
+      h?.toString().toLowerCase() === headerName.toLowerCase()
     );
+    
+    if (index === -1) {
+      // Try partial match
+      index = headers.findIndex(h => 
+        h?.toString().toLowerCase().includes(headerName.toLowerCase())
+      );
+    }
+    
     return index >= 0 ? row[index] : null;
   };
 
@@ -359,8 +433,8 @@ function parseRowToIncident(headers: string[], row: any[], rowNum: number, sheet
   }
 
   // Jika NCAL valid, lanjutkan dengan data yang ada
-  const noCase = getValue('No Case') || `AUTO-${Date.now()}-${rowNum}`; // Generate auto ID jika kosong
-  const startTimeRaw = getValue('Start');
+  const noCase = getValue('No Case') || getValue('NoCase') || getValue('Case') || `AUTO-${Date.now()}-${rowNum}`;
+  const startTimeRaw = getValue('Start') || getValue('Start Time') || getValue('StartTime');
   
   if (rowNum <= 5) {
     console.log(`🔍 Row ${rowNum} No Case:`, noCase);
@@ -416,10 +490,10 @@ function parseRowToIncident(headers: string[], row: any[], rowNum: number, sheet
       return levelValue ? Number(levelValue) : null;
     })(),
     ts: getValue('TS') || null,
-    odpBts: getValue('ODP/BTS') || null,
+    odpBts: getValue('ODP/BTS') || getValue('ODP') || getValue('BTS') || null,
     startTime,
-    startEscalationVendor: parseDateSafe(getValue('Start Escalation Vendor')),
-    endTime: parseDateSafe(getValue('End')),
+    startEscalationVendor: parseDateSafe(getValue('Start Escalation Vendor') || getValue('StartEscalationVendor')),
+    endTime: parseDateSafe(getValue('End') || getValue('End Time') || getValue('EndTime')),
     durationMin: (() => {
       const duration = getValue('Duration');
       const minutes = toMinutes(duration);
@@ -429,7 +503,7 @@ function parseRowToIncident(headers: string[], row: any[], rowNum: number, sheet
       return minutes;
     })(),
     durationVendorMin: (() => {
-      const duration = getValue('Duration Vendor');
+      const duration = getValue('Duration Vendor') || getValue('DurationVendor');
       const minutes = toMinutes(duration);
       if (duration && minutes === 0) {
         console.warn(`Row ${rowNum} in "${sheetName}": Duration Vendor not parsed correctly. Raw value: "${duration}"`);
@@ -438,11 +512,11 @@ function parseRowToIncident(headers: string[], row: any[], rowNum: number, sheet
     })(),
     problem: getValue('Problem') || null,
     penyebab: getValue('Penyebab') || null,
-    actionTerakhir: getValue('Action Terakhir') || null,
+    actionTerakhir: getValue('Action Terakhir') || getValue('ActionTerakhir') || null,
     note: getValue('Note') || null,
-    klasifikasiGangguan: getValue('Klasifikasi Gangguan') || null,
+    klasifikasiGangguan: getValue('Klasifikasi Gangguan') || getValue('KlasifikasiGangguan') || null,
     powerBefore: (() => {
-      const powerValue = getValue('Power Before');
+      const powerValue = getValue('Power Before') || getValue('PowerBefore');
       if (powerValue) {
         const powerNum = Number(powerValue);
         if (Number.isFinite(powerNum)) {
@@ -459,7 +533,7 @@ function parseRowToIncident(headers: string[], row: any[], rowNum: number, sheet
       return powerValue ? Number(powerValue) : null;
     })(),
     powerAfter: (() => {
-      const powerValue = getValue('Power After');
+      const powerValue = getValue('Power After') || getValue('PowerAfter');
       if (powerValue) {
         const powerNum = Number(powerValue);
         if (Number.isFinite(powerNum)) {
@@ -475,12 +549,12 @@ function parseRowToIncident(headers: string[], row: any[], rowNum: number, sheet
       }
       return powerValue ? Number(powerValue) : null;
     })(),
-    startPause1: parseDateSafe(getValue('Start Pause')),
-    endPause1: parseDateSafe(getValue('End Pause')),
-    startPause2: parseDateSafe(getValue('Start Pause 2')),
-    endPause2: parseDateSafe(getValue('End Pause 2')),
+    startPause1: parseDateSafe(getValue('Start Pause') || getValue('StartPause')),
+    endPause1: parseDateSafe(getValue('End Pause') || getValue('EndPause')),
+    startPause2: parseDateSafe(getValue('Start Pause 2') || getValue('StartPause2')),
+    endPause2: parseDateSafe(getValue('End Pause 2') || getValue('EndPause2')),
     totalDurationPauseMin: (() => {
-      const duration = getValue('Total Duration Pause');
+      const duration = getValue('Total Duration Pause') || getValue('TotalDurationPause');
       const minutes = toMinutes(duration);
       if (duration && minutes === 0) {
         console.warn(`Row ${rowNum} in "${sheetName}": Total Duration Pause not parsed correctly. Raw value: "${duration}"`);
@@ -488,7 +562,7 @@ function parseRowToIncident(headers: string[], row: any[], rowNum: number, sheet
       return minutes;
     })(),
     totalDurationVendorMin: (() => {
-      const duration = getValue('Total Duration Vendor');
+      const duration = getValue('Total Duration Vendor') || getValue('TotalDurationVendor');
       const minutes = toMinutes(duration);
       if (duration && minutes === 0) {
         console.warn(`Row ${rowNum} in "${sheetName}": Total Duration Vendor not parsed correctly. Raw value: "${duration}"`);
@@ -496,7 +570,7 @@ function parseRowToIncident(headers: string[], row: any[], rowNum: number, sheet
       return minutes;
     })(),
     netDurationMin: Math.max(
-      toMinutes(getValue('Duration')) - toMinutes(getValue('Total Duration Pause')), 
+      toMinutes(getValue('Duration')) - toMinutes(getValue('Total Duration Pause') || getValue('TotalDurationPause')), 
       0
     ),
     batchId: generateBatchId(),
