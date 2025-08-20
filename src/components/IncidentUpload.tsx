@@ -16,7 +16,8 @@ import {
   XCircle, 
   AlertTriangle,
   Download,
-  RefreshCw
+  RefreshCw,
+  X
 } from 'lucide-react';
 
 interface UploadResult {
