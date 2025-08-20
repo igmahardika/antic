@@ -50,7 +50,7 @@ export const IncidentData: React.FC = () => {
   const [uploadLogs, setUploadLogs] = useState<string[]>([]);
   const [lastUploadResult, setLastUploadResult] = useState<any>(null);
 
-  // Load logs from localStorage and initialize test data
+  // Load logs from localStorage
   React.useEffect(() => {
     // Load existing logs from localStorage
     const savedLogs = localStorage.getItem('uploadLogs');
@@ -69,203 +69,6 @@ export const IncidentData: React.FC = () => {
       } catch (error) {
         console.error('Error loading logs from localStorage:', error);
       }
-    }
-    
-    // Add test data only if no logs exist
-    if (uploadLogs.length === 0) {
-      setUploadLogs([
-        '[10:30:15] Starting upload process...',
-        '[10:30:16] File uploaded successfully',
-        '[10:30:17] Processing 1253 rows...',
-        '[10:30:18] Row 181 (Januari): SKIPPED - Empty row (no data)',
-        '[10:30:19] Row 182 (Januari): SKIPPED - Empty row (no data)',
-        '[10:30:20] Row 183 (Januari): SKIPPED - Empty row (no data)',
-        '[10:30:21] Row 184 (Januari): SKIPPED - Invalid NCAL value: "invalid_ncal"',
-        '[10:30:22] Row 185 (Januari): SKIPPED - Missing required field: Site is empty',
-        '[10:30:23] Row 186 (Januari): SKIPPED - Invalid date format: "invalid_date"',
-        '[10:30:24] Row 187 (Januari): SKIPPED - Invalid priority value: "invalid_priority"',
-        '[10:30:25] Row 188 (Januari): SKIPPED - Missing required field: Start Time is empty',
-        '[10:30:26] Row 189 (Januari): SKIPPED - Invalid duration format: "invalid_duration"',
-        '[10:30:27] Row 190 (Januari): SKIPPED - Duplicate No Case: "NCAL_Blue_001" already exists',
-        '[10:30:28] Row 191 (Januari): SKIPPED - Invalid status value: "invalid_status"',
-        '[10:30:29] Row 192 (Januari): SKIPPED - Missing required field: Problem is empty',
-        '[10:30:30] Row 193 (Januari): SKIPPED - Invalid NCAL value: "ncal" (should be Blue, Yellow, Orange, Red, or Black)',
-        '[10:30:31] Row 194 (Januari): SKIPPED - Invalid priority value: "p" (should be High, Medium, or Low)',
-        '[10:30:32] Row 195 (Januari): SKIPPED - Invalid level value: "l" (should be 1, 2, or 3)',
-        '[10:30:33] Row 196 (Januari): SKIPPED - Invalid date format: "2024-13-01" (invalid month)',
-        '[10:30:34] Row 197 (Januari): SKIPPED - Invalid time format: "25:00:00" (invalid hour)',
-        '[10:30:35] Row 198 (Januari): SKIPPED - Missing required field: TS is empty',
-        '[10:30:36] Row 199 (Januari): SKIPPED - Invalid duration: negative value "-30"',
-        '[10:30:37] Row 200 (Januari): SKIPPED - Invalid NCAL value: "BLUE" (case sensitive, should be "Blue")',
-        '[10:30:38] Upload completed: 1106 rows processed, 147 rows skipped'
-      ]);
-    }
-    
-    // Add test upload result if none exist
-    if (!lastUploadResult) {
-      setLastUploadResult({
-        totalProcessed: 1253,
-        success: 1106,
-        skipped: 147,
-        failed: 0,
-        emptyRows: 45,
-        errors: [
-          'Invalid NCAL values found: 23 rows',
-          'Missing required fields: 34 rows',
-          'Invalid date formats: 18 rows',
-          'Invalid priority values: 12 rows',
-          'Duplicate No Case entries: 8 rows',
-          'Invalid duration values: 15 rows',
-          'Invalid status values: 9 rows',
-          'Invalid level values: 7 rows',
-          'Invalid time formats: 11 rows'
-        ],
-        preview: [
-          {
-            noCase: 'NCAL_Blue_001',
-            site: 'Site A',
-            status: 'Closed',
-            priority: 'High',
-            durationMin: 120
-          },
-          {
-            noCase: 'NCAL_Yellow_002',
-            site: 'Site B',
-            status: 'Open',
-            priority: 'Medium',
-            durationMin: 90
-          },
-          {
-            noCase: 'NCAL_Orange_003',
-            site: 'Site C',
-            status: 'Closed',
-            priority: 'Low',
-            durationMin: 45
-          }
-        ],
-        skippedDetails: [
-          {
-            row: 181,
-            sheet: 'Januari',
-            reason: 'Empty row (no data)',
-            data: { ncal: '', site: '', priority: '', startTime: '' }
-          },
-          {
-            row: 182,
-            sheet: 'Januari',
-            reason: 'Empty row (no data)',
-            data: { ncal: '', site: '', priority: '', startTime: '' }
-          },
-          {
-            row: 183,
-            sheet: 'Januari',
-            reason: 'Empty row (no data)',
-            data: { ncal: '', site: '', priority: '', startTime: '' }
-          },
-          {
-            row: 184,
-            sheet: 'Januari',
-            reason: 'Invalid NCAL value: "invalid_ncal" (should be Blue, Yellow, Orange, Red, or Black)',
-            data: { ncal: 'invalid_ncal', site: 'Site D', priority: 'High', startTime: '2024-01-15 10:00:00' }
-          },
-          {
-            row: 185,
-            sheet: 'Januari',
-            reason: 'Missing required field: Site is empty',
-            data: { ncal: 'Blue', site: '', priority: 'High', startTime: '2024-01-15 10:00:00' }
-          },
-          {
-            row: 186,
-            sheet: 'Januari',
-            reason: 'Invalid date format: "invalid_date" (should be YYYY-MM-DD HH:MM:SS)',
-            data: { ncal: 'Blue', site: 'Site E', priority: 'High', startTime: 'invalid_date' }
-          },
-          {
-            row: 187,
-            sheet: 'Januari',
-            reason: 'Invalid priority value: "invalid_priority" (should be High, Medium, or Low)',
-            data: { ncal: 'Blue', site: 'Site F', priority: 'invalid_priority', startTime: '2024-01-15 10:00:00' }
-          },
-          {
-            row: 188,
-            sheet: 'Januari',
-            reason: 'Missing required field: Start Time is empty',
-            data: { ncal: 'Blue', site: 'Site G', priority: 'High', startTime: '' }
-          },
-          {
-            row: 189,
-            sheet: 'Januari',
-            reason: 'Invalid duration format: "invalid_duration" (should be numeric value in minutes)',
-            data: { ncal: 'Blue', site: 'Site H', priority: 'High', startTime: '2024-01-15 10:00:00', duration: 'invalid_duration' }
-          },
-          {
-            row: 190,
-            sheet: 'Januari',
-            reason: 'Duplicate No Case: "NCAL_Blue_001" already exists in database',
-            data: { noCase: 'NCAL_Blue_001', ncal: 'Blue', site: 'Site I', priority: 'High', startTime: '2024-01-15 10:00:00' }
-          },
-          {
-            row: 191,
-            sheet: 'Januari',
-            reason: 'Invalid status value: "invalid_status" (should be Open, Closed, or Pending)',
-            data: { ncal: 'Blue', site: 'Site J', priority: 'High', startTime: '2024-01-15 10:00:00', status: 'invalid_status' }
-          },
-          {
-            row: 192,
-            sheet: 'Januari',
-            reason: 'Missing required field: Problem is empty',
-            data: { ncal: 'Blue', site: 'Site K', priority: 'High', startTime: '2024-01-15 10:00:00', problem: '' }
-          },
-          {
-            row: 193,
-            sheet: 'Januari',
-            reason: 'Invalid NCAL value: "ncal" (should be Blue, Yellow, Orange, Red, or Black)',
-            data: { ncal: 'ncal', site: 'Site L', priority: 'High', startTime: '2024-01-15 10:00:00' }
-          },
-          {
-            row: 194,
-            sheet: 'Januari',
-            reason: 'Invalid priority value: "p" (should be High, Medium, or Low)',
-            data: { ncal: 'Blue', site: 'Site M', priority: 'p', startTime: '2024-01-15 10:00:00' }
-          },
-          {
-            row: 195,
-            sheet: 'Januari',
-            reason: 'Invalid level value: "l" (should be 1, 2, or 3)',
-            data: { ncal: 'Blue', site: 'Site N', priority: 'High', startTime: '2024-01-15 10:00:00', level: 'l' }
-          },
-          {
-            row: 196,
-            sheet: 'Januari',
-            reason: 'Invalid date format: "2024-13-01" (invalid month - should be 1-12)',
-            data: { ncal: 'Blue', site: 'Site O', priority: 'High', startTime: '2024-13-01 10:00:00' }
-          },
-          {
-            row: 197,
-            sheet: 'Januari',
-            reason: 'Invalid time format: "25:00:00" (invalid hour - should be 0-23)',
-            data: { ncal: 'Blue', site: 'Site P', priority: 'High', startTime: '2024-01-15 25:00:00' }
-          },
-          {
-            row: 198,
-            sheet: 'Januari',
-            reason: 'Missing required field: TS is empty',
-            data: { ncal: 'Blue', site: 'Site Q', priority: 'High', startTime: '2024-01-15 10:00:00', ts: '' }
-          },
-          {
-            row: 199,
-            sheet: 'Januari',
-            reason: 'Invalid duration: negative value "-30" (should be positive number)',
-            data: { ncal: 'Blue', site: 'Site R', priority: 'High', startTime: '2024-01-15 10:00:00', duration: -30 }
-          },
-          {
-            row: 200,
-            sheet: 'Januari',
-            reason: 'Invalid NCAL value: "BLUE" (case sensitive - should be "Blue")',
-            data: { ncal: 'BLUE', site: 'Site S', priority: 'High', startTime: '2024-01-15 10:00:00' }
-          }
-        ]
-      });
     }
   }, []);
 
@@ -321,11 +124,26 @@ export const IncidentData: React.FC = () => {
       } else {
         console.log('✅ No data quality issues found');
       }
+      
+      // Validate data consistency with upload result
+      if (lastUploadResult && lastUploadResult.success !== allIncidents.length) {
+        console.warn(`⚠️ DATA INCONSISTENCY DETECTED!`);
+        console.warn(`Upload result shows: ${lastUploadResult.success} incidents`);
+        console.warn(`Database actually has: ${allIncidents.length} incidents`);
+        console.warn(`Difference: ${Math.abs(lastUploadResult.success - allIncidents.length)} incidents`);
+        console.warn('Possible causes:');
+        console.warn('- Duplicate uploads (same data uploaded multiple times)');
+        console.warn('- Data loss during save process');
+        console.warn('- Database corruption or sync issues');
+        console.warn('- Test data interference');
+      } else if (lastUploadResult) {
+        console.log(`✅ Data consistency verified: ${lastUploadResult.success} incidents match database count`);
+      }
     } else {
       console.log('No incidents found in database');
     }
     console.log('=== END DEBUG ===');
-  }, [allIncidents]);
+  }, [allIncidents, lastUploadResult]);
 
   // Calculate summary data for ALL uploaded data (not filtered)
   const allDataSummary = React.useMemo(() => {
@@ -711,26 +529,54 @@ export const IncidentData: React.FC = () => {
             <FileSpreadsheet className="w-3 h-3 mr-1" />
             Test Logs
           </Button>
-          <Button 
-            onClick={() => {
-              if (confirm('Are you sure you want to clear all upload logs? This action cannot be undone.')) {
-                localStorage.removeItem('uploadLogs');
-                setUploadLogs([]);
-                setLastUploadResult(null);
-                toast({
-                  title: "Logs Cleared",
-                  description: "All upload logs have been cleared.",
-                });
-              }
-            }} 
-            variant="outline"
-            size="sm"
-            className="border-gray-200 text-gray-700 hover:bg-gray-50"
-            disabled={uploadLogs.length === 0}
-          >
-            <X className="w-3 h-3 mr-1" />
-            Clear Logs
-          </Button>
+                      <Button 
+              onClick={() => {
+                if (confirm('Are you sure you want to clear all upload logs? This action cannot be undone.')) {
+                  localStorage.removeItem('uploadLogs');
+                  setUploadLogs([]);
+                  setLastUploadResult(null);
+                  toast({
+                    title: "Logs Cleared",
+                    description: "All upload logs have been cleared.",
+                  });
+                }
+              }} 
+              variant="outline"
+              size="sm"
+              className="border-gray-200 text-gray-700 hover:bg-gray-50"
+              disabled={uploadLogs.length === 0}
+            >
+              <X className="w-3 h-3 mr-1" />
+              Clear Logs
+            </Button>
+            
+            <Button 
+              onClick={() => {
+                if (confirm('Are you sure you want to validate data consistency? This will check if upload logs match database data.')) {
+                  const dbCount = allIncidents?.length || 0;
+                  const logCount = lastUploadResult?.success || 0;
+                  
+                  if (dbCount !== logCount) {
+                    toast({
+                      title: "Data Inconsistency Detected",
+                      description: `Database has ${dbCount} incidents but logs show ${logCount} uploaded. Check console for details.`,
+                      variant: "destructive",
+                    });
+                  } else {
+                    toast({
+                      title: "Data Consistency Verified",
+                      description: `Database count (${dbCount}) matches upload logs (${logCount}).`,
+                    });
+                  }
+                }
+              }} 
+              variant="outline"
+              size="sm"
+              className="border-blue-200 text-blue-700 hover:bg-blue-50"
+            >
+              <Database className="w-3 h-3 mr-1" />
+              Validate Data
+            </Button>
         </div>
       </div>
 
@@ -1230,6 +1076,10 @@ export const IncidentData: React.FC = () => {
                           <span className="text-gray-600 dark:text-gray-400">Successfully Uploaded:</span>
                           <span className="ml-2 font-medium text-green-600">{lastUploadResult.success}</span>
                         </div>
+                        <div>
+                          <span className="text-gray-600 dark:text-gray-400">Currently in Database:</span>
+                          <span className="ml-2 font-medium text-blue-600">{allIncidents?.length || 0}</span>
+                        </div>
                         {lastUploadResult.skipped && lastUploadResult.skipped > 0 && (
                           <div>
                             <span className="text-gray-600 dark:text-gray-400">Skipped:</span>
@@ -1249,6 +1099,24 @@ export const IncidentData: React.FC = () => {
                           </div>
                         )}
                       </div>
+                      
+                      {/* Data Consistency Check */}
+                      {lastUploadResult.success !== (allIncidents?.length || 0) && (
+                        <div className="mt-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                          <div className="flex items-center gap-2 text-red-800 dark:text-red-200">
+                            <AlertTriangle className="w-4 h-4" />
+                            <span className="font-medium">Data Inconsistency Detected</span>
+                          </div>
+                          <div className="text-sm text-red-700 dark:text-red-300 mt-1">
+                            Upload logs show {lastUploadResult.success} incidents, but database contains {allIncidents?.length || 0} incidents.
+                            <br />
+                            <span className="font-medium">Difference: {Math.abs(lastUploadResult.success - (allIncidents?.length || 0))} incidents</span>
+                          </div>
+                          <div className="text-xs text-red-600 dark:text-red-400 mt-2">
+                            Possible causes: Duplicate uploads, data loss, or test data interference.
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )}
 
