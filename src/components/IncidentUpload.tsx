@@ -302,6 +302,14 @@ export const IncidentUpload: React.FC<IncidentUploadProps> = ({ onUploadComplete
           if (savedCount !== allRows.length) {
             captureLog(`⚠️ WARNING: Saved count (${savedCount}) doesn't match expected (${allRows.length})`);
             captureLog(`This may indicate duplicate data or database issues.`);
+            
+            // Check if there are existing records that might be causing the difference
+            const existingCount = savedCount - allRows.length;
+            if (existingCount > 0) {
+              captureLog(`📊 Database already contained ${existingCount} existing incidents`);
+              captureLog(`📊 New incidents added: ${allRows.length}`);
+              captureLog(`📊 Total incidents now: ${savedCount}`);
+            }
           } else {
             captureLog(`✅ Database validation: Saved count matches expected count`);
           }
@@ -315,8 +323,15 @@ export const IncidentUpload: React.FC<IncidentUploadProps> = ({ onUploadComplete
         captureLog(`⚠️ WARNING: No valid incidents to save`);
       }
 
+      // Ensure success count matches actual saved data
+      const actualSuccessCount = allRows.length;
+      if (successCount !== actualSuccessCount) {
+        captureLog(`⚠️ SUCCESS COUNT MISMATCH: Parsed ${successCount} but actually saved ${actualSuccessCount}`);
+        captureLog(`This may indicate some rows were filtered out during processing.`);
+      }
+
       setUploadResult({
-        success: successCount,
+        success: actualSuccessCount, // Use actual count instead of parsed count
         failed: failedCount,
         errors,
         preview: allRows.slice(0, 20),
@@ -331,7 +346,8 @@ export const IncidentUpload: React.FC<IncidentUploadProps> = ({ onUploadComplete
       // Log detailed summary
       captureLog(`\n=== FINAL UPLOAD SUMMARY ===`);
       captureLog(`Expected rows: ${totalRowsProcessed}`);
-      captureLog(`Successfully uploaded: ${successCount}`);
+      captureLog(`Successfully parsed: ${successCount}`);
+      captureLog(`Actually saved to database: ${actualSuccessCount}`);
       captureLog(`Skipped (empty/invalid): ${skippedCount}`);
       captureLog(`Empty rows: ${emptyRowCount}`);
       captureLog(`Invalid rows: ${invalidRowCount}`);
