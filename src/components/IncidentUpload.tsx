@@ -67,24 +67,87 @@ export const IncidentUpload: React.FC<IncidentUploadProps> = ({ onUploadSuccess 
     }
   };
 
+  // Function to test database operations
+  const testDatabase = async () => {
+    console.log('🧪 Testing database operations...');
+    
+    try {
+      // Test adding a sample incident
+      const testIncident = {
+        id: 'TEST-' + Date.now(),
+        noCase: 'TEST-CASE-001',
+        ncal: 'Blue',
+        site: 'Test Site',
+        startTime: new Date().toISOString(),
+        status: 'Open',
+        priority: 'High',
+        level: 1,
+        problem: 'Test problem',
+        batchId: 'test-batch',
+        importedAt: new Date().toISOString()
+      };
+      
+      console.log('📝 Adding test incident...');
+      await db.incidents.add(testIncident);
+      console.log('✅ Test incident added successfully');
+      
+      // Verify it was added
+      const count = await db.incidents.count();
+      console.log(`📊 Total incidents after test: ${count}`);
+      
+      // Remove test incident
+      console.log('🗑️ Removing test incident...');
+      await db.incidents.delete(testIncident.id);
+      console.log('✅ Test incident removed');
+      
+      const finalCount = await db.incidents.count();
+      console.log(`📊 Final incident count: ${finalCount}`);
+      
+      alert('Database test completed successfully! Check console for details.');
+      
+    } catch (error) {
+      console.error('❌ Database test failed:', error);
+      alert(`Database test failed: ${error.message}`);
+    }
+  };
+
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
     if (acceptedFiles.length === 0) return;
 
+    console.log('🚀 Starting upload process...');
     setIsUploading(true);
     setProgress(0);
     setUploadResult(null);
 
     try {
       const file = acceptedFiles[0];
-      console.log('📁 File uploaded:', file.name, 'Size:', file.size);
+      console.log('📁 File uploaded:', file.name, 'Size:', file.size, 'Type:', file.type);
+      
+      // Check file size
+      if (file.size === 0) {
+        throw new Error('File is empty');
+      }
+      
+      // Check file type
+      const validTypes = [
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'application/vnd.ms-excel',
+        'application/octet-stream' // Some systems may use this for Excel files
+      ];
+      
+      if (!validTypes.includes(file.type)) {
+        console.warn(`⚠️ File type "${file.type}" not in expected types:`, validTypes);
+      }
       
       const workbook = XLSX.read(await file.arrayBuffer(), { type: 'array' });
+      console.log('📊 Workbook parsed successfully');
       console.log('📊 Workbook sheets:', workbook.SheetNames);
       
       const allRows: Incident[] = [];
       const errors: string[] = [];
       let successCount = 0;
       let failedCount = 0;
+      let totalRowsProcessed = 0;
 
       // Process all sheets
       for (const sheetName of workbook.SheetNames) {
@@ -131,7 +194,9 @@ export const IncidentUpload: React.FC<IncidentUploadProps> = ({ onUploadSuccess 
         // Process rows
         console.log(`📊 Processing ${jsonData.length - 1} rows in "${sheetName}"`);
         for (let i = 1; i < jsonData.length; i++) {
+          totalRowsProcessed++;
           const row = jsonData[i] as any[];
+          
           if (!row || row.length === 0) {
             console.log(`Row ${i + 1} in "${sheetName}" skipped: empty row`);
             continue;
@@ -149,7 +214,11 @@ export const IncidentUpload: React.FC<IncidentUploadProps> = ({ onUploadSuccess 
             if (incident) {
               allRows.push(incident);
               successCount++;
-              console.log(`✅ Row ${i + 1} in "${sheetName}" processed successfully: ${incident.noCase} (NCAL: ${incident.ncal})`);
+              if (successCount <= 5) {
+                console.log(`✅ Row ${i + 1} in "${sheetName}" processed successfully: ${incident.noCase} (NCAL: ${incident.ncal})`);
+              } else if (successCount === 6) {
+                console.log(`✅ ... and ${jsonData.length - 6} more rows processed successfully`);
+              }
             } else {
               // Row was skipped (empty NCAL) - don't count as failed
               console.log(`⏭️ Row ${i + 1} in "${sheetName}" skipped: invalid NCAL or empty required fields`);
@@ -166,6 +235,7 @@ export const IncidentUpload: React.FC<IncidentUploadProps> = ({ onUploadSuccess 
       }
 
       console.log(`📊 Processing complete: ${allRows.length} incidents ready to save`);
+      console.log(`📊 Summary: ${totalRowsProcessed} rows processed, ${successCount} successful, ${failedCount} failed`);
 
       // Save to database
       if (allRows.length > 0) {
@@ -174,25 +244,45 @@ export const IncidentUpload: React.FC<IncidentUploadProps> = ({ onUploadSuccess 
         console.log('📋 Sample incident to save:', allRows[0]);
         
         try {
+          // Check database before save
+          const beforeCount = await db.incidents.count();
+          console.log(`📊 Incidents in database before save: ${beforeCount}`);
+          
           await saveIncidentsChunked(allRows);
           console.log('✅ Incidents saved successfully');
           
           // Verify the save by checking database
-          // const savedCount = await db.incidents.count();
-          // console.log(`📊 Total incidents in database after save: ${savedCount}`);
+          const afterCount = await db.incidents.count();
+          console.log(`📊 Incidents in database after save: ${afterCount}`);
+          console.log(`📊 Net change: ${afterCount - beforeCount} incidents added`);
+          
+          if (afterCount <= beforeCount) {
+            console.warn('⚠️ Warning: Database count did not increase after save');
+          }
           
         } catch (saveError) {
           console.error('❌ Error saving incidents:', saveError);
-          errors.push(`Failed to save incidents: ${saveError}`);
+          console.error('Save error details:', {
+            name: saveError.name,
+            message: saveError.message,
+            stack: saveError.stack
+          });
+          errors.push(`Failed to save incidents: ${saveError.message}`);
         }
         
         setProgress(100);
       } else {
         console.warn('⚠️ No incidents to save');
         console.log('🔍 Debugging info:');
+        console.log('- Total rows processed:', totalRowsProcessed);
         console.log('- Success count:', successCount);
         console.log('- Failed count:', failedCount);
         console.log('- All rows array length:', allRows.length);
+        console.log('- Errors encountered:', errors.length);
+        
+        if (errors.length > 0) {
+          console.log('- Error details:', errors.slice(0, 5));
+        }
       }
 
       setUploadResult({
@@ -291,10 +381,15 @@ export const IncidentUpload: React.FC<IncidentUploadProps> = ({ onUploadSuccess 
             </div>
 
             <div className="flex justify-between items-center">
-              <Button onClick={downloadTemplate} variant="outline" size="sm">
-                <Download className="w-4 h-4 mr-2" />
-                Download Template
-              </Button>
+              <div className="flex gap-2">
+                <Button onClick={downloadTemplate} variant="outline" size="sm">
+                  <Download className="w-4 h-4 mr-2" />
+                  Download Template
+                </Button>
+                <Button onClick={testDatabase} variant="outline" size="sm">
+                  🧪 Test DB
+                </Button>
+              </div>
               
               {/* Database Status */}
               <div className="text-sm text-gray-600 dark:text-gray-400">
