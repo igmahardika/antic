@@ -945,6 +945,25 @@ export const IncidentAnalytics: React.FC = () => {
                     }}
                   />
                 </Pie>
+                <Legend
+                  verticalAlign="bottom"
+                  height={36}
+                  content={({ payload }) => (
+                    <div className="flex flex-wrap justify-center gap-4 mt-4">
+                      {payload?.map((entry, index) => (
+                        <div key={index} className="flex items-center gap-2">
+                          <div
+                            className="w-3 h-3 rounded-sm"
+                            style={{ backgroundColor: entry.color }}
+                          />
+                          <span className="text-sm text-gray-700 dark:text-gray-300">
+                            {entry.value}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                />
               </PieChart>
             </ChartContainer>
           </CardContent>
