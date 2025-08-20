@@ -906,7 +906,7 @@ export const IncidentAnalytics: React.FC = () => {
             </CardTitle>
             <CardDescription>Actual vs Target duration for each NCAL level</CardDescription>
           </CardHeader>
-          <CardContent className="h-[300px] overflow-y-auto">
+          <CardContent className="h-[300px] overflow-y-auto p-4">
             <div className="space-y-3">
               {NCAL_ORDER.map(ncal => {
                 const performance = stats.targetPerformance[ncal];
@@ -947,7 +947,7 @@ export const IncidentAnalytics: React.FC = () => {
           <CardContent className="flex flex-1 justify-center pb-0 h-[300px]">
             <ChartContainer
               config={ncalChartConfig}
-              className="mx-auto aspect-square w-full max-w-[260px]"
+              className="mx-auto aspect-square w-full max-w-[240px]"
             >
               <PieChart>
                 <ChartTooltip
@@ -997,13 +997,13 @@ export const IncidentAnalytics: React.FC = () => {
                 </Pie>
                 <Legend
                   verticalAlign="bottom"
-                  height={30}
+                  height={25}
                   content={({ payload }) => (
-                    <div className="flex justify-center items-center gap-4 mt-2">
+                    <div className="flex justify-center items-center gap-3 mt-1">
                       {payload?.map((entry, index) => (
                         <div key={index} className="flex items-center gap-1">
                           <div
-                            className="w-2 h-2 rounded-sm"
+                            className="w-1.5 h-1.5 rounded-sm"
                             style={{ backgroundColor: entry.color }}
                           />
                           <span className="text-xs text-gray-700 dark:text-gray-300">
@@ -1037,10 +1037,10 @@ export const IncidentAnalytics: React.FC = () => {
                   accessibilityLayer
                   data={filteredMonthlyNCALData}
                   margin={{
-                    top: 15,
-                    left: 10,
-                    right: 10,
-                    bottom: 25,
+                    top: 30,
+                    left: 15,
+                    right: 15,
+                    bottom: 40,
                   }}
                 >
                 <CartesianGrid vertical={false} />
@@ -1103,10 +1103,10 @@ export const IncidentAnalytics: React.FC = () => {
                   accessibilityLayer
                   data={filteredMonthlyNCALDurationData}
                   margin={{
-                    top: 15,
-                    left: 10,
-                    right: 10,
-                    bottom: 25,
+                    top: 30,
+                    left: 15,
+                    right: 15,
+                    bottom: 40,
                   }}
                 >
                 <CartesianGrid vertical={false} />
@@ -1172,10 +1172,10 @@ export const IncidentAnalytics: React.FC = () => {
                   accessibilityLayer 
                   data={priorityData}
                   margin={{
-                    top: 20,
-                    left: 10,
-                    right: 10,
-                    bottom: 30,
+                    top: 40,
+                    left: 15,
+                    right: 15,
+                    bottom: 50,
                   }}
                 >
                 <CartesianGrid vertical={false} />
@@ -1251,10 +1251,10 @@ export const IncidentAnalytics: React.FC = () => {
                   accessibilityLayer 
                   data={filteredLevelData}
                   margin={{
-                    top: 30,
-                    left: 10,
-                    right: 10,
-                    bottom: 40,
+                    top: 50,
+                    left: 15,
+                    right: 15,
+                    bottom: 60,
                   }}
                 >
                 <CartesianGrid vertical={false} />
@@ -1272,7 +1272,7 @@ export const IncidentAnalytics: React.FC = () => {
                   axisLine={false} 
                   tickMargin={8}
                   tickFormatter={(value) => value.toLocaleString()}
-                  domain={[0, 'dataMax + 20']}
+                  domain={[0, 'dataMax + 50']}
                 />
                 <ChartTooltip
                   cursor={false}
@@ -1285,9 +1285,9 @@ export const IncidentAnalytics: React.FC = () => {
                 >
                   <LabelList
                     position="top"
-                    offset={8}
+                    offset={5}
                     className="fill-foreground"
-                    fontSize={10}
+                    fontSize={9}
                   />
                 </Bar>
               </BarChart>
@@ -1327,7 +1327,7 @@ export const IncidentAnalytics: React.FC = () => {
             </CardTitle>
             <CardDescription>Total pause time ratio</CardDescription>
           </CardHeader>
-          <CardContent className="h-[300px] overflow-y-auto">
+          <CardContent className="h-[300px] overflow-y-auto p-4">
             <div className="space-y-3">
               {/* Main Metric */}
               <div className="text-center">
@@ -1427,10 +1427,10 @@ export const IncidentAnalytics: React.FC = () => {
                   data={siteData} 
                   layout="horizontal"
                   margin={{
-                    top: 15,
-                    left: 10,
-                    right: 10,
-                    bottom: 25,
+                    top: 25,
+                    left: 15,
+                    right: 15,
+                    bottom: 35,
                   }}
                 >
                 <CartesianGrid vertical={false} />
@@ -1445,13 +1445,13 @@ export const IncidentAnalytics: React.FC = () => {
                 <YAxis 
                   dataKey="name" 
                   type="category" 
-                  width={120} 
+                  width={100} 
                   tickLine={false} 
                   axisLine={false} 
                   tickMargin={8}
                   tickFormatter={(value) => {
                     // Truncate long site names
-                    return value.length > 15 ? value.substring(0, 15) + '...' : value;
+                    return value.length > 12 ? value.substring(0, 12) + '...' : value;
                   }}
                 />
                 <ChartTooltip
