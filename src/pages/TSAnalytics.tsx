@@ -294,7 +294,7 @@ export const TSAnalytics: React.FC = () => {
   }, [filteredIncidents]);
 
   // Prepare chart data
-  const tsPerformanceData = tsStats.tsPerformance.map((ts, index) => ({
+  const tsPerformanceData = Array.isArray(tsStats.tsPerformance) ? tsStats.tsPerformance.map((ts, index) => ({
     name: ts.ts,
     count: ts.count,
     avgDuration: ts.avgDuration,
@@ -302,11 +302,11 @@ export const TSAnalytics: React.FC = () => {
     efficiency: ts.efficiency,
     rank: index + 1,
     fill: index < 3 ? '#3b82f6' : index < 7 ? '#6b7280' : '#d1d5db'
-  }));
+  })) : [];
 
-  const tsWorkloadData = Object.entries(tsStats.byTS)
+  const tsWorkloadData = Object.entries(tsStats.byTS || {})
     .sort((a, b) => b[1].count - a[1].count)
-    .slice(0, 10)
+    .slice(0,10)
     .map(([ts, data]) => ({
       name: ts,
       count: data.count,
@@ -314,7 +314,7 @@ export const TSAnalytics: React.FC = () => {
       escalationRate: data.escalationRate
     }));
 
-  const tsEfficiencyData = Object.entries(tsStats.byTSDuration)
+  const tsEfficiencyData = Object.entries(tsStats.byTSDuration || {})
     .map(([ts, data]) => ({
       name: ts,
       avgDuration: data.avg,
@@ -422,7 +422,7 @@ export const TSAnalytics: React.FC = () => {
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                {tsPerformanceData.map((ts, index) => (
+                {tsPerformanceData.length > 0 ? tsPerformanceData.map((ts, index) => (
                   <div key={ts.name} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-zinc-800 rounded-lg border border-gray-200 dark:border-zinc-700">
                     <div className="flex items-center gap-3">
                       <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold ${
@@ -448,7 +448,11 @@ export const TSAnalytics: React.FC = () => {
                       </div>
                     </div>
                   </div>
-                ))}
+                )) : (
+                  <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                    No TS performance data available
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -464,7 +468,7 @@ export const TSAnalytics: React.FC = () => {
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                {tsEfficiencyData.map((ts, index) => (
+                {tsEfficiencyData.length > 0 ? tsEfficiencyData.map((ts, index) => (
                   <div key={ts.name} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-zinc-800 rounded-lg border border-gray-200 dark:border-zinc-700">
                     <div className="flex items-center gap-3">
                       <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold ${
@@ -490,7 +494,11 @@ export const TSAnalytics: React.FC = () => {
                       </div>
                     </div>
                   </div>
-                ))}
+                )) : (
+                  <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                    No TS efficiency data available
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -508,6 +516,7 @@ export const TSAnalytics: React.FC = () => {
               <CardDescription>Incident distribution across Technical Support teams</CardDescription>
             </CardHeader>
             <CardContent>
+                          {tsWorkloadData.length > 0 ? (
               <ChartContainer config={{}}>
                 <BarChart 
                   data={tsWorkloadData}
@@ -532,6 +541,11 @@ export const TSAnalytics: React.FC = () => {
                   </Bar>
                 </BarChart>
               </ChartContainer>
+            ) : (
+              <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                No workload data available
+              </div>
+            )}
             </CardContent>
           </Card>
 
@@ -590,50 +604,56 @@ export const TSAnalytics: React.FC = () => {
             <CardDescription>Monthly performance trend for Technical Support teams</CardDescription>
           </CardHeader>
           <CardContent>
-            <ChartContainer config={{}}>
-              <LineChart
-                data={Object.entries(tsStats.byTSMonth)
-                  .sort((a, b) => a[0].localeCompare(b[0]))
-                  .map(([month, tsData]) => ({
-                    month,
-                    totalIncidents: Object.values(tsData).reduce((sum: number, count: any) => sum + count, 0),
-                    uniqueTS: Object.keys(tsData).length
-                  }))}
-                margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
-              >
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis 
-                  dataKey="month" 
-                  tickFormatter={(value) => {
-                    const [year, month] = value.split('-');
-                    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
-                                      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-                    return `${monthNames[parseInt(month) - 1]} ${year}`;
-                  }}
-                />
-                <YAxis />
-                <ChartTooltip
-                  cursor={false}
-                  content={<ChartTooltipContent hideLabel />}
-                />
-                <Line 
-                  type="monotone" 
-                  dataKey="totalIncidents" 
-                  stroke="#3b82f6" 
-                  strokeWidth={2}
-                  dot={{ fill: '#3b82f6', strokeWidth: 2, r: 4 }}
-                  name="Total Incidents"
-                />
-                <Line 
-                  type="monotone" 
-                  dataKey="uniqueTS" 
-                  stroke="#10b981" 
-                  strokeWidth={2}
-                  dot={{ fill: '#10b981', strokeWidth: 2, r: 4 }}
-                  name="Unique TS"
-                />
-              </LineChart>
-            </ChartContainer>
+            {Object.keys(tsStats.byTSMonth || {}).length > 0 ? (
+              <ChartContainer config={{}}>
+                <LineChart
+                  data={Object.entries(tsStats.byTSMonth || {})
+                    .sort((a, b) => a[0].localeCompare(b[0]))
+                    .map(([month, tsData]) => ({
+                      month,
+                      totalIncidents: Object.values(tsData).reduce((sum: number, count: any) => sum + count, 0),
+                      uniqueTS: Object.keys(tsData).length
+                    }))}
+                  margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis 
+                    dataKey="month" 
+                    tickFormatter={(value) => {
+                      const [year, month] = value.split('-');
+                      const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
+                                        'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                      return `${monthNames[parseInt(month) - 1]} ${year}`;
+                    }}
+                  />
+                  <YAxis />
+                  <ChartTooltip
+                    cursor={false}
+                    content={<ChartTooltipContent hideLabel />}
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="totalIncidents" 
+                    stroke="#3b82f6" 
+                    strokeWidth={2}
+                    dot={{ fill: '#3b82f6', strokeWidth: 2, r: 4 }}
+                    name="Total Incidents"
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="uniqueTS" 
+                    stroke="#10b981" 
+                    strokeWidth={2}
+                    dot={{ fill: '#10b981', strokeWidth: 2, r: 4 }}
+                    name="Unique TS"
+                  />
+                </LineChart>
+              </ChartContainer>
+            ) : (
+              <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                No trend data available
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>

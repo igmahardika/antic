@@ -337,7 +337,7 @@ export const SiteAnalytics: React.FC = () => {
   }, [filteredIncidents]);
 
   // Prepare chart data
-  const sitePerformanceData = siteStats.sitePerformance.map((site, index) => ({
+  const sitePerformanceData = Array.isArray(siteStats.sitePerformance) ? siteStats.sitePerformance.map((site, index) => ({
     name: site.site,
     count: site.count,
     avgDuration: site.avgDuration,
@@ -345,17 +345,17 @@ export const SiteAnalytics: React.FC = () => {
     riskScore: site.riskScore,
     rank: index + 1,
     fill: index < 3 ? '#ef4444' : index < 7 ? '#f97316' : '#eab308'
-  }));
+  })) : [];
 
-  const topAffectedSitesData = siteStats.topAffectedSites.map((site, index) => ({
+  const topAffectedSitesData = Array.isArray(siteStats.topAffectedSites) ? siteStats.topAffectedSites.map((site, index) => ({
     name: site.site,
     count: site.count,
     avgDuration: site.avgDuration,
     resolutionRate: site.resolutionRate,
     rank: index + 1
-  }));
+  })) : [];
 
-  const siteReliabilityData = Object.entries(siteStats.bySite)
+  const siteReliabilityData = Object.entries(siteStats.bySite || {})
     .map(([site, data]) => ({
       name: site,
       reliability: data.resolutionRate,
@@ -463,7 +463,7 @@ export const SiteAnalytics: React.FC = () => {
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                {topAffectedSitesData.map((site, index) => (
+                {topAffectedSitesData.length > 0 ? topAffectedSitesData.map((site, index) => (
                   <div key={site.name} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-zinc-800 rounded-lg border border-gray-200 dark:border-zinc-700">
                     <div className="flex items-center gap-3">
                       <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold ${
@@ -489,7 +489,11 @@ export const SiteAnalytics: React.FC = () => {
                       </div>
                     </div>
                   </div>
-                ))}
+                )) : (
+                  <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                    No site data available
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -505,7 +509,7 @@ export const SiteAnalytics: React.FC = () => {
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                {siteReliabilityData.map((site, index) => (
+                {siteReliabilityData.length > 0 ? siteReliabilityData.map((site, index) => (
                   <div key={site.name} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-zinc-800 rounded-lg border border-gray-200 dark:border-zinc-700">
                     <div className="flex items-center gap-3">
                       <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold ${
@@ -531,7 +535,11 @@ export const SiteAnalytics: React.FC = () => {
                       </div>
                     </div>
                   </div>
-                ))}
+                )) : (
+                  <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                    No reliability data available
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -550,7 +558,7 @@ export const SiteAnalytics: React.FC = () => {
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                {Object.entries(siteStats.siteRiskScore)
+                {Object.keys(siteStats.siteRiskScore || {}).length > 0 ? Object.entries(siteStats.siteRiskScore || {})
                   .sort((a, b) => b[1].riskScore - a[1].riskScore)
                   .slice(0, 10)
                   .map(([site, data], index) => (
@@ -581,7 +589,11 @@ export const SiteAnalytics: React.FC = () => {
                         </div>
                       </div>
                     </div>
-                  ))}
+                  )) : (
+                    <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                      No risk assessment data available
+                    </div>
+                  )}
               </div>
             </CardContent>
           </Card>
@@ -643,50 +655,56 @@ export const SiteAnalytics: React.FC = () => {
             <CardDescription>Monthly incident trend for affected sites</CardDescription>
           </CardHeader>
           <CardContent>
-            <ChartContainer config={{}}>
-              <LineChart
-                data={Object.entries(siteStats.bySiteMonth)
-                  .sort((a, b) => a[0].localeCompare(b[0]))
-                  .map(([month, siteData]) => ({
-                    month,
-                    totalIncidents: Object.values(siteData).reduce((sum: number, count: any) => sum + count, 0),
-                    uniqueSites: Object.keys(siteData).length
-                  }))}
-                margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
-              >
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis 
-                  dataKey="month" 
-                  tickFormatter={(value) => {
-                    const [year, month] = value.split('-');
-                    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
-                                      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-                    return `${monthNames[parseInt(month) - 1]} ${year}`;
-                  }}
-                />
-                <YAxis />
-                <ChartTooltip
-                  cursor={false}
-                  content={<ChartTooltipContent hideLabel />}
-                />
-                <Line 
-                  type="monotone" 
-                  dataKey="totalIncidents" 
-                  stroke="#ef4444" 
-                  strokeWidth={2}
-                  dot={{ fill: '#ef4444', strokeWidth: 2, r: 4 }}
-                  name="Total Incidents"
-                />
-                <Line 
-                  type="monotone" 
-                  dataKey="uniqueSites" 
-                  stroke="#3b82f6" 
-                  strokeWidth={2}
-                  dot={{ fill: '#3b82f6', strokeWidth: 2, r: 4 }}
-                  name="Unique Sites"
-                />
-              </LineChart>
-            </ChartContainer>
+            {Object.keys(siteStats.bySiteMonth || {}).length > 0 ? (
+              <ChartContainer config={{}}>
+                <LineChart
+                  data={Object.entries(siteStats.bySiteMonth || {})
+                    .sort((a, b) => a[0].localeCompare(b[0]))
+                    .map(([month, siteData]) => ({
+                      month,
+                      totalIncidents: Object.values(siteData).reduce((sum: number, count: any) => sum + count, 0),
+                      uniqueSites: Object.keys(siteData).length
+                    }))}
+                  margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis 
+                    dataKey="month" 
+                    tickFormatter={(value) => {
+                      const [year, month] = value.split('-');
+                      const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
+                                        'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                      return `${monthNames[parseInt(month) - 1]} ${year}`;
+                    }}
+                  />
+                  <YAxis />
+                  <ChartTooltip
+                    cursor={false}
+                    content={<ChartTooltipContent hideLabel />}
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="totalIncidents" 
+                    stroke="#ef4444" 
+                    strokeWidth={2}
+                    dot={{ fill: '#ef4444', strokeWidth: 2, r: 4 }}
+                    name="Total Incidents"
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="uniqueSites" 
+                    stroke="#3b82f6" 
+                    strokeWidth={2}
+                    dot={{ fill: '#3b82f6', strokeWidth: 2, r: 4 }}
+                    name="Unique Sites"
+                  />
+                </LineChart>
+              </ChartContainer>
+            ) : (
+              <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                No trend data available
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
