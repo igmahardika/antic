@@ -1032,14 +1032,17 @@ export const IncidentAnalytics: React.FC = () => {
           </CardHeader>
           <CardContent className="h-[300px]">
             <ChartContainer config={ncalAreaChartConfig}>
-              <LineChart
-                accessibilityLayer
-                data={filteredMonthlyNCALData}
-                margin={{
-                  left: 12,
-                  right: 12,
-                }}
-              >
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart
+                  accessibilityLayer
+                  data={filteredMonthlyNCALData}
+                  margin={{
+                    top: 10,
+                    left: 10,
+                    right: 10,
+                    bottom: 10,
+                  }}
+                >
                 <CartesianGrid vertical={false} />
                 <XAxis
                   dataKey="month"
@@ -1080,6 +1083,7 @@ export const IncidentAnalytics: React.FC = () => {
                   />
                 ))}
               </LineChart>
+              </ResponsiveContainer>
             </ChartContainer>
           </CardContent>
         </Card>
@@ -1094,14 +1098,17 @@ export const IncidentAnalytics: React.FC = () => {
           </CardHeader>
           <CardContent className="h-[300px]">
             <ChartContainer config={ncalAreaChartConfig}>
-              <LineChart
-                accessibilityLayer
-                data={filteredMonthlyNCALDurationData}
-                margin={{
-                  left: 12,
-                  right: 12,
-                }}
-              >
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart
+                  accessibilityLayer
+                  data={filteredMonthlyNCALDurationData}
+                  margin={{
+                    top: 10,
+                    left: 10,
+                    right: 10,
+                    bottom: 10,
+                  }}
+                >
                 <CartesianGrid vertical={false} />
                 <XAxis
                   dataKey="month"
@@ -1142,6 +1149,7 @@ export const IncidentAnalytics: React.FC = () => {
                   />
                 ))}
               </LineChart>
+              </ResponsiveContainer>
             </ChartContainer>
           </CardContent>
         </Card>
@@ -1159,14 +1167,17 @@ export const IncidentAnalytics: React.FC = () => {
           </CardHeader>
           <CardContent className="h-[300px]">
             <ChartContainer config={priorityChartConfig}>
-              <BarChart 
-                accessibilityLayer 
-                data={priorityData}
-                margin={{
-                  left: 12,
-                  right: 12,
-                }}
-              >
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart 
+                  accessibilityLayer 
+                  data={priorityData}
+                  margin={{
+                    top: 10,
+                    left: 10,
+                    right: 10,
+                    bottom: 10,
+                  }}
+                >
                 <CartesianGrid vertical={false} />
                 <XAxis
                   dataKey="name"
@@ -1193,6 +1204,7 @@ export const IncidentAnalytics: React.FC = () => {
                   radius={8}
                 />
               </BarChart>
+              </ResponsiveContainer>
             </ChartContainer>
           </CardContent>
         </Card>
@@ -1234,13 +1246,17 @@ export const IncidentAnalytics: React.FC = () => {
             </div>
 
             <ChartContainer config={levelChartConfig}>
-              <BarChart 
-                accessibilityLayer 
-                data={filteredLevelData}
-                margin={{
-                  top: 20,
-                }}
-              >
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart 
+                  accessibilityLayer 
+                  data={filteredLevelData}
+                  margin={{
+                    top: 10,
+                    left: 10,
+                    right: 10,
+                    bottom: 10,
+                  }}
+                >
                 <CartesianGrid vertical={false} />
                 <XAxis
                   dataKey="name"
@@ -1274,6 +1290,7 @@ export const IncidentAnalytics: React.FC = () => {
                   />
                 </Bar>
               </BarChart>
+              </ResponsiveContainer>
             </ChartContainer>
           </CardContent>
         </Card>
@@ -1403,17 +1420,18 @@ export const IncidentAnalytics: React.FC = () => {
           </CardHeader>
           <CardContent className="h-[300px]">
             <ChartContainer config={siteChartConfig}>
-              <BarChart 
-                accessibilityLayer
-                data={siteData} 
-                layout="horizontal"
-                margin={{
-                  top: 20,
-                  right: 30,
-                  left: 20,
-                  bottom: 20,
-                }}
-              >
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart 
+                  accessibilityLayer
+                  data={siteData} 
+                  layout="horizontal"
+                  margin={{
+                    top: 10,
+                    left: 10,
+                    right: 10,
+                    bottom: 10,
+                  }}
+                >
                 <CartesianGrid vertical={false} />
                 <XAxis 
                   type="number" 
@@ -1443,12 +1461,13 @@ export const IncidentAnalytics: React.FC = () => {
                   dataKey="value" 
                   fill="var(--chart-1)" 
                   radius={[0, 4, 4, 0]} 
-                />
+                                />
               </BarChart>
+              </ResponsiveContainer>
             </ChartContainer>
           </CardContent>
         </Card>
-    </div>
+      </div>
       </div>
     </PageWrapper>
   );
