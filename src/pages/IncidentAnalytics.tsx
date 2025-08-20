@@ -650,19 +650,19 @@ export const IncidentAnalytics: React.FC = () => {
     },
     high: {
       label: "High",
-      color: "var(--chart-1)",
+      color: "#ef4444", // red-500 for high priority
     },
     medium: {
       label: "Medium", 
-      color: "var(--chart-2)",
+      color: "#f59e0b", // amber-500 for medium priority
     },
     low: {
       label: "Low",
-      color: "var(--chart-3)",
+      color: "#10b981", // emerald-500 for low priority
     },
     unknown: {
       label: "Unknown",
-      color: "var(--chart-4)",
+      color: "#6b7280", // gray-500 for unknown priority
     },
   } satisfies ChartConfig;
 
@@ -1113,10 +1113,8 @@ export const IncidentAnalytics: React.FC = () => {
                 accessibilityLayer 
                 data={priorityData}
                 margin={{
-                  top: 20,
-                  right: 30,
-                  left: 20,
-                  bottom: 20,
+                  left: 12,
+                  right: 12,
                 }}
               >
                 <CartesianGrid vertical={false} />
