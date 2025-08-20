@@ -42,6 +42,7 @@ export const IncidentData: React.FC = () => {
   const [selectedMonth, setSelectedMonth] = useState<string>('');
   const [showLogs, setShowLogs] = useState(false);
   const [uploadLogs, setUploadLogs] = useState<string[]>([]);
+  const [lastUploadResult, setLastUploadResult] = useState<any>(null);
 
   // Helper function to normalize NCAL values
   const normalizeNCAL = (ncal: string | null | undefined): string => {
@@ -553,10 +554,13 @@ export const IncidentData: React.FC = () => {
 
       {showUpload && (
         <IncidentUpload 
-          onUploadComplete={(logs?: string[]) => {
+          onUploadComplete={(logs?: string[], uploadResult?: any) => {
             setShowUpload(false);
             if (logs && logs.length > 0) {
               setUploadLogs(logs);
+            }
+            if (uploadResult) {
+              setLastUploadResult(uploadResult);
             }
             // Data will automatically refresh due to useLiveQuery
             toast({
@@ -919,18 +923,154 @@ export const IncidentData: React.FC = () => {
             
             <div className="flex-1 overflow-hidden">
               <div className="bg-gray-100 dark:bg-gray-900 rounded-lg p-4 h-full overflow-y-auto">
-                <div className="space-y-2 font-mono text-sm">
-                  {uploadLogs.length > 0 ? (
-                    uploadLogs.map((log, index) => (
-                      <div key={index} className="text-gray-800 dark:text-gray-200 whitespace-pre-wrap">
-                        {log}
+                <div className="space-y-4">
+                  {/* Upload Summary */}
+                  {lastUploadResult && (
+                    <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border">
+                      <h4 className="font-medium mb-3 text-gray-900 dark:text-gray-100">📊 Upload Summary</h4>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                        <div>
+                          <span className="text-gray-600 dark:text-gray-400">Total Processed:</span>
+                          <span className="ml-2 font-medium">{lastUploadResult.totalProcessed}</span>
+                        </div>
+                        <div>
+                          <span className="text-gray-600 dark:text-gray-400">Successfully Uploaded:</span>
+                          <span className="ml-2 font-medium text-green-600">{lastUploadResult.success}</span>
+                        </div>
+                        {lastUploadResult.skipped && lastUploadResult.skipped > 0 && (
+                          <div>
+                            <span className="text-gray-600 dark:text-gray-400">Skipped:</span>
+                            <span className="ml-2 font-medium text-yellow-600">{lastUploadResult.skipped}</span>
+                          </div>
+                        )}
+                        {lastUploadResult.emptyRows && lastUploadResult.emptyRows > 0 && (
+                          <div>
+                            <span className="text-gray-600 dark:text-gray-400">Empty Rows:</span>
+                            <span className="ml-2 font-medium text-gray-600">{lastUploadResult.emptyRows}</span>
+                          </div>
+                        )}
+                        {lastUploadResult.failed > 0 && (
+                          <div>
+                            <span className="text-gray-600 dark:text-gray-400">Failed:</span>
+                            <span className="ml-2 font-medium text-red-600">{lastUploadResult.failed}</span>
+                          </div>
+                        )}
                       </div>
-                    ))
-                  ) : (
-                    <div className="text-gray-500 dark:text-gray-400 text-center py-8">
-                      No logs available. Upload some data first to see logs.
                     </div>
                   )}
+
+                  {/* Skipped Rows Details */}
+                  {lastUploadResult?.skippedDetails && lastUploadResult.skippedDetails.length > 0 && (
+                    <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border">
+                      <h4 className="font-medium mb-3 text-red-800 dark:text-red-200">
+                        📋 Skipped Rows Details ({lastUploadResult.skippedDetails.length} rows)
+                      </h4>
+                      <div className="space-y-2 max-h-60 overflow-y-auto">
+                        {lastUploadResult.skippedDetails.slice(0, 50).map((detail: any, index: number) => (
+                          <div key={index} className="text-sm bg-gray-50 dark:bg-gray-700 p-2 rounded border">
+                            <div className="flex justify-between items-start">
+                              <span className="font-medium text-red-600 dark:text-red-400">
+                                Row {detail.row} ({detail.sheet})
+                              </span>
+                              <span className="text-xs text-gray-500">
+                                #{index + 1}
+                              </span>
+                            </div>
+                            <div className="text-gray-700 dark:text-gray-300 mt-1">
+                              <span className="font-medium">Reason:</span> {detail.reason}
+                            </div>
+                            {detail.data && (
+                              <div className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                                <details>
+                                  <summary className="cursor-pointer hover:text-gray-800 dark:hover:text-gray-200">
+                                    View Data Details
+                                  </summary>
+                                  <pre className="mt-1 p-2 bg-gray-100 dark:bg-gray-700 rounded text-xs overflow-x-auto">
+                                    {JSON.stringify(detail.data, null, 2)}
+                                  </pre>
+                                </details>
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                        {lastUploadResult.skippedDetails.length > 50 && (
+                          <div className="text-center text-sm text-gray-600 dark:text-gray-400 py-2">
+                            ... and {lastUploadResult.skippedDetails.length - 50} more skipped rows
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Errors */}
+                  {lastUploadResult?.errors && lastUploadResult.errors.length > 0 && (
+                    <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border">
+                      <h4 className="font-medium mb-3 text-red-800 dark:text-red-200">❌ Errors Encountered</h4>
+                      <div className="space-y-2">
+                        {lastUploadResult.errors.slice(0, 20).map((error: string, index: number) => (
+                          <div key={index} className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 p-2 rounded">
+                            {error}
+                          </div>
+                        ))}
+                        {lastUploadResult.errors.length > 20 && (
+                          <div className="text-center text-sm text-gray-600 dark:text-gray-400 py-2">
+                            ... and {lastUploadResult.errors.length - 20} more errors
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Data Preview */}
+                  {lastUploadResult?.preview && lastUploadResult.preview.length > 0 && (
+                    <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border">
+                      <h4 className="font-medium mb-3 text-gray-900 dark:text-gray-100">👀 Data Preview (first 20 rows)</h4>
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-sm">
+                          <thead className="bg-gray-50 dark:bg-gray-700">
+                            <tr>
+                              <th className="px-3 py-2 text-left">No Case</th>
+                              <th className="px-3 py-2 text-left">Site</th>
+                              <th className="px-3 py-2 text-left">Status</th>
+                              <th className="px-3 py-2 text-left">Priority</th>
+                              <th className="px-3 py-2 text-left">Duration</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {lastUploadResult.preview.map((incident: any, index: number) => (
+                              <tr key={index} className="border-t">
+                                <td className="px-3 py-2">{incident.noCase}</td>
+                                <td className="px-3 py-2">{incident.site}</td>
+                                <td className="px-3 py-2">{incident.status}</td>
+                                <td className="px-3 py-2">{incident.priority}</td>
+                                <td className="px-3 py-2">
+                                  {incident.durationMin ? `${Math.floor(incident.durationMin / 60)}:${String(incident.durationMin % 60).padStart(2, '0')}` : '-'}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Detailed Logs */}
+                  <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border">
+                    <h4 className="font-medium mb-3 text-gray-900 dark:text-gray-100">📝 Detailed Processing Logs</h4>
+                    <div className="space-y-2 font-mono text-sm">
+                      {uploadLogs.length > 0 ? (
+                        uploadLogs.map((log, index) => (
+                          <div key={index} className="text-gray-800 dark:text-gray-200 whitespace-pre-wrap bg-gray-50 dark:bg-gray-700 p-2 rounded">
+                            {log}
+                          </div>
+                        ))
+                      ) : (
+                        <div className="text-gray-500 dark:text-gray-400 text-center py-8">
+                          No logs available. Upload some data first to see logs.
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>

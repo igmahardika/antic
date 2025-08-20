@@ -47,14 +47,13 @@ const REQUIRED_HEADERS = [
 ];
 
 interface IncidentUploadProps {
-  onUploadComplete?: (logs?: string[]) => void;
+  onUploadComplete?: (logs?: string[], uploadResult?: UploadResult) => void;
 }
 
 export const IncidentUpload: React.FC<IncidentUploadProps> = ({ onUploadComplete }) => {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadResult, setUploadResult] = useState<UploadResult | null>(null);
   const [progress, setProgress] = useState(0);
-  const [showLogs, setShowLogs] = useState(false);
   const [logs, setLogs] = useState<string[]>([]);
 
   // Function to capture console logs
@@ -320,11 +319,11 @@ export const IncidentUpload: React.FC<IncidentUploadProps> = ({ onUploadComplete
         captureLog(`\n🔄 Calling onUploadComplete callback in 3 seconds to allow log review...`);
         setTimeout(() => {
           captureLog(`✅ Executing onUploadComplete callback now`);
-          onUploadComplete(logs);
+          onUploadComplete(logs, uploadResult);
         }, 3000); // 3 second delay
       } else if (onUploadComplete && successCount === 0) {
         captureLog(`\n⚠️ Upload completed but no data was uploaded. Callback will not be called.`);
-        onUploadComplete(logs); // Still send logs even if no data uploaded
+        onUploadComplete(logs, uploadResult); // Still send logs even if no data uploaded
       }
 
     } catch (error) {
@@ -457,20 +456,10 @@ export const IncidentUpload: React.FC<IncidentUploadProps> = ({ onUploadComplete
                 {/* Action Buttons */}
                 <div className="flex gap-2">
                   <Button 
-                    onClick={() => setShowLogs(true)}
-                    variant="outline" 
-                    size="sm"
-                    className="border-orange-200 text-orange-700 hover:bg-orange-50"
-                  >
-                    <FileSpreadsheet className="w-4 h-4 mr-2" />
-                    View Logs ({logs.length})
-                  </Button>
-                  
-                  <Button 
                     onClick={() => {
                       console.log('🔄 Manual close button clicked - calling onUploadComplete immediately');
                       if (onUploadComplete) {
-                        onUploadComplete(logs);
+                        onUploadComplete(logs, uploadResult);
                       }
                     }}
                     variant="default" 
@@ -487,216 +476,7 @@ export const IncidentUpload: React.FC<IncidentUploadProps> = ({ onUploadComplete
         </CardContent>
       </Card>
 
-      {/* Logs Modal */}
-      {showLogs && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-4xl w-full mx-4 max-h-[80vh] flex flex-col">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-orange-100 dark:bg-orange-900/30 rounded-full flex items-center justify-center">
-                  <FileSpreadsheet className="w-5 h-5 text-orange-600 dark:text-orange-400" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                    Upload Logs
-                  </h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
-                    Detailed upload analysis and processing logs
-                  </p>
-                </div>
-              </div>
-              <Button 
-                onClick={() => setShowLogs(false)}
-                variant="outline" 
-                size="sm"
-              >
-                <X className="w-4 h-4" />
-              </Button>
-            </div>
-            
-                         <div className="flex-1 overflow-hidden">
-               <div className="bg-gray-100 dark:bg-gray-900 rounded-lg p-4 h-full overflow-y-auto">
-                 <div className="space-y-4">
-                   {/* Upload Summary */}
-                   {uploadResult && (
-                     <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border">
-                       <h4 className="font-medium mb-3 text-gray-900 dark:text-gray-100">📊 Upload Summary</h4>
-                       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                         <div>
-                           <span className="text-gray-600 dark:text-gray-400">Total Processed:</span>
-                           <span className="ml-2 font-medium">{uploadResult.totalProcessed}</span>
-                         </div>
-                         <div>
-                           <span className="text-gray-600 dark:text-gray-400">Successfully Uploaded:</span>
-                           <span className="ml-2 font-medium text-green-600">{uploadResult.success}</span>
-                         </div>
-                         {uploadResult.skipped && uploadResult.skipped > 0 && (
-                           <div>
-                             <span className="text-gray-600 dark:text-gray-400">Skipped:</span>
-                             <span className="ml-2 font-medium text-yellow-600">{uploadResult.skipped}</span>
-                           </div>
-                         )}
-                         {uploadResult.emptyRows && uploadResult.emptyRows > 0 && (
-                           <div>
-                             <span className="text-gray-600 dark:text-gray-400">Empty Rows:</span>
-                             <span className="ml-2 font-medium text-gray-600">{uploadResult.emptyRows}</span>
-                           </div>
-                         )}
-                         {uploadResult.failed > 0 && (
-                           <div>
-                             <span className="text-gray-600 dark:text-gray-400">Failed:</span>
-                             <span className="ml-2 font-medium text-red-600">{uploadResult.failed}</span>
-                           </div>
-                         )}
-                       </div>
-                     </div>
-                   )}
-
-                   {/* Skipped Rows Details */}
-                   {uploadResult?.skippedDetails && uploadResult.skippedDetails.length > 0 && (
-                     <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border">
-                       <h4 className="font-medium mb-3 text-red-800 dark:text-red-200">
-                         📋 Skipped Rows Details ({uploadResult.skippedDetails.length} rows)
-                       </h4>
-                       <div className="space-y-2 max-h-60 overflow-y-auto">
-                         {uploadResult.skippedDetails.slice(0, 50).map((detail, index) => (
-                           <div key={index} className="text-sm bg-gray-50 dark:bg-gray-700 p-2 rounded border">
-                             <div className="flex justify-between items-start">
-                               <span className="font-medium text-red-600 dark:text-red-400">
-                                 Row {detail.row} ({detail.sheet})
-                               </span>
-                               <span className="text-xs text-gray-500">
-                                 #{index + 1}
-                               </span>
-                             </div>
-                             <div className="text-gray-700 dark:text-gray-300 mt-1">
-                               <span className="font-medium">Reason:</span> {detail.reason}
-                             </div>
-                             {detail.data && (
-                               <div className="text-xs text-gray-600 dark:text-gray-400 mt-1">
-                                 <details>
-                                   <summary className="cursor-pointer hover:text-gray-800 dark:hover:text-gray-200">
-                                     View Data Details
-                                   </summary>
-                                   <pre className="mt-1 p-2 bg-gray-100 dark:bg-gray-700 rounded text-xs overflow-x-auto">
-                                     {JSON.stringify(detail.data, null, 2)}
-                                   </pre>
-                                 </details>
-                               </div>
-                             )}
-                           </div>
-                         ))}
-                         {uploadResult.skippedDetails.length > 50 && (
-                           <div className="text-center text-sm text-gray-600 dark:text-gray-400 py-2">
-                             ... and {uploadResult.skippedDetails.length - 50} more skipped rows
-                           </div>
-                         )}
-                       </div>
-                     </div>
-                   )}
-
-                   {/* Errors */}
-                   {uploadResult?.errors && uploadResult.errors.length > 0 && (
-                     <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border">
-                       <h4 className="font-medium mb-3 text-red-800 dark:text-red-200">❌ Errors Encountered</h4>
-                       <div className="space-y-2">
-                         {uploadResult.errors.slice(0, 20).map((error, index) => (
-                           <div key={index} className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 p-2 rounded">
-                             {error}
-                           </div>
-                         ))}
-                         {uploadResult.errors.length > 20 && (
-                           <div className="text-center text-sm text-gray-600 dark:text-gray-400 py-2">
-                             ... and {uploadResult.errors.length - 20} more errors
-                           </div>
-                         )}
-                       </div>
-                     </div>
-                   )}
-
-                   {/* Data Preview */}
-                   {uploadResult?.preview && uploadResult.preview.length > 0 && (
-                     <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border">
-                       <h4 className="font-medium mb-3 text-gray-900 dark:text-gray-100">👀 Data Preview (first 20 rows)</h4>
-                       <div className="overflow-x-auto">
-                         <table className="w-full text-sm">
-                           <thead className="bg-gray-50 dark:bg-gray-700">
-                             <tr>
-                               <th className="px-3 py-2 text-left">No Case</th>
-                               <th className="px-3 py-2 text-left">Site</th>
-                               <th className="px-3 py-2 text-left">Status</th>
-                               <th className="px-3 py-2 text-left">Priority</th>
-                               <th className="px-3 py-2 text-left">Duration</th>
-                             </tr>
-                           </thead>
-                           <tbody>
-                             {uploadResult.preview.map((incident, index) => (
-                               <tr key={index} className="border-t">
-                                 <td className="px-3 py-2">{incident.noCase}</td>
-                                 <td className="px-3 py-2">{incident.site}</td>
-                                 <td className="px-3 py-2">{incident.status}</td>
-                                 <td className="px-3 py-2">{incident.priority}</td>
-                                 <td className="px-3 py-2">
-                                   {incident.durationMin ? `${Math.floor(incident.durationMin / 60)}:${String(incident.durationMin % 60).padStart(2, '0')}` : '-'}
-                                 </td>
-                               </tr>
-                             ))}
-                           </tbody>
-                         </table>
-                       </div>
-                     </div>
-                   )}
-
-                   {/* Detailed Logs */}
-                   <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border">
-                     <h4 className="font-medium mb-3 text-gray-900 dark:text-gray-100">📝 Detailed Processing Logs</h4>
-                     <div className="space-y-2 font-mono text-sm">
-                       {logs.length > 0 ? (
-                         logs.map((log, index) => (
-                           <div key={index} className="text-gray-800 dark:text-gray-200 whitespace-pre-wrap bg-gray-50 dark:bg-gray-700 p-2 rounded">
-                             {log}
-                           </div>
-                         ))
-                       ) : (
-                         <div className="text-gray-500 dark:text-gray-400 text-center py-8">
-                           No logs available
-                         </div>
-                       )}
-                     </div>
-                   </div>
-                 </div>
-               </div>
-             </div>
-            
-            <div className="flex justify-between items-center mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-              <div className="text-sm text-gray-600 dark:text-gray-400">
-                {logs.length} log entries
-              </div>
-              <div className="flex gap-2">
-                <Button 
-                  onClick={() => {
-                    const logText = logs.join('\n');
-                    navigator.clipboard.writeText(logText);
-                    alert('Logs copied to clipboard!');
-                  }}
-                  variant="outline" 
-                  size="sm"
-                >
-                  <Download className="w-4 h-4 mr-2" />
-                  Copy Logs
-                </Button>
-                <Button 
-                  onClick={() => setShowLogs(false)}
-                  variant="default"
-                  size="sm"
-                >
-                  Close
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      
     </div>
   );
 };
