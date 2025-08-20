@@ -898,31 +898,31 @@ export const IncidentAnalytics: React.FC = () => {
 
       {/* NCAL Target Performance */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+        <Card className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg h-[400px]">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-lg">
               <AssignmentIcon className="w-5 h-5" />
               NCAL Target Performance
             </CardTitle>
             <CardDescription>Actual vs Target duration for each NCAL level</CardDescription>
           </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
+          <CardContent className="h-[300px] overflow-y-auto">
+            <div className="space-y-3">
               {NCAL_ORDER.map(ncal => {
                 const performance = stats.targetPerformance[ncal];
                 if (!performance) return null;
                 
                 return (
-                  <div key={ncal} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-zinc-800 rounded-xl border border-gray-200 dark:border-zinc-700">
+                  <div key={ncal} className="flex items-center justify-between p-2 bg-gray-50 dark:bg-zinc-800 rounded-lg border border-gray-200 dark:border-zinc-700">
                     <div className="flex items-center gap-3">
                       <div 
-                        className="w-4 h-4 rounded-full" 
+                        className="w-3 h-3 rounded-full" 
                         style={{ backgroundColor: NCAL_COLORS[ncal as keyof typeof NCAL_COLORS] }}
                       />
-                      <span className="font-medium">{ncal}</span>
+                      <span className="font-medium text-sm">{ncal}</span>
                     </div>
                     <div className="text-right">
-                      <div className="text-sm font-medium">
+                      <div className="text-xs font-medium">
                         {formatDurationHMS(performance.actual)} / {formatDurationHMS(performance.target)}
                       </div>
                       <div className={`text-xs ${performance.status === 'good' ? 'text-green-600' : 'text-red-600'}`}>
@@ -936,18 +936,18 @@ export const IncidentAnalytics: React.FC = () => {
           </CardContent>
         </Card>
 
-        <Card className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+        <Card className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg h-[400px]">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-lg">
               <PieChartIconMUI className="w-5 h-5" />
               NCAL Distribution
             </CardTitle>
             <CardDescription>Distribution of incidents by NCAL level</CardDescription>
           </CardHeader>
-          <CardContent className="flex flex-1 justify-center pb-0">
+          <CardContent className="flex flex-1 justify-center pb-0 h-[300px]">
             <ChartContainer
               config={ncalChartConfig}
-              className="mx-auto aspect-square w-full max-w-[300px]"
+              className="mx-auto aspect-square w-full max-w-[280px]"
             >
               <PieChart>
                 <ChartTooltip
@@ -1022,15 +1022,15 @@ export const IncidentAnalytics: React.FC = () => {
 
       {/* NCAL Area Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+        <Card className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg h-[400px]">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-lg">
               <ShowChartIcon className="w-5 h-5" />
               NCAL Count by Month
             </CardTitle>
             <CardDescription>Monthly incident count by NCAL level</CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="h-[300px]">
             <ChartContainer config={ncalAreaChartConfig}>
               <LineChart
                 accessibilityLayer
@@ -1084,15 +1084,15 @@ export const IncidentAnalytics: React.FC = () => {
           </CardContent>
         </Card>
 
-        <Card className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+        <Card className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg h-[400px]">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-lg">
               <ShowChartIcon className="w-5 h-5" />
               NCAL Duration by Month
             </CardTitle>
             <CardDescription>Average duration by NCAL level per month</CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="h-[300px]">
             <ChartContainer config={ncalAreaChartConfig}>
               <LineChart
                 accessibilityLayer
@@ -1149,15 +1149,15 @@ export const IncidentAnalytics: React.FC = () => {
 
       {/* Additional Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+        <Card className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg h-[400px]">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-lg">
               <LabelIcon className="w-5 h-5" />
               Priority Distribution
             </CardTitle>
             <CardDescription>Distribution of incidents by priority level</CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="h-[300px]">
             <ChartContainer config={priorityChartConfig}>
               <BarChart 
                 accessibilityLayer 
@@ -1197,23 +1197,23 @@ export const IncidentAnalytics: React.FC = () => {
           </CardContent>
         </Card>
 
-        <Card className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+        <Card className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg h-[400px]">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-lg">
               <ConfirmationNumberIcon className="w-5 h-5" />
               Level Distribution
             </CardTitle>
             <CardDescription>Distribution of incidents by level</CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="h-[300px]">
             {/* Month Filter */}
-            <div className="mb-4">
-              <div className="flex items-center gap-2 mb-2">
-                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Filter by Month:</span>
+            <div className="mb-3">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-xs font-medium text-gray-700 dark:text-gray-300">Filter by Month:</span>
                 <select 
                   value={selectedLevelMonth} 
                   onChange={(e) => setSelectedLevelMonth(e.target.value)}
-                  className="px-3 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-zinc-800 text-gray-900 dark:text-gray-100"
+                  className="px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-zinc-800 text-gray-900 dark:text-gray-100"
                 >
                   <option value="all">All Months</option>
                   {Object.keys(stats.byMonth).sort().map(month => {
@@ -1281,37 +1281,39 @@ export const IncidentAnalytics: React.FC = () => {
 
       {/* Performance Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+        <Card className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg h-[400px]">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-lg">
               <AccessTimeIcon className="w-5 h-5" />
               Vendor Performance
             </CardTitle>
             <CardDescription>Average vendor response time</CardDescription>
           </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold text-blue-600">
-              {stats.avgVendorMin > 0 ? formatDurationHMS(stats.avgVendorMin) : '0:00:00'}
+          <CardContent className="h-[300px] flex flex-col justify-center">
+            <div className="text-center">
+              <div className="text-3xl font-bold text-blue-600">
+                {stats.avgVendorMin > 0 ? formatDurationHMS(stats.avgVendorMin) : '0:00:00'}
+              </div>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
+                Average vendor duration across all incidents
+              </p>
             </div>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
-              Average vendor duration across all incidents
-            </p>
           </CardContent>
         </Card>
 
-        <Card className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+        <Card className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg h-[400px]">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-lg">
               <WarningAmberIcon className="w-5 h-5" />
               Pause Ratio
             </CardTitle>
             <CardDescription>Total pause time ratio</CardDescription>
           </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
+          <CardContent className="h-[300px] overflow-y-auto">
+            <div className="space-y-3">
               {/* Main Metric */}
               <div className="text-center">
-                <div className="text-4xl font-bold text-orange-600">
+                <div className="text-3xl font-bold text-orange-600">
                   {stats.pauseRatio > 0 ? (stats.pauseRatio * 100).toFixed(1) : '0.0'}%
                 </div>
                 <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
@@ -1320,15 +1322,15 @@ export const IncidentAnalytics: React.FC = () => {
               </div>
 
               {/* Breakdown */}
-              <div className="space-y-3">
-                <div className="flex items-center justify-between p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg border border-orange-200 dark:border-orange-800">
+              <div className="space-y-2">
+                <div className="flex items-center justify-between p-2 bg-orange-50 dark:bg-orange-900/20 rounded-lg border border-orange-200 dark:border-orange-800">
                   <div className="flex items-center gap-2">
                     <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
-                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
                       Total Pause Time
                     </span>
                   </div>
-                  <span className="text-sm font-bold text-orange-600">
+                  <span className="text-xs font-bold text-orange-600">
                     {(() => {
                       const totalPauseTime = filteredIncidents.reduce((sum, i) => sum + (i.totalDurationPauseMin || 0), 0);
                       return formatDurationHMS(totalPauseTime);
@@ -1336,14 +1338,14 @@ export const IncidentAnalytics: React.FC = () => {
                   </span>
                 </div>
 
-                <div className="flex items-center justify-between p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                <div className="flex items-center justify-between p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
                   <div className="flex items-center gap-2">
                     <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
                       Total Duration
                     </span>
                   </div>
-                  <span className="text-sm font-bold text-blue-600">
+                  <span className="text-xs font-bold text-blue-600">
                     {(() => {
                       const totalDuration = filteredIncidents.reduce((sum, i) => sum + (i.durationMin || 0), 0);
                       return formatDurationHMS(totalDuration);
@@ -1351,29 +1353,29 @@ export const IncidentAnalytics: React.FC = () => {
                   </span>
                 </div>
 
-                <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+                <div className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
                   <div className="flex items-center gap-2">
                     <div className="w-2 h-2 bg-gray-500 rounded-full"></div>
-                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
                       Incidents with Pause
                     </span>
                   </div>
-                  <span className="text-sm font-bold text-gray-600">
+                  <span className="text-xs font-bold text-gray-600">
                     {filteredIncidents.filter(i => i.totalDurationPauseMin && i.totalDurationPauseMin > 0).length}
                   </span>
                 </div>
               </div>
 
               {/* Performance Indicator */}
-              <div className="mt-4 p-3 bg-gradient-to-r from-orange-50 to-red-50 dark:from-orange-900/20 dark:to-red-900/20 rounded-lg border border-orange-200 dark:border-orange-800">
+              <div className="mt-3 p-2 bg-gradient-to-r from-orange-50 to-red-50 dark:from-orange-900/20 dark:to-red-900/20 rounded-lg border border-orange-200 dark:border-orange-800">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <WarningAmberIcon className="w-4 h-4 text-orange-600" />
-                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    <WarningAmberIcon className="w-3 h-3 text-orange-600" />
+                    <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
                       Performance Impact
                     </span>
                   </div>
-                  <span className={`text-sm font-bold ${
+                  <span className={`text-xs font-bold ${
                     stats.pauseRatio > 0.15 ? 'text-red-600' : 
                     stats.pauseRatio > 0.10 ? 'text-orange-600' : 'text-green-600'
                   }`}>
@@ -1391,15 +1393,15 @@ export const IncidentAnalytics: React.FC = () => {
           </CardContent>
         </Card>
 
-        <Card className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+        <Card className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg h-[400px]">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-lg">
               <BarChartIcon className="w-5 h-5" />
               Top 10 Sites
             </CardTitle>
             <CardDescription>Most affected sites by incident count</CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="h-[300px]">
             <ChartContainer config={siteChartConfig}>
               <BarChart 
                 accessibilityLayer
