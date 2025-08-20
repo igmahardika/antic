@@ -919,18 +919,24 @@ export const IncidentData: React.FC = () => {
             
             <div className="flex-1 overflow-hidden">
               <div className="bg-gray-100 dark:bg-gray-900 rounded-lg p-4 h-full overflow-y-auto">
-                <div className="space-y-2 font-mono text-sm">
-                  {uploadLogs.length > 0 ? (
-                    uploadLogs.map((log, index) => (
-                      <div key={index} className="text-gray-800 dark:text-gray-200 whitespace-pre-wrap">
-                        {log}
-                      </div>
-                    ))
-                  ) : (
-                    <div className="text-gray-500 dark:text-gray-400 text-center py-8">
-                      No logs available. Upload some data first to see logs.
+                <div className="space-y-4">
+                  {/* Detailed Logs */}
+                  <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border">
+                    <h4 className="font-medium mb-3 text-gray-900 dark:text-gray-100">📝 Upload Processing Logs</h4>
+                    <div className="space-y-2 font-mono text-sm">
+                      {uploadLogs.length > 0 ? (
+                        uploadLogs.map((log, index) => (
+                          <div key={index} className="text-gray-800 dark:text-gray-200 whitespace-pre-wrap bg-gray-50 dark:bg-gray-700 p-2 rounded">
+                            {log}
+                          </div>
+                        ))
+                      ) : (
+                        <div className="text-gray-500 dark:text-gray-400 text-center py-8">
+                          No logs available. Upload some data first to see logs.
+                        </div>
+                      )}
                     </div>
-                  )}
+                  </div>
                 </div>
               </div>
             </div>
