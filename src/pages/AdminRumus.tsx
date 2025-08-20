@@ -1370,6 +1370,199 @@ const mostReliable = reliableCandidates.reduce(
           </div>
         </CardContent>
       </Card>
+
+      {/* Database Architecture & Storage */}
+      <Card className="w-full bg-white dark:bg-zinc-900 rounded-xl border shadow p-0">
+        <CardHeader className="p-8 pb-2">
+          <CardTitle className="text-lg font-bold text-gray-900 dark:text-gray-100 text-left flex items-center gap-2">
+            <BarChartIcon className="w-6 h-6" />
+            Database Architecture & Storage
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-8 pt-2 space-y-6">
+          <div className="space-y-4 text-base text-gray-700 dark:text-gray-300 text-left">
+            <p>
+              Sistem menggunakan <strong>IndexedDB (Dexie.js)</strong> sebagai database utama untuk penyimpanan lokal yang powerful dan scalable. Database ini menyimpan semua data tiket, incident, customer, dan user dengan struktur yang terorganisir dan teroptimasi.
+            </p>
+            
+            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+              <h4 className="font-semibold text-blue-800 dark:text-blue-200 mb-2">
+                <LightbulbIcon className="inline mr-2" />
+                Database Overview
+              </h4>
+              <div className="text-sm space-y-2">
+                <div><strong>Database Name:</strong> InsightTicketDatabase</div>
+                <div><strong>Technology:</strong> IndexedDB (Dexie.js wrapper)</div>
+                <div><strong>Storage Location:</strong> Browser Local Storage</div>
+                <div><strong>Current Version:</strong> 5</div>
+                <div><strong>Total Tables:</strong> 5 (tickets, users, menuPermissions, customers, incidents)</div>
+              </div>
+            </div>
+
+            <div>
+              <div className="font-semibold mb-1 text-base">1. Database Schema & Tables</div>
+              
+              <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4 mb-4">
+                <h5 className="font-semibold text-green-800 dark:text-green-200 mb-2">📊 Tickets Table</h5>
+                <div className="text-sm space-y-2">
+                  <div><strong>Primary Key:</strong> id (UUID string)</div>
+                  <div><strong>Indexes:</strong> id, openTime, name, uploadTimestamp, cabang</div>
+                  <div><strong>Key Fields:</strong> customerId, name, category, description, cause, handling</div>
+                  <div><strong>Time Fields:</strong> openTime, closeTime (ISO String format)</div>
+                  <div><strong>Duration Fields:</strong> duration, handlingDuration (rawHours + formatted)</div>
+                  <div><strong>Status Fields:</strong> status, classification, subClassification</div>
+                  <div><strong>Handling Fields:</strong> handling1-5, closeHandling1-5, handlingDuration1-5</div>
+                  <div><strong>Metadata:</strong> openBy, cabang, uploadTimestamp, repClass</div>
+                </div>
+              </div>
+
+              <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4 mb-4">
+                <h5 className="font-semibold text-yellow-800 dark:text-yellow-200 mb-2">👥 Users Table</h5>
+                <div className="text-sm space-y-2">
+                  <div><strong>Primary Key:</strong> id (auto-increment number)</div>
+                  <div><strong>Indexes:</strong> ++id, username, role</div>
+                  <div><strong>Fields:</strong> username, password (hashed), role (super admin/admin/user)</div>
+                </div>
+              </div>
+
+              <div className="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg p-4 mb-4">
+                <h5 className="font-semibold text-purple-800 dark:text-purple-200 mb-2">🔐 Menu Permissions Table</h5>
+                <div className="text-sm space-y-2">
+                  <div><strong>Primary Key:</strong> id (auto-increment number)</div>
+                  <div><strong>Indexes:</strong> ++id, role</div>
+                  <div><strong>Fields:</strong> role, menus (array of menu strings)</div>
+                </div>
+              </div>
+
+              <div className="bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg p-4 mb-4">
+                <h5 className="font-semibold text-orange-800 dark:text-orange-200 mb-2">🏢 Customers Table</h5>
+                <div className="text-sm space-y-2">
+                  <div><strong>Primary Key:</strong> id (UUID string)</div>
+                  <div><strong>Indexes:</strong> id, nama, jenisKlien, layanan, kategori</div>
+                  <div><strong>Fields:</strong> nama, jenisKlien, layanan, kategori</div>
+                </div>
+              </div>
+
+              <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 mb-4">
+                <h5 className="font-semibold text-red-800 dark:text-red-200 mb-2">🚨 Incidents Table</h5>
+                <div className="text-sm space-y-2">
+                  <div><strong>Primary Key:</strong> id (computed hash from noCase + startTime)</div>
+                  <div><strong>Indexes:</strong> id, startTime, status, priority, site, klasifikasiGangguan, level, ncal, noCase</div>
+                  <div><strong>Core Fields:</strong> noCase, priority, site, ncal, status, level, ts, odpBts</div>
+                  <div><strong>Time Fields:</strong> startTime, startEscalationVendor, endTime</div>
+                  <div><strong>Duration Fields:</strong> durationMin, durationVendorMin, totalDurationPauseMin, totalDurationVendorMin, netDurationMin</div>
+                  <div><strong>Problem Fields:</strong> problem, penyebab, actionTerakhir, note, klasifikasiGangguan</div>
+                  <div><strong>Power Fields:</strong> powerBefore, powerAfter</div>
+                  <div><strong>Pause Fields:</strong> startPause1, endPause1, startPause2, endPause2</div>
+                  <div><strong>Metadata:</strong> batchId, importedAt</div>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <div className="font-semibold mb-1 text-base">2. Data Processing & Storage Locations</div>
+              
+              <div className="bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800 rounded-lg p-4 mb-4">
+                <h5 className="font-semibold text-indigo-800 dark:text-indigo-200 mb-2">📥 Data Input Sources</h5>
+                <div className="text-sm space-y-2">
+                  <div><strong>Excel File Upload:</strong> UploadProcess.tsx → processAndAnalyzeData() → db.tickets.bulkPut()</div>
+                  <div><strong>Customer Data Upload:</strong> CustomerData.tsx → Papa Parse → db.customers.bulkAdd()</div>
+                  <div><strong>Incident Data Upload:</strong> IncidentUpload.tsx → XLSX → saveIncidentsChunked() → db.incidents.bulkPut()</div>
+                  <div><strong>User Management:</strong> AdminPanel.tsx → bcrypt hash → db.users.add()</div>
+                </div>
+              </div>
+
+              <div className="bg-teal-50 dark:bg-teal-900/20 border border-teal-200 dark:border-teal-800 rounded-lg p-4 mb-4">
+                <h5 className="font-semibold text-teal-800 dark:text-teal-200 mb-2">📤 Data Output & Processing</h5>
+                <div className="text-sm space-y-2">
+                  <div><strong>Analytics Context:</strong> useLiveQuery() → db.tickets.toArray() → filtered data</div>
+                  <div><strong>Agent Analytics:</strong> AgentAnalyticsContext.tsx → db.tickets.toArray() → agent performance calculation</div>
+                  <div><strong>Ticket Analytics:</strong> TicketAnalyticsContext.tsx → db.tickets.toArray() → ticket metrics</div>
+                  <div><strong>Incident Analytics:</strong> TSAnalytics.tsx/SiteAnalytics.tsx → db.incidents.toArray() → NCAL analysis</div>
+                  <div><strong>Grid View:</strong> GridView.tsx → db.tickets.toArray() → paginated display</div>
+                  <div><strong>Master Data:</strong> MasterDataAgent.tsx → db.tickets.toArray() → agent statistics</div>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <div className="font-semibold mb-1 text-base">3. Database Operations & Utilities</div>
+              
+              <div className="bg-pink-50 dark:bg-pink-900/20 border border-pink-200 dark:border-pink-800 rounded-lg p-4 mb-4">
+                <h5 className="font-semibold text-pink-800 dark:text-pink-200 mb-2">🔧 Core Database Functions</h5>
+                <div className="text-sm space-y-2">
+                  <div><strong>Bulk Operations:</strong> bulkPut(), bulkAdd(), bulkDelete() untuk operasi massal</div>
+                  <div><strong>Query Operations:</strong> where(), between(), orderBy(), reverse() untuk filtering</div>
+                  <div><strong>Count Operations:</strong> count() untuk statistik data</div>
+                  <div><strong>Clear Operations:</strong> clear() untuk reset table</div>
+                  <div><strong>Chunked Processing:</strong> saveIncidentsChunked() untuk data besar</div>
+                </div>
+              </div>
+
+              <div className="bg-cyan-50 dark:bg-cyan-900/20 border border-cyan-200 dark:border-cyan-800 rounded-lg p-4 mb-4">
+                <h5 className="font-semibold text-cyan-800 dark:text-cyan-200 mb-2">📊 Analytics Functions</h5>
+                <div className="text-sm space-y-2">
+                  <div><strong>computeStats():</strong> Menghitung statistik incident (total, open, MTTR, etc.)</div>
+                  <div><strong>queryIncidents():</strong> Query dengan filter dan pagination</div>
+                  <div><strong>formatDurationHMS():</strong> Konversi menit ke HH:MM:SS format</div>
+                  <div><strong>parseDateSafe():</strong> Parse tanggal dengan multiple format support</div>
+                  <div><strong>toMinutes():</strong> Konversi berbagai format durasi ke menit</div>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <div className="font-semibold mb-1 text-base">4. Data Validation & Error Handling</div>
+              
+              <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4 mb-4">
+                <h5 className="font-semibold text-amber-800 dark:text-amber-200 mb-2">✅ Data Validation</h5>
+                <div className="text-sm space-y-2">
+                  <div><strong>Header Validation:</strong> EXPECTED_HEADERS check di UploadProcess.tsx</div>
+                  <div><strong>Date Validation:</strong> parseDateSafe() dengan multiple format support</div>
+                  <div><strong>Duration Validation:</strong> toMinutes() dengan format detection</div>
+                  <div><strong>ID Generation:</strong> mkId() untuk unique incident ID</div>
+                  <div><strong>Error Logging:</strong> IErrorLog interface untuk tracking errors</div>
+                </div>
+              </div>
+
+              <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 mb-4">
+                <h5 className="font-semibold text-red-800 dark:text-red-200 mb-2">⚠️ Error Handling</h5>
+                <div className="text-sm space-y-2">
+                  <div><strong>Upload Errors:</strong> Error rows disimpan di localStorage</div>
+                  <div><strong>Validation Errors:</strong> Invalid data ditolak dengan feedback</div>
+                  <div><strong>Database Errors:</strong> Try-catch blocks untuk operasi database</div>
+                  <div><strong>Format Errors:</strong> Graceful fallback untuk format yang tidak dikenali</div>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <div className="font-semibold mb-1 text-base">5. Performance & Optimization</div>
+              
+              <div className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-lg p-4 mb-4">
+                <h5 className="font-semibold text-emerald-800 dark:text-emerald-200 mb-2">⚡ Performance Features</h5>
+                <div className="text-sm space-y-2">
+                  <div><strong>Indexed Queries:</strong> Optimized indexes untuk field yang sering di-query</div>
+                  <div><strong>Chunked Processing:</strong> Data besar diproses dalam batch 2000 records</div>
+                  <div><strong>Live Queries:</strong> useLiveQuery() untuk real-time data sync</div>
+                  <div><strong>Memory Management:</strong> Efficient data structures dan garbage collection</div>
+                  <div><strong>Caching:</strong> React Query caching untuk akses data cepat</div>
+                </div>
+              </div>
+
+              <div className="bg-violet-50 dark:bg-violet-900/20 border border-violet-200 dark:border-violet-800 rounded-lg p-4 mb-4">
+                <h5 className="font-semibold text-violet-800 dark:text-violet-200 mb-2">🔄 Data Flow</h5>
+                <div className="text-sm space-y-2">
+                  <div><strong>Upload → Parse → Validate → Store:</strong> Excel → XLSX/Papa Parse → Validation → IndexedDB</div>
+                  <div><strong>Query → Filter → Process → Display:</strong> IndexedDB → useLiveQuery → Filtering → Analytics</div>
+                  <div><strong>Real-time Updates:</strong> Database changes → Automatic UI updates</div>
+                  <div><strong>Export → Local Storage:</strong> Error logs dan upload summaries</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 } 
