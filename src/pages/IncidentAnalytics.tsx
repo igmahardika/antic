@@ -947,7 +947,7 @@ export const IncidentAnalytics: React.FC = () => {
           <CardContent className="flex flex-1 justify-center pb-0 h-[300px]">
             <ChartContainer
               config={ncalChartConfig}
-              className="mx-auto aspect-square w-full max-w-[280px]"
+              className="mx-auto aspect-square w-full max-w-[260px]"
             >
               <PieChart>
                 <ChartTooltip
@@ -997,16 +997,16 @@ export const IncidentAnalytics: React.FC = () => {
                 </Pie>
                 <Legend
                   verticalAlign="bottom"
-                  height={36}
+                  height={30}
                   content={({ payload }) => (
-                    <div className="flex justify-center items-center gap-6 mt-4">
+                    <div className="flex justify-center items-center gap-4 mt-2">
                       {payload?.map((entry, index) => (
-                        <div key={index} className="flex items-center gap-2">
+                        <div key={index} className="flex items-center gap-1">
                           <div
-                            className="w-3 h-3 rounded-sm"
+                            className="w-2 h-2 rounded-sm"
                             style={{ backgroundColor: entry.color }}
                           />
-                          <span className="text-sm text-gray-700 dark:text-gray-300">
+                          <span className="text-xs text-gray-700 dark:text-gray-300">
                             {entry.value}
                           </span>
                         </div>
@@ -1037,10 +1037,10 @@ export const IncidentAnalytics: React.FC = () => {
                   accessibilityLayer
                   data={filteredMonthlyNCALData}
                   margin={{
-                    top: 10,
+                    top: 15,
                     left: 10,
                     right: 10,
-                    bottom: 10,
+                    bottom: 25,
                   }}
                 >
                 <CartesianGrid vertical={false} />
@@ -1103,10 +1103,10 @@ export const IncidentAnalytics: React.FC = () => {
                   accessibilityLayer
                   data={filteredMonthlyNCALDurationData}
                   margin={{
-                    top: 10,
+                    top: 15,
                     left: 10,
                     right: 10,
-                    bottom: 10,
+                    bottom: 25,
                   }}
                 >
                 <CartesianGrid vertical={false} />
@@ -1172,10 +1172,10 @@ export const IncidentAnalytics: React.FC = () => {
                   accessibilityLayer 
                   data={priorityData}
                   margin={{
-                    top: 10,
+                    top: 20,
                     left: 10,
                     right: 10,
-                    bottom: 10,
+                    bottom: 30,
                   }}
                 >
                 <CartesianGrid vertical={false} />
@@ -1251,10 +1251,10 @@ export const IncidentAnalytics: React.FC = () => {
                   accessibilityLayer 
                   data={filteredLevelData}
                   margin={{
-                    top: 10,
+                    top: 30,
                     left: 10,
                     right: 10,
-                    bottom: 10,
+                    bottom: 40,
                   }}
                 >
                 <CartesianGrid vertical={false} />
@@ -1272,6 +1272,7 @@ export const IncidentAnalytics: React.FC = () => {
                   axisLine={false} 
                   tickMargin={8}
                   tickFormatter={(value) => value.toLocaleString()}
+                  domain={[0, 'dataMax + 20']}
                 />
                 <ChartTooltip
                   cursor={false}
@@ -1284,9 +1285,9 @@ export const IncidentAnalytics: React.FC = () => {
                 >
                   <LabelList
                     position="top"
-                    offset={12}
+                    offset={8}
                     className="fill-foreground"
-                    fontSize={12}
+                    fontSize={10}
                   />
                 </Bar>
               </BarChart>
@@ -1426,10 +1427,10 @@ export const IncidentAnalytics: React.FC = () => {
                   data={siteData} 
                   layout="horizontal"
                   margin={{
-                    top: 10,
+                    top: 15,
                     left: 10,
                     right: 10,
-                    bottom: 10,
+                    bottom: 25,
                   }}
                 >
                 <CartesianGrid vertical={false} />
@@ -1444,13 +1445,13 @@ export const IncidentAnalytics: React.FC = () => {
                 <YAxis 
                   dataKey="name" 
                   type="category" 
-                  width={150} 
+                  width={120} 
                   tickLine={false} 
                   axisLine={false} 
                   tickMargin={8}
                   tickFormatter={(value) => {
                     // Truncate long site names
-                    return value.length > 20 ? value.substring(0, 20) + '...' : value;
+                    return value.length > 15 ? value.substring(0, 15) + '...' : value;
                   }}
                 />
                 <ChartTooltip
