@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { Incident } from '@/types/incident';
 import { db } from '@/lib/db';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -19,123 +18,19 @@ import {
   XAxis, 
   YAxis, 
   CartesianGrid, 
-  Tooltip, 
-  ResponsiveContainer,
   PieChart,
   Pie,
   Cell,
-  Sector,
   Label,
   LabelList,
   LineChart,
   Line,
-  AreaChart,
-  Area,
-  ComposedChart,
-  Legend,
-  Rectangle,
-  ScatterChart,
-  Scatter,
-  RadarChart,
-  PolarGrid,
-  PolarAngleAxis,
-  PolarRadiusAxis,
-  Radar
+  Legend
 } from 'recharts';
 import { 
-  AlertTriangle, 
-  Clock, 
-  CheckCircle, 
-  TrendingUp,
-  Activity,
-  Target,
-  Calendar,
-  BarChart3,
-  PieChart as PieChartIcon,
-  AreaChart as AreaChartIcon,
-  RefreshCw,
-  Download,
   Filter,
-  TrendingDown,
-  AlertCircle,
-  Zap,
   Gauge,
-  Timer,
-  CheckSquare,
-  XCircle,
-  MapPin,
-  Users,
-  Settings,
-  Minus,
-  Plus,
-  Equal,
-  ArrowUp,
-  ArrowDown,
-  ArrowRight,
-  ArrowLeft,
-  Circle,
-  Square,
-  Triangle,
-  Star,
-  Award,
-  Trophy,
-  Medal,
-  Crown,
-  Shield,
-  Flag,
-  Cloud,
-  Sun,
-  Moon,
-  Eye,
-  EyeOff,
-  Search,
-  SortAsc,
-  SortDesc,
-  MoreHorizontal,
-  MoreVertical,
-  ChevronUp,
-  ChevronDown,
-  ChevronLeft,
-  ChevronRight,
-  Play,
-  Pause,
-  SkipBack,
-  SkipForward,
-  RotateCcw,
-  RotateCw,
-  ZoomIn,
-  ZoomOut,
-  Maximize,
-  Minimize,
-  Fullscreen,
-  Upload,
-  Share,
-  Link,
-  ExternalLink,
-  Copy,
-  Edit,
-  Trash,
-  Save,
-  X,
-  Check,
-  Info,
-  Mail,
-  Phone,
-  Video,
-  Image,
-  File,
-  Folder,
-  Database,
-  Server,
-  Network,
-  Wifi,
-  Bluetooth,
-  Signal,
-  Battery,
-  Power,
-  Volume,
-  Mic,
-  Camera
+  CheckSquare
 } from 'lucide-react';
 
 import PageWrapper from '@/components/PageWrapper';
@@ -145,7 +40,6 @@ import BarChartIcon from '@mui/icons-material/BarChart';
 import PieChartIconMUI from '@mui/icons-material/PieChart';
 import ShowChartIcon from '@mui/icons-material/ShowChart';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
-import TrendingDownIcon from '@mui/icons-material/TrendingDown';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import ConfirmationNumberIcon from '@mui/icons-material/ConfirmationNumber';
@@ -154,52 +48,8 @@ import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import AssignmentIcon from '@mui/icons-material/Assignment';
 import TrackChangesIcon from '@mui/icons-material/TrackChanges';
 import LabelIcon from '@mui/icons-material/Label';
-import WarningIcon from '@mui/icons-material/Warning';
-import SpeedIcon from '@mui/icons-material/Speed';
-import TimelineIcon from '@mui/icons-material/Timeline';
-import AnalyticsIcon from '@mui/icons-material/Analytics';
-import InsightsIcon from '@mui/icons-material/Insights';
-import TrendingFlatIcon from '@mui/icons-material/TrendingFlat';
-import AssessmentIcon from '@mui/icons-material/Assessment';
-import DashboardIcon from '@mui/icons-material/Dashboard';
 import MonitorIcon from '@mui/icons-material/Monitor';
-import NotificationsIcon from '@mui/icons-material/Notifications';
-import SecurityIcon from '@mui/icons-material/Security';
-import BuildIcon from '@mui/icons-material/Build';
 import BugReportIcon from '@mui/icons-material/BugReport';
-import ReportIcon from '@mui/icons-material/Report';
-import AssessmentOutlinedIcon from '@mui/icons-material/AssessmentOutlined';
-import TrendingUpOutlinedIcon from '@mui/icons-material/TrendingUpOutlined';
-import TrendingDownOutlinedIcon from '@mui/icons-material/TrendingDownOutlined';
-import TrendingFlatOutlinedIcon from '@mui/icons-material/TrendingFlatOutlined';
-import SpeedOutlinedIcon from '@mui/icons-material/SpeedOutlined';
-import TimelineOutlinedIcon from '@mui/icons-material/TimelineOutlined';
-import AnalyticsOutlinedIcon from '@mui/icons-material/AnalyticsOutlined';
-import InsightsOutlinedIcon from '@mui/icons-material/InsightsOutlined';
-import AssessmentRoundedIcon from '@mui/icons-material/AssessmentRounded';
-import TrendingUpRoundedIcon from '@mui/icons-material/TrendingUpRounded';
-import TrendingDownRoundedIcon from '@mui/icons-material/TrendingDownRounded';
-import TrendingFlatRoundedIcon from '@mui/icons-material/TrendingFlatRounded';
-import SpeedRoundedIcon from '@mui/icons-material/SpeedRounded';
-import TimelineRoundedIcon from '@mui/icons-material/TimelineRounded';
-import AnalyticsRoundedIcon from '@mui/icons-material/AnalyticsRounded';
-import InsightsRoundedIcon from '@mui/icons-material/InsightsRounded';
-import AssessmentSharpIcon from '@mui/icons-material/AssessmentSharp';
-import TrendingUpSharpIcon from '@mui/icons-material/TrendingUpSharp';
-import TrendingDownSharpIcon from '@mui/icons-material/TrendingDownSharp';
-import TrendingFlatSharpIcon from '@mui/icons-material/TrendingFlatSharp';
-import SpeedSharpIcon from '@mui/icons-material/SpeedSharp';
-import TimelineSharpIcon from '@mui/icons-material/TimelineSharp';
-import AnalyticsSharpIcon from '@mui/icons-material/AnalyticsSharp';
-import InsightsSharpIcon from '@mui/icons-material/InsightsSharp';
-import AssessmentTwoToneIcon from '@mui/icons-material/AssessmentTwoTone';
-import TrendingUpTwoToneIcon from '@mui/icons-material/TrendingUpTwoTone';
-import TrendingDownTwoToneIcon from '@mui/icons-material/TrendingDownTwoTone';
-import TrendingFlatTwoToneIcon from '@mui/icons-material/TrendingFlatTwoTone';
-import SpeedTwoToneIcon from '@mui/icons-material/SpeedTwoTone';
-import TimelineTwoToneIcon from '@mui/icons-material/TimelineTwoTone';
-import AnalyticsTwoToneIcon from '@mui/icons-material/AnalyticsTwoTone';
-import InsightsTwoToneIcon from '@mui/icons-material/InsightsTwoTone';
 
 // NCAL Color mapping - using project standard colors
 const NCAL_COLORS = {
@@ -210,16 +60,7 @@ const NCAL_COLORS = {
   Black: '#1f2937'    // gray-800
 };
 
-// Area chart colors matching project standards
-const AREA_COLORS = [
-  '#11A69C', // teal/cyan
-  '#0081FE', // biru
-  '#924AF7', // ungu
-  '#FBBF24', // kuning
-  '#FF5383', // merah muda neon
-  '#4ADE80', // hijau segar
-  '#F2681F', // oranye
-];
+
 
 // NCAL Target durations in minutes
 const NCAL_TARGETS = {
@@ -657,10 +498,7 @@ export const IncidentAnalytics: React.FC = () => {
             priority === 'Low' ? 'var(--color-low)' : 'var(--color-unknown)'
     }));
 
-  const klasifikasiData = Object.entries(stats.byKlas).map(([klas, count]) => ({
-    name: klas,
-    value: count
-  }));
+
 
   const siteData = Object.entries(stats.bySite)
     .sort((a, b) => b[1] - a[1])
@@ -880,15 +718,7 @@ export const IncidentAnalytics: React.FC = () => {
     },
   } satisfies ChartConfig;
 
-  const ncalDurationData = NCAL_ORDER.map(ncal => {
-    const duration = stats.byNCALDuration[ncal];
-    return {
-      name: ncal,
-      actual: duration?.avg || 0,
-      target: NCAL_TARGETS[ncal as keyof typeof NCAL_TARGETS] || 0,
-      color: NCAL_COLORS[ncal as keyof typeof NCAL_COLORS]
-    };
-  });
+
 
   // Debug active NCAL categories
   console.log('🔍 ACTIVE NCAL CATEGORIES:', {
@@ -1434,7 +1264,6 @@ export const IncidentAnalytics: React.FC = () => {
                       const currentMonthKey = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`;
                       const lastMonthKey = `${currentYear}-${String(currentMonth).padStart(2, '0')}`;
                       const currentCount = stats.byMonth[currentMonthKey] || 0;
-                      const lastCount = stats.byMonth[lastMonthKey] || 0;
                       return currentCount;
                     })()}
                   </div>
@@ -1609,7 +1438,6 @@ export const IncidentAnalytics: React.FC = () => {
               <div className="text-center">
                 <div className="text-3xl font-bold text-green-600">
                   {(() => {
-                    const slaTarget = 0.95; // 95% SLA target
                     const compliantIncidents = filteredIncidents.filter(i => {
                       if (!i.durationMin || !i.startTime) return false;
                       const ncal = normalizeNCAL(i.ncal);
@@ -1618,7 +1446,7 @@ export const IncidentAnalytics: React.FC = () => {
                     }).length;
                     const complianceRate = filteredIncidents.length > 0 ? compliantIncidents / filteredIncidents.length : 0;
                     return (complianceRate * 100).toFixed(1);
-                  })}%
+                  })()}%
                 </div>
                 <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
                   SLA Compliance Rate
@@ -1673,7 +1501,7 @@ export const IncidentAnalytics: React.FC = () => {
                       const totalPauseTime = filteredIncidents.reduce((sum, i) => sum + (i.totalDurationPauseMin || 0), 0);
                       const efficiency = totalVendorTime > 0 ? ((totalVendorTime - totalPauseTime) / totalVendorTime * 100) : 0;
                       return efficiency.toFixed(1);
-                    })}%
+                    })()}%
                   </div>
                   <div className="text-xs text-gray-600 dark:text-gray-400">Efficiency Rate</div>
                 </div>
@@ -1684,7 +1512,7 @@ export const IncidentAnalytics: React.FC = () => {
                       const targetResolutionTime = 120; // 2 hours target
                       const performance = targetResolutionTime > 0 ? (targetResolutionTime - avgResolutionTime) / targetResolutionTime * 100 : 0;
                       return performance.toFixed(1);
-                    })}%
+                    })()}%
                   </div>
                   <div className="text-xs text-gray-600 dark:text-gray-400">Performance</div>
                 </div>
