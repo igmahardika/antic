@@ -541,7 +541,14 @@ export const IncidentData: React.FC = () => {
 
 
       {showUpload && (
-        <IncidentUpload />
+        <IncidentUpload onUploadComplete={() => {
+          setShowUpload(false);
+          // Data will automatically refresh due to useLiveQuery
+          toast({
+            title: "Upload Complete",
+            description: "Incident data has been uploaded successfully and is now available.",
+          });
+        }} />
       )}
 
       {/* Reset Confirmation Modal */}
@@ -716,10 +723,6 @@ export const IncidentData: React.FC = () => {
             ⚠️ No valid months found in data. Please check that the "Start" column contains valid dates.
           </div>
         </div>
-      )}
-
-      {showUpload && (
-        <IncidentUpload />
       )}
 
       {/* Reset Confirmation Modal */}
