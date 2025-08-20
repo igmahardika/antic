@@ -44,9 +44,28 @@ export const IncidentData: React.FC = () => {
   const [uploadLogs, setUploadLogs] = useState<string[]>([]);
   const [lastUploadResult, setLastUploadResult] = useState<any>(null);
 
-  // Add test data for debugging
+  // Load logs from localStorage and initialize test data
   React.useEffect(() => {
-    // Add some test logs if none exist
+    // Load existing logs from localStorage
+    const savedLogs = localStorage.getItem('uploadLogs');
+    if (savedLogs) {
+      try {
+        const parsedLogs = JSON.parse(savedLogs);
+        // Convert stored log objects to string format for display
+        const logStrings = parsedLogs.map((log: any) => {
+          if (typeof log === 'string') return log;
+          if (log.action === 'DATA_RESET') {
+            return `[${new Date(log.timestamp).toLocaleTimeString()}] 🔄 DATA RESET: ${log.message}. Previous count: ${log.details?.previousCount || 0} incidents.`;
+          }
+          return log.message || log;
+        });
+        setUploadLogs(logStrings);
+      } catch (error) {
+        console.error('Error loading logs from localStorage:', error);
+      }
+    }
+    
+    // Add test data only if no logs exist
     if (uploadLogs.length === 0) {
       setUploadLogs([
         '[10:30:15] Starting upload process...',
@@ -506,16 +525,38 @@ export const IncidentData: React.FC = () => {
 
   const resetData = async () => {
     try {
+      // Clear only incident data, keep logs
       await db.incidents.clear();
       setShowResetConfirm(false);
-      // Refresh data
-      const result = await queryIncidents(filter);
-      setIncidents(result.rows);
-      setTotal(result.total);
+      
+      // Clear current state but keep logs
+      setIncidents([]);
+      setTotal(0);
+      
+      // Add reset log entry
+      const resetLog = {
+        id: Date.now().toString(),
+        timestamp: new Date().toISOString(),
+        action: 'DATA_RESET',
+        message: 'All incident data has been reset by user',
+        details: {
+          previousCount: allIncidents?.length || 0,
+          resetBy: 'User',
+          resetTime: new Date().toLocaleString()
+        }
+      };
+      
+      // Store reset log in localStorage for persistence
+      const existingLogs = JSON.parse(localStorage.getItem('uploadLogs') || '[]');
+      existingLogs.push(resetLog);
+      localStorage.setItem('uploadLogs', JSON.stringify(existingLogs));
+      
+      // Update upload logs state to include reset log
+      setUploadLogs(prev => [...prev, `[${new Date().toLocaleTimeString()}] 🔄 DATA RESET: All incident data has been cleared. Previous count: ${allIncidents?.length || 0} incidents.`]);
       
       toast({
         title: "Data Reset Successfully",
-        description: "All incident data has been deleted from the database.",
+        description: "All incident data has been deleted from the database. Upload logs are preserved.",
         variant: "default",
       });
     } catch (error) {
@@ -661,6 +702,25 @@ export const IncidentData: React.FC = () => {
             <FileSpreadsheet className="w-4 h-4 mr-2" />
             Test Logs
           </Button>
+          <Button 
+            onClick={() => {
+              if (confirm('Are you sure you want to clear all upload logs? This action cannot be undone.')) {
+                localStorage.removeItem('uploadLogs');
+                setUploadLogs([]);
+                setLastUploadResult(null);
+                toast({
+                  title: "Logs Cleared",
+                  description: "All upload logs have been cleared.",
+                });
+              }
+            }} 
+            variant="outline"
+            className="border-gray-200 text-gray-700 hover:bg-gray-50"
+            disabled={uploadLogs.length === 0}
+          >
+            <X className="w-4 h-4 mr-2" />
+            Clear Logs
+          </Button>
         </div>
       </div>
 
@@ -773,7 +833,11 @@ export const IncidentData: React.FC = () => {
           onUploadComplete={(logs?: string[], uploadResult?: any) => {
             setShowUpload(false);
             if (logs && logs.length > 0) {
-              setUploadLogs(logs);
+              // Save logs to localStorage for persistence
+              const existingLogs = JSON.parse(localStorage.getItem('uploadLogs') || '[]');
+              const newLogs = [...existingLogs, ...logs];
+              localStorage.setItem('uploadLogs', JSON.stringify(newLogs));
+              setUploadLogs(newLogs);
             }
             if (uploadResult) {
               setLastUploadResult(uploadResult);
@@ -1174,6 +1238,18 @@ export const IncidentData: React.FC = () => {
                       </div>
                     </div>
                   )}
+
+                  {/* Log Persistence Info */}
+                  <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                    <h4 className="font-medium mb-2 text-blue-800 dark:text-blue-200">💾 Log Persistence</h4>
+                    <div className="text-sm text-blue-700 dark:text-blue-300 space-y-1">
+                      <div>✅ <strong>Logs are preserved</strong> even when data is reset</div>
+                      <div>✅ <strong>Logs are stored</strong> in browser localStorage</div>
+                      <div>✅ <strong>Logs persist</strong> across browser sessions</div>
+                      <div>✅ <strong>Reset operations</strong> are logged for audit trail</div>
+                      <div>⚠️ <strong>Clear Logs</strong> button will permanently delete all logs</div>
+                    </div>
+                  </div>
 
                   {/* Skipped Rows Summary */}
                   {lastUploadResult?.skippedDetails && lastUploadResult.skippedDetails.length > 0 && (
