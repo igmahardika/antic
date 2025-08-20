@@ -103,6 +103,7 @@ const NCAL_ORDER = ['Blue', 'Yellow', 'Orange', 'Red', 'Black'];
 export const IncidentAnalytics: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [selectedPeriod, setSelectedPeriod] = useState<'3m' | '6m' | '1y' | 'all'>('6m');
+  const [selectedLevelMonth, setSelectedLevelMonth] = useState<string>('all');
 
   // Get all incidents for live updates
   const allIncidents = useLiveQuery(() => 
@@ -553,6 +554,52 @@ export const IncidentAnalytics: React.FC = () => {
             level === '27' ? 'var(--color-level27)' :
             level === '46' ? 'var(--color-level46)' : 'var(--color-levelunknown)'
     }));
+
+  // Filtered level data based on selected month
+  const filteredLevelData = useMemo(() => {
+    if (selectedLevelMonth === 'all') {
+      return levelData;
+    }
+
+    // Filter incidents by selected month
+    const monthFilteredIncidents = filteredIncidents.filter(incident => {
+      if (!incident.startTime) return false;
+      const incidentDate = new Date(incident.startTime);
+      const incidentMonth = `${incidentDate.getFullYear()}-${String(incidentDate.getMonth() + 1).padStart(2, '0')}`;
+      return incidentMonth === selectedLevelMonth;
+    });
+
+    // Calculate level distribution for filtered incidents
+    const filteredByLevel = monthFilteredIncidents.reduce((acc, incident) => {
+      const level = incident.level?.toString() || 'Unknown';
+      acc[level] = (acc[level] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+
+    // Create filtered level data
+    return Object.entries(filteredByLevel)
+      .sort((a, b) => {
+        const aLevel = a[0] === 'Unknown' ? 999 : parseInt(a[0]) || 999;
+        const bLevel = b[0] === 'Unknown' ? 999 : parseInt(b[0]) || 999;
+        return aLevel - bLevel;
+      })
+      .map(([level, count]) => ({
+        name: `Level ${level}`,
+        value: count,
+        fill: level === '8' ? 'var(--color-level8)' :
+              level === '17' ? 'var(--color-level17)' :
+              level === '27' ? 'var(--color-level27)' :
+              level === '46' ? 'var(--color-level46)' : 'var(--color-levelunknown)'
+      }));
+  }, [selectedLevelMonth, filteredIncidents, levelData]);
+
+  // Debug filtered level data
+  console.log('📊 FILTERED LEVEL DATA:', {
+    selectedLevelMonth,
+    totalFilteredData: filteredLevelData.length,
+    filteredLevelData,
+    originalLevelData: levelData
+  });
 
   // Debug chart data preparation
   console.log('📊 CHART DATA PREPARATION:', {
@@ -1157,10 +1204,37 @@ export const IncidentAnalytics: React.FC = () => {
             <CardDescription>Distribution of incidents by level</CardDescription>
           </CardHeader>
           <CardContent>
+            {/* Month Filter */}
+            <div className="mb-4">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Filter by Month:</span>
+                <select 
+                  value={selectedLevelMonth} 
+                  onChange={(e) => setSelectedLevelMonth(e.target.value)}
+                  className="px-3 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-zinc-800 text-gray-900 dark:text-gray-100"
+                >
+                  <option value="all">All Months</option>
+                  {Object.keys(stats.byMonth).sort().map(month => {
+                    const [year, monthNum] = month.split('-');
+                    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
+                                      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                    return (
+                      <option key={month} value={month}>
+                        {monthNames[parseInt(monthNum) - 1]} {year}
+                      </option>
+                    );
+                  })}
+                </select>
+              </div>
+              <div className="text-xs text-gray-600 dark:text-gray-400">
+                Showing {selectedLevelMonth === 'all' ? 'all incidents' : `incidents from ${selectedLevelMonth}`}
+              </div>
+            </div>
+
             <ChartContainer config={levelChartConfig}>
               <BarChart 
                 accessibilityLayer 
-                data={levelData}
+                data={filteredLevelData}
                 margin={{
                   top: 20,
                 }}
