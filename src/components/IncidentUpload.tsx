@@ -134,8 +134,13 @@ export const IncidentUpload: React.FC<IncidentUploadProps> = ({ onUploadComplete
         let sheetInvalidCount = 0;
 
         for (let i = 1; i < jsonData.length; i++) {
-          totalRowsProcessed++;
           const row = jsonData[i] as any[];
+          totalRowsProcessed++;
+          
+          // Log every 100th row for debugging
+          if (totalRowsProcessed % 100 === 0) {
+            captureLog(`Processing row ${totalRowsProcessed} of ${jsonData.length - 1} in sheet "${sheetName}"`);
+          }
           
           if (!row || row.length === 0) {
             sheetEmptyCount++;
@@ -173,6 +178,7 @@ export const IncidentUpload: React.FC<IncidentUploadProps> = ({ onUploadComplete
                 allRows.push(result);
                 successCount++;
                 sheetSuccessCount++;
+                captureLog(`Row ${i + 1} in "${sheetName}": Successfully processed`);
               } else if (result && result.skipped) {
                 // Row was skipped with specific reason
                 sheetSkippedCount++;
@@ -185,10 +191,10 @@ export const IncidentUpload: React.FC<IncidentUploadProps> = ({ onUploadComplete
                   data: result.rowData
                 });
               } else {
-                // Row was skipped (empty NCAL or invalid data)
+                // Row was skipped (null result)
                 sheetSkippedCount++;
                 skippedCount++;
-                const reason = "Empty NCAL or invalid data";
+                const reason = "Row processing returned null (unknown error)";
                 captureLog(`Row ${i + 1} in "${sheetName}" skipped: ${reason}`);
                 skippedDetails.push({
                   row: i + 1,
@@ -213,22 +219,40 @@ export const IncidentUpload: React.FC<IncidentUploadProps> = ({ onUploadComplete
         }
 
                   captureLog(`Sheet "${sheetName}" results:`);
+          captureLog(`  - Total rows in sheet: ${jsonData.length - 1}`);
           captureLog(`  - Success: ${sheetSuccessCount}`);
           captureLog(`  - Skipped: ${sheetSkippedCount}`);
           captureLog(`  - Empty: ${sheetEmptyCount}`);
           captureLog(`  - Invalid: ${sheetInvalidCount}`);
+          captureLog(`  - Total processed: ${sheetSuccessCount + sheetSkippedCount + sheetEmptyCount + sheetInvalidCount}`);
+          
+          // Validate sheet processing
+          const sheetTotal = sheetSuccessCount + sheetSkippedCount + sheetEmptyCount + sheetInvalidCount;
+          if (sheetTotal !== jsonData.length - 1) {
+            captureLog(`⚠️ SHEET INCONSISTENCY: Expected ${jsonData.length - 1}, got ${sheetTotal}`);
+          } else {
+            captureLog(`✅ Sheet processing consistent`);
+          }
 
           setProgress((workbook.SheetNames.indexOf(sheetName) + 1) / workbook.SheetNames.length * 50);
         }
 
-        captureLog(`\n=== UPLOAD ANALYSIS SUMMARY ===`);
-        captureLog(`📊 Total rows processed: ${totalRowsProcessed}`);
-        captureLog(`✅ Successfully parsed: ${successCount}`);
-        captureLog(`⚠️ Skipped (empty/invalid): ${skippedCount}`);
-        captureLog(`📭 Empty rows: ${emptyRowCount}`);
-        captureLog(`❌ Invalid rows: ${invalidRowCount}`);
-        captureLog(`💥 Failed: ${failedCount}`);
-        captureLog(`💾 Total incidents to save: ${allRows.length}`);
+              captureLog(`\n=== UPLOAD ANALYSIS SUMMARY ===`);
+      captureLog(`📊 Total rows processed: ${totalRowsProcessed}`);
+      captureLog(`✅ Successfully parsed: ${successCount}`);
+      captureLog(`⚠️ Skipped (empty/invalid): ${skippedCount}`);
+      captureLog(`📭 Empty rows: ${emptyRowCount}`);
+      captureLog(`❌ Invalid rows: ${invalidRowCount}`);
+      captureLog(`💥 Failed: ${failedCount}`);
+      captureLog(`💾 Total incidents to save: ${allRows.length}`);
+      
+      // Validate data consistency
+      const expectedTotal = successCount + skippedCount + emptyRowCount + invalidRowCount + failedCount;
+      if (expectedTotal !== totalRowsProcessed) {
+        captureLog(`⚠️ DATA INCONSISTENCY DETECTED!`);
+        captureLog(`Expected total: ${expectedTotal}, Actual processed: ${totalRowsProcessed}`);
+        captureLog(`Difference: ${Math.abs(expectedTotal - totalRowsProcessed)} rows`);
+      }
         
         // Log detailed breakdown of skipped rows
         if (skippedDetails.length > 0) {
@@ -272,6 +296,14 @@ export const IncidentUpload: React.FC<IncidentUploadProps> = ({ onUploadComplete
             throw new Error('Data was not saved to database - count is 0');
           }
           
+          // Validate saved data matches expected
+          if (savedCount !== allRows.length) {
+            captureLog(`⚠️ WARNING: Saved count (${savedCount}) doesn't match expected (${allRows.length})`);
+            captureLog(`This may indicate duplicate data or database issues.`);
+          } else {
+            captureLog(`✅ Database validation: Saved count matches expected count`);
+          }
+          
           setProgress(100);
         } catch (error) {
           captureLog(`❌ ERROR: Error saving to database: ${error}`);
@@ -303,6 +335,20 @@ export const IncidentUpload: React.FC<IncidentUploadProps> = ({ onUploadComplete
       captureLog(`Invalid rows: ${invalidRowCount}`);
       captureLog(`Failed: ${failedCount}`);
       captureLog(`Total incidents saved: ${allRows.length}`);
+      
+      // Final data consistency check
+      const totalAccounted = successCount + skippedCount + emptyRowCount + invalidRowCount + failedCount;
+      captureLog(`\n=== DATA CONSISTENCY VALIDATION ===`);
+      captureLog(`Total rows processed: ${totalRowsProcessed}`);
+      captureLog(`Total accounted for: ${totalAccounted}`);
+      captureLog(`Difference: ${Math.abs(totalRowsProcessed - totalAccounted)}`);
+      
+      if (totalAccounted !== totalRowsProcessed) {
+        captureLog(`❌ DATA INCONSISTENCY: ${Math.abs(totalRowsProcessed - totalAccounted)} rows unaccounted for!`);
+        captureLog(`This indicates a bug in the processing logic.`);
+      } else {
+        captureLog(`✅ DATA CONSISTENCY: All rows properly accounted for!`);
+      }
       
       if (successCount < totalRowsProcessed) {
         captureLog(`⚠️  WARNING: Only ${successCount} out of ${totalRowsProcessed} rows were successfully uploaded!`);
@@ -537,14 +583,16 @@ function parseRowToIncident(headers: string[], row: any[], rowNum: number, sheet
   // Additional validation for required fields
   const startTimeRaw = getValue('Start');
   if (!startTimeRaw || String(startTimeRaw).trim() === '') {
-    console.log(`Row ${rowNum} in "${sheetName}" skipped: missing Start time`);
-    return null;
+    const reason = "Missing Start time (required field)";
+    console.log(`Row ${rowNum} in "${sheetName}": ${reason}`);
+    return { skipped: true, reason, rowData: { startTimeRaw } };
   }
 
   const startTime = parseDateSafe(startTimeRaw);
   if (!startTime) {
-    console.log(`Row ${rowNum} in "${sheetName}" skipped: invalid Start time format: "${startTimeRaw}"`);
-    return null;
+    const reason = `Invalid Start time format: "${startTimeRaw}"`;
+    console.log(`Row ${rowNum} in "${sheetName}": ${reason}`);
+    return { skipped: true, reason, rowData: { startTimeRaw } };
   }
   
   console.log(`Row ${rowNum} in "${sheetName}": Successfully parsed Start time "${startTimeRaw}" -> ${startTime}`);
@@ -552,8 +600,9 @@ function parseRowToIncident(headers: string[], row: any[], rowNum: number, sheet
   
   // Validate ID generation
   if (!id) {
-    console.error(`Row ${rowNum} in "${sheetName}": Failed to generate ID for No Case: "${noCase}"`);
-    return null;
+    const reason = `Failed to generate ID for No Case: "${noCase}"`;
+    console.error(`Row ${rowNum} in "${sheetName}": ${reason}`);
+    return { skipped: true, reason, rowData: { noCase, startTime } };
   }
 
   const incident: Incident = {
@@ -710,8 +759,9 @@ function parseRowToIncident(headers: string[], row: any[], rowNum: number, sheet
 
   // Final validation before returning
   if (!incident.id || !incident.noCase || !incident.startTime) {
-    console.error(`Row ${rowNum} in "${sheetName}": Invalid incident object created`, incident);
-    return null;
+    const reason = `Invalid incident object created - missing required fields`;
+    console.error(`Row ${rowNum} in "${sheetName}": ${reason}`, incident);
+    return { skipped: true, reason, rowData: { incident } };
   }
 
   console.log(`Row ${rowNum} in "${sheetName}": Successfully created incident with ID: ${incident.id}`);
