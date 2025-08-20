@@ -16,8 +16,6 @@ import {
   Filter, 
   Download, 
   Upload,
-  ChevronLeft,
-  ChevronRight,
   FileSpreadsheet,
   Trash2,
   AlertTriangle,
@@ -141,9 +139,7 @@ export const IncidentData: React.FC = () => {
     return Array.from(months).sort().reverse();
   }, [allIncidents]);
 
-  const uniqueStatuses = [...new Set(allIncidents?.map(i => i.status).filter(Boolean) || [])];
   const uniquePriorities = [...new Set(allIncidents?.map(i => i.priority).filter(Boolean) || [])];
-  const uniqueSites = [...new Set(allIncidents?.map(i => i.site).filter(Boolean) || [])];
 
   useEffect(() => {
     const loadData = async () => {
