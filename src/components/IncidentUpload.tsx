@@ -47,7 +47,7 @@ const REQUIRED_HEADERS = [
 ];
 
 interface IncidentUploadProps {
-  onUploadComplete?: () => void;
+  onUploadComplete?: (logs?: string[]) => void;
 }
 
 export const IncidentUpload: React.FC<IncidentUploadProps> = ({ onUploadComplete }) => {
@@ -320,10 +320,11 @@ export const IncidentUpload: React.FC<IncidentUploadProps> = ({ onUploadComplete
         captureLog(`\n🔄 Calling onUploadComplete callback in 3 seconds to allow log review...`);
         setTimeout(() => {
           captureLog(`✅ Executing onUploadComplete callback now`);
-          onUploadComplete();
+          onUploadComplete(logs);
         }, 3000); // 3 second delay
       } else if (onUploadComplete && successCount === 0) {
         captureLog(`\n⚠️ Upload completed but no data was uploaded. Callback will not be called.`);
+        onUploadComplete(logs); // Still send logs even if no data uploaded
       }
 
     } catch (error) {
@@ -616,7 +617,7 @@ export const IncidentUpload: React.FC<IncidentUploadProps> = ({ onUploadComplete
                     onClick={() => {
                       console.log('🔄 Manual close button clicked - calling onUploadComplete immediately');
                       if (onUploadComplete) {
-                        onUploadComplete();
+                        onUploadComplete(logs);
                       }
                     }}
                     variant="default" 
