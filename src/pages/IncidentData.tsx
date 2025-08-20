@@ -18,6 +18,7 @@ import {
   Upload,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
   FileSpreadsheet,
   Trash2,
   AlertTriangle,
@@ -49,6 +50,7 @@ export const IncidentData: React.FC = () => {
   const [showLogs, setShowLogs] = useState(false);
   const [uploadLogs, setUploadLogs] = useState<string[]>([]);
   const [lastUploadResult, setLastUploadResult] = useState<any>(null);
+  const [showDataTools, setShowDataTools] = useState(false);
 
   // Load logs from localStorage
   React.useEffect(() => {
@@ -71,6 +73,24 @@ export const IncidentData: React.FC = () => {
       }
     }
   }, []);
+
+  // Close data tools dropdown when clicking outside
+  React.useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Element;
+      if (!target.closest('.data-tools-dropdown')) {
+        setShowDataTools(false);
+      }
+    };
+
+    if (showDataTools) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showDataTools]);
 
   // Helper function to normalize NCAL values
   const normalizeNCAL = (ncal: string | null | undefined): string => {
@@ -484,11 +504,14 @@ export const IncidentData: React.FC = () => {
             Manage and view incident data with filtering and search capabilities
           </p>
         </div>
-        <div className="flex gap-2">
+                <div className="flex gap-2">
+          {/* Primary Actions */}
           <Button onClick={() => setShowUpload(!showUpload)} variant="outline" size="sm">
             <Upload className="w-3 h-3 mr-1" />
             Upload Data
           </Button>
+          
+          {/* Logs Management */}
           <Button 
             onClick={() => {
               console.log('View Logs button clicked!');
@@ -502,12 +525,16 @@ export const IncidentData: React.FC = () => {
             disabled={uploadLogs.length === 0 && !lastUploadResult}
           >
             <FileSpreadsheet className="w-3 h-3 mr-1" />
-            View Logs {uploadLogs.length > 0 && `(${uploadLogs.length})`}
+            Logs {uploadLogs.length > 0 && `(${uploadLogs.length})`}
           </Button>
+          
+          {/* Data Export */}
           <Button onClick={exportToCSV} variant="outline" size="sm">
             <Download className="w-3 h-3 mr-1" />
             Export CSV
           </Button>
+          
+          {/* Data Management */}
           <Button 
             onClick={() => setShowResetConfirm(true)} 
             variant="destructive"
@@ -517,112 +544,115 @@ export const IncidentData: React.FC = () => {
             <Trash2 className="w-3 h-3 mr-1" />
             Reset Data
           </Button>
-          <Button 
-            onClick={() => {
-              console.log('Test button clicked!');
-              setShowLogs(true);
-            }} 
-            variant="outline"
-            size="sm"
-            className="border-green-200 text-green-700 hover:bg-green-50"
-          >
-            <FileSpreadsheet className="w-3 h-3 mr-1" />
-            Test Logs
-          </Button>
-                      <Button 
-              onClick={() => {
-                if (confirm('Are you sure you want to clear all upload logs? This action cannot be undone.')) {
-                  localStorage.removeItem('uploadLogs');
-                  setUploadLogs([]);
-                  setLastUploadResult(null);
-                  toast({
-                    title: "Logs Cleared",
-                    description: "All upload logs have been cleared.",
-                  });
-                }
-              }} 
-              variant="outline"
-              size="sm"
-              className="border-gray-200 text-gray-700 hover:bg-gray-50"
-              disabled={uploadLogs.length === 0}
-            >
-              <X className="w-3 h-3 mr-1" />
-              Clear Logs
-            </Button>
-            
+          
+          {/* Data Tools Dropdown */}
+          <div className="relative data-tools-dropdown">
             <Button 
-              onClick={() => {
-                if (confirm('Are you sure you want to validate data consistency? This will check if upload logs match database data.')) {
-                  const dbCount = allIncidents?.length || 0;
-                  const logCount = lastUploadResult?.success || 0;
-                  
-                  if (dbCount !== logCount) {
-                    toast({
-                      title: "Data Inconsistency Detected",
-                      description: `Database has ${dbCount} incidents but logs show ${logCount} uploaded. Check console for details.`,
-                      variant: "destructive",
-                    });
-                  } else {
-                    toast({
-                      title: "Data Consistency Verified",
-                      description: `Database count (${dbCount}) matches upload logs (${logCount}).`,
-                    });
-                  }
-                }
-              }} 
+              onClick={() => setShowDataTools(!showDataTools)} 
               variant="outline"
               size="sm"
               className="border-blue-200 text-blue-700 hover:bg-blue-50"
             >
-              <Database className="w-3 h-3 mr-1" />
-              Validate Data
+              <Settings className="w-3 h-3 mr-1" />
+              Data Tools
+              <ChevronDown className="w-3 h-3 ml-1" />
             </Button>
             
-            <Button 
-              onClick={async () => {
-                if (confirm('Are you sure you want to fix data inconsistency? This will update the upload result to match the actual database count.')) {
-                  const dbCount = allIncidents?.length || 0;
-                  const logCount = lastUploadResult?.success || 0;
+            {showDataTools && (
+              <div className="absolute right-0 top-full mt-1 w-48 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-10">
+                <div className="py-1">
+                  <button
+                    onClick={() => {
+                      if (confirm('Are you sure you want to validate data consistency? This will check if upload logs match database data.')) {
+                        const dbCount = allIncidents?.length || 0;
+                        const logCount = lastUploadResult?.success || 0;
+                        
+                        if (dbCount !== logCount) {
+                          toast({
+                            title: "Data Inconsistency Detected",
+                            description: `Database has ${dbCount} incidents but logs show ${logCount} uploaded. Check console for details.`,
+                            variant: "destructive",
+                          });
+                        } else {
+                          toast({
+                            title: "Data Consistency Verified",
+                            description: `Database count (${dbCount}) matches upload logs (${logCount}).`,
+                          });
+                        }
+                      }
+                      setShowDataTools(false);
+                    }}
+                    className="w-full px-3 py-2 text-left text-sm text-blue-700 dark:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 flex items-center"
+                  >
+                    <Database className="w-3 h-3 mr-2" />
+                    Validate Data
+                  </button>
                   
-                  if (dbCount !== logCount && lastUploadResult) {
-                    // Update the upload result to match database count
-                    const updatedResult = {
-                      ...lastUploadResult,
-                      success: dbCount,
-                      actualSaved: dbCount,
-                      originalReported: logCount,
-                      inconsistencyFixed: true
-                    };
-                    
-                    setLastUploadResult(updatedResult);
-                    
-                    // Add a log entry about the fix
-                    const fixLog = `[${new Date().toLocaleTimeString()}] 🔧 DATA INCONSISTENCY FIXED: Updated upload result from ${logCount} to ${dbCount} to match database count.`;
-                    const newLogs = [...uploadLogs, fixLog];
-                    setUploadLogs(newLogs);
-                    
-                    // Save to localStorage
-                    localStorage.setItem('uploadLogs', JSON.stringify(newLogs));
-                    
-                    toast({
-                      title: "Data Inconsistency Fixed",
-                      description: `Upload result updated to match database count (${dbCount}).`,
-                    });
-                  } else {
-                    toast({
-                      title: "No Inconsistency Found",
-                      description: "Data is already consistent.",
-                    });
-                  }
-                }
-              }} 
-              variant="outline"
-              size="sm"
-              className="border-green-200 text-green-700 hover:bg-green-50"
-            >
-              <CheckCircle className="w-3 h-3 mr-1" />
-              Fix Inconsistency
-            </Button>
+                  <button
+                    onClick={async () => {
+                      if (confirm('Are you sure you want to fix data inconsistency? This will update the upload result to match the actual database count.')) {
+                        const dbCount = allIncidents?.length || 0;
+                        const logCount = lastUploadResult?.success || 0;
+                        
+                        if (dbCount !== logCount && lastUploadResult) {
+                          const updatedResult = {
+                            ...lastUploadResult,
+                            success: dbCount,
+                            actualSaved: dbCount,
+                            originalReported: logCount,
+                            inconsistencyFixed: true
+                          };
+                          
+                          setLastUploadResult(updatedResult);
+                          
+                          const fixLog = `[${new Date().toLocaleTimeString()}] 🔧 DATA INCONSISTENCY FIXED: Updated upload result from ${logCount} to ${dbCount} to match database count.`;
+                          const newLogs = [...uploadLogs, fixLog];
+                          setUploadLogs(newLogs);
+                          
+                          localStorage.setItem('uploadLogs', JSON.stringify(newLogs));
+                          
+                          toast({
+                            title: "Data Inconsistency Fixed",
+                            description: `Upload result updated to match database count (${dbCount}).`,
+                          });
+                        } else {
+                          toast({
+                            title: "No Inconsistency Found",
+                            description: "Data is already consistent.",
+                          });
+                        }
+                      }
+                      setShowDataTools(false);
+                    }}
+                    className="w-full px-3 py-2 text-left text-sm text-green-700 dark:text-green-300 hover:bg-green-50 dark:hover:bg-green-900/20 flex items-center"
+                  >
+                    <CheckCircle className="w-3 h-3 mr-2" />
+                    Fix Inconsistency
+                  </button>
+                  
+                  <button
+                    onClick={() => {
+                      if (confirm('Are you sure you want to clear all upload logs? This action cannot be undone.')) {
+                        localStorage.removeItem('uploadLogs');
+                        setUploadLogs([]);
+                        setLastUploadResult(null);
+                        toast({
+                          title: "Logs Cleared",
+                          description: "All upload logs have been cleared.",
+                        });
+                      }
+                      setShowDataTools(false);
+                    }}
+                    className="w-full px-3 py-2 text-left text-sm text-red-700 dark:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center"
+                    disabled={uploadLogs.length === 0}
+                  >
+                    <X className="w-3 h-3 mr-2" />
+                    Clear Logs
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
