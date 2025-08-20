@@ -1353,20 +1353,140 @@ export const IncidentAnalytics: React.FC = () => {
           </CardContent>
         </Card>
 
-        {/* Root Cause Analysis */}
+                {/* Root Cause Analysis */}
         <Card className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <BugReportIcon className="w-5 h-5" />
               Root Cause Analysis
             </CardTitle>
-            <CardDescription>Top problems and penyebab patterns</CardDescription>
+            <CardDescription>Comprehensive analysis of penyebab, action, and gangguan categories</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
+            <div className="space-y-6">
+              {/* Kategori Gangguan */}
+              <div className="space-y-3">
+                <h4 className="font-medium text-gray-900 dark:text-gray-100 flex items-center gap-2">
+                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                  Kategori Gangguan (Top 5)
+                </h4>
+                {(() => {
+                  const klasifikasiStats = filteredIncidents.reduce((acc, incident) => {
+                    const klasifikasi = incident.klasifikasiGangguan || 'Unknown';
+                    acc[klasifikasi] = (acc[klasifikasi] || 0) + 1;
+                    return acc;
+                  }, {} as Record<string, number>);
+                  
+                  return Object.entries(klasifikasiStats)
+                    .sort((a, b) => b[1] - a[1])
+                    .slice(0, 5)
+                    .map(([klasifikasi, count], index) => (
+                      <div key={klasifikasi} className="flex items-center justify-between p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                        <div className="flex items-center gap-3">
+                          <div className="w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-xs font-bold">
+                            {index + 1}
+                          </div>
+                          <div className="flex-1">
+                            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                              {klasifikasi.length > 35 ? klasifikasi.substring(0, 35) + '...' : klasifikasi}
+                            </span>
+                            <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                              {((count / filteredIncidents.length) * 100).toFixed(1)}% of total incidents
+                            </div>
+                          </div>
+                        </div>
+                        <Badge variant="secondary" className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                          {count}
+                        </Badge>
+                      </div>
+                    ));
+                })()}
+              </div>
+              
+              {/* Penyebab Analysis */}
+              <div className="space-y-3">
+                <h4 className="font-medium text-gray-900 dark:text-gray-100 flex items-center gap-2">
+                  <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
+                  Penyebab Analysis (Top 5)
+                </h4>
+                {(() => {
+                  const penyebabStats = filteredIncidents.reduce((acc, incident) => {
+                    const penyebab = incident.penyebab || 'Unknown';
+                    acc[penyebab] = (acc[penyebab] || 0) + 1;
+                    return acc;
+                  }, {} as Record<string, number>);
+                  
+                  return Object.entries(penyebabStats)
+                    .sort((a, b) => b[1] - a[1])
+                    .slice(0, 5)
+                    .map(([penyebab, count], index) => (
+                      <div key={penyebab} className="flex items-center justify-between p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg border border-orange-200 dark:border-orange-800">
+                        <div className="flex items-center gap-3">
+                          <div className="w-6 h-6 bg-orange-500 text-white rounded-full flex items-center justify-center text-xs font-bold">
+                            {index + 1}
+                          </div>
+                          <div className="flex-1">
+                            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                              {penyebab.length > 35 ? penyebab.substring(0, 35) + '...' : penyebab}
+                            </span>
+                            <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                              {((count / filteredIncidents.length) * 100).toFixed(1)}% of total incidents
+                            </div>
+                          </div>
+                        </div>
+                        <Badge variant="secondary" className="bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200">
+                          {count}
+                        </Badge>
+                      </div>
+                    ));
+                })()}
+              </div>
+              
+              {/* Action Terakhir Analysis */}
+              <div className="space-y-3">
+                <h4 className="font-medium text-gray-900 dark:text-gray-100 flex items-center gap-2">
+                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                  Action Terakhir (Top 5)
+                </h4>
+                {(() => {
+                  const actionStats = filteredIncidents.reduce((acc, incident) => {
+                    const action = incident.actionTerakhir || 'Unknown';
+                    acc[action] = (acc[action] || 0) + 1;
+                    return acc;
+                  }, {} as Record<string, number>);
+                  
+                  return Object.entries(actionStats)
+                    .sort((a, b) => b[1] - a[1])
+                    .slice(0, 5)
+                    .map(([action, count], index) => (
+                      <div key={action} className="flex items-center justify-between p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
+                        <div className="flex items-center gap-3">
+                          <div className="w-6 h-6 bg-green-500 text-white rounded-full flex items-center justify-center text-xs font-bold">
+                            {index + 1}
+                          </div>
+                          <div className="flex-1">
+                            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                              {action.length > 35 ? action.substring(0, 35) + '...' : action}
+                            </span>
+                            <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                              {((count / filteredIncidents.length) * 100).toFixed(1)}% of total incidents
+                            </div>
+                          </div>
+                        </div>
+                        <Badge variant="secondary" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                          {count}
+                        </Badge>
+                      </div>
+                    ));
+                })()}
+              </div>
+              
               {/* Problem Categories */}
               <div className="space-y-3">
-                <h4 className="font-medium text-gray-900 dark:text-gray-100">Top Problem Categories</h4>
+                <h4 className="font-medium text-gray-900 dark:text-gray-100 flex items-center gap-2">
+                  <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                  Problem Categories (Top 5)
+                </h4>
                 {(() => {
                   const problemStats = filteredIncidents.reduce((acc, incident) => {
                     const problem = incident.problem || 'Unknown';
@@ -1377,45 +1497,49 @@ export const IncidentAnalytics: React.FC = () => {
                   return Object.entries(problemStats)
                     .sort((a, b) => b[1] - a[1])
                     .slice(0, 5)
-                    .map(([problem, count]) => (
-                      <div key={problem} className="flex items-center justify-between p-2 bg-gray-50 dark:bg-zinc-800 rounded-lg">
-                        <div className="flex items-center gap-2">
-                          <div className="w-2 h-2 bg-red-500 rounded-full"></div>
-                          <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                            {problem.length > 30 ? problem.substring(0, 30) + '...' : problem}
-                          </span>
+                    .map(([problem, count], index) => (
+                      <div key={problem} className="flex items-center justify-between p-3 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800">
+                        <div className="flex items-center gap-3">
+                          <div className="w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center text-xs font-bold">
+                            {index + 1}
+                          </div>
+                          <div className="flex-1">
+                            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                              {problem.length > 35 ? problem.substring(0, 35) + '...' : problem}
+                            </span>
+                            <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                              {((count / filteredIncidents.length) * 100).toFixed(1)}% of total incidents
+                            </div>
+                          </div>
                         </div>
-                        <Badge variant="secondary">{count}</Badge>
+                        <Badge variant="secondary" className="bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200">
+                          {count}
+                        </Badge>
                       </div>
                     ));
                 })()}
               </div>
               
-              {/* Penyebab Distribution */}
-              <div className="space-y-3">
-                <h4 className="font-medium text-gray-900 dark:text-gray-100">Penyebab Distribution</h4>
-                {(() => {
-                  const penyebabStats = filteredIncidents.reduce((acc, incident) => {
-                    const penyebab = incident.penyebab || 'Unknown';
-                    acc[penyebab] = (acc[penyebab] || 0) + 1;
-                    return acc;
-                  }, {} as Record<string, number>);
-                  
-                  return Object.entries(penyebabStats)
-                    .sort((a, b) => b[1] - a[1])
-                    .slice(0, 3)
-                    .map(([penyebab, count]) => (
-                      <div key={penyebab} className="flex items-center justify-between p-2 bg-gray-50 dark:bg-zinc-800 rounded-lg">
-                        <div className="flex items-center gap-2">
-                          <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
-                          <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                            {penyebab.length > 25 ? penyebab.substring(0, 25) + '...' : penyebab}
-                          </span>
-                        </div>
-                                                 <Badge variant="secondary">{count}</Badge>
-                      </div>
-                    ));
-                })()}
+              {/* Summary Statistics */}
+              <div className="grid grid-cols-2 gap-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                <div className="text-center p-3 bg-gray-50 dark:bg-zinc-800 rounded-lg">
+                  <div className="text-lg font-bold text-gray-900 dark:text-gray-100">
+                    {(() => {
+                      const uniqueKlasifikasi = new Set(filteredIncidents.map(i => i.klasifikasiGangguan).filter(Boolean)).size;
+                      return uniqueKlasifikasi;
+                    })()}
+                  </div>
+                  <div className="text-xs text-gray-600 dark:text-gray-400">Unique Categories</div>
+                </div>
+                <div className="text-center p-3 bg-gray-50 dark:bg-zinc-800 rounded-lg">
+                  <div className="text-lg font-bold text-gray-900 dark:text-gray-100">
+                    {(() => {
+                      const uniquePenyebab = new Set(filteredIncidents.map(i => i.penyebab).filter(Boolean)).size;
+                      return uniquePenyebab;
+                    })()}
+                  </div>
+                  <div className="text-xs text-gray-600 dark:text-gray-400">Unique Causes</div>
+                </div>
               </div>
             </div>
           </CardContent>
