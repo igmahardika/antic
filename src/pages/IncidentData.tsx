@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { Incident, IncidentFilter } from '@/types/incident';
-import { queryIncidents } from '@/utils/incidentUtils';
+
 import { IncidentUpload } from '@/components/IncidentUpload';
 import { db } from '@/lib/db';
 import { Button } from '@/components/ui/button';
@@ -51,6 +51,9 @@ export const IncidentData: React.FC = () => {
   const [uploadLogs, setUploadLogs] = useState<string[]>([]);
   const [lastUploadResult, setLastUploadResult] = useState<any>(null);
   const [showDataTools, setShowDataTools] = useState(false);
+
+  // Use useLiveQuery for real-time data updates
+  const allIncidents = useLiveQuery(() => db.incidents.toArray());
 
   // Load logs from localStorage
   React.useEffect(() => {
@@ -141,10 +144,7 @@ export const IncidentData: React.FC = () => {
     return ncalCounts[normalizedTarget] || 0;
   };
 
-  // Get unique values for filter options
-  const allIncidents = useLiveQuery(() => 
-    db.incidents.toArray()
-  );
+
 
   // Debug: Log when allIncidents changes
   React.useEffect(() => {
@@ -265,21 +265,77 @@ export const IncidentData: React.FC = () => {
   const uniqueSites = [...new Set(allIncidents?.map(i => i.site).filter(Boolean) || [])];
 
   useEffect(() => {
-    const loadData = async () => {
+    if (allIncidents) {
       setIsLoading(true);
       try {
-        const result = await queryIncidents(filter);
-        setIncidents(result.rows);
-        setTotal(result.total);
+        // Apply filters
+        let filteredIncidents = [...allIncidents];
+
+        // Date range filter
+        if (filter.dateFrom && filter.dateTo) {
+          filteredIncidents = filteredIncidents.filter(incident => {
+            if (!incident.startTime) return false;
+            const incidentDate = new Date(incident.startTime);
+            const fromDate = new Date(filter.dateFrom);
+            const toDate = new Date(filter.dateTo);
+            return incidentDate >= fromDate && incidentDate <= toDate;
+          });
+        }
+
+        // Other filters
+        if (filter.status) {
+          filteredIncidents = filteredIncidents.filter(i => i.status === filter.status);
+        }
+        if (filter.priority) {
+          filteredIncidents = filteredIncidents.filter(i => i.priority === filter.priority);
+        }
+        if (filter.level !== undefined) {
+          filteredIncidents = filteredIncidents.filter(i => i.level === filter.level);
+        }
+        if (filter.site) {
+          filteredIncidents = filteredIncidents.filter(i => i.site === filter.site);
+        }
+        if (filter.ncal) {
+          filteredIncidents = filteredIncidents.filter(i => i.ncal === filter.ncal);
+        }
+        if (filter.klasifikasiGangguan) {
+          filteredIncidents = filteredIncidents.filter(i => i.klasifikasiGangguan === filter.klasifikasiGangguan);
+        }
+
+        // Search filter
+        if (filter.search) {
+          const searchLower = filter.search.toLowerCase();
+          filteredIncidents = filteredIncidents.filter(i =>
+            (i.noCase || '').toLowerCase().includes(searchLower) ||
+            (i.site || '').toLowerCase().includes(searchLower) ||
+            (i.problem || '').toLowerCase().includes(searchLower)
+          );
+        }
+
+        // Sort by startTime descending
+        filteredIncidents.sort((a, b) => {
+          if (!a.startTime || !b.startTime) return 0;
+          return new Date(b.startTime).getTime() - new Date(a.startTime).getTime();
+        });
+
+        const total = filteredIncidents.length;
+
+        // Pagination
+        const page = filter.page || 1;
+        const limit = filter.limit || 50;
+        const startIndex = (page - 1) * limit;
+        const endIndex = startIndex + limit;
+        const paginatedIncidents = filteredIncidents.slice(startIndex, endIndex);
+
+        setIncidents(paginatedIncidents);
+        setTotal(total);
       } catch (error) {
-        console.error('Error loading incidents:', error);
+        console.error('Error processing incidents:', error);
       } finally {
         setIsLoading(false);
       }
-    };
-
-    loadData();
-  }, [filter]);
+    }
+  }, [allIncidents, filter]);
 
   const handleFilterChange = (key: keyof IncidentFilter, value: any) => {
     setFilter(prev => ({
@@ -346,11 +402,11 @@ export const IncidentData: React.FC = () => {
     if (incidents.length === 0) return;
 
     const headers = [
-      'No Case', 'Priority', 'Site', 'NCAL', 'Status', 'Level', 'TS', 'ODP/BTS',
-      'Start Time', 'Start Escalation Vendor', 'End Time', 'Duration', 'Duration Vendor',
+      'Priority', 'Site', 'No Case', 'NCAL', 'Status', 'Level', 'TS', 'ODP/BTS',
+      'Start', 'Start Escalation Vendor', 'End', 'Duration', 'Duration Vendor',
       'Problem', 'Penyebab', 'Action Terakhir', 'Note', 'Klasifikasi Gangguan',
-      'Power Before', 'Power After', 'Start Pause 1', 'End Pause 1', 'Start Pause 2', 'End Pause 2',
-      'Total Duration Pause', 'Total Duration Vendor', 'Net Duration'
+      'Power Before', 'Power After', 'Start Pause', 'End Pause', 'Start Pause 2', 'End Pause 2',
+      'Total Duration Pause', 'Total Duration Vendor'
     ];
 
     const data = incidents.map(incident => [
