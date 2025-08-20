@@ -1,4 +1,4 @@
-import { Incident, IncidentFilter, IncidentRecord, IncidentStats } from '@/types/incident';
+import { Incident, IncidentStats, IncidentFilter } from '@/types/incident';
 import { db } from '@/lib/db';
 
 // Helper untuk konversi Excel serial date ke JavaScript Date
@@ -218,57 +218,10 @@ export const parseDateSafe = (dt?: string | Date | null): string | null => {
 
 // Simpan ke Dexie (chunked)
 export async function saveIncidentsChunked(rows: Incident[], chunkSize = 2000) {
-  console.log(`Starting to save ${rows.length} incidents in chunks of ${chunkSize}`);
-  
-  let totalSaved = 0;
-  const chunks = Math.ceil(rows.length / chunkSize);
-  
   for (let i = 0; i < rows.length; i += chunkSize) {
     const part = rows.slice(i, i + chunkSize);
-    const chunkNumber = Math.floor(i / chunkSize) + 1;
-    
-    console.log(`Saving chunk ${chunkNumber}/${chunks} with ${part.length} incidents`);
-    
-    try {
-      // Validate each incident before saving
-      const validIncidents = part.filter(incident => {
-        if (!incident.id) {
-          console.error('Invalid incident: missing ID', incident);
-          return false;
-        }
-        if (!incident.noCase) {
-          console.error('Invalid incident: missing No Case', incident);
-          return false;
-        }
-        if (!incident.startTime) {
-          console.error('Invalid incident: missing Start Time', incident);
-          return false;
-        }
-        return true;
-      });
-      
-      if (validIncidents.length !== part.length) {
-        console.warn(`Chunk ${chunkNumber}: ${part.length - validIncidents.length} invalid incidents filtered out`);
-      }
-      
-      if (validIncidents.length > 0) {
-        await db.incidents.bulkPut(validIncidents);
-        totalSaved += validIncidents.length;
-        console.log(`Chunk ${chunkNumber} saved successfully: ${validIncidents.length} incidents`);
-      }
-    } catch (error) {
-      console.error(`Error saving chunk ${chunkNumber}:`, error);
-      throw error;
-    }
+    await db.incidents.bulkPut(part);
   }
-  
-  console.log(`Total incidents saved: ${totalSaved}/${rows.length}`);
-  
-  // Verify final count
-  const finalCount = await db.incidents.count();
-  console.log(`Final database count: ${finalCount}`);
-  
-  return totalSaved;
 }
 
 // Compute stats dari data incident
@@ -305,190 +258,45 @@ export async function computeStats(range?: { from: string; to: string; }): Promi
   return { total, open, mttrMin, avgVendorMin, pauseRatio, byPriority, byKlas, bySite, byLevel };
 }
 
-// Fungsi untuk query incident lama (untuk backward compatibility)
-export async function queryIncidents(filter: IncidentFilter) {
-  const allIncidents = await db.incidents.toArray();
+// Query incidents dengan filter
+export async function queryIncidents(filter: IncidentFilter): Promise<{ rows: Incident[]; total: number }> {
+  let coll = db.incidents.orderBy('startTime').reverse();
   
-  // Apply filters
-  let filteredIncidents = [...allIncidents];
-
-  // Date range filter
+  // Filter by date range
   if (filter.dateFrom && filter.dateTo) {
-    filteredIncidents = filteredIncidents.filter(incident => {
-      if (!incident.startTime) return false;
-      const incidentDate = new Date(incident.startTime);
-      const fromDate = new Date(filter.dateFrom);
-      const toDate = new Date(filter.dateTo);
-      return incidentDate >= fromDate && incidentDate <= toDate;
-    });
+    coll = db.incidents
+      .where('startTime')
+      .between(filter.dateFrom, filter.dateTo, true, true);
   }
+  
+  let rows = await coll.toArray();
 
-  // Other filters
-  if (filter.status) {
-    filteredIncidents = filteredIncidents.filter(i => i.status === filter.status);
-  }
-  if (filter.priority) {
-    filteredIncidents = filteredIncidents.filter(i => i.priority === filter.priority);
-  }
-  if (filter.level !== undefined) {
-    filteredIncidents = filteredIncidents.filter(i => i.level === filter.level);
-  }
-  if (filter.site) {
-    filteredIncidents = filteredIncidents.filter(i => i.site === filter.site);
-  }
-  if (filter.ncal) {
-    filteredIncidents = filteredIncidents.filter(i => i.ncal === filter.ncal);
-  }
-  if (filter.klasifikasiGangguan) {
-    filteredIncidents = filteredIncidents.filter(i => i.klasifikasiGangguan === filter.klasifikasiGangguan);
-  }
+  // Secondary filters (in-memory)
+  if (filter.status) rows = rows.filter(r => r.status === filter.status);
+  if (filter.priority) rows = rows.filter(r => r.priority === filter.priority);
+  if (filter.level !== undefined) rows = rows.filter(r => r.level === filter.level);
+  if (filter.site) rows = rows.filter(r => r.site === filter.site);
+  if (filter.ncal) rows = rows.filter(r => r.ncal === filter.ncal);
+  if (filter.klasifikasiGangguan) rows = rows.filter(r => r.klasifikasiGangguan === filter.klasifikasiGangguan);
 
-  // Search filter
+  // Search
   if (filter.search) {
-    const searchLower = filter.search.toLowerCase();
-    filteredIncidents = filteredIncidents.filter(i =>
-      (i.noCase || '').toLowerCase().includes(searchLower) ||
-      (i.site || '').toLowerCase().includes(searchLower) ||
-      (i.problem || '').toLowerCase().includes(searchLower)
+    const q = filter.search.toLowerCase();
+    rows = rows.filter(r =>
+      (r.noCase || '').toLowerCase().includes(q) ||
+      (r.site || '').toLowerCase().includes(q) ||
+      (r.problem || '').toLowerCase().includes(q)
     );
   }
 
-  // Sort by startTime descending
-  filteredIncidents.sort((a, b) => {
-    if (!a.startTime || !b.startTime) return 0;
-    return new Date(b.startTime).getTime() - new Date(a.startTime).getTime();
-  });
-
-  const total = filteredIncidents.length;
+  const total = rows.length;
 
   // Pagination
   const page = filter.page || 1;
   const limit = filter.limit || 50;
-  const startIndex = (page - 1) * limit;
-  const endIndex = startIndex + limit;
-  const paginatedIncidents = filteredIncidents.slice(startIndex, endIndex);
+  rows = rows.slice((page - 1) * limit, page * limit);
 
-  return {
-    rows: paginatedIncidents,
-    total
-  };
-}
-
-// Fungsi untuk query incident record baru
-export async function queryIncidentRecords(filter: IncidentFilter) {
-  const allRecords = await db.incident.toArray();
-  
-  // Apply filters
-  let filteredRecords = [...allRecords];
-
-  // Date range filter
-  if (filter.dateFrom && filter.dateTo) {
-    filteredRecords = filteredRecords.filter(record => {
-      if (!record.openTime) return false;
-      const recordDate = new Date(record.openTime);
-      const fromDate = new Date(filter.dateFrom);
-      const toDate = new Date(filter.dateTo);
-      return recordDate >= fromDate && recordDate <= toDate;
-    });
-  }
-
-  // Other filters
-  if (filter.status) {
-    filteredRecords = filteredRecords.filter(r => r.status === filter.status);
-  }
-  if (filter.priority) {
-    filteredRecords = filteredRecords.filter(r => r.priority === filter.priority);
-  }
-  if (filter.level !== undefined) {
-    filteredRecords = filteredRecords.filter(r => r.level === filter.level);
-  }
-  if (filter.site) {
-    filteredRecords = filteredRecords.filter(r => r.site === filter.site);
-  }
-  if (filter.ncal) {
-    filteredRecords = filteredRecords.filter(r => r.ncal === filter.ncal);
-  }
-  if (filter.klasifikasiGangguan) {
-    filteredRecords = filteredRecords.filter(r => r.klasifikasiGangguan === filter.klasifikasiGangguan);
-  }
-
-  // Search filter
-  if (filter.search) {
-    const searchLower = filter.search.toLowerCase();
-    filteredRecords = filteredRecords.filter(r =>
-      (r.noCase || '').toLowerCase().includes(searchLower) ||
-      (r.site || '').toLowerCase().includes(searchLower) ||
-      (r.problem || '').toLowerCase().includes(searchLower)
-    );
-  }
-
-  // Sort by openTime descending
-  filteredRecords.sort((a, b) => {
-    if (!a.openTime || !b.openTime) return 0;
-    return new Date(b.openTime).getTime() - new Date(a.openTime).getTime();
-  });
-
-  const total = filteredRecords.length;
-
-  // Pagination
-  const page = filter.page || 1;
-  const limit = filter.limit || 50;
-  const startIndex = (page - 1) * limit;
-  const endIndex = startIndex + limit;
-  const paginatedRecords = filteredRecords.slice(startIndex, endIndex);
-
-  return {
-    rows: paginatedRecords,
-    total
-  };
-}
-
-// Fungsi untuk mendefinisikan status "Open" (konsisten di semua analytics)
-export function isOpenIncident(record: IncidentRecord | Incident): boolean {
-  // Jika ada closeTime, berarti sudah closed
-  if ('closeTime' in record && record.closeTime) {
-    return false;
-  }
-  
-  // Jika ada endTime, berarti sudah closed
-  if ('endTime' in record && record.endTime) {
-    return false;
-  }
-  
-  // Jika status adalah 'Closed', 'Done', atau 'Resolved'
-  const status = record.status?.toLowerCase();
-  if (status === 'closed' || status === 'done' || status === 'resolved') {
-    return false;
-  }
-  
-  // Default: open
-  return true;
-}
-
-// Fungsi untuk mendapatkan semua incident records (untuk analytics)
-export async function getAllIncidentRecords(): Promise<IncidentRecord[]> {
-  return await db.incident.toArray();
-}
-
-// Fungsi untuk mendapatkan incident records yang open
-export async function getOpenIncidentRecords(): Promise<IncidentRecord[]> {
-  const allRecords = await db.incident.toArray();
-  return allRecords.filter(isOpenIncident);
-}
-
-// Fungsi untuk mendapatkan incident records berdasarkan NCAL
-export async function getIncidentRecordsByNCAL(ncal: string): Promise<IncidentRecord[]> {
-  return await db.incident.where('ncal').equals(ncal).toArray();
-}
-
-// Fungsi untuk mendapatkan incident records berdasarkan site
-export async function getIncidentRecordsBySite(site: string): Promise<IncidentRecord[]> {
-  return await db.incident.where('site').equals(site).toArray();
-}
-
-// Fungsi untuk mendapatkan incident records berdasarkan TS
-export async function getIncidentRecordsByTS(ts: string): Promise<IncidentRecord[]> {
-  return await db.incident.where('ts').equals(ts).toArray();
+  return { rows, total };
 }
 
 // Format durasi dari menit ke HH:MM:SS

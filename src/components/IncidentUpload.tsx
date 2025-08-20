@@ -3,7 +3,6 @@ import { useDropzone } from 'react-dropzone';
 import * as XLSX from 'xlsx';
 import { Incident } from '@/types/incident';
 import { mkId, toMinutes, parseDateSafe, saveIncidentsChunked, generateBatchId } from '@/utils/incidentUtils';
-import { db } from '@/lib/db';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -15,9 +14,7 @@ import {
   CheckCircle, 
   XCircle, 
   AlertTriangle,
-  Download,
-  RefreshCw,
-  X
+  Download
 } from 'lucide-react';
 
 interface UploadResult {
@@ -25,17 +22,6 @@ interface UploadResult {
   failed: number;
   errors: string[];
   preview: Incident[];
-  totalProcessed?: number;
-  skipped?: number;
-  emptyRows?: number;
-  invalidRows?: number;
-  skippedDetails?: Array<{
-    row: number;
-    sheet: string;
-    reason: string;
-    data?: any;
-  }>;
-  logs?: string[];
 }
 
 const REQUIRED_HEADERS = [
@@ -46,23 +32,10 @@ const REQUIRED_HEADERS = [
   'Total Duration Pause', 'Total Duration Vendor'
 ];
 
-interface IncidentUploadProps {
-  onUploadComplete?: (logs?: string[], uploadResult?: UploadResult) => void;
-}
-
-export const IncidentUpload: React.FC<IncidentUploadProps> = ({ onUploadComplete }) => {
+export const IncidentUpload: React.FC = () => {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadResult, setUploadResult] = useState<UploadResult | null>(null);
   const [progress, setProgress] = useState(0);
-  const [logs, setLogs] = useState<string[]>([]);
-
-  // Function to capture console logs
-  const captureLog = useCallback((message: string) => {
-    const timestamp = new Date().toLocaleTimeString();
-    const logEntry = `[${timestamp}] ${message}`;
-    setLogs(prev => [...prev, logEntry]);
-    console.log(message); // Still log to console
-  }, []);
 
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
     if (acceptedFiles.length === 0) return;
@@ -70,7 +43,6 @@ export const IncidentUpload: React.FC<IncidentUploadProps> = ({ onUploadComplete
     setIsUploading(true);
     setProgress(0);
     setUploadResult(null);
-    setLogs([]); // Clear previous logs
 
     try {
       const file = acceptedFiles[0];
@@ -80,40 +52,15 @@ export const IncidentUpload: React.FC<IncidentUploadProps> = ({ onUploadComplete
       const errors: string[] = [];
       let successCount = 0;
       let failedCount = 0;
-      let skippedCount = 0;
-      let emptyRowCount = 0;
-      let invalidRowCount = 0;
-      let totalRowsProcessed = 0;
-      const skippedDetails: Array<{
-        row: number;
-        sheet: string;
-        reason: string;
-        data?: any;
-      }> = [];
-
-      captureLog(`=== UPLOAD ANALYSIS START ===`);
-      captureLog(`🔍 VALIDATION STRATEGY: Using NCAL as primary validation field (not No Case)`);
-      captureLog(`📊 Total sheets found: ${workbook.SheetNames.length}`);
-      captureLog(`📋 Sheet names: ${workbook.SheetNames.join(', ')}`);
-      captureLog(`🎯 GOAL: Upload ALL valid data, skip only truly invalid/empty rows`);
-      captureLog(`📝 LOGGING: Detailed logging for all skipped rows with specific reasons`);
 
       // Process all sheets
       for (const sheetName of workbook.SheetNames) {
         const worksheet = workbook.Sheets[sheetName];
         const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
 
-        captureLog(`\n--- Processing Sheet: "${sheetName}" ---`);
-        captureLog(`Total rows in sheet: ${jsonData.length}`);
-
-        if (jsonData.length < 2) {
-          captureLog(`Sheet "${sheetName}" skipped: less than 2 rows`);
-          continue;
-        }
+        if (jsonData.length < 2) continue; // Skip empty sheets
 
         const headers = jsonData[0] as string[];
-        captureLog(`Headers found: ${headers.length}`);
-        captureLog(`Header names: ${headers.join(', ')}`);
         
         // Validate headers
         const missingHeaders = REQUIRED_HEADERS.filter(h => 
@@ -121,284 +68,50 @@ export const IncidentUpload: React.FC<IncidentUploadProps> = ({ onUploadComplete
         );
 
         if (missingHeaders.length > 0) {
-          const errorMsg = `Sheet "${sheetName}": Missing headers: ${missingHeaders.join(', ')}`;
-          errors.push(errorMsg);
-          captureLog(`❌ ERROR: ${errorMsg}`);
+          errors.push(`Sheet "${sheetName}": Missing headers: ${missingHeaders.join(', ')}`);
           continue;
         }
 
-        captureLog(`✅ All required headers found in sheet "${sheetName}"`);
-
         // Process rows
-        let sheetSuccessCount = 0;
-        let sheetSkippedCount = 0;
-        let sheetEmptyCount = 0;
-        let sheetInvalidCount = 0;
-
         for (let i = 1; i < jsonData.length; i++) {
           const row = jsonData[i] as any[];
-          totalRowsProcessed++;
-          
-          // Log every 100th row for debugging
-          if (totalRowsProcessed % 100 === 0) {
-            captureLog(`Processing row ${totalRowsProcessed} of ${jsonData.length - 1} in sheet "${sheetName}"`);
-          }
-          
-          if (!row || row.length === 0) {
-            sheetEmptyCount++;
-            emptyRowCount++;
-            const reason = "Empty row (no data)";
-            captureLog(`Row ${i + 1} in "${sheetName}": ${reason}`);
-            skippedDetails.push({
-              row: i + 1,
-              sheet: sheetName,
-              reason,
-              data: { rowData: row }
-            });
-            continue;
-          }
+          if (!row || row.length === 0) continue;
 
           // Skip completely empty rows
           const hasData = row.some(cell => cell !== null && cell !== undefined && String(cell).trim() !== '');
-          if (!hasData) {
-            sheetEmptyCount++;
-            emptyRowCount++;
-            const reason = "Empty row (all cells empty)";
-            captureLog(`Row ${i + 1} in "${sheetName}": ${reason}`);
-            skippedDetails.push({
-              row: i + 1,
-              sheet: sheetName,
-              reason,
-              data: { rowData: row, hasData }
-            });
-            continue;
-          }
+          if (!hasData) continue;
 
-                      try {
-              const result = parseRowToIncident(headers, row, i + 1, sheetName);
-              if (result && !result.skipped) {
-                allRows.push(result);
-                successCount++;
-                sheetSuccessCount++;
-                captureLog(`Row ${i + 1} in "${sheetName}": ✅ Successfully processed - ID: ${result.id}, NCAL: ${result.ncal}, Site: ${result.site}`);
-              } else if (result && result.skipped) {
-                // Row was skipped with specific reason
-                sheetSkippedCount++;
-                skippedCount++;
-                captureLog(`Row ${i + 1} in "${sheetName}" ⚠️ SKIPPED: ${result.reason}`);
-                skippedDetails.push({
-                  row: i + 1,
-                  sheet: sheetName,
-                  reason: result.reason,
-                  data: result.rowData
-                });
-              } else {
-                // Row was skipped (null result)
-                sheetSkippedCount++;
-                skippedCount++;
-                const reason = "Row processing returned null (unknown error)";
-                captureLog(`Row ${i + 1} in "${sheetName}" ❌ SKIPPED: ${reason}`);
-                skippedDetails.push({
-                  row: i + 1,
-                  sheet: sheetName,
-                  reason,
-                  data: { rowData: row }
-                });
-              }
-            } catch (error) {
-              sheetInvalidCount++;
-              invalidRowCount++;
-              const errorMsg = `Row ${i + 1} in "${sheetName}": ${error}`;
-              errors.push(errorMsg);
-              failedCount++;
-              skippedDetails.push({
-                row: i + 1,
-                sheet: sheetName,
-                reason: `Error: ${error}`,
-                data: { rowData: row, error: error.toString() }
-              });
+          try {
+            const incident = parseRowToIncident(headers, row, i + 1, sheetName);
+            if (incident) {
+              allRows.push(incident);
+              successCount++;
+            } else {
+              // Row was skipped (empty No Case) - don't count as failed
+              console.log(`Row ${i + 1} in "${sheetName}" skipped: empty No Case`);
             }
-        }
-
-                  captureLog(`Sheet "${sheetName}" results:`);
-          captureLog(`  - Total rows in sheet: ${jsonData.length - 1}`);
-          captureLog(`  - Success: ${sheetSuccessCount}`);
-          captureLog(`  - Skipped: ${sheetSkippedCount}`);
-          captureLog(`  - Empty: ${sheetEmptyCount}`);
-          captureLog(`  - Invalid: ${sheetInvalidCount}`);
-          captureLog(`  - Total processed: ${sheetSuccessCount + sheetSkippedCount + sheetEmptyCount + sheetInvalidCount}`);
-          
-          // Validate sheet processing
-          const sheetTotal = sheetSuccessCount + sheetSkippedCount + sheetEmptyCount + sheetInvalidCount;
-          if (sheetTotal !== jsonData.length - 1) {
-            captureLog(`⚠️ SHEET INCONSISTENCY: Expected ${jsonData.length - 1}, got ${sheetTotal}`);
-          } else {
-            captureLog(`✅ Sheet processing consistent`);
+          } catch (error) {
+            errors.push(`Row ${i + 1} in "${sheetName}": ${error}`);
+            failedCount++;
           }
-
-          setProgress((workbook.SheetNames.indexOf(sheetName) + 1) / workbook.SheetNames.length * 50);
         }
 
-              captureLog(`\n=== UPLOAD ANALYSIS SUMMARY ===`);
-      captureLog(`📊 Total rows processed: ${totalRowsProcessed}`);
-      captureLog(`✅ Successfully parsed: ${successCount}`);
-      captureLog(`⚠️ Skipped (empty/invalid): ${skippedCount}`);
-      captureLog(`📭 Empty rows: ${emptyRowCount}`);
-      captureLog(`❌ Invalid rows: ${invalidRowCount}`);
-      captureLog(`💥 Failed: ${failedCount}`);
-      captureLog(`💾 Total incidents to save: ${allRows.length}`);
-      
-      // Validate data consistency
-      const expectedTotal = successCount + skippedCount + emptyRowCount + invalidRowCount + failedCount;
-      if (expectedTotal !== totalRowsProcessed) {
-        captureLog(`⚠️ DATA INCONSISTENCY DETECTED!`);
-        captureLog(`Expected total: ${expectedTotal}, Actual processed: ${totalRowsProcessed}`);
-        captureLog(`Difference: ${Math.abs(expectedTotal - totalRowsProcessed)} rows`);
+        setProgress((workbook.SheetNames.indexOf(sheetName) + 1) / workbook.SheetNames.length * 50);
       }
-        
-        // Log detailed breakdown of skipped rows
-        if (skippedDetails.length > 0) {
-          captureLog(`\n📋 DETAILED SKIPPED ROWS BREAKDOWN:`);
-          captureLog(`Total skipped rows: ${skippedDetails.length}`);
-          
-          // Group by reason
-          const reasonGroups = skippedDetails.reduce((acc, detail) => {
-            if (!acc[detail.reason]) acc[detail.reason] = [];
-            acc[detail.reason].push(detail);
-            return acc;
-          }, {} as Record<string, typeof skippedDetails>);
-          
-          Object.entries(reasonGroups).forEach(([reason, details]) => {
-            captureLog(`\n🔍 "${reason}": ${details.length} rows`);
-            details.slice(0, 10).forEach(detail => {
-              captureLog(`   Row ${detail.row} (${detail.sheet})`);
-            });
-            if (details.length > 10) {
-              captureLog(`   ... and ${details.length - 10} more rows`);
-            }
-          });
-        }
-        
-        captureLog(`\n=== UPLOAD ANALYSIS END ===\n`);
 
       // Save to database
       if (allRows.length > 0) {
         setProgress(60);
-        captureLog(`💾 Saving ${allRows.length} incidents to database...`);
-        
-        try {
-          await saveIncidentsChunked(allRows);
-          captureLog(`✅ Successfully saved ${allRows.length} incidents to database`);
-          
-          // Verify data was saved
-          const savedCount = await db.incidents.count();
-          captureLog(`📊 Total incidents in database after save: ${savedCount}`);
-          
-          if (savedCount === 0) {
-            throw new Error('Data was not saved to database - count is 0');
-          }
-          
-          // Validate saved data matches expected
-          if (savedCount !== allRows.length) {
-            captureLog(`⚠️ WARNING: Saved count (${savedCount}) doesn't match expected (${allRows.length})`);
-            captureLog(`This may indicate duplicate data or database issues.`);
-            
-            // Check if there are existing records that might be causing the difference
-            const existingCount = savedCount - allRows.length;
-            if (existingCount > 0) {
-              captureLog(`📊 Database already contained ${existingCount} existing incidents`);
-              captureLog(`📊 New incidents added: ${allRows.length}`);
-              captureLog(`📊 Total incidents now: ${savedCount}`);
-            }
-          } else {
-            captureLog(`✅ Database validation: Saved count matches expected count`);
-          }
-          
-          setProgress(100);
-        } catch (error) {
-          captureLog(`❌ ERROR: Error saving to database: ${error}`);
-          throw new Error(`Failed to save data to database: ${error}`);
-        }
-      } else {
-        captureLog(`⚠️ WARNING: No valid incidents to save`);
-      }
-
-      // Ensure success count matches actual saved data
-      const actualSuccessCount = allRows.length;
-      if (successCount !== actualSuccessCount) {
-        captureLog(`⚠️ SUCCESS COUNT MISMATCH: Parsed ${successCount} but actually saved ${actualSuccessCount}`);
-        captureLog(`This may indicate some rows were filtered out during processing.`);
+        await saveIncidentsChunked(allRows);
+        setProgress(100);
       }
 
       setUploadResult({
-        success: actualSuccessCount, // Use actual count instead of parsed count
+        success: successCount,
         failed: failedCount,
         errors,
-        preview: allRows.slice(0, 20),
-        totalProcessed: totalRowsProcessed,
-        skipped: skippedCount,
-        emptyRows: emptyRowCount,
-        invalidRows: invalidRowCount,
-        skippedDetails,
-        logs
+        preview: allRows.slice(0, 20)
       });
-
-      // Log detailed summary
-      captureLog(`\n=== FINAL UPLOAD SUMMARY ===`);
-      captureLog(`Expected rows: ${totalRowsProcessed}`);
-      captureLog(`Successfully parsed: ${successCount}`);
-      captureLog(`Actually saved to database: ${actualSuccessCount}`);
-      captureLog(`Skipped (empty/invalid): ${skippedCount}`);
-      captureLog(`Empty rows: ${emptyRowCount}`);
-      captureLog(`Invalid rows: ${invalidRowCount}`);
-      captureLog(`Failed: ${failedCount}`);
-      captureLog(`Total incidents saved: ${allRows.length}`);
-      
-      // Final data consistency check
-      const totalAccounted = successCount + skippedCount + emptyRowCount + invalidRowCount + failedCount;
-      captureLog(`\n=== DATA CONSISTENCY VALIDATION ===`);
-      captureLog(`Total rows processed: ${totalRowsProcessed}`);
-      captureLog(`Total accounted for: ${totalAccounted}`);
-      captureLog(`Difference: ${Math.abs(totalRowsProcessed - totalAccounted)}`);
-      
-      if (totalAccounted !== totalRowsProcessed) {
-        captureLog(`❌ DATA INCONSISTENCY: ${Math.abs(totalRowsProcessed - totalAccounted)} rows unaccounted for!`);
-        captureLog(`This indicates a bug in the processing logic.`);
-      } else {
-        captureLog(`✅ DATA CONSISTENCY: All rows properly accounted for!`);
-      }
-      
-      // Upload success validation
-      captureLog(`\n=== UPLOAD SUCCESS VALIDATION ===`);
-      if (successCount > 0) {
-        captureLog(`✅ SUCCESS: ${successCount} valid incidents uploaded successfully!`);
-        captureLog(`📊 Upload success rate: ${((successCount / totalRowsProcessed) * 100).toFixed(1)}%`);
-      } else {
-        captureLog(`❌ FAILURE: No valid incidents were uploaded!`);
-        captureLog(`🔍 Check the skipped rows details above for issues.`);
-      }
-      
-      if (successCount < totalRowsProcessed) {
-        captureLog(`⚠️  WARNING: Only ${successCount} out of ${totalRowsProcessed} rows were successfully uploaded!`);
-        captureLog(`Missing data: ${totalRowsProcessed - successCount} rows`);
-        captureLog(`Check the logs above for details on skipped/failed rows.`);
-      } else {
-        captureLog(`✅ SUCCESS: All ${successCount} rows were successfully uploaded!`);
-      }
-      captureLog(`=== END SUMMARY ===\n`);
-
-      // Call callback if provided and upload was successful
-      // Add delay to ensure logs are visible before closing modal
-      if (onUploadComplete && successCount > 0) {
-        captureLog(`\n🔄 Calling onUploadComplete callback in 3 seconds to allow log review...`);
-        setTimeout(() => {
-          captureLog(`✅ Executing onUploadComplete callback now`);
-          onUploadComplete(logs, uploadResult);
-        }, 3000); // 3 second delay
-      } else if (onUploadComplete && successCount === 0) {
-        captureLog(`\n⚠️ Upload completed but no data was uploaded. Callback will not be called.`);
-        onUploadComplete(logs, uploadResult); // Still send logs even if no data uploaded
-      }
 
     } catch (error) {
       setUploadResult({
@@ -486,71 +199,80 @@ export const IncidentUpload: React.FC<IncidentUploadProps> = ({ onUploadComplete
               </div>
             )}
 
-                        {uploadResult && (
+            {uploadResult && (
               <div className="space-y-4">
-                {/* Simple Summary */}
-                <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                      <div className="flex items-center gap-2">
-                        <CheckCircle className="w-5 h-5 text-green-600" />
-                        <span className="font-medium text-green-600">{uploadResult.success}</span>
-                        <span className="text-sm text-gray-600 dark:text-gray-400">Successfully Uploaded</span>
-                      </div>
-                      {uploadResult.skipped && uploadResult.skipped > 0 && (
-                        <div className="flex items-center gap-2">
-                          <AlertTriangle className="w-5 h-5 text-yellow-600" />
-                          <span className="font-medium text-yellow-600">{uploadResult.skipped}</span>
-                          <span className="text-sm text-gray-600 dark:text-gray-400">Skipped</span>
-                        </div>
-                      )}
-                      {uploadResult.failed > 0 && (
-                        <div className="flex items-center gap-2">
-                          <XCircle className="w-5 h-5 text-red-600" />
-                          <span className="font-medium text-red-600">{uploadResult.failed}</span>
-                          <span className="text-sm text-gray-600 dark:text-gray-400">Failed</span>
-                        </div>
-                      )}
-                    </div>
-                    <div className="text-sm text-gray-600 dark:text-gray-400">
-                      Total: {uploadResult.totalProcessed || 0} rows
-                    </div>
-                  </div>
-                  
-                  {uploadResult.success < (uploadResult.totalProcessed || 0) && (
-                    <div className="mt-3 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
-                      <p className="text-yellow-800 dark:text-yellow-200 text-sm">
-                        ⚠️ Only {uploadResult.success} out of {uploadResult.totalProcessed} rows were successfully uploaded. 
-                        Click "View Logs" button to see detailed information about skipped/failed rows.
-                      </p>
-                    </div>
+                <div className="flex gap-4">
+                  <Badge variant="success" className="flex items-center gap-1">
+                    <CheckCircle className="w-4 h-4" />
+                    {uploadResult.success} Success
+                  </Badge>
+                  {uploadResult.failed > 0 && (
+                    <Badge variant="destructive" className="flex items-center gap-1">
+                      <XCircle className="w-4 h-4" />
+                      {uploadResult.failed} Failed
+                    </Badge>
                   )}
                 </div>
-                
-                {/* Action Buttons */}
-                <div className="flex gap-2">
-                  <Button 
-                    onClick={() => {
-                      console.log('🔄 Manual close button clicked - calling onUploadComplete immediately');
-                      if (onUploadComplete) {
-                        onUploadComplete(logs, uploadResult);
-                      }
-                    }}
-                    variant="default" 
-                    size="sm"
-                    className="bg-blue-600 hover:bg-blue-700"
-                  >
-                    <CheckCircle className="w-4 h-4 mr-2" />
-                    Close & Continue
-                  </Button>
-                </div>
+
+                {uploadResult.errors.length > 0 && (
+                  <Alert>
+                    <AlertTriangle className="w-4 h-4" />
+                    <AlertDescription>
+                      <div className="space-y-2">
+                        <p className="font-medium">Errors encountered:</p>
+                        <ul className="text-sm space-y-1">
+                          {uploadResult.errors.slice(0, 10).map((error, index) => (
+                            <li key={index} className="text-red-600 dark:text-red-400">
+                              {error}
+                            </li>
+                          ))}
+                          {uploadResult.errors.length > 10 && (
+                            <li className="text-gray-500">
+                              ... and {uploadResult.errors.length - 10} more errors
+                            </li>
+                          )}
+                        </ul>
+                      </div>
+                    </AlertDescription>
+                  </Alert>
+                )}
+
+                {uploadResult.preview.length > 0 && (
+                  <div>
+                    <h4 className="font-medium mb-2">Preview (first 20 rows):</h4>
+                    <div className="border rounded-lg overflow-hidden">
+                      <table className="w-full text-sm">
+                        <thead className="bg-gray-50 dark:bg-gray-800">
+                          <tr>
+                            <th className="px-3 py-2 text-left">No Case</th>
+                            <th className="px-3 py-2 text-left">Site</th>
+                            <th className="px-3 py-2 text-left">Status</th>
+                            <th className="px-3 py-2 text-left">Priority</th>
+                            <th className="px-3 py-2 text-left">Duration</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {uploadResult.preview.map((incident, index) => (
+                            <tr key={index} className="border-t">
+                              <td className="px-3 py-2">{incident.noCase}</td>
+                              <td className="px-3 py-2">{incident.site}</td>
+                              <td className="px-3 py-2">{incident.status}</td>
+                              <td className="px-3 py-2">{incident.priority}</td>
+                              <td className="px-3 py-2">
+                                {incident.durationMin ? `${Math.floor(incident.durationMin / 60)}:${String(incident.durationMin % 60).padStart(2, '0')}` : '-'}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>
         </CardContent>
       </Card>
-
-      
     </div>
   );
 };
@@ -563,97 +285,29 @@ function parseRowToIncident(headers: string[], row: any[], rowNum: number, sheet
     return index >= 0 ? row[index] : null;
   };
 
-  // Use NCAL as primary validation instead of No Case
-  const ncalValue = getValue('NCAL');
-  if (!ncalValue || String(ncalValue).trim() === '') {
-    const reason = "Empty NCAL (primary validation field)";
-    console.log(`Row ${rowNum} in "${sheetName}": ${reason}`);
-    return { skipped: true, reason, rowData: { ncal: ncalValue } };
-  }
-
-  // Normalize NCAL - remove extra spaces and ensure it's a string
-  const normalizedNCAL = String(ncalValue).trim();
-  if (normalizedNCAL === '') {
-    const reason = "NCAL is empty after normalization (primary validation field)";
-    console.log(`Row ${rowNum} in "${sheetName}": ${reason}`);
-    return { skipped: true, reason, rowData: { ncal: ncalValue, normalizedNCAL } };
-  }
-
-  // Validate NCAL value with more flexible normalization
-  const validNCAL = ['Blue', 'Yellow', 'Orange', 'Red', 'Black'];
-  const ncalStr = normalizedNCAL;
-  let finalNCAL = ncalStr;
-  
-  if (!validNCAL.includes(ncalStr)) {
-    // Try to normalize common variations
-    const normalized = ncalStr.toLowerCase();
-    if (normalized === 'blue' || normalized === 'b' || normalized === 'blu') finalNCAL = 'Blue';
-    else if (normalized === 'yellow' || normalized === 'y' || normalized === 'yel') finalNCAL = 'Yellow';
-    else if (normalized === 'orange' || normalized === 'o' || normalized === 'ora') finalNCAL = 'Orange';
-    else if (normalized === 'red' || normalized === 'r') finalNCAL = 'Red';
-    else if (normalized === 'black' || normalized === 'bl' || normalized === 'bla') finalNCAL = 'Black';
-    else {
-      const reason = `Invalid NCAL value "${ncalValue}" (primary validation field) - Expected: Blue, Yellow, Orange, Red, or Black`;
-      console.log(`Row ${rowNum} in "${sheetName}": ${reason}`);
-      return { skipped: true, reason, rowData: { ncal: ncalValue, normalizedNCAL } };
-    }
-  }
-
   const noCase = getValue('No Case');
-  // Normalize No Case - remove extra spaces and ensure it's a string
-  const normalizedNoCase = noCase ? String(noCase).trim() : `NCAL_${finalNCAL}_${rowNum}`;
-  
-  // Log if No Case was auto-generated
   if (!noCase || String(noCase).trim() === '') {
-    console.log(`Row ${rowNum} in "${sheetName}": Auto-generated No Case "${normalizedNoCase}" for NCAL "${finalNCAL}"`);
+    return null; // Skip empty rows instead of throwing error
   }
 
   // Additional validation for required fields
   const startTimeRaw = getValue('Start');
   if (!startTimeRaw || String(startTimeRaw).trim() === '') {
-    const reason = "Missing Start time (required field)";
-    console.log(`Row ${rowNum} in "${sheetName}": ${reason}`);
-    return { skipped: true, reason, rowData: { startTimeRaw } };
-  }
-  
-  // Validate other critical fields but don't skip if they're missing
-  const siteValue = getValue('Site');
-  const tsValue = getValue('TS');
-  const problemValue = getValue('Problem');
-  
-  if (!siteValue || String(siteValue).trim() === '') {
-    console.warn(`Row ${rowNum} in "${sheetName}": Site is empty - will use default value`);
-  }
-  
-  if (!tsValue || String(tsValue).trim() === '') {
-    console.warn(`Row ${rowNum} in "${sheetName}": TS is empty - will use default value`);
-  }
-  
-  if (!problemValue || String(problemValue).trim() === '') {
-    console.warn(`Row ${rowNum} in "${sheetName}": Problem is empty - will use default value`);
+    console.log(`Row ${rowNum} in "${sheetName}" skipped: missing Start time`);
+    return null;
   }
 
   const startTime = parseDateSafe(startTimeRaw);
   if (!startTime) {
-    const reason = `Invalid Start time format: "${startTimeRaw}"`;
-    console.log(`Row ${rowNum} in "${sheetName}": ${reason}`);
-    return { skipped: true, reason, rowData: { startTimeRaw } };
+    console.log(`Row ${rowNum} in "${sheetName}" skipped: invalid Start time format`);
+    return null;
   }
-  
   console.log(`Row ${rowNum} in "${sheetName}": Successfully parsed Start time "${startTimeRaw}" -> ${startTime}`);
   const id = mkId(noCase, startTime);
-  
-  // Validate ID generation
-  if (!id) {
-    const reason = `Failed to generate ID for No Case: "${noCase}"`;
-    console.error(`Row ${rowNum} in "${sheetName}": ${reason}`);
-    return { skipped: true, reason, rowData: { noCase, startTime } };
-  }
 
   const incident: Incident = {
     id,
-    noCase: normalizedNoCase,
-    ncal: finalNCAL,
+    noCase: String(noCase),
     priority: (() => {
       const priorityValue = getValue('Priority');
       if (priorityValue) {
@@ -663,24 +317,25 @@ function parseRowToIncident(headers: string[], row: any[], rowNum: number, sheet
           return priorityStr;
         } else {
           console.warn(`Row ${rowNum} in "${sheetName}": Invalid Priority value "${priorityValue}". Expected: High, Medium, Low`);
-          // Try to normalize common variations
-          const normalized = priorityStr.toLowerCase();
-          if (normalized === 'high' || normalized === 'h' || normalized === 'hi') return 'High';
-          if (normalized === 'medium' || normalized === 'med' || normalized === 'm' || normalized === 'mid') return 'Medium';
-          if (normalized === 'low' || normalized === 'l' || normalized === 'lo') return 'Low';
         }
       }
-      return priorityValue ? String(priorityValue).trim() : null;
+      return priorityValue || null;
     })(),
-    site: (() => {
-      const siteValue = getValue('Site');
-      return siteValue ? String(siteValue).trim() : 'Unknown Site';
+    site: getValue('Site') || null,
+    ncal: (() => {
+      const ncalValue = getValue('NCAL');
+      if (ncalValue) {
+        const validNCAL = ['Blue', 'Yellow', 'Orange', 'Red', 'Black'];
+        const ncalStr = String(ncalValue).trim();
+        if (validNCAL.includes(ncalStr)) {
+          return ncalStr;
+        } else {
+          console.warn(`Row ${rowNum} in "${sheetName}": Invalid NCAL value "${ncalValue}". Expected: Blue, Yellow, Orange, Red, Black`);
+        }
+      }
+      return ncalValue || null;
     })(),
-    // NCAL is already processed above
-    status: (() => {
-      const statusValue = getValue('Status');
-      return statusValue ? String(statusValue).trim() : null;
-    })(),
+    status: getValue('Status') || null,
     level: (() => {
       const levelValue = getValue('Level');
       if (levelValue) {
@@ -689,23 +344,12 @@ function parseRowToIncident(headers: string[], row: any[], rowNum: number, sheet
           return levelNum;
         } else {
           console.warn(`Row ${rowNum} in "${sheetName}": Invalid Level value "${levelValue}". Expected: 1-10`);
-          // Try to normalize common variations
-          const levelStr = String(levelValue).toLowerCase().trim();
-          if (levelStr === '1' || levelStr === 'one' || levelStr === 'i') return 1;
-          if (levelStr === '2' || levelStr === 'two' || levelStr === 'ii') return 2;
-          if (levelStr === '3' || levelStr === 'three' || levelStr === 'iii') return 3;
         }
       }
       return levelValue ? Number(levelValue) : null;
     })(),
-    ts: (() => {
-      const tsValue = getValue('TS');
-      return tsValue ? String(tsValue).trim() : 'Unknown TS';
-    })(),
-    odpBts: (() => {
-      const odpValue = getValue('ODP/BTS');
-      return odpValue ? String(odpValue).trim() : null;
-    })(),
+    ts: getValue('TS') || null,
+    odpBts: getValue('ODP/BTS') || null,
     startTime,
     startEscalationVendor: parseDateSafe(getValue('Start Escalation Vendor')),
     endTime: parseDateSafe(getValue('End')),
@@ -725,26 +369,11 @@ function parseRowToIncident(headers: string[], row: any[], rowNum: number, sheet
       }
       return minutes;
     })(),
-    problem: (() => {
-      const problemValue = getValue('Problem');
-      return problemValue ? String(problemValue).trim() : 'No Problem Description';
-    })(),
-    penyebab: (() => {
-      const penyebabValue = getValue('Penyebab');
-      return penyebabValue ? String(penyebabValue).trim() : null;
-    })(),
-    actionTerakhir: (() => {
-      const actionValue = getValue('Action Terakhir');
-      return actionValue ? String(actionValue).trim() : null;
-    })(),
-    note: (() => {
-      const noteValue = getValue('Note');
-      return noteValue ? String(noteValue).trim() : null;
-    })(),
-    klasifikasiGangguan: (() => {
-      const klasValue = getValue('Klasifikasi Gangguan');
-      return klasValue ? String(klasValue).trim() : null;
-    })(),
+    problem: getValue('Problem') || null,
+    penyebab: getValue('Penyebab') || null,
+    actionTerakhir: getValue('Action Terakhir') || null,
+    note: getValue('Note') || null,
+    klasifikasiGangguan: getValue('Klasifikasi Gangguan') || null,
     powerBefore: (() => {
       const powerValue = getValue('Power Before');
       if (powerValue) {
@@ -807,13 +436,5 @@ function parseRowToIncident(headers: string[], row: any[], rowNum: number, sheet
     importedAt: new Date().toISOString()
   };
 
-  // Final validation before returning
-  if (!incident.id || !incident.noCase || !incident.startTime) {
-    const reason = `Invalid incident object created - missing required fields`;
-    console.error(`Row ${rowNum} in "${sheetName}": ${reason}`, incident);
-    return { skipped: true, reason, rowData: { incident } };
-  }
-
-  console.log(`Row ${rowNum} in "${sheetName}": Successfully created incident with ID: ${incident.id}`);
   return incident;
 }

@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '@/lib/db';
-import { getAllIncidentRecords, isOpenIncident } from '@/utils/incidentUtils';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -79,9 +78,9 @@ export const IncidentAnalytics: React.FC = () => {
   const [selectedPeriod, setSelectedPeriod] = useState<'3m' | '6m' | '1y' | 'all'>('6m');
   const [selectedLevelMonth, setSelectedLevelMonth] = useState<string>('all');
 
-  // Get all incident records for live updates
-  const allIncidentRecords = useLiveQuery(() => 
-    db.incident.toArray()
+  // Get all incidents for live updates
+  const allIncidents = useLiveQuery(() => 
+    db.incidents.toArray()
   );
 
   // Helper function to normalize NCAL values
@@ -100,19 +99,19 @@ export const IncidentAnalytics: React.FC = () => {
 
   // Debug: Log data for verification (background only)
   useEffect(() => {
-    if (allIncidentRecords && allIncidentRecords.length > 0) {
+    if (allIncidents && allIncidents.length > 0) {
       console.group('🔍 INCIDENT ANALYTICS - DATA VERIFICATION');
-      console.log('📊 Total incident records loaded:', allIncidentRecords.length);
-      console.log('📋 Sample record:', allIncidentRecords[0]);
+      console.log('📊 Total incidents loaded:', allIncidents.length);
+      console.log('📋 Sample incident:', allIncidents[0]);
       
       // Check NCAL values
-      const ncalValues = [...new Set(allIncidentRecords.map(r => r.ncal).filter(Boolean))];
+      const ncalValues = [...new Set(allIncidents.map(i => i.ncal).filter(Boolean))];
       console.log('🎨 Unique NCAL values:', ncalValues);
       
       // Check date ranges
-      const dates = allIncidentRecords
-        .filter(r => r.openTime)
-        .map(r => new Date(r.openTime!))
+      const dates = allIncidents
+        .filter(i => i.startTime)
+        .map(i => new Date(i.startTime!))
         .sort((a, b) => a.getTime() - b.getTime());
       
       if (dates.length > 0) {
@@ -123,9 +122,9 @@ export const IncidentAnalytics: React.FC = () => {
       }
       
       // Check duration values
-      const durations = allIncidentRecords
-        .filter(r => r.durationMin && r.durationMin > 0)
-        .map(r => r.durationMin);
+      const durations = allIncidents
+        .filter(i => i.durationMin && i.durationMin > 0)
+        .map(i => i.durationMin);
       
       console.log('⏱️ Duration stats:', {
         totalWithDuration: durations.length,
@@ -136,13 +135,13 @@ export const IncidentAnalytics: React.FC = () => {
 
       // NCAL breakdown
       const ncalBreakdown = NCAL_ORDER.map(ncal => {
-        const count = allIncidentRecords.filter(r => r.ncal === ncal).length;
-        const withDuration = allIncidentRecords.filter(r => 
-          r.ncal === ncal && r.durationMin && r.durationMin > 0
+        const count = allIncidents.filter(i => normalizeNCAL(i.ncal) === ncal).length;
+        const withDuration = allIncidents.filter(i => 
+          normalizeNCAL(i.ncal) === ncal && i.durationMin && i.durationMin > 0
         ).length;
-        const totalDuration = allIncidentRecords.filter(r => 
-          r.ncal === ncal && r.durationMin && r.durationMin > 0
-        ).reduce((sum, r) => sum + (r.durationMin || 0), 0);
+        const totalDuration = allIncidents.filter(i => 
+          normalizeNCAL(i.ncal) === ncal && i.durationMin && i.durationMin > 0
+        ).reduce((sum, i) => sum + (i.durationMin || 0), 0);
         const avgDuration = withDuration > 0 ? totalDuration / withDuration : 0;
 
         return {
@@ -157,7 +156,7 @@ export const IncidentAnalytics: React.FC = () => {
       console.table(ncalBreakdown);
       console.groupEnd();
     }
-  }, [allIncidentRecords]);
+  }, [allIncidents]);
 
   // Helper function to format duration
   const formatDurationHMS = (minutes: number): string => {

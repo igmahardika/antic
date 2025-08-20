@@ -159,9 +159,7 @@ export const TSAnalytics: React.FC = () => {
         byTSNCAL: {},
         byTSMonth: {},
         tsPerformance: {},
-        vendorEfficiency: 0,
-        ncalPerformance: {},
-        targetCompliance: {}
+        vendorEfficiency: 0
       };
     }
 
@@ -169,7 +167,7 @@ export const TSAnalytics: React.FC = () => {
     const incidentsWithVendor = filteredIncidents.filter(i => i.durationVendorMin && i.durationVendorMin > 0);
     const escalatedIncidents = filteredIncidents.filter(i => i.startEscalationVendor);
 
-    // TS Performance Analysis with NCAL Target Compliance
+    // TS Performance Analysis
     const byTS = incidentsWithTS.reduce((acc, incident) => {
       const ts = incident.ts || 'Unknown';
       if (!acc[ts]) {
@@ -179,9 +177,7 @@ export const TSAnalytics: React.FC = () => {
           avgDuration: 0,
           escalations: 0,
           byNCAL: {},
-          byPriority: {},
-          ncalCompliance: {},
-          targetCompliance: 0
+          byPriority: {}
         };
       }
       acc[ts].count += 1;
@@ -194,18 +190,9 @@ export const TSAnalytics: React.FC = () => {
         acc[ts].escalations += 1;
       }
 
-      // NCAL breakdown with target compliance
+      // NCAL breakdown
       const ncal = normalizeNCAL(incident.ncal);
-      if (!acc[ts].byNCAL[ncal]) {
-        acc[ts].byNCAL[ncal] = { count: 0, totalDuration: 0, avgDuration: 0, compliance: 0 };
-      }
-      acc[ts].byNCAL[ncal].count += 1;
-      acc[ts].byNCAL[ncal].totalDuration += incident.durationVendorMin || 0;
-      
-      // Calculate NCAL compliance
-      const target = NCAL_TARGETS[ncal as keyof typeof NCAL_TARGETS] || 0;
-      const isCompliant = (incident.durationVendorMin || 0) <= target;
-      acc[ts].byNCAL[ncal].compliance += isCompliant ? 1 : 0;
+      acc[ts].byNCAL[ncal] = (acc[ts].byNCAL[ncal] || 0) + 1;
 
       // Priority breakdown
       const priority = incident.priority || 'Unknown';
@@ -214,111 +201,42 @@ export const TSAnalytics: React.FC = () => {
       return acc;
     }, {} as Record<string, any>);
 
-    // Calculate averages and compliance rates
+    // Calculate averages
     Object.keys(byTS).forEach(ts => {
       if (byTS[ts].count > 0) {
         byTS[ts].avgDuration = byTS[ts].totalDuration / byTS[ts].count;
         byTS[ts].escalationRate = (byTS[ts].escalations / byTS[ts].count) * 100;
-        
-        // Calculate overall target compliance
-        let totalCompliant = 0;
-        let totalIncidents = 0;
-        Object.keys(byTS[ts].byNCAL).forEach(ncal => {
-          const ncalData = byTS[ts].byNCAL[ncal];
-          ncalData.avgDuration = ncalData.totalDuration / ncalData.count;
-          ncalData.complianceRate = (ncalData.compliance / ncalData.count) * 100;
-          totalCompliant += ncalData.compliance;
-          totalIncidents += ncalData.count;
-        });
-        byTS[ts].targetCompliance = totalIncidents > 0 ? (totalCompliant / totalIncidents) * 100 : 0;
       }
     });
 
-    // TS Duration Analysis with NCAL Targets
+    // TS Duration Analysis
     const byTSDuration = incidentsWithVendor.reduce((acc, incident) => {
       const ts = incident.ts || 'Unknown';
       if (!acc[ts]) {
-        acc[ts] = { 
-          total: 0, 
-          count: 0, 
-          avg: 0,
-          byNCAL: {},
-          targetCompliance: 0
-        };
+        acc[ts] = { total: 0, count: 0, avg: 0 };
       }
       acc[ts].total += incident.durationVendorMin || 0;
       acc[ts].count += 1;
-      
-      // NCAL-specific duration analysis
-      const ncal = normalizeNCAL(incident.ncal);
-      if (!acc[ts].byNCAL[ncal]) {
-        acc[ts].byNCAL[ncal] = { total: 0, count: 0, avg: 0, target: 0, compliance: 0 };
-      }
-      acc[ts].byNCAL[ncal].total += incident.durationVendorMin || 0;
-      acc[ts].byNCAL[ncal].count += 1;
-      acc[ts].byNCAL[ncal].target = NCAL_TARGETS[ncal as keyof typeof NCAL_TARGETS] || 0;
-      
-      // Check compliance
-      const isCompliant = (incident.durationVendorMin || 0) <= acc[ts].byNCAL[ncal].target;
-      acc[ts].byNCAL[ncal].compliance += isCompliant ? 1 : 0;
-      
       return acc;
-    }, {} as Record<string, any>);
+    }, {} as Record<string, { total: number; count: number; avg: number }>);
 
-    // Calculate averages and compliance for duration analysis
+    // Calculate averages
     Object.keys(byTSDuration).forEach(ts => {
       if (byTSDuration[ts].count > 0) {
         byTSDuration[ts].avg = byTSDuration[ts].total / byTSDuration[ts].count;
-        
-        // Calculate overall compliance
-        let totalCompliant = 0;
-        let totalIncidents = 0;
-        Object.keys(byTSDuration[ts].byNCAL).forEach(ncal => {
-          const ncalData = byTSDuration[ts].byNCAL[ncal];
-          ncalData.avg = ncalData.total / ncalData.count;
-          ncalData.complianceRate = (ncalData.compliance / ncalData.count) * 100;
-          totalCompliant += ncalData.compliance;
-          totalIncidents += ncalData.count;
-        });
-        byTSDuration[ts].targetCompliance = totalIncidents > 0 ? (totalCompliant / totalIncidents) * 100 : 0;
       }
     });
 
-    // TS by NCAL with target analysis
+    // TS by NCAL
     const byTSNCAL = incidentsWithTS.reduce((acc, incident) => {
       const ts = incident.ts || 'Unknown';
       const ncal = normalizeNCAL(incident.ncal);
       
       if (!acc[ts]) acc[ts] = {};
-      if (!acc[ts][ncal]) {
-        acc[ts][ncal] = { 
-          count: 0, 
-          totalDuration: 0, 
-          avgDuration: 0, 
-          target: 0, 
-          compliance: 0,
-          complianceRate: 0
-        };
-      }
-      acc[ts][ncal].count += 1;
-      acc[ts][ncal].totalDuration += incident.durationVendorMin || 0;
-      acc[ts][ncal].target = NCAL_TARGETS[ncal as keyof typeof NCAL_TARGETS] || 0;
-      
-      // Check compliance
-      const isCompliant = (incident.durationVendorMin || 0) <= acc[ts][ncal].target;
-      acc[ts][ncal].compliance += isCompliant ? 1 : 0;
-      
+      if (!acc[ts][ncal]) acc[ts][ncal] = 0;
+      acc[ts][ncal] += 1;
       return acc;
-    }, {} as Record<string, Record<string, any>>);
-
-    // Calculate averages and compliance rates for NCAL analysis
-    Object.keys(byTSNCAL).forEach(ts => {
-      Object.keys(byTSNCAL[ts]).forEach(ncal => {
-        const data = byTSNCAL[ts][ncal];
-        data.avgDuration = data.totalDuration / data.count;
-        data.complianceRate = (data.compliance / data.count) * 100;
-      });
-    });
+    }, {} as Record<string, Record<string, number>>);
 
     // TS by Month
     const byTSMonth = incidentsWithTS.reduce((acc, incident) => {
@@ -332,55 +250,17 @@ export const TSAnalytics: React.FC = () => {
       return acc;
     }, {} as Record<string, Record<string, number>>);
 
-    // TS Performance Ranking with target compliance
+    // TS Performance Ranking
     const tsPerformance = Object.entries(byTS)
       .map(([ts, data]) => ({
         ts,
         count: data.count,
         avgDuration: data.avgDuration,
         escalationRate: data.escalationRate,
-        efficiency: data.count > 0 ? (data.totalDuration / data.count) : 0,
-        targetCompliance: data.targetCompliance
+        efficiency: data.count > 0 ? (data.totalDuration / data.count) : 0
       }))
       .sort((a, b) => b.count - a.count)
       .slice(0, 10);
-
-    // NCAL Performance Analysis
-    const ncalPerformance = NCAL_ORDER.reduce((acc, ncal) => {
-      const ncalIncidents = incidentsWithVendor.filter(i => normalizeNCAL(i.ncal) === ncal);
-      const target = NCAL_TARGETS[ncal as keyof typeof NCAL_TARGETS] || 0;
-      
-      acc[ncal] = {
-        count: ncalIncidents.length,
-        avgDuration: ncalIncidents.length > 0 
-          ? ncalIncidents.reduce((sum, i) => sum + (i.durationVendorMin || 0), 0) / ncalIncidents.length 
-          : 0,
-        target: target,
-        compliance: ncalIncidents.filter(i => (i.durationVendorMin || 0) <= target).length,
-        complianceRate: ncalIncidents.length > 0 
-          ? (ncalIncidents.filter(i => (i.durationVendorMin || 0) <= target).length / ncalIncidents.length) * 100 
-          : 0
-      };
-      return acc;
-    }, {} as Record<string, any>);
-
-    // Overall Target Compliance
-    const targetCompliance = NCAL_ORDER.reduce((acc, ncal) => {
-      const ncalIncidents = incidentsWithVendor.filter(i => normalizeNCAL(i.ncal) === ncal);
-      const target = NCAL_TARGETS[ncal as keyof typeof NCAL_TARGETS] || 0;
-      
-      acc[ncal] = {
-        target: target,
-        targetFormatted: formatDurationHMS(target),
-        count: ncalIncidents.length,
-        compliant: ncalIncidents.filter(i => (i.durationVendorMin || 0) <= target).length,
-        nonCompliant: ncalIncidents.filter(i => (i.durationVendorMin || 0) > target).length,
-        complianceRate: ncalIncidents.length > 0 
-          ? (ncalIncidents.filter(i => (i.durationVendorMin || 0) <= target).length / ncalIncidents.length) * 100 
-          : 0
-      };
-      return acc;
-    }, {} as Record<string, any>);
 
     const avgVendorDuration = incidentsWithVendor.length > 0
       ? incidentsWithVendor.reduce((sum, i) => sum + (i.durationVendorMin || 0), 0) / incidentsWithVendor.length
@@ -409,9 +289,7 @@ export const TSAnalytics: React.FC = () => {
       byTSNCAL,
       byTSMonth,
       tsPerformance,
-      vendorEfficiency,
-      ncalPerformance,
-      targetCompliance
+      vendorEfficiency
     };
   }, [filteredIncidents]);
 
@@ -422,7 +300,6 @@ export const TSAnalytics: React.FC = () => {
     avgDuration: ts.avgDuration,
     escalationRate: ts.escalationRate,
     efficiency: ts.efficiency,
-    targetCompliance: ts.targetCompliance || 0,
     rank: index + 1,
     fill: index < 3 ? '#3b82f6' : index < 7 ? '#6b7280' : '#d1d5db'
   })) : [];
@@ -541,7 +418,7 @@ export const TSAnalytics: React.FC = () => {
                 <Award className="w-5 h-5" />
                 TS Performance Ranking
               </CardTitle>
-              <CardDescription>Top 10 Technical Support by incident count and target compliance</CardDescription>
+              <CardDescription>Top 10 Technical Support by incident count</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
@@ -566,9 +443,9 @@ export const TSAnalytics: React.FC = () => {
                       <Badge variant="secondary" className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
                         {ts.count}
                       </Badge>
-                                              <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                          {ts.targetCompliance ? ts.targetCompliance.toFixed(1) : '0.0'}% compliance
-                        </div>
+                      <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                        {ts.escalationRate.toFixed(1)}% escalation
+                      </div>
                     </div>
                   </div>
                 )) : (
@@ -622,6 +499,173 @@ export const TSAnalytics: React.FC = () => {
                     No TS efficiency data available
                   </div>
                 )}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* NCAL Target Compliance Analysis */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <Card className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Target className="w-5 h-5" />
+                NCAL Target Compliance
+              </CardTitle>
+              <CardDescription>Compliance analysis by NCAL categories and targets</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {NCAL_ORDER.map((ncal) => {
+                  const ncalIncidents = incidentsWithVendor.filter(i => normalizeNCAL(i.ncal) === ncal);
+                  const target = NCAL_TARGETS[ncal as keyof typeof NCAL_TARGETS] || 0;
+                  const avgDuration = ncalIncidents.length > 0 
+                    ? ncalIncidents.reduce((sum, i) => sum + (i.durationVendorMin || 0), 0) / ncalIncidents.length 
+                    : 0;
+                  const compliant = ncalIncidents.filter(i => (i.durationVendorMin || 0) <= target).length;
+                  const complianceRate = ncalIncidents.length > 0 ? (compliant / ncalIncidents.length) * 100 : 0;
+                  
+                  if (ncalIncidents.length === 0) return null;
+                  
+                  return (
+                    <div key={ncal} className="p-4 bg-gray-50 dark:bg-zinc-800 rounded-lg border border-gray-200 dark:border-zinc-700">
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-2">
+                          <div 
+                            className="w-4 h-4 rounded-full" 
+                            style={{ backgroundColor: NCAL_COLORS[ncal as keyof typeof NCAL_COLORS] }}
+                          ></div>
+                          <span className="font-medium text-gray-700 dark:text-gray-300">{ncal}</span>
+                        </div>
+                        <Badge 
+                          variant={complianceRate >= 80 ? "success" : complianceRate >= 60 ? "warning" : "danger"}
+                          className="text-xs"
+                        >
+                          {complianceRate.toFixed(1)}%
+                        </Badge>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-4 text-sm">
+                        <div>
+                          <span className="text-gray-600 dark:text-gray-400">Target:</span>
+                          <span className="ml-2 font-medium">{formatDurationHMS(target)}</span>
+                        </div>
+                        <div>
+                          <span className="text-gray-600 dark:text-gray-400">Average:</span>
+                          <span className={`ml-2 font-medium ${avgDuration <= target ? 'text-green-600' : 'text-red-600'}`}>
+                            {formatDurationHMS(avgDuration)}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-gray-600 dark:text-gray-400">Incidents:</span>
+                          <span className="ml-2 font-medium">{ncalIncidents.length}</span>
+                        </div>
+                        <div>
+                          <span className="text-gray-600 dark:text-gray-400">Compliant:</span>
+                          <span className="ml-2 font-medium text-green-600">{compliant}</span>
+                        </div>
+                      </div>
+                      
+                      <div className="mt-3">
+                        <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 mb-1">
+                          <span>Compliance Rate</span>
+                          <span>{complianceRate.toFixed(1)}%</span>
+                        </div>
+                        <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                          <div 
+                            className={`h-2 rounded-full ${
+                              complianceRate >= 80 ? 'bg-green-500' : 
+                              complianceRate >= 60 ? 'bg-yellow-500' : 'bg-red-500'
+                            }`}
+                            style={{ width: `${Math.min(complianceRate, 100)}%` }}
+                          ></div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* TS Performance by NCAL */}
+          <Card className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <SpeedIcon className="w-5 h-5" />
+                TS Performance by NCAL
+              </CardTitle>
+              <CardDescription>Average response time vs target by NCAL category</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {NCAL_ORDER.map((ncal) => {
+                  const ncalIncidents = incidentsWithVendor.filter(i => normalizeNCAL(i.ncal) === ncal);
+                  const target = NCAL_TARGETS[ncal as keyof typeof NCAL_TARGETS] || 0;
+                  const avgDuration = ncalIncidents.length > 0 
+                    ? ncalIncidents.reduce((sum, i) => sum + (i.durationVendorMin || 0), 0) / ncalIncidents.length 
+                    : 0;
+                  const isCompliant = avgDuration <= target;
+                  const efficiencyRate = target > 0 ? (target / avgDuration) * 100 : 0;
+                  
+                  if (ncalIncidents.length === 0) return null;
+                  
+                  return (
+                    <div key={ncal} className="p-4 bg-gray-50 dark:bg-zinc-800 rounded-lg border border-gray-200 dark:border-zinc-700">
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-2">
+                          <div 
+                            className="w-4 h-4 rounded-full" 
+                            style={{ backgroundColor: NCAL_COLORS[ncal as keyof typeof NCAL_COLORS] }}
+                          ></div>
+                          <span className="font-medium text-gray-700 dark:text-gray-300">{ncal}</span>
+                        </div>
+                        <Badge 
+                          variant={isCompliant ? "success" : "danger"}
+                          className="text-xs"
+                        >
+                          {isCompliant ? 'On Target' : 'Over Target'}
+                        </Badge>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-4 text-sm">
+                        <div>
+                          <span className="text-gray-600 dark:text-gray-400">Target:</span>
+                          <span className="ml-2 font-medium">{formatDurationHMS(target)}</span>
+                        </div>
+                        <div>
+                          <span className="text-gray-600 dark:text-gray-400">Average:</span>
+                          <span className={`ml-2 font-medium ${isCompliant ? 'text-green-600' : 'text-red-600'}`}>
+                            {formatDurationHMS(avgDuration)}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-gray-600 dark:text-gray-400">Incidents:</span>
+                          <span className="ml-2 font-medium">{ncalIncidents.length}</span>
+                        </div>
+                        <div>
+                          <span className="text-gray-600 dark:text-gray-400">Efficiency:</span>
+                          <span className={`ml-2 font-medium ${isCompliant ? 'text-green-600' : 'text-red-600'}`}>
+                            {efficiencyRate.toFixed(1)}%
+                          </span>
+                        </div>
+                      </div>
+                      
+                      <div className="mt-3">
+                        <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 mb-1">
+                          <span>Performance vs Target</span>
+                          <span>{isCompliant ? 'Compliant' : 'Non-Compliant'}</span>
+                        </div>
+                        <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                          <div 
+                            className={`h-2 rounded-full ${isCompliant ? 'bg-green-500' : 'bg-red-500'}`}
+                            style={{ width: `${Math.min(efficiencyRate, 100)}%` }}
+                          ></div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </CardContent>
           </Card>
@@ -712,160 +756,6 @@ export const TSAnalytics: React.FC = () => {
                     <span className="font-medium">{tsStats.totalTS}</span>
                   </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* NCAL Target Compliance Analysis */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <Card className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Target className="w-5 h-5" />
-                NCAL Target Compliance
-              </CardTitle>
-              <CardDescription>Compliance analysis by NCAL categories and targets</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {NCAL_ORDER.map((ncal) => {
-                  const data = tsStats.targetCompliance[ncal];
-                  if (!data || data.count === 0) return null;
-                  
-                  return (
-                    <div key={ncal} className="p-4 bg-gray-50 dark:bg-zinc-800 rounded-lg border border-gray-200 dark:border-zinc-700">
-                      <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center gap-2">
-                          <div 
-                            className="w-4 h-4 rounded-full" 
-                            style={{ backgroundColor: NCAL_COLORS[ncal as keyof typeof NCAL_COLORS] }}
-                          ></div>
-                          <span className="font-medium text-gray-700 dark:text-gray-300">{ncal}</span>
-                        </div>
-                        <Badge 
-                          variant={data.complianceRate >= 80 ? "success" : data.complianceRate >= 60 ? "warning" : "danger"}
-                          className="text-xs"
-                        >
-                          {data.complianceRate.toFixed(1)}%
-                        </Badge>
-                      </div>
-                      
-                      <div className="grid grid-cols-2 gap-4 text-sm">
-                        <div>
-                          <span className="text-gray-600 dark:text-gray-400">Target:</span>
-                          <span className="ml-2 font-medium">{data.targetFormatted}</span>
-                        </div>
-                        <div>
-                          <span className="text-gray-600 dark:text-gray-400">Incidents:</span>
-                          <span className="ml-2 font-medium">{data.count}</span>
-                        </div>
-                        <div>
-                          <span className="text-gray-600 dark:text-gray-400">Compliant:</span>
-                          <span className="ml-2 font-medium text-green-600">{data.compliant}</span>
-                        </div>
-                        <div>
-                          <span className="text-gray-600 dark:text-gray-400">Non-Compliant:</span>
-                          <span className="ml-2 font-medium text-red-600">{data.nonCompliant}</span>
-                        </div>
-                      </div>
-                      
-                      <div className="mt-3">
-                        <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 mb-1">
-                          <span>Compliance Rate</span>
-                          <span>{data.complianceRate.toFixed(1)}%</span>
-                        </div>
-                        <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                          <div 
-                            className={`h-2 rounded-full ${
-                              data.complianceRate >= 80 ? 'bg-green-500' : 
-                              data.complianceRate >= 60 ? 'bg-yellow-500' : 'bg-red-500'
-                            }`}
-                            style={{ width: `${Math.min(data.complianceRate, 100)}%` }}
-                          ></div>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* TS Efficiency by NCAL */}
-          <Card className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <SpeedIcon className="w-5 h-5" />
-                TS Efficiency by NCAL
-              </CardTitle>
-              <CardDescription>Average response time vs target by NCAL category</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {NCAL_ORDER.map((ncal) => {
-                  const data = tsStats.ncalPerformance[ncal];
-                  if (!data || data.count === 0) return null;
-                  
-                  const isCompliant = data.avgDuration <= data.target;
-                  const efficiencyRate = data.target > 0 ? (data.target / data.avgDuration) * 100 : 0;
-                  
-                  return (
-                    <div key={ncal} className="p-4 bg-gray-50 dark:bg-zinc-800 rounded-lg border border-gray-200 dark:border-zinc-700">
-                      <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center gap-2">
-                          <div 
-                            className="w-4 h-4 rounded-full" 
-                            style={{ backgroundColor: NCAL_COLORS[ncal as keyof typeof NCAL_COLORS] }}
-                          ></div>
-                          <span className="font-medium text-gray-700 dark:text-gray-300">{ncal}</span>
-                        </div>
-                        <Badge 
-                          variant={isCompliant ? "success" : "danger"}
-                          className="text-xs"
-                        >
-                          {isCompliant ? 'On Target' : 'Over Target'}
-                        </Badge>
-                      </div>
-                      
-                      <div className="grid grid-cols-2 gap-4 text-sm">
-                        <div>
-                          <span className="text-gray-600 dark:text-gray-400">Target:</span>
-                          <span className="ml-2 font-medium">{formatDurationHMS(data.target)}</span>
-                        </div>
-                        <div>
-                          <span className="text-gray-600 dark:text-gray-400">Average:</span>
-                          <span className={`ml-2 font-medium ${isCompliant ? 'text-green-600' : 'text-red-600'}`}>
-                            {formatDurationHMS(data.avgDuration)}
-                          </span>
-                        </div>
-                        <div>
-                          <span className="text-gray-600 dark:text-gray-400">Incidents:</span>
-                          <span className="ml-2 font-medium">{data.count}</span>
-                        </div>
-                        <div>
-                          <span className="text-gray-600 dark:text-gray-400">Efficiency:</span>
-                          <span className={`ml-2 font-medium ${isCompliant ? 'text-green-600' : 'text-red-600'}`}>
-                            {efficiencyRate.toFixed(1)}%
-                          </span>
-                        </div>
-                      </div>
-                      
-                      <div className="mt-3">
-                        <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 mb-1">
-                          <span>Performance vs Target</span>
-                          <span>{isCompliant ? 'Compliant' : 'Non-Compliant'}</span>
-                        </div>
-                        <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                          <div 
-                            className={`h-2 rounded-full ${isCompliant ? 'bg-green-500' : 'bg-red-500'}`}
-                            style={{ width: `${Math.min(efficiencyRate, 100)}%` }}
-                          ></div>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
               </div>
             </CardContent>
           </Card>
