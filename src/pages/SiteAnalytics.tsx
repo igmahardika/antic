@@ -146,6 +146,11 @@ export const SiteAnalytics: React.FC = () => {
     });
   }, [allIncidents, selectedPeriod]);
 
+  // Define incidentsWithSite outside useMemo so it can be used in the component
+  const incidentsWithSite = useMemo(() => {
+    return filteredIncidents.filter(i => i.site);
+  }, [filteredIncidents]);
+
   // Calculate Site-focused statistics
   const siteStats = useMemo(() => {
     if (!filteredIncidents || filteredIncidents.length === 0) {
@@ -166,7 +171,6 @@ export const SiteAnalytics: React.FC = () => {
       };
     }
 
-    const incidentsWithSite = filteredIncidents.filter(i => i.site);
     const resolvedIncidents = filteredIncidents.filter(i => i.endTime);
 
     // Site Performance Analysis

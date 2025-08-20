@@ -145,6 +145,11 @@ export const TSAnalytics: React.FC = () => {
     });
   }, [allIncidents, selectedPeriod]);
 
+  // Define incidentsWithVendor outside useMemo so it can be used in the component
+  const incidentsWithVendor = useMemo(() => {
+    return filteredIncidents.filter(i => i.durationVendorMin && i.durationVendorMin > 0);
+  }, [filteredIncidents]);
+
   // Calculate TS-focused statistics
   const tsStats = useMemo(() => {
     if (!filteredIncidents || filteredIncidents.length === 0) {
@@ -164,7 +169,6 @@ export const TSAnalytics: React.FC = () => {
     }
 
     const incidentsWithTS = filteredIncidents.filter(i => i.ts);
-    const incidentsWithVendor = filteredIncidents.filter(i => i.durationVendorMin && i.durationVendorMin > 0);
     const escalatedIncidents = filteredIncidents.filter(i => i.startEscalationVendor);
 
     // TS Performance Analysis
