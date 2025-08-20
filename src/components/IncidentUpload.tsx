@@ -68,8 +68,9 @@ export const IncidentUpload: React.FC<IncidentUploadProps> = ({ onUploadComplete
       let totalRowsProcessed = 0;
 
       console.log(`=== UPLOAD ANALYSIS START ===`);
-      console.log(`Total sheets found: ${workbook.SheetNames.length}`);
-      console.log(`Sheet names: ${workbook.SheetNames.join(', ')}`);
+      console.log(`🔍 VALIDATION STRATEGY: Using NCAL as primary validation field (not No Case)`);
+      console.log(`📊 Total sheets found: ${workbook.SheetNames.length}`);
+      console.log(`📋 Sheet names: ${workbook.SheetNames.join(', ')}`);
 
       // Process all sheets
       for (const sheetName of workbook.SheetNames) {
@@ -135,10 +136,10 @@ export const IncidentUpload: React.FC<IncidentUploadProps> = ({ onUploadComplete
                 successCount++;
                 sheetSuccessCount++;
               } else {
-                // Row was skipped (empty No Case or invalid data)
+                // Row was skipped (empty NCAL or invalid data)
                 sheetSkippedCount++;
                 skippedCount++;
-                console.log(`Row ${i + 1} in "${sheetName}" skipped: empty No Case or invalid data`);
+                console.log(`Row ${i + 1} in "${sheetName}" skipped: empty NCAL or invalid data`);
               }
             } catch (error) {
               sheetInvalidCount++;
@@ -475,17 +476,46 @@ function parseRowToIncident(headers: string[], row: any[], rowNum: number, sheet
     return index >= 0 ? row[index] : null;
   };
 
-  const noCase = getValue('No Case');
-  if (!noCase || String(noCase).trim() === '') {
-    console.log(`Row ${rowNum} in "${sheetName}" skipped: empty No Case`);
+  // Use NCAL as primary validation instead of No Case
+  const ncalValue = getValue('NCAL');
+  if (!ncalValue || String(ncalValue).trim() === '') {
+    console.log(`Row ${rowNum} in "${sheetName}" skipped: empty NCAL (primary validation field)`);
     return null; // Skip empty rows instead of throwing error
   }
 
-  // Normalize No Case - remove extra spaces and ensure it's a string
-  const normalizedNoCase = String(noCase).trim();
-  if (normalizedNoCase === '') {
-    console.log(`Row ${rowNum} in "${sheetName}" skipped: No Case is empty after normalization`);
+  // Normalize NCAL - remove extra spaces and ensure it's a string
+  const normalizedNCAL = String(ncalValue).trim();
+  if (normalizedNCAL === '') {
+    console.log(`Row ${rowNum} in "${sheetName}" skipped: NCAL is empty after normalization (primary validation field)`);
     return null;
+  }
+
+  // Validate NCAL value
+  const validNCAL = ['Blue', 'Yellow', 'Orange', 'Red', 'Black'];
+  const ncalStr = normalizedNCAL;
+  let finalNCAL = ncalStr;
+  
+  if (!validNCAL.includes(ncalStr)) {
+    // Try to normalize common variations
+    const normalized = ncalStr.toLowerCase();
+    if (normalized === 'blue' || normalized === 'b') finalNCAL = 'Blue';
+    else if (normalized === 'yellow' || normalized === 'y') finalNCAL = 'Yellow';
+    else if (normalized === 'orange' || normalized === 'o') finalNCAL = 'Orange';
+    else if (normalized === 'red' || normalized === 'r') finalNCAL = 'Red';
+    else if (normalized === 'black' || normalized === 'bl') finalNCAL = 'Black';
+    else {
+          console.log(`Row ${rowNum} in "${sheetName}" skipped: invalid NCAL value "${ncalValue}" (primary validation field)`);
+    return null;
+    }
+  }
+
+  const noCase = getValue('No Case');
+  // Normalize No Case - remove extra spaces and ensure it's a string
+  const normalizedNoCase = noCase ? String(noCase).trim() : `NCAL_${finalNCAL}_${rowNum}`;
+  
+  // Log if No Case was auto-generated
+  if (!noCase || String(noCase).trim() === '') {
+    console.log(`Row ${rowNum} in "${sheetName}": Auto-generated No Case "${normalizedNoCase}" for NCAL "${finalNCAL}"`);
   }
 
   // Additional validation for required fields
@@ -513,6 +543,7 @@ function parseRowToIncident(headers: string[], row: any[], rowNum: number, sheet
   const incident: Incident = {
     id,
     noCase: normalizedNoCase,
+    ncal: finalNCAL,
     priority: (() => {
       const priorityValue = getValue('Priority');
       if (priorityValue) {
@@ -535,26 +566,7 @@ function parseRowToIncident(headers: string[], row: any[], rowNum: number, sheet
       const siteValue = getValue('Site');
       return siteValue ? String(siteValue).trim() : null;
     })(),
-    ncal: (() => {
-      const ncalValue = getValue('NCAL');
-      if (ncalValue) {
-        const validNCAL = ['Blue', 'Yellow', 'Orange', 'Red', 'Black'];
-        const ncalStr = String(ncalValue).trim();
-        if (validNCAL.includes(ncalStr)) {
-          return ncalStr;
-        } else {
-          console.warn(`Row ${rowNum} in "${sheetName}": Invalid NCAL value "${ncalValue}". Expected: Blue, Yellow, Orange, Red, Black`);
-          // Try to normalize common variations
-          const normalized = ncalStr.toLowerCase();
-          if (normalized === 'blue' || normalized === 'b') return 'Blue';
-          if (normalized === 'yellow' || normalized === 'y') return 'Yellow';
-          if (normalized === 'orange' || normalized === 'o') return 'Orange';
-          if (normalized === 'red' || normalized === 'r') return 'Red';
-          if (normalized === 'black' || normalized === 'bl') return 'Black';
-        }
-      }
-      return ncalValue ? String(ncalValue).trim() : null;
-    })(),
+    // NCAL is already processed above
     status: (() => {
       const statusValue = getValue('Status');
       return statusValue ? String(statusValue).trim() : null;
