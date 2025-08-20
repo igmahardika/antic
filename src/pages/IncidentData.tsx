@@ -40,6 +40,8 @@ export const IncidentData: React.FC = () => {
   const [showUpload, setShowUpload] = useState(false);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [selectedMonth, setSelectedMonth] = useState<string>('');
+  const [showLogs, setShowLogs] = useState(false);
+  const [uploadLogs, setUploadLogs] = useState<string[]>([]);
 
   // Helper function to normalize NCAL values
   const normalizeNCAL = (ncal: string | null | undefined): string => {
@@ -421,6 +423,15 @@ export const IncidentData: React.FC = () => {
             <Upload className="w-4 h-4 mr-2" />
             Upload Data
           </Button>
+          <Button 
+            onClick={() => setShowLogs(true)} 
+            variant="outline"
+            className="border-orange-200 text-orange-700 hover:bg-orange-50"
+            disabled={uploadLogs.length === 0}
+          >
+            <FileSpreadsheet className="w-4 h-4 mr-2" />
+            View Logs {uploadLogs.length > 0 && `(${uploadLogs.length})`}
+          </Button>
           <Button onClick={exportToCSV} variant="outline">
             <Download className="w-4 h-4 mr-2" />
             Export CSV
@@ -541,14 +552,19 @@ export const IncidentData: React.FC = () => {
 
 
       {showUpload && (
-        <IncidentUpload onUploadComplete={() => {
-          setShowUpload(false);
-          // Data will automatically refresh due to useLiveQuery
-          toast({
-            title: "Upload Complete",
-            description: "Incident data has been uploaded successfully and is now available.",
-          });
-        }} />
+        <IncidentUpload 
+          onUploadComplete={(logs?: string[]) => {
+            setShowUpload(false);
+            if (logs && logs.length > 0) {
+              setUploadLogs(logs);
+            }
+            // Data will automatically refresh due to useLiveQuery
+            toast({
+              title: "Upload Complete",
+              description: "Incident data has been uploaded successfully and is now available.",
+            });
+          }} 
+        />
       )}
 
       {/* Reset Confirmation Modal */}
@@ -873,6 +889,82 @@ export const IncidentData: React.FC = () => {
           )}
         </CardContent>
       </Card>
+
+      {/* Logs Modal */}
+      {showLogs && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-4xl w-full mx-4 max-h-[80vh] flex flex-col">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-orange-100 dark:bg-orange-900/30 rounded-full flex items-center justify-center">
+                  <FileSpreadsheet className="w-5 h-5 text-orange-600 dark:text-orange-400" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                    Upload Logs
+                  </h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    Detailed upload analysis and processing logs
+                  </p>
+                </div>
+              </div>
+              <Button 
+                onClick={() => setShowLogs(false)}
+                variant="outline" 
+                size="sm"
+              >
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+            
+            <div className="flex-1 overflow-hidden">
+              <div className="bg-gray-100 dark:bg-gray-900 rounded-lg p-4 h-full overflow-y-auto">
+                <div className="space-y-2 font-mono text-sm">
+                  {uploadLogs.length > 0 ? (
+                    uploadLogs.map((log, index) => (
+                      <div key={index} className="text-gray-800 dark:text-gray-200 whitespace-pre-wrap">
+                        {log}
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-gray-500 dark:text-gray-400 text-center py-8">
+                      No logs available. Upload some data first to see logs.
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+            
+            <div className="flex justify-between items-center mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+              <div className="text-sm text-gray-600 dark:text-gray-400">
+                {uploadLogs.length} log entries
+              </div>
+              <div className="flex gap-2">
+                <Button 
+                  onClick={() => {
+                    const logText = uploadLogs.join('\n');
+                    navigator.clipboard.writeText(logText);
+                    alert('Logs copied to clipboard!');
+                  }}
+                  variant="outline" 
+                  size="sm"
+                  disabled={uploadLogs.length === 0}
+                >
+                  <Download className="w-4 h-4 mr-2" />
+                  Copy Logs
+                </Button>
+                <Button 
+                  onClick={() => setShowLogs(false)}
+                  variant="default"
+                  size="sm"
+                >
+                  Close
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
       </div>
     </PageWrapper>
   );
