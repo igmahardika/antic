@@ -297,8 +297,30 @@ export const IncidentUpload: React.FC = () => {
   });
 
   const downloadTemplate = () => {
-    const templateData = [REQUIRED_HEADERS];
+    const templateData = [
+      REQUIRED_HEADERS,
+      // Add example row with comments
+      ['High', 'Site A', 'INC-001', 'Red', 'Open', '1', 'TS1', 'ODP001', 
+       '2024-01-01 08:00:00', '2024-01-01 08:30:00', '2024-01-01 10:00:00', '2:00:00', '1:30:00',
+       'Network Issue', 'Hardware Failure', 'Replaced Equipment', 'Resolved', 'Hardware',
+       '-25.5', '-20.1', '2024-01-01 08:45:00', '2024-01-01 09:00:00', '', '',
+       '0:15:00', '1:30:00']
+    ];
+    
     const ws = XLSX.utils.aoa_to_sheet(templateData);
+    
+    // Add comments/notes for specific columns
+    const comments = {
+      'Priority': 'High, Medium, Low',
+      'NCAL': 'Blue, Yellow, Orange, Red, Black',
+      'Level': '1-500 (based on handling duration)',
+      'Status': 'Open, In Progress, Done, Escalated',
+      'Start': 'Format: YYYY-MM-DD HH:mm:ss',
+      'End': 'Format: YYYY-MM-DD HH:mm:ss',
+      'Duration': 'Format: HH:mm:ss or HH:mm',
+      'Power Before/After': 'Values in dBm (-70 to +10)'
+    };
+    
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Template');
     XLSX.writeFile(wb, 'incident_template.xlsx');
@@ -353,6 +375,10 @@ export const IncidentUpload: React.FC = () => {
           </CardTitle>
           <CardDescription>
             Upload Excel file with incident data. The file should contain all required columns.
+            <br />
+            <span className="text-xs text-gray-500 mt-1 block">
+              Note: Level field accepts values 1-500 based on handling duration, not just 1-10.
+            </span>
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -683,7 +709,7 @@ function parseRowToIncident(headers: string[], row: any[], rowNum: number, sheet
       const levelValue = getValue('Level');
       if (levelValue) {
         const levelNum = Number(levelValue);
-        if (Number.isInteger(levelNum) && levelNum >= 1 && levelNum <= 10) {
+        if (Number.isInteger(levelNum) && levelNum >= 1 && levelNum <= 500) {
           return levelNum;
         } else {
           if (uploadLog) {
@@ -691,7 +717,7 @@ function parseRowToIncident(headers: string[], row: any[], rowNum: number, sheet
               type: 'error',
               row: rowNum,
               sheet: sheetName,
-              message: `Invalid Level value "${levelValue}". Expected: 1-10`,
+              message: `Invalid Level value "${levelValue}". Expected: 1-500 (based on handling duration)`,
               noCase: String(noCase)
             });
           }
