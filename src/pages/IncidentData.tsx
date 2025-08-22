@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { Incident, IncidentFilter } from '@/types/incident';
-import { queryIncidents } from '@/utils/incidentUtils';
+import { queryIncidents, cleanDuplicateIncidents, getDatabaseStats } from '@/utils/incidentUtils';
 import { IncidentUpload } from '@/components/IncidentUpload';
 import { db } from '@/lib/db';
 import { Button } from '@/components/ui/button';
@@ -23,7 +23,8 @@ import {
   CheckCircle,
   XCircle,
   RefreshCw,
-  X
+  X,
+  Database
 } from 'lucide-react';
 
 export const IncidentData: React.FC = () => {
@@ -37,7 +38,9 @@ export const IncidentData: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [showUpload, setShowUpload] = useState(false);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const [showCleanupConfirm, setShowCleanupConfirm] = useState(false);
   const [selectedMonth, setSelectedMonth] = useState<string>('');
+  const [dbStats, setDbStats] = useState<any>(null);
 
   // Helper function to normalize NCAL values
   const normalizeNCAL = (ncal: string | null | undefined): string => {
@@ -148,6 +151,11 @@ export const IncidentData: React.FC = () => {
         const result = await queryIncidents(filter);
         setIncidents(result.rows);
         setTotal(result.total);
+        
+        // Load database stats for debugging
+        const stats = await getDatabaseStats();
+        setDbStats(stats);
+        console.log('[IncidentData] Database stats:', stats);
       } catch (error) {
         console.error('Error loading incidents:', error);
       } finally {
@@ -297,6 +305,31 @@ export const IncidentData: React.FC = () => {
     }
   };
 
+  const cleanupDuplicates = async () => {
+    try {
+      const result = await cleanDuplicateIncidents();
+      setShowCleanupConfirm(false);
+      
+      // Refresh data
+      const queryResult = await queryIncidents(filter);
+      setIncidents(queryResult.rows);
+      setTotal(queryResult.total);
+      
+      toast({
+        title: "Duplicate Cleanup Complete",
+        description: `Removed ${result.removed} duplicate incidents. ${result.remaining} incidents remaining.`,
+        variant: "default",
+      });
+    } catch (error) {
+      console.error('Error cleaning duplicates:', error);
+      toast({
+        title: "Error",
+        description: "Failed to clean duplicates. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
   const formatDuration = (minutes: number | null | undefined) => {
     if (!minutes || minutes === 0) return '-';
     const totalSeconds = Math.floor(minutes * 60);
@@ -397,6 +430,16 @@ export const IncidentData: React.FC = () => {
             <Download className="w-4 h-4 mr-2" />
             Export CSV
           </Button>
+          {dbStats && dbStats.duplicateGroups > 0 && (
+            <Button 
+              onClick={() => setShowCleanupConfirm(true)} 
+              variant="outline"
+              className="bg-yellow-600 hover:bg-yellow-700 text-white"
+            >
+              <AlertTriangle className="w-4 h-4 mr-2" />
+              Clean Duplicates ({dbStats.duplicateGroups})
+            </Button>
+          )}
           <Button 
             onClick={() => setShowResetConfirm(true)} 
             variant="destructive"
@@ -486,6 +529,26 @@ export const IncidentData: React.FC = () => {
         />
       </div>
 
+      {/* Database Status Information */}
+      {dbStats && (
+        <div className="bg-gray-50 dark:bg-gray-900/20 rounded-lg p-4 mb-4">
+          <div className="flex items-center gap-2 mb-2">
+            <Database className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+            <span className="text-sm font-medium text-gray-800 dark:text-gray-200">Database Status</span>
+          </div>
+          <div className="text-sm text-gray-700 dark:text-gray-300 space-y-1">
+            <div>• Total incidents in database: <strong>{dbStats.totalIncidents}</strong></div>
+            <div>• Unique No Cases: <strong>{dbStats.uniqueNoCases}</strong></div>
+            <div>• Unique Start Times: <strong>{dbStats.uniqueStartTimes}</strong></div>
+            {dbStats.duplicateGroups > 0 && (
+              <div className="text-yellow-600 dark:text-yellow-400">
+                ⚠️ <strong>{dbStats.duplicateGroups} duplicate groups</strong> detected. Consider cleaning duplicates.
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Filter Status Information */}
       {filter.dateFrom || filter.status || filter.priority || filter.site || filter.search ? (
         <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 mb-4">
@@ -552,6 +615,48 @@ export const IncidentData: React.FC = () => {
               >
                 <Trash2 className="w-4 h-4 mr-2" />
                 Delete All Data
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Cleanup Duplicates Confirmation Modal */}
+      {showCleanupConfirm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full mx-4">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 bg-yellow-100 dark:bg-yellow-900/30 rounded-full flex items-center justify-center">
+                <AlertTriangle className="w-5 h-5 text-yellow-600 dark:text-yellow-400" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                  Clean Duplicate Incidents
+                </h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  Remove duplicate entries from database
+                </p>
+              </div>
+            </div>
+            
+            <p className="text-gray-700 dark:text-gray-300 mb-6">
+              This will remove duplicate incidents based on No Case and Start Time. Only the first occurrence of each duplicate will be kept. This action cannot be undone.
+            </p>
+            
+            <div className="flex gap-3 justify-end">
+              <Button 
+                onClick={() => setShowCleanupConfirm(false)} 
+                variant="outline"
+              >
+                Cancel
+              </Button>
+              <Button 
+                onClick={cleanupDuplicates} 
+                variant="outline"
+                className="bg-yellow-600 hover:bg-yellow-700 text-white"
+              >
+                <AlertTriangle className="w-4 h-4 mr-2" />
+                Clean Duplicates
               </Button>
             </div>
           </div>
