@@ -1262,6 +1262,7 @@ export const IncidentAnalytics: React.FC = () => {
                       const currentMonth = new Date().getMonth();
                       const currentYear = new Date().getFullYear();
                       const currentMonthKey = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`;
+                      const lastMonthKey = `${currentYear}-${String(currentMonth).padStart(2, '0')}`;
                       const currentCount = stats.byMonth[currentMonthKey] || 0;
                       return currentCount;
                     })()}

@@ -513,22 +513,7 @@ export const IncidentData: React.FC = () => {
 
 
       {showUpload && (
-        <IncidentUpload onUploadSuccess={() => {
-          // Refresh data after successful upload
-          const loadData = async () => {
-            setIsLoading(true);
-            try {
-              const result = await queryIncidents(filter);
-              setIncidents(result.rows);
-              setTotal(result.total);
-            } catch (error) {
-              console.error('Error loading incidents after upload:', error);
-            } finally {
-              setIsLoading(false);
-            }
-          };
-          loadData();
-        }} />
+        <IncidentUpload />
       )}
 
       {/* Reset Confirmation Modal */}
@@ -703,6 +688,10 @@ export const IncidentData: React.FC = () => {
             ⚠️ No valid months found in data. Please check that the "Start" column contains valid dates.
           </div>
         </div>
+      )}
+
+      {showUpload && (
+        <IncidentUpload />
       )}
 
       {/* Reset Confirmation Modal */}
