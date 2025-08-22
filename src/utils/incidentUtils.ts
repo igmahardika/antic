@@ -47,9 +47,11 @@ const parseHHMMSS = (timeString: string): number => {
 // Helper untuk membuat ID unik
 export const mkId = (noCase: string, startIso: string | undefined | null): string => {
   const base = `${(noCase || '').trim()}|${(startIso || '').trim()}`;
-  // Simple hash function untuk browser
+  // Generate unique ID dengan timestamp dan random string untuk menghindari collision
+  const timestamp = Date.now();
+  const random = Math.random().toString(36).substring(2, 15);
   const hash = Array.from(base).reduce((a, c) => ((a << 5) - a + c.charCodeAt(0)) | 0, 0);
-  return 'INC-' + Math.abs(hash).toString(36) + '-' + base.length;
+  return `INC-${Math.abs(hash).toString(36)}-${timestamp}-${random}`;
 };
 
 // Helper untuk konversi durasi ke menit
@@ -218,10 +220,62 @@ export const parseDateSafe = (dt?: string | Date | null): string | null => {
 
 // Simpan ke Dexie (chunked)
 export async function saveIncidentsChunked(rows: Incident[], chunkSize = 2000) {
+  console.log(`[saveIncidentsChunked] Starting to save ${rows.length} incidents in chunks of ${chunkSize}`);
+  
+  let totalSaved = 0;
+  let totalChunks = Math.ceil(rows.length / chunkSize);
+  
   for (let i = 0; i < rows.length; i += chunkSize) {
+    const chunkIndex = Math.floor(i / chunkSize) + 1;
     const part = rows.slice(i, i + chunkSize);
-    await db.incidents.bulkPut(part);
+    
+    console.log(`[saveIncidentsChunked] Processing chunk ${chunkIndex}/${totalChunks} with ${part.length} incidents`);
+    
+    try {
+      // Check for duplicate IDs in this chunk
+      const ids = part.map(incident => incident.id);
+      const uniqueIds = new Set(ids);
+      if (ids.length !== uniqueIds.size) {
+        console.warn(`[saveIncidentsChunked] Duplicate IDs found in chunk ${chunkIndex}:`, 
+          ids.filter((id, index) => ids.indexOf(id) !== index));
+      }
+      
+      // Save to database
+      const result = await db.incidents.bulkPut(part);
+      totalSaved += part.length;
+      
+      console.log(`[saveIncidentsChunked] Chunk ${chunkIndex} saved successfully. Total saved so far: ${totalSaved}`);
+      
+      // Verify the save by counting records
+      const totalInDb = await db.incidents.count();
+      console.log(`[saveIncidentsChunked] Total incidents in database after chunk ${chunkIndex}: ${totalInDb}`);
+      
+    } catch (error) {
+      console.error(`[saveIncidentsChunked] Error saving chunk ${chunkIndex}:`, error);
+      throw error;
+    }
   }
+  
+  // Final verification
+  const finalCount = await db.incidents.count();
+  console.log(`[saveIncidentsChunked] Final count in database: ${finalCount}, Expected: ${rows.length}`);
+  
+  if (finalCount !== rows.length) {
+    console.warn(`[saveIncidentsChunked] DISCREPANCY DETECTED: Expected ${rows.length} but found ${finalCount} in database`);
+    
+    // Get all incidents to check for duplicates
+    const allIncidents = await db.incidents.toArray();
+    const incidentIds = allIncidents.map(inc => inc.id);
+    const uniqueIncidentIds = new Set(incidentIds);
+    
+    console.log(`[saveIncidentsChunked] Unique incident IDs: ${uniqueIncidentIds.size}, Total incidents: ${allIncidents.length}`);
+    
+    if (uniqueIncidentIds.size !== allIncidents.length) {
+      console.error(`[saveIncidentsChunked] DUPLICATE IDs FOUND: ${allIncidents.length - uniqueIncidentIds.size} duplicates`);
+    }
+  }
+  
+  return finalCount;
 }
 
 // Compute stats dari data incident
@@ -320,3 +374,75 @@ export const formatDurationForDisplay = (minutes: number | null | undefined): st
 export const generateBatchId = (): string => {
   return 'batch-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
 };
+
+// Clean duplicate incidents from database
+export async function cleanDuplicateIncidents(): Promise<{ removed: number; remaining: number }> {
+  console.log('[cleanDuplicateIncidents] Starting duplicate cleanup...');
+  
+  const allIncidents = await db.incidents.toArray();
+  console.log(`[cleanDuplicateIncidents] Found ${allIncidents.length} total incidents`);
+  
+  // Group by No Case and Start Time to find duplicates
+  const grouped = new Map<string, Incident[]>();
+  
+  allIncidents.forEach(incident => {
+    const key = `${incident.noCase}|${incident.startTime}`;
+    if (!grouped.has(key)) {
+      grouped.set(key, []);
+    }
+    grouped.get(key)!.push(incident);
+  });
+  
+  let duplicatesToRemove: string[] = [];
+  
+  grouped.forEach((incidents, key) => {
+    if (incidents.length > 1) {
+      // Keep the first one, remove the rest
+      const toRemove = incidents.slice(1);
+      duplicatesToRemove.push(...toRemove.map(inc => inc.id));
+      console.log(`[cleanDuplicateIncidents] Found ${incidents.length} duplicates for key "${key}", keeping first, removing ${toRemove.length}`);
+    }
+  });
+  
+  if (duplicatesToRemove.length > 0) {
+    console.log(`[cleanDuplicateIncidents] Removing ${duplicatesToRemove.length} duplicate incidents`);
+    await db.incidents.bulkDelete(duplicatesToRemove);
+  }
+  
+  const remaining = await db.incidents.count();
+  console.log(`[cleanDuplicateIncidents] Cleanup complete. Removed: ${duplicatesToRemove.length}, Remaining: ${remaining}`);
+  
+  return { removed: duplicatesToRemove.length, remaining };
+}
+
+// Get database statistics for debugging
+export async function getDatabaseStats(): Promise<{
+  totalIncidents: number;
+  uniqueNoCases: number;
+  uniqueStartTimes: number;
+  duplicateGroups: number;
+}> {
+  const allIncidents = await db.incidents.toArray();
+  
+  const uniqueNoCases = new Set(allIncidents.map(inc => inc.noCase)).size;
+  const uniqueStartTimes = new Set(allIncidents.map(inc => inc.startTime)).size;
+  
+  // Count duplicate groups
+  const grouped = new Map<string, Incident[]>();
+  allIncidents.forEach(incident => {
+    const key = `${incident.noCase}|${incident.startTime}`;
+    if (!grouped.has(key)) {
+      grouped.set(key, []);
+    }
+    grouped.get(key)!.push(incident);
+  });
+  
+  const duplicateGroups = Array.from(grouped.values()).filter(group => group.length > 1).length;
+  
+  return {
+    totalIncidents: allIncidents.length,
+    uniqueNoCases,
+    uniqueStartTimes,
+    duplicateGroups
+  };
+}
