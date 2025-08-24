@@ -62,13 +62,13 @@ const NCAL_COLORS = {
 
 
 
-// NCAL Target durations in minutes
+// NCAL Target durations in minutes (higher severity = shorter target time)
 const NCAL_TARGETS = {
-  Blue: 6 * 60,    // 6:00:00
-  Yellow: 5 * 60,  // 5:00:00
-  Orange: 4 * 60,  // 4:00:00
-  Red: 3 * 60,     // 3:00:00
-  Black: 1 * 60    // 1:00:00
+  Blue: 6 * 60,    // 6:00:00 - Least critical
+  Yellow: 5 * 60,  // 5:00:00 - Low critical
+  Orange: 4 * 60,  // 4:00:00 - Medium critical (shorter than Yellow)
+  Red: 3 * 60,     // 3:00:00 - High critical
+  Black: 1 * 60    // 1:00:00 - Most critical (shortest target)
 };
 
 const NCAL_ORDER = ['Blue', 'Yellow', 'Orange', 'Red', 'Black'];
@@ -424,6 +424,50 @@ export const IncidentAnalytics: React.FC = () => {
     console.group('📈 MONTHLY NCAL DATA');
     console.log('📊 Monthly NCAL Count:', byMonthNCAL);
     console.log('⏱️ Monthly NCAL Duration:', byMonthNCALDuration);
+    
+    // Detailed NCAL Duration Analysis
+    console.group('🔍 DETAILED NCAL DURATION ANALYSIS');
+    
+    // Check Yellow and Orange specifically
+    ['Yellow', 'Orange'].forEach(ncal => {
+      const incidents = filteredIncidents.filter(i => normalizeNCAL(i.ncal) === ncal);
+      const withDuration = incidents.filter(i => {
+        const realDuration = i.netDurationMin || i.durationMin || 0;
+        return realDuration > 0;
+      });
+      
+      const totalDuration = withDuration.reduce((sum, i) => {
+        const realDuration = i.netDurationMin || i.durationMin || 0;
+        return sum + realDuration;
+      }, 0);
+      
+      const avgDuration = withDuration.length > 0 ? totalDuration / withDuration.length : 0;
+      
+      console.log(`🎨 ${ncal} NCAL Analysis:`, {
+        totalIncidents: incidents.length,
+        incidentsWithDuration: withDuration.length,
+        totalDurationMinutes: totalDuration,
+        avgDurationMinutes: avgDuration,
+        avgDurationFormatted: `${Math.floor(avgDuration / 60)}:${String(Math.floor(avgDuration % 60)).padStart(2, '0')}:${String(Math.floor((avgDuration % 1) * 60)).padStart(2, '0')}`,
+        targetDuration: NCAL_TARGETS[ncal as keyof typeof NCAL_TARGETS],
+        targetFormatted: `${Math.floor(NCAL_TARGETS[ncal as keyof typeof NCAL_TARGETS] / 60)}:${String(Math.floor(NCAL_TARGETS[ncal as keyof typeof NCAL_TARGETS] % 60)).padStart(2, '0')}:00`,
+        performance: NCAL_TARGETS[ncal as keyof typeof NCAL_TARGETS] > 0 ? 
+          ((NCAL_TARGETS[ncal as keyof typeof NCAL_TARGETS] - avgDuration) / NCAL_TARGETS[ncal as keyof typeof NCAL_TARGETS] * 100) : 0
+      });
+      
+      // Sample incidents for verification
+      if (withDuration.length > 0) {
+        console.log(`📋 Sample ${ncal} incidents:`, withDuration.slice(0, 3).map(i => ({
+          noCase: i.noCase,
+          durationMin: i.durationMin,
+          netDurationMin: i.netDurationMin,
+          totalDurationPauseMin: i.totalDurationPauseMin,
+          usedDuration: i.netDurationMin || i.durationMin || 0
+        })));
+      }
+    });
+    
+    console.groupEnd();
     console.groupEnd();
 
     // Debug category breakdowns (background only)
@@ -461,6 +505,17 @@ export const IncidentAnalytics: React.FC = () => {
           performance,
           status: performance >= 0 ? 'good' : 'poor'
         };
+        
+        // Debug target performance calculation
+        console.log(`🎯 ${ncal} Target Performance:`, {
+          target: target,
+          targetFormatted: `${Math.floor(target / 60)}:${String(Math.floor(target % 60)).padStart(2, '0')}:00`,
+          actual: actual,
+          actualFormatted: `${Math.floor(actual / 60)}:${String(Math.floor(actual % 60)).padStart(2, '0')}:${String(Math.floor((actual % 1) * 60)).padStart(2, '0')}`,
+          performance: performance,
+          status: performance >= 0 ? 'good' : 'poor',
+          interpretation: performance >= 0 ? 'Under target (good)' : 'Over target (poor)'
+        });
       }
       return acc;
     }, {} as Record<string, { target: number; actual: number; performance: number; status: 'good' | 'poor' }>);
