@@ -353,8 +353,10 @@ export const IncidentAnalytics: React.FC = () => {
       if (!acc[ncal]) {
         acc[ncal] = { total: 0, count: 0, avg: 0 };
       }
-      if (incident.durationMin && incident.durationMin > 0) {
-        acc[ncal].total += incident.durationMin;
+      // Use netDurationMin (real duration without pause) for NCAL duration calculation
+      const realDuration = incident.netDurationMin || incident.durationMin || 0;
+      if (realDuration > 0) {
+        acc[ncal].total += realDuration;
         acc[ncal].count += 1;
       }
       return acc;
@@ -400,8 +402,10 @@ export const IncidentAnalytics: React.FC = () => {
         acc[monthKey][ncal] = { total: 0, count: 0, avg: 0 };
       }
       
-      if (incident.durationMin && incident.durationMin > 0) {
-        acc[monthKey][ncal].total += incident.durationMin;
+      // Use netDurationMin (real duration without pause) for NCAL duration calculation
+      const realDuration = incident.netDurationMin || incident.durationMin || 0;
+      if (realDuration > 0) {
+        acc[monthKey][ncal].total += realDuration;
         acc[monthKey][ncal].count += 1;
       }
       return acc;
