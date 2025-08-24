@@ -282,13 +282,13 @@ const TSAnalytics: React.FC = () => {
     return `${value.toFixed(2)} dBm`;
   };
 
-  // Helper function to calculate average power between two values
-  const calculateAvgPowerBetween = (powerBefore: number | null, powerAfter: number | null): number | null => {
-    if (powerBefore === null && powerAfter === null) return null;
-    if (powerBefore === null) return powerAfter;
-    if (powerAfter === null) return powerBefore;
-    return (powerBefore + powerAfter) / 2;
-  };
+  // Helper function to calculate average power between two values (unused - removed)
+  // const calculateAvgPowerBetween = (powerBefore: number | null, powerAfter: number | null): number | null => {
+  //   if (powerBefore === null && powerAfter === null) return null;
+  //   if (powerBefore === null) return powerAfter;
+  //   if (powerAfter === null) return powerBefore;
+  //   return (powerBefore + powerAfter) / 2;
+  // };
 
   // Helper function to get customer name with flexible column mapping
   const getCustomerName = (incident: any): string => {
@@ -1555,7 +1555,7 @@ const TSAnalytics: React.FC = () => {
                        fill="#8884d8"
                        label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
                      >
-                       {wanedaStats.donutData.map((entry, index) => (
+                       {wanedaStats.donutData.map((_, index) => (
                          <Cell
                            key={`cell-${index}`}
                            fill={index === 0 ? '#10b981' : '#ef4444'}
