@@ -416,7 +416,7 @@ export const IncidentData: React.FC = () => {
       <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Incident Data</h1>
+          <h1 className="text-3xl md:text-4xl font-extrabold text-gray-900 dark:text-gray-100">Incident Data</h1>
           <p className="text-gray-600 dark:text-gray-400 mt-2">
             Manage and view incident data with filtering and search capabilities
           </p>
@@ -588,7 +588,7 @@ export const IncidentData: React.FC = () => {
                 <Trash2 className="w-5 h-5 text-red-600 dark:text-red-400" />
               </div>
               <div>
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">
                   Reset Incident Data
                 </h3>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
@@ -630,7 +630,7 @@ export const IncidentData: React.FC = () => {
                 <AlertTriangle className="w-5 h-5 text-yellow-600 dark:text-yellow-400" />
               </div>
               <div>
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">
                   Clean Duplicate Incidents
                 </h3>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
@@ -808,7 +808,7 @@ export const IncidentData: React.FC = () => {
                 <Trash2 className="w-5 h-5 text-red-600 dark:text-red-400" />
               </div>
               <div>
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">
                   Reset Incident Data
                 </h3>
                 <p className="text-sm text-gray-600 dark:text-gray-400">

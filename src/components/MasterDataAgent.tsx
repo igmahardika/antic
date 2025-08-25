@@ -119,7 +119,7 @@ const MasterDataAgent: React.FC = () => {
 
   const renderTable = (agents: any[], title: string) => (
     <div className="mb-12">
-      <h2 className="text-xl md:text-2xl font-bold mb-4 text-gray-900 dark:text-gray-100">{title}</h2>
+              <h2 className="text-lg md:text-xl font-bold mb-4 text-gray-900 dark:text-gray-100">{title}</h2>
       <div className="overflow-x-auto rounded-xl shadow-lg border border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-900">
         <table className="min-w-full table-fixed text-sm rounded-xl overflow-hidden">
           <colgroup>

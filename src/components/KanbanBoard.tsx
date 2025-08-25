@@ -901,7 +901,7 @@ const KanbanBoard = () => {
               <>
                 {/* Header */}
                 <div className="flex items-center justify-between px-10 pt-8 pb-2 border-b border-blue-100 dark:border-zinc-800">
-                  <div className="text-2xl font-bold text-gray-900 dark:text-gray-100">{selectedCustomer.name}</div>
+                  <div className="text-lg font-bold text-gray-900 dark:text-gray-100">{selectedCustomer.name}</div>
                   <RadixDialog.Close asChild>
                     <button className="text-blue-700 dark:text-blue-300 hover:text-red-500 text-4xl font-extrabold focus:outline-none transition-colors duration-150" aria-label="Close customer detail">&times;</button>
                   </RadixDialog.Close>

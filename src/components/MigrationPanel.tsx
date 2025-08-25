@@ -66,7 +66,7 @@ const MigrationPanel: React.FC = () => {
   if (isLoading) {
     return (
       <div className="bg-white dark:bg-zinc-800 rounded-xl shadow-lg p-6">
-        <h2 className="text-2xl font-bold mb-4 text-gray-900 dark:text-gray-100">
+        <h2 className="text-lg font-bold mb-4 text-gray-900 dark:text-gray-100">
           Database Migration
         </h2>
         <div className="flex items-center justify-center py-8">
@@ -79,7 +79,7 @@ const MigrationPanel: React.FC = () => {
 
   return (
     <div className="bg-white dark:bg-zinc-800 rounded-xl shadow-lg p-6">
-      <h2 className="text-2xl font-bold mb-4 text-gray-900 dark:text-gray-100">
+              <h2 className="text-lg font-bold mb-4 text-gray-900 dark:text-gray-100">
         Database Migration
       </h2>
 
@@ -121,7 +121,7 @@ const MigrationPanel: React.FC = () => {
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
             <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
-              <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                              <div className="text-lg font-bold text-blue-600 dark:text-blue-400">
                 {migrationStatus.indexedDbTickets}
               </div>
               <div className="text-sm text-blue-800 dark:text-blue-300">
@@ -129,7 +129,7 @@ const MigrationPanel: React.FC = () => {
               </div>
             </div>
             <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg">
-              <div className="text-2xl font-bold text-green-600 dark:text-green-400">
+                              <div className="text-lg font-bold text-green-600 dark:text-green-400">
                 {migrationStatus.indexedDbCustomers}
               </div>
               <div className="text-sm text-green-800 dark:text-green-300">
@@ -137,7 +137,7 @@ const MigrationPanel: React.FC = () => {
               </div>
             </div>
             <div className="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-lg">
-              <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">
+                              <div className="text-lg font-bold text-purple-600 dark:text-purple-400">
                 {migrationStatus.indexedDbUsers}
               </div>
               <div className="text-sm text-purple-800 dark:text-purple-300">

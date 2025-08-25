@@ -985,7 +985,7 @@ const TSAnalytics: React.FC = () => {
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Technical Support Analytics</h1>
+            <h1 className="text-3xl md:text-4xl font-extrabold text-gray-900 dark:text-gray-100">Technical Support Analytics</h1>
             <p className="text-gray-600 dark:text-gray-400 mt-2">
               Comprehensive analytics with Vendor vs Internal TS separation
             </p>
@@ -1100,7 +1100,7 @@ const TSAnalytics: React.FC = () => {
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-medium text-muted-foreground">SLA Compliance (≤4h)</span>
-                    <span className="text-lg font-bold text-blue-600">
+                    <span className="text-base font-bold text-blue-600">
                       {analyticsData.vendor.slaCompliance.toFixed(1)}%
                     </span>
                       </div>
@@ -1113,7 +1113,7 @@ const TSAnalytics: React.FC = () => {
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-medium text-muted-foreground">Power Compliance (≤+1dBm)</span>
-                    <span className="text-lg font-bold text-purple-600">
+                    <span className="text-base font-bold text-purple-600">
                       {analyticsData.vendor.powerCompliance.toFixed(1)}%
                         </span>
                         </div>

@@ -237,7 +237,7 @@ const CustomerData: React.FC = () => {
   return (
     <PageWrapper>
       <div className="mb-8">
-        <h1 className="text-3xl md:text-4xl font-extrabold mb-2 text-gray-900 dark:text-gray-100">Data Customer</h1>
+        <h1 className="text-2xl md:text-3xl font-extrabold mb-2 text-gray-900 dark:text-gray-100">Data Customer</h1>
         <p className="text-gray-500 dark:text-gray-400 mb-6 max-w-2xl">Upload file Excel berisi data customer per bulan (setiap sheet = 1 bulan, header: Nama, Jenis Klien, Layanan, Kategori). Pilih bulan untuk melihat daftar customer.</p>
       </div>
       {/* Summary Cards - Full Width, Modern Layout */}

@@ -67,7 +67,7 @@ const SummaryCard: React.FC<SummaryCardProps> = ({
         // Jika value adalah string (nama agent), gunakan font size yang lebih kecil
         typeof value === 'string' && value.length > 15 
           ? 'text-sm md:text-base lg:text-lg' 
-          : 'text-xl md:text-2xl lg:text-3xl font-mono'
+          : 'text-lg md:text-xl lg:text-2xl font-mono'
       }`}>
         {typeof value === 'string' && value.length > 20 ? (
           <span className="truncate block" title={value}>{value}</span>

@@ -1316,7 +1316,7 @@ export const IncidentAnalytics: React.FC = () => {
               {/* Trend Indicators */}
               <div className="grid grid-cols-3 gap-4">
                 <div className="text-center p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                  <div className="text-2xl font-bold text-blue-600">
+                  <div className="text-lg font-bold text-blue-600">
                     {(() => {
                       const currentMonth = new Date().getMonth();
                       const currentYear = new Date().getFullYear();
@@ -1328,7 +1328,7 @@ export const IncidentAnalytics: React.FC = () => {
                   <div className="text-xs text-gray-600 dark:text-gray-400">This Month</div>
                 </div>
                 <div className="text-center p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
-                  <div className="text-2xl font-bold text-green-600">
+                  <div className="text-lg font-bold text-green-600">
                     {(() => {
                       const currentMonth = new Date().getMonth();
                       const currentYear = new Date().getFullYear();
@@ -1353,7 +1353,7 @@ export const IncidentAnalytics: React.FC = () => {
                   <div className="text-xs text-gray-600 dark:text-gray-400">vs Last Month</div>
                 </div>
                 <div className="text-center p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
-                  <div className="text-2xl font-bold text-purple-600">
+                  <div className="text-lg font-bold text-purple-600">
                     {(() => {
                       // Simple forecast: average of last 3 months + 5% growth
                       const currentMonth = new Date().getMonth();
@@ -1618,7 +1618,7 @@ export const IncidentAnalytics: React.FC = () => {
           <CardContent>
             <div className="space-y-4">
               <div className="text-center">
-                <div className="text-3xl font-bold text-green-600">
+                <div className="text-lg font-bold text-green-600">
                   {(() => {
                     const compliantIncidents = filteredIncidents.filter(i => {
                       if (!i.durationMin || !i.startTime) return false;
@@ -1776,7 +1776,7 @@ export const IncidentAnalytics: React.FC = () => {
             <CardDescription>Average vendor response time</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-blue-600">
+                            <div className="text-lg font-bold text-blue-600">
               {stats.avgVendorMin > 0 ? formatDurationHMS(stats.avgVendorMin) : '0:00:00'}
                   </div>
             <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
@@ -1797,7 +1797,7 @@ export const IncidentAnalytics: React.FC = () => {
             <div className="space-y-4">
               {/* Main Metric */}
             <div className="text-center">
-                <div className="text-4xl font-bold text-orange-600">
+                <div className="text-lg font-bold text-orange-600">
                   {stats.pauseRatio > 0 ? (stats.pauseRatio * 100).toFixed(1) : '0.0'}%
               </div>
                 <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">

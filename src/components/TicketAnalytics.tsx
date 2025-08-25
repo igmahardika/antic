@@ -854,8 +854,8 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
   if (!gridData || gridData.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center h-full text-gray-500 p-8">
-        <h1 className="text-3xl md:text-4xl font-extrabold mb-4 text-gray-900 dark:text-gray-100">Ticket Analytics</h1>
-        <h3 className="text-xl md:text-2xl font-semibold mb-2 text-gray-900 dark:text-gray-100">Data Analisis Tiket</h3>
+        <h1 className="text-2xl md:text-3xl font-extrabold mb-4 text-gray-900 dark:text-gray-100">Ticket Analytics</h1>
+        <h3 className="text-lg md:text-xl font-semibold mb-2 text-gray-900 dark:text-gray-100">Data Analisis Tiket</h3>
         <p>Tidak ada data yang cukup untuk ditampilkan. Unggah file untuk memulai.</p>
       </div>
     );
@@ -873,7 +873,7 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
     <PageWrapper>
       {/* Page Title & Description */}
       <div className="mb-6">
-        <h1 className="text-3xl md:text-4xl font-extrabold mb-4 text-gray-900 dark:text-gray-100">Ticket Analytics</h1>
+        <h1 className="text-2xl md:text-3xl font-extrabold mb-4 text-gray-900 dark:text-gray-100">Ticket Analytics</h1>
         <p className="text-gray-500 dark:text-gray-400">Analysis of ticket statistics, trends, and complaint categories for the selected period.</p>
       </div>
       <div className="flex justify-center mb-6">
@@ -2615,7 +2615,7 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
                       </div>
                     </div>
                     <div className="text-right">
-                      <div className="text-lg font-bold text-gray-900 dark:text-gray-100">{d.count}</div>
+                      <div className="text-base font-bold text-gray-900 dark:text-gray-100">{d.count}</div>
                       <div className="text-xs text-gray-600 dark:text-gray-400">total</div>
                     </div>
                   </div>
@@ -2774,7 +2774,7 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
         </div>
                         </div>
                         <div className="text-right">
-                          <div className="text-lg font-bold text-gray-900 dark:text-gray-100">{shift.formattedAvg}</div>
+                          <div className="text-base font-bold text-gray-900 dark:text-gray-100">{shift.formattedAvg}</div>
                           <div className="text-xs text-gray-600 dark:text-gray-400">rata-rata</div>
                         </div>
                       </div>
@@ -2886,7 +2886,7 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
         </div>
       </div>
                         <div className="text-right">
-                          <div className="text-lg font-bold text-gray-900 dark:text-gray-100">{cat.formattedAvg}</div>
+                          <div className="text-base font-bold text-gray-900 dark:text-gray-100">{cat.formattedAvg}</div>
                           <div className="text-xs text-gray-600 dark:text-gray-400">rata-rata</div>
                         </div>
                       </div>

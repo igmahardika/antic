@@ -1716,7 +1716,7 @@ const AgentAnalytics = () => {
                                    </p>
                                  </div>
                                  <div className="text-center">
-                                   <div className="text-4xl font-bold text-blue-600 dark:text-blue-400 mb-2">
+                                   <div className="text-2xl font-bold text-blue-600 dark:text-blue-400 mb-2">
                                      {cpi}
                                    </div>
                                    <span className={`px-3 py-1 rounded-full text-sm font-semibold ${cpiLevel.color}`}>
@@ -1731,7 +1731,7 @@ const AgentAnalytics = () => {
                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                              <Card>
                                <CardContent className="p-4 text-center">
-                                 <div className="text-2xl font-bold text-blue-600 mb-1">{totalTickets}</div>
+                                 <div className="text-lg font-bold text-blue-600 mb-1">{totalTickets}</div>
                                  <div className="text-sm text-gray-600 dark:text-gray-400">Total Tickets</div>
                                  <div className="text-xs text-gray-500">Career Total</div>
                                </CardContent>
@@ -1739,7 +1739,7 @@ const AgentAnalytics = () => {
                              
                              <Card>
                                <CardContent className="p-4 text-center">
-                                 <div className="text-2xl font-bold text-green-600 mb-1">{tenure}</div>
+                                 <div className="text-lg font-bold text-green-600 mb-1">{tenure}</div>
                                  <div className="text-sm text-gray-600 dark:text-gray-400">Active Days</div>
                                  <div className="text-xs text-gray-500">Career Tenure</div>
                                </CardContent>
@@ -1747,7 +1747,7 @@ const AgentAnalytics = () => {
                              
                              <Card>
                                <CardContent className="p-4 text-center">
-                                 <div className="text-2xl font-bold text-purple-600 mb-1">{slaRate.toFixed(1)}%</div>
+                                 <div className="text-lg font-bold text-purple-600 mb-1">{slaRate.toFixed(1)}%</div>
                                  <div className="text-sm text-gray-600 dark:text-gray-400">SLA Rate</div>
                                  <div className="text-xs text-gray-500">Quality Metric</div>
                                </CardContent>
@@ -1755,7 +1755,7 @@ const AgentAnalytics = () => {
                              
                              <Card>
                                <CardContent className="p-4 text-center">
-                                 <div className="text-2xl font-bold text-orange-600 mb-1">{fcrRate.toFixed(1)}%</div>
+                                 <div className="text-lg font-bold text-orange-600 mb-1">{fcrRate.toFixed(1)}%</div>
                                  <div className="text-sm text-gray-600 dark:text-gray-400">FCR Rate</div>
                                  <div className="text-xs text-gray-500">Resolution Metric</div>
                                </CardContent>
@@ -2104,19 +2104,19 @@ const AgentAnalytics = () => {
                               <CardContent className="space-y-4">
                                 <div className="grid grid-cols-2 gap-4">
                                   <div className="text-center p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                                    <p className="text-2xl font-bold text-blue-600">{fcrRate.toFixed(1)}%</p>
+                                    <p className="text-lg font-bold text-blue-600">{fcrRate.toFixed(1)}%</p>
                                     <p className="text-sm text-gray-600 dark:text-gray-400">FCR Rate</p>
                                   </div>
                                   <div className="text-center p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
-                                    <p className="text-2xl font-bold text-green-600">{escalationRate.toFixed(1)}%</p>
+                                    <p className="text-lg font-bold text-green-600">{escalationRate.toFixed(1)}%</p>
                                     <p className="text-sm text-gray-600 dark:text-gray-400">Escalation Rate</p>
                                   </div>
                                   <div className="text-center p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
-                                    <p className="text-2xl font-bold text-purple-600">{formatDurationDHM(avgFRT)}</p>
+                                    <p className="text-lg font-bold text-purple-600">{formatDurationDHM(avgFRT)}</p>
                                     <p className="text-sm text-gray-600 dark:text-gray-400">Avg FRT</p>
                                   </div>
                                   <div className="text-center p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg">
-                                    <p className="text-2xl font-bold text-orange-600">{formatDurationDHM(avgART)}</p>
+                                    <p className="text-lg font-bold text-orange-600">{formatDurationDHM(avgART)}</p>
                                     <p className="text-sm text-gray-600 dark:text-gray-400">Avg ART</p>
                                   </div>
                                 </div>
@@ -2390,7 +2390,7 @@ const AgentAnalytics = () => {
                                   </p>
                                 </div>
                                 <div className="text-center">
-                                  <div className="text-4xl font-bold text-blue-600 dark:text-blue-400 mb-2">
+                                  <div className="text-2xl font-bold text-blue-600 dark:text-blue-400 mb-2">
                                     {cpi}
                                   </div>
                                   <span className={`px-3 py-1 rounded-full text-sm font-semibold ${cpiLevel.color}`}>
@@ -2405,7 +2405,7 @@ const AgentAnalytics = () => {
                           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
                             <Card>
                               <CardContent className="p-4 text-center">
-                                <div className="text-2xl font-bold text-blue-600 mb-1">{efficiencyScore.toFixed(0)}</div>
+                                <div className="text-lg font-bold text-blue-600 mb-1">{efficiencyScore.toFixed(0)}</div>
                                 <div className="text-sm text-gray-600 dark:text-gray-400">Efficiency (25%)</div>
                                 <div className="text-xs text-gray-500">AHT: {formatDurationDHM(avgAHT)}</div>
                               </CardContent>
@@ -2413,7 +2413,7 @@ const AgentAnalytics = () => {
                             
                             <Card>
                               <CardContent className="p-4 text-center">
-                                <div className="text-2xl font-bold text-green-600 mb-1">{qualityScore.toFixed(0)}</div>
+                                <div className="text-lg font-bold text-green-600 mb-1">{qualityScore.toFixed(0)}</div>
                                 <div className="text-sm text-gray-600 dark:text-gray-400">Quality (30%)</div>
                                 <div className="text-xs text-gray-500">SLA: {slaRate.toFixed(1)}%</div>
                               </CardContent>
@@ -2421,7 +2421,7 @@ const AgentAnalytics = () => {
                             
                             <Card>
                               <CardContent className="p-4 text-center">
-                                <div className="text-2xl font-bold text-purple-600 mb-1">{resolutionScore.toFixed(0)}</div>
+                                <div className="text-lg font-bold text-purple-600 mb-1">{resolutionScore.toFixed(0)}</div>
                                 <div className="text-sm text-gray-600 dark:text-gray-400">Resolution (20%)</div>
                                 <div className="text-xs text-gray-500">FCR: {fcrRate.toFixed(1)}%</div>
                               </CardContent>
@@ -2429,7 +2429,7 @@ const AgentAnalytics = () => {
                             
                             <Card>
                               <CardContent className="p-4 text-center">
-                                <div className="text-2xl font-bold text-orange-600 mb-1">{reliabilityScore.toFixed(0)}</div>
+                                <div className="text-lg font-bold text-orange-600 mb-1">{reliabilityScore.toFixed(0)}</div>
                                 <div className="text-sm text-gray-600 dark:text-gray-400">Reliability (15%)</div>
                                 <div className="text-xs text-gray-500">Esc: {escalationRate.toFixed(1)}%</div>
                               </CardContent>
@@ -2437,7 +2437,7 @@ const AgentAnalytics = () => {
                             
                             <Card>
                               <CardContent className="p-4 text-center">
-                                <div className="text-2xl font-bold text-indigo-600 mb-1">{productivityScore.toFixed(0)}</div>
+                                <div className="text-lg font-bold text-indigo-600 mb-1">{productivityScore.toFixed(0)}</div>
                                 <div className="text-sm text-gray-600 dark:text-gray-400">Productivity (10%)</div>
                                 <div className="text-xs text-gray-500">Vol: {totalTickets}</div>
                               </CardContent>
