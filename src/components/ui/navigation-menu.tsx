@@ -1,7 +1,7 @@
 import * as React from "react"
 import * as NavigationMenuPrimitive from "@radix-ui/react-navigation-menu"
 import { cva } from "class-variance-authority"
-import { Link, useLocation, NavLink, useNavigate } from 'react-router-dom'
+import { Link, useLocation, NavLink } from 'react-router-dom'
 import HomeIcon from '@mui/icons-material/Home';
 import TableChartIcon from '@mui/icons-material/TableChart';
 import GroupIcon from '@mui/icons-material/Group';
@@ -173,114 +173,116 @@ export function NavigationMenuBar() {
   );
 }
 
-export function SidebarNav({ isMobileOpen, setIsMobileOpen, onCollapseChange }) {
+export function SidebarNav({ onCollapseChange }: {
+  onCollapseChange?: (collapsed: boolean) => void;
+}) {
   // Struktur menu baru: nested
   const allMenus = [
     {
       name: 'Dashboard',
       path: '/',
-      icon: <HomeIcon sx={{ fontSize: 18 }} />,
+                icon: <HomeIcon sx={{ fontSize: 16 }} />,
     },
     {
       name: 'Ticket',
       path: '/ticket',
-      icon: <ConfirmationNumberIcon sx={{ fontSize: 18 }} />,
+      icon: <ConfirmationNumberIcon sx={{ fontSize: 16 }} />,
       children: [
         {
           name: 'Ticket Data',
           path: '/ticket/grid-view',
-          icon: <TableChartIcon sx={{ fontSize: 18 }} />,
+          icon: <TableChartIcon sx={{ fontSize: 16 }} />,
         },
         {
           name: 'Customer Analytics',
           path: '/ticket/kanban-board',
-          icon: <GroupIcon sx={{ fontSize: 18 }} />,
+          icon: <GroupIcon sx={{ fontSize: 16 }} />,
         },
         {
           name: 'Ticket Analytics',
           path: '/ticket/ticket-analytics',
-          icon: <BarChartIcon sx={{ fontSize: 18 }} />,
+          icon: <BarChartIcon sx={{ fontSize: 16 }} />,
         },
         {
           name: 'Agent Analytics',
           path: '/ticket/agent-analytics',
-          icon: <PersonCheckIcon sx={{ fontSize: 18 }} />,
+          icon: <PersonCheckIcon sx={{ fontSize: 16 }} />,
         },
       ],
     },
     {
       name: 'Incident',
       path: '/incident',
-      icon: <WarningIcon sx={{ fontSize: 18 }} />,
+      icon: <WarningIcon sx={{ fontSize: 16 }} />,
       children: [
         {
           name: 'Incident Data',
           path: '/incident/data',
-          icon: <TableChartIcon sx={{ fontSize: 18 }} />,
+          icon: <TableChartIcon sx={{ fontSize: 16 }} />,
         },
         {
           name: 'Incident Analytics',
           path: '/incident/analytics',
-          icon: <BarChartIcon sx={{ fontSize: 18 }} />,
+          icon: <BarChartIcon sx={{ fontSize: 16 }} />,
         },
         {
           name: 'Technical Support Analytics',
           path: '/incident/ts-analytics',
-          icon: <ScienceIcon sx={{ fontSize: 18 }} />,
+          icon: <ScienceIcon sx={{ fontSize: 16 }} />,
         },
         {
           name: 'Site Analytics',
           path: '/incident/site-analytics',
-          icon: <GroupIcon sx={{ fontSize: 18 }} />,
+          icon: <GroupIcon sx={{ fontSize: 16 }} />,
         },
       ],
     },
     {
       name: 'Master Data',
       path: '/masterdata',
-      icon: <StorageIcon sx={{ fontSize: 18 }} />,
+      icon: <StorageIcon sx={{ fontSize: 16 }} />,
       children: [
         {
           name: 'Agent Data',
           path: '/masterdata/data-agent',
-          icon: <PersonIcon sx={{ fontSize: 18 }} />,
+          icon: <PersonIcon sx={{ fontSize: 16 }} />,
         },
         {
           name: 'Customer Data',
           path: '/masterdata/data-customer',
-          icon: <GroupIcon sx={{ fontSize: 18 }} />,
+          icon: <GroupIcon sx={{ fontSize: 16 }} />,
         },
       ],
     },
     {
       name: 'Documentation',
       path: '/documentation',
-      icon: <MenuBookIcon sx={{ fontSize: 18 }} />,
+      icon: <MenuBookIcon sx={{ fontSize: 16 }} />,
       children: [
         {
           name: 'Upload Data',
           path: '/documentation/upload',
-          icon: <CloudUploadIcon sx={{ fontSize: 18 }} />,
+          icon: <CloudUploadIcon sx={{ fontSize: 16 }} />,
         },
         {
           name: 'Formulas',
           path: '/documentation/admin-rumus',
-          icon: <ScienceIcon sx={{ fontSize: 18 }} />,
+          icon: <ScienceIcon sx={{ fontSize: 16 }} />,
         },
       ],
     },
     {
       name: 'Admin Panel',
       path: '/admin',
-      icon: <AdminPanelSettingsIcon sx={{ fontSize: 18 }} />,
+      icon: <AdminPanelSettingsIcon sx={{ fontSize: 16 }} />,
     },
   ];
   // Selalu tampilkan semua menu, tanpa filter permission/role
-  const allowedMenus = allMenus;
-  let user = { username: '', role: 'user' };
+  const allowedMenus: any[] = allMenus;
+  let user: { username: string; role: string } = { username: '', role: 'user' };
   try {
     user = JSON.parse(localStorage.getItem('user') || '{"role":"user"}');
-    const permissions = JSON.parse(localStorage.getItem('menuPermissions') || '{}');
+    // const permissions = JSON.parse(localStorage.getItem('menuPermissions') || '{}'); // Removed unused variable
 
     // allowedMenus = allMenus.filter(menu => allowed.includes(menu.name)); // This line is removed
   } catch {}
@@ -301,18 +303,18 @@ export function SidebarNav({ isMobileOpen, setIsMobileOpen, onCollapseChange }) 
   const sidebarClass = `h-full bg-white dark:bg-zinc-900 shadow-xl border-r border-gray-200 dark:border-zinc-800 flex flex-col top-0 left-0 transition-all duration-300 fixed z-40 md:static md:z-auto md:block`;
 
   // Fungsi render menu dan submenu
-  const renderMenu = (menu, parent = false) => {
+  const renderMenu = (menu: any, parent = false) => {
     if (menu.children && menu.children.length > 0) {
       return (
         <div key={menu.path} className={parent ? '' : 'mb-2'}>
           <div
-            className={`group flex items-center gap-2 px-4 py-3 my-1 rounded-xl font-bold text-[15px] transition-all duration-200 text-zinc-700 dark:text-zinc-200 ${autoCollapsed ? 'justify-center px-2' : ''}`}
+            className={`group flex items-center gap-1.5 px-3 py-2.5 my-1 rounded-xl font-bold text-[14px] transition-all duration-200 text-zinc-700 dark:text-zinc-200 ${autoCollapsed ? 'justify-center px-2' : ''}`}
             title={menu.name}
           >
             {menu.icon}
             <span className={`${autoCollapsed ? 'hidden' : 'block'} transition-all duration-200`} style={{ whiteSpace: 'nowrap' }}>{menu.name}</span>
           </div>
-          <div className={`${autoCollapsed ? 'hidden' : 'block'} ml-6`}> {/* Indent submenu */}
+          <div className={`${autoCollapsed ? 'hidden' : 'block'} ml-4`}> {/* Indent submenu */}
             {menu.children.map((child) => renderMenu(child, true))}
           </div>
         </div>
@@ -323,7 +325,7 @@ export function SidebarNav({ isMobileOpen, setIsMobileOpen, onCollapseChange }) 
         key={menu.path}
         to={menu.path}
         className={({ isActive }) =>
-          `group flex items-center gap-2 px-4 py-2 my-1 rounded-xl font-medium text-[14px] transition-all duration-200 ${isActive ? 'bg-blue-600 text-white shadow-md' : 'text-zinc-700 dark:text-zinc-200 hover:bg-blue-50 dark:hover:bg-zinc-800/60'} ${autoCollapsed ? 'justify-center px-2' : ''}`
+          `group flex items-center gap-1.5 px-3 py-2 my-1 rounded-xl font-medium text-[13px] transition-all duration-200 ${isActive ? 'bg-blue-600 text-white shadow-md' : 'text-zinc-700 dark:text-zinc-200 hover:bg-blue-50 dark:hover:bg-zinc-800/60'} ${autoCollapsed ? 'justify-center px-2' : ''}`
         }
         title={menu.name}
       >
@@ -331,7 +333,7 @@ export function SidebarNav({ isMobileOpen, setIsMobileOpen, onCollapseChange }) 
         <span className={`${autoCollapsed ? 'hidden' : 'block'} transition-all duration-200`} style={{ whiteSpace: 'nowrap' }}>{menu.name}</span>
         {/* Tooltip for collapsed mode */}
         {autoCollapsed && (
-          <span className="absolute left-full ml-2 px-2 py-1 rounded bg-zinc-900 text-white text-xs shadow-lg opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity duration-200">
+          <span className="absolute left-full ml-1.5 px-1.5 py-0.5 rounded bg-zinc-900 text-white text-xs shadow-lg opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity duration-200">
             {menu.name}
           </span>
         )}
@@ -344,8 +346,8 @@ export function SidebarNav({ isMobileOpen, setIsMobileOpen, onCollapseChange }) 
       className={sidebarClass + ' relative'}
       style={{
         minHeight: '100vh',
-        width: autoCollapsed ? '80px !important' : '310px !important',
-        maxWidth: autoCollapsed ? '80px !important' : '310px !important',
+        width: autoCollapsed ? '70px !important' : '260px !important',
+        maxWidth: autoCollapsed ? '70px !important' : '260px !important',
         boxShadow: '0 4px 32px 0 rgba(0,0,0,0.07)',
         transition: 'width 0.3s cubic-bezier(0.4,0,0.2,1)',
         zIndex: 40,
@@ -360,35 +362,35 @@ export function SidebarNav({ isMobileOpen, setIsMobileOpen, onCollapseChange }) 
     >
       <div>
         {/* Logo area */}
-        <div className="flex flex-col items-center justify-center pt-6 pb-4 gap-3">
+        <div className="flex flex-col items-center justify-center pt-5 pb-3 gap-2">
           <img
             src="/logo-a.png"
             alt="Helpdesk Management System Logo"
-            className="max-w-[90%] h-16 object-contain mx-auto"
+            className="max-w-[85%] h-14 object-contain mx-auto"
             style={{ display: autoCollapsed ? 'none' : 'block' }}
           />
         </div>
         {/* Menu */}
-        <nav className="flex flex-col gap-1 px-2">
+        <nav className="flex flex-col gap-1 px-1.5">
           {allowedMenus.map((menu) => renderMenu(menu))}
         </nav>
       </div>
       {/* Bottom section: Avatar/Profile & ModeToggle, modern layout */}
-      <div className="absolute bottom-8 left-0 w-full flex flex-col items-center gap-6">
+      <div className="absolute bottom-6 left-0 w-full flex flex-col items-center gap-4">
         {/* Avatar dengan dropdown profile */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button className="flex items-center justify-center focus:outline-none group">
-              <Avatar className="h-12 w-12">
-                <AvatarFallback className="bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300 text-xl font-bold">
+              <Avatar className="h-10 w-10">
+                <AvatarFallback className="bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300 text-lg font-bold">
                   {user.username ? user.username.charAt(0).toUpperCase() : 'U'}
                 </AvatarFallback>
               </Avatar>
             </button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent className="w-56" align="center">
+          <DropdownMenuContent className="w-48" align="center">
             <DropdownMenuLabel>
-              <div className="font-semibold text-gray-900 dark:text-white text-base text-center">{user.username || 'User'}</div>
+              <div className="font-semibold text-gray-900 dark:text-white text-sm text-center">{user.username || 'User'}</div>
               <div className="text-xs text-gray-500 dark:text-gray-400 capitalize text-center">{user.role} Role</div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
@@ -415,7 +417,7 @@ export function SidebarNav({ isMobileOpen, setIsMobileOpen, onCollapseChange }) 
                 window.location.href = '/summary-dashboard';
               }
             }} className="cursor-pointer text-red-500 focus:bg-red-50 focus:text-red-600 dark:focus:bg-red-900/50 dark:focus:text-red-400 font-semibold">
-              <LogoutIcon className="mr-2 h-4 w-4" />
+              <LogoutIcon className="mr-2 h-3.5 w-3.5" />
               <span>Logout</span>
             </DropdownMenuItem>
           </DropdownMenuContent>
@@ -423,7 +425,7 @@ export function SidebarNav({ isMobileOpen, setIsMobileOpen, onCollapseChange }) 
         {/* Mode Toggle dengan tooltip */}
         <div className="relative group">
           <ModeToggle />
-          <span className="absolute left-1/2 -translate-x-1/2 mt-2 px-2 py-1 rounded bg-zinc-900 text-white text-xs opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10">
+          <span className="absolute left-1/2 -translate-x-1/2 mt-1.5 px-1.5 py-0.5 rounded bg-zinc-900 text-white text-xs opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10">
             Toggle dark mode
           </span>
         </div>

@@ -5,19 +5,17 @@ import { Incident } from '@/types/incident';
 import { mkId, toMinutes, parseDateSafe, saveIncidentsChunked, generateBatchId } from '@/utils/incidentUtils';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+
 import { Progress } from '@/components/ui/progress';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { 
-  Upload as UploadIcon, 
-  FileSpreadsheet, 
-  CheckCircle, 
-  XCircle, 
-  AlertTriangle,
-  Download,
-  Info,
-  FileText
-} from 'lucide-react';
+import CloudUploadIcon from '@mui/icons-material/CloudUpload';
+import TableChartIcon from '@mui/icons-material/TableChart';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import CancelIcon from '@mui/icons-material/Cancel';
+import WarningAmberIcon from '@mui/icons-material/WarningAmber';
+import DownloadIcon from '@mui/icons-material/Download';
+import InfoIcon from '@mui/icons-material/Info';
+import DescriptionIcon from '@mui/icons-material/Description';
 
 interface UploadResult {
   success: number;
@@ -309,17 +307,7 @@ export const IncidentUpload: React.FC = () => {
     
     const ws = XLSX.utils.aoa_to_sheet(templateData);
     
-    // Add comments/notes for specific columns
-    const comments = {
-      'Priority': 'High, Medium, Low',
-      'NCAL': 'Blue, Yellow, Orange, Red, Black',
-      'Level': '1-500 (based on handling duration)',
-      'Status': 'Open, In Progress, Done, Escalated',
-      'Start': 'Format: YYYY-MM-DD HH:mm:ss',
-      'End': 'Format: YYYY-MM-DD HH:mm:ss',
-      'Duration': 'Format: HH:mm:ss or HH:mm',
-      'Power Before/After': 'Values in dBm (-70 to +10)'
-    };
+    
     
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Template');
@@ -347,11 +335,11 @@ export const IncidentUpload: React.FC = () => {
 
   const getLogEntryIcon = (type: string) => {
     switch (type) {
-      case 'success': return <CheckCircle className="w-4 h-4 text-green-500" />;
-      case 'error': return <XCircle className="w-4 h-4 text-red-500" />;
-      case 'skipped': return <AlertTriangle className="w-4 h-4 text-yellow-500" />;
-      case 'info': return <Info className="w-4 h-4 text-blue-500" />;
-      default: return <FileText className="w-4 h-4 text-gray-500" />;
+      case 'success': return <CheckCircleIcon className="w-4 h-4 text-green-500" />;
+      case 'error': return <CancelIcon className="w-4 h-4 text-red-500" />;
+      case 'skipped': return <WarningAmberIcon className="w-4 h-4 text-yellow-500" />;
+      case 'info': return <InfoIcon className="w-4 h-4 text-blue-500" />;
+      default: return <DescriptionIcon className="w-4 h-4 text-gray-500" />;
     }
   };
 
@@ -370,7 +358,7 @@ export const IncidentUpload: React.FC = () => {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <FileSpreadsheet className="w-5 h-5" />
+                            <TableChartIcon className="w-5 h-5" />
             Upload Incident Data
           </CardTitle>
           <CardDescription>
@@ -392,7 +380,7 @@ export const IncidentUpload: React.FC = () => {
               }`}
             >
               <input {...getInputProps()} />
-              <UploadIcon className="w-12 h-12 mx-auto mb-4 text-gray-400" />
+              <CloudUploadIcon className="w-12 h-12 mx-auto mb-4 text-gray-400" />
               {isDragActive ? (
                 <p className="text-lg font-medium text-blue-600 dark:text-blue-400">
                   Drop the Excel file here...
@@ -411,8 +399,8 @@ export const IncidentUpload: React.FC = () => {
 
             <div className="flex justify-between items-center">
               <Button onClick={downloadTemplate} variant="outline" size="sm">
-                <Download className="w-4 h-4 mr-2" />
-                Download Template
+                                             <DownloadIcon className="w-4 h-4 mr-2" />
+               Download Template
               </Button>
             </div>
 
@@ -451,7 +439,7 @@ export const IncidentUpload: React.FC = () => {
                 {/* Data Discrepancy Alert */}
                 {uploadResult.success !== uploadResult.totalRowsInFile && (
                   <Alert>
-                    <AlertTriangle className="w-4 h-4" />
+                    <WarningAmberIcon className="w-4 h-4" />
                     <AlertDescription>
                       <div className="space-y-2">
                         <p className="font-medium">Data Discrepancy Detected:</p>
@@ -479,7 +467,7 @@ export const IncidentUpload: React.FC = () => {
                     variant="outline" 
                     size="sm"
                   >
-                    <FileText className="w-4 h-4 mr-2" />
+                    <DescriptionIcon className="w-4 h-4 mr-2" />
                     {showDetailedLog ? 'Hide' : 'Show'} Detailed Log
                   </Button>
                   <Button 
@@ -487,7 +475,7 @@ export const IncidentUpload: React.FC = () => {
                     variant="outline" 
                     size="sm"
                   >
-                    <Download className="w-4 h-4 mr-2" />
+                    <DownloadIcon className="w-4 h-4 mr-2" />
                     Export Log
                   </Button>
                 </div>
@@ -533,7 +521,7 @@ export const IncidentUpload: React.FC = () => {
 
                 {uploadResult.errors.length > 0 && (
                   <Alert>
-                    <AlertTriangle className="w-4 h-4" />
+                    <WarningAmberIcon className="w-4 h-4" />
                     <AlertDescription>
                       <div className="space-y-2">
                         <p className="font-medium">Errors encountered:</p>

@@ -9,9 +9,6 @@ import BarChartIcon from '@mui/icons-material/BarChart';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import FlashOnIcon from '@mui/icons-material/FlashOn';
 import MenuBookIcon from '@mui/icons-material/MenuBook';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import WarningIcon from '@mui/icons-material/Warning';
-import ErrorIcon from '@mui/icons-material/Error';
 import LightbulbIcon from '@mui/icons-material/Lightbulb';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -20,20 +17,18 @@ import { useAgentAnalytics } from './AgentAnalyticsContext';
 import jsPDF from 'jspdf';
 import SummaryCard from './ui/SummaryCard';
 import TimeFilter from './TimeFilter';
-import { ListAlt as ListAltIcon, TrendingUp as TrendingUpIcon } from '@mui/icons-material';
+import { ListAlt as ListAltIcon, TrendingUp as TrendingUpIcon, Download as DownloadIcon } from '@mui/icons-material';
 import PageWrapper from './PageWrapper';
 import type { AgentMetric } from '@/utils/agentKpi';
 import { enableBacklogDebug } from '@/utils/agentKpi';
 import { formatDurationDHM } from '@/lib/utils';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Calendar, Clock, Award, TrendingUp, Users, Target, Activity, BarChart3, Download } from 'lucide-react';
-// Unused import - commented out
-// import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
+import TrackChangesIcon from '@mui/icons-material/TrackChanges';
+import TimelineIcon from '@mui/icons-material/Timeline';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, Legend as RechartsLegend, Tooltip } from 'recharts';
 import { Badge } from '@/components/ui/badge';
 import * as RadixDialog from '@radix-ui/react-dialog';
-// Unused import - commented out
-// import dayjs from 'dayjs';
 
 // Define the structure of the data this component will receive
 export interface AgentAnalyticsData {
@@ -151,20 +146,7 @@ const CustomTooltip = ({ active = false, payload = [], label = '' } = {}) => {
 //   );
 // }
 
-// Komponen Box besar untuk Rank dan Backlog
-function StatBox({ icon, value, label, bg, valueColor }: { icon: React.ReactNode, value: React.ReactNode, label: string, bg: string, valueColor?: string }) {
-  return (
-    <div className="flex flex-col items-center justify-center px-6 py-5 min-w-[220px] min-h-[90px]">
-      <div className="flex flex-row items-center gap-4 mb-1">
-        <div className={`w-12 h-12 min-w-12 min-h-12 rounded-xl flex items-center justify-center ${bg} shadow-lg`}>
-          <span className="text-white" style={{ fontSize: 28 }}>{icon}</span>
-        </div>
-        <span className={`text-4xl font-extrabold ${valueColor || (bg === 'bg-yellow-400' ? 'text-yellow-400' : bg === 'bg-green-500' ? 'text-green-500' : bg === 'bg-red-500' ? 'text-red-500' : bg === 'bg-blue-500' ? 'text-blue-500' : '')}`}>{value}</span>
-      </div>
-      <div className="text-xs font-semibold text-gray-500 mt-1">{label}</div>
-    </div>
-  );
-}
+
 
 const AgentAnalytics = () => {
   // Semua hook di bagian paling atas
@@ -1340,7 +1322,7 @@ const AgentAnalytics = () => {
                     onClick={exportToPDF}
                     className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium"
                   >
-                    <Download className="w-4 h-4" />
+                    <DownloadIcon sx={{ fontSize: 16 }} />
                     Export PDF
                   </Button>
               <RadixDialog.Close asChild>
@@ -1578,15 +1560,15 @@ const AgentAnalytics = () => {
                   <Tabs defaultValue="overview" className="w-full">
                     <TabsList className="grid w-full grid-cols-3 bg-gray-100 dark:bg-gray-800 p-1 rounded-lg">
                       <TabsTrigger value="overview" className="flex items-center gap-2 data-[state=active]:bg-white dark:data-[state=active]:bg-gray-700 data-[state=active]:shadow-sm">
-                        <Activity className="w-4 h-4" />
+                        <TimelineIcon className="w-4 h-4" />
                         <span className="hidden sm:inline">Overview & Career</span>
                       </TabsTrigger>
                       <TabsTrigger value="performance" className="flex items-center gap-2 data-[state=active]:bg-white dark:data-[state=active]:bg-gray-700 data-[state=active]:shadow-sm">
-                        <Target className="w-4 h-4" />
+                        <TrackChangesIcon className="w-4 h-4" />
                         <span className="hidden sm:inline">Performance & Insights</span>
                       </TabsTrigger>
                       <TabsTrigger value="trends" className="flex items-center gap-2 data-[state=active]:bg-white dark:data-[state=active]:bg-gray-700 data-[state=active]:shadow-sm">
-                        <TrendingUp className="w-4 h-4" />
+                        <TrendingUpIcon className="w-4 h-4" />
                         <span className="hidden sm:inline">Trends & History</span>
                       </TabsTrigger>
                     </TabsList>
@@ -1600,7 +1582,7 @@ const AgentAnalytics = () => {
                        if (agentTickets.length === 0) {
                          return (
                            <div className="text-center py-8 text-gray-500">
-                             <Activity className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+                             <TimelineIcon className="w-12 h-12 mx-auto mb-4 text-gray-300" />
                              <p>No career data available for this agent.</p>
                            </div>
                          );
@@ -1785,7 +1767,7 @@ const AgentAnalytics = () => {
                               <Card>
                                 <CardHeader>
                                   <CardTitle className="text-lg flex items-center gap-2">
-                                    <TrendingUp className="w-5 h-5" />
+                                    <TrendingUpIcon className="w-5 h-5" />
                                     Performance Summary
                                   </CardTitle>
                                 </CardHeader>
@@ -1814,7 +1796,7 @@ const AgentAnalytics = () => {
                               <Card>
                                 <CardHeader>
                                   <CardTitle className="text-lg flex items-center gap-2">
-                                    <BarChart3 className="w-5 h-5" />
+                                    <BarChartIcon className="w-5 h-5" />
                                     Shift Distribution
                                   </CardTitle>
                                 </CardHeader>
@@ -2064,7 +2046,7 @@ const AgentAnalytics = () => {
                             <Card className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20">
                               <CardContent className="p-4">
                                 <div className="flex items-center gap-3">
-                                  <Calendar className="w-8 h-8 text-blue-600" />
+                                  <CalendarTodayIcon className="w-8 h-8 text-blue-600" />
                                   <div>
                                     <p className="text-sm text-gray-600 dark:text-gray-400">Tenure</p>
                                     <p className="text-xl font-bold text-blue-900 dark:text-blue-100">{tenure} days</p>
@@ -2088,7 +2070,7 @@ const AgentAnalytics = () => {
                             <Card className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20">
                               <CardContent className="p-4">
                                 <div className="flex items-center gap-3">
-                                  <Clock className="w-8 h-8 text-purple-600" />
+                                  <AccessTimeIcon className="w-8 h-8 text-purple-600" />
                                   <div>
                                     <p className="text-sm text-gray-600 dark:text-gray-400">Avg AHT</p>
                                     <p className="text-xl font-bold text-purple-900 dark:text-purple-100">{formatDurationDHM(avgAHT)}</p>
@@ -2100,7 +2082,7 @@ const AgentAnalytics = () => {
                             <Card className="bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-900/20 dark:to-orange-800/20">
                               <CardContent className="p-4">
                                 <div className="flex items-center gap-3">
-                                  <Target className="w-8 h-8 text-orange-600" />
+                                  <TrackChangesIcon className="w-8 h-8 text-orange-600" />
                                   <div>
                                     <p className="text-sm text-gray-600 dark:text-gray-400">SLA Rate</p>
                                     <p className="text-xl font-bold text-orange-900 dark:text-orange-100">{slaRate.toFixed(1)}%</p>
@@ -2115,7 +2097,7 @@ const AgentAnalytics = () => {
                             <Card>
                               <CardHeader>
                                 <CardTitle className="text-lg flex items-center gap-2">
-                                  <TrendingUp className="w-5 h-5" />
+                                  <TrendingUpIcon className="w-5 h-5" />
                                   Performance Metrics
                                 </CardTitle>
                               </CardHeader>
@@ -2144,7 +2126,7 @@ const AgentAnalytics = () => {
                             <Card>
                               <CardHeader>
                                 <CardTitle className="text-lg flex items-center gap-2">
-                                  <Users className="w-5 h-5" />
+                                  <GroupIcon className="w-5 h-5" />
                                   Activity Summary
                                 </CardTitle>
                               </CardHeader>
@@ -2175,7 +2157,7 @@ const AgentAnalytics = () => {
                           <Card>
                             <CardHeader>
                               <CardTitle className="text-lg flex items-center gap-2">
-                                <Calendar className="w-5 h-5" />
+                                <CalendarTodayIcon className="w-5 h-5" />
                                 Career Timeline
                               </CardTitle>
                             </CardHeader>
@@ -2238,7 +2220,7 @@ const AgentAnalytics = () => {
                       if (totalTickets === 0) {
                         return (
                           <div className="text-center py-8 text-gray-500">
-                            <Target className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+                            <TrackChangesIcon className="w-12 h-12 mx-auto mb-4 text-gray-300" />
                             <p>No performance data available for this agent.</p>
                           </div>
                         );
@@ -2467,7 +2449,7 @@ const AgentAnalytics = () => {
                             <Card>
                               <CardHeader>
                                 <CardTitle className="text-lg flex items-center gap-2">
-                                  <BarChart3 className="w-5 h-5" />
+                                  <BarChartIcon className="w-5 h-5" />
                                   CPI Calculation Details
                                 </CardTitle>
                               </CardHeader>
@@ -2509,7 +2491,7 @@ const AgentAnalytics = () => {
                             <Card>
                               <CardHeader>
                                 <CardTitle className="text-lg flex items-center gap-2">
-                                  <Target className="w-5 h-5" />
+                                  <TrackChangesIcon className="w-5 h-5" />
                                   Performance Targets & Benchmarks
                                 </CardTitle>
                               </CardHeader>
@@ -2576,7 +2558,7 @@ const AgentAnalytics = () => {
                             <Card>
                               <CardHeader>
                                 <CardTitle className="text-lg flex items-center gap-2">
-                                  <TrendingUp className="w-5 h-5" />
+                                  <TrendingUpIcon className="w-5 h-5" />
                                   Performance Metrics
                                 </CardTitle>
                               </CardHeader>
@@ -2605,7 +2587,7 @@ const AgentAnalytics = () => {
                             <Card>
                               <CardHeader>
                                 <CardTitle className="text-lg flex items-center gap-2">
-                                  <Target className="w-5 h-5" />
+                                  <TrackChangesIcon className="w-5 h-5" />
                                   Performance Targets
                                 </CardTitle>
                               </CardHeader>
@@ -2842,7 +2824,7 @@ const AgentAnalytics = () => {
                       <Card>
                         <CardHeader>
                           <CardTitle className="text-lg flex items-center gap-2">
-                            <TrendingUp className="w-5 h-5" />
+                            <TrendingUpIcon className="w-5 h-5" />
                             Performance Trends (Last 12 Months)
                           </CardTitle>
                         </CardHeader>
@@ -2883,7 +2865,7 @@ const AgentAnalytics = () => {
                       <Card>
                         <CardHeader>
                           <CardTitle className="text-lg flex items-center gap-2">
-                            <BarChart3 className="w-5 h-5" />
+                            <BarChartIcon className="w-5 h-5" />
                             Detailed Metrics
                           </CardTitle>
                         </CardHeader>

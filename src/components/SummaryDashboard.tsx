@@ -2,7 +2,12 @@ import React, { useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import SummaryCard from '@/components/ui/SummaryCard';
-import { CheckCircle2, Clock3, Users, Timer, Zap, Trophy } from 'lucide-react';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import AccessTimeIcon from '@mui/icons-material/AccessTime';
+import GroupIcon from '@mui/icons-material/Group';
+import TimerIcon from '@mui/icons-material/Timer';
+import FlashOnIcon from '@mui/icons-material/FlashOn';
+import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 import { sanitizeTickets, calcAllMetrics, Ticket as AgentTicket, rank as rankBand } from '@/utils/agentKpi';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Legend as RechartsLegend, Tooltip as RechartsTooltip } from 'recharts';
 
@@ -236,28 +241,28 @@ const SummaryDashboard = ({ ticketAnalyticsData, filteredTickets }: any) => {
       {/* KPI Row */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <SummaryCard
-          icon={<Zap />}
+          icon={<FlashOnIcon sx={{ fontSize: 20 }} />}
           iconBg="bg-indigo-500"
           title="Total Tickets"
           value={stats[0]?.value || '-'}
           description={stats[0]?.description || ''}
         />
         <SummaryCard
-          icon={<CheckCircle2 />}
+          icon={<CheckCircleIcon sx={{ fontSize: 20 }} />}
           iconBg="bg-emerald-500"
           title="Closed Tickets"
           value={stats[2]?.value || '-'}
           description={stats[2]?.description || '100% resolution rate'}
         />
         <SummaryCard
-          icon={<Clock3 />}
+          icon={<AccessTimeIcon sx={{ fontSize: 20 }} />}
           iconBg="bg-amber-500"
           title="Avg Duration"
           value={stats[1]?.value || '-'}
           description="average resolution time"
         />
         <SummaryCard
-          icon={<Users />}
+          icon={<GroupIcon sx={{ fontSize: 20 }} />}
           iconBg="bg-sky-500"
           title="Active Agents"
           value={stats[3]?.value || '-'}
@@ -268,28 +273,28 @@ const SummaryDashboard = ({ ticketAnalyticsData, filteredTickets }: any) => {
       {/* KPI Row 2 */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <SummaryCard
-          icon={<CheckCircle2 />}
+          icon={<CheckCircleIcon sx={{ fontSize: 20 }} />}
           iconBg="bg-emerald-500"
           title="Closed Rate"
           value={kpis.closedRate}
           description="closed / total"
         />
         <SummaryCard
-          icon={<Timer />}
+          icon={<TimerIcon sx={{ fontSize: 20 }} />}
           iconBg="bg-cyan-500"
           title="SLA ≤ 24h"
           value={kpis.slaPct}
           description="percentage closed within 24h"
         />
         <SummaryCard
-          icon={<Timer />}
+          icon={<TimerIcon sx={{ fontSize: 20 }} />}
           iconBg="bg-rose-500"
           title="Avg FRT (min)"
           value={kpis.frtAvg.toFixed(1)}
           description="first response time"
         />
         <SummaryCard
-          icon={<Timer />}
+          icon={<TimerIcon sx={{ fontSize: 20 }} />}
           iconBg="bg-violet-500"
           title="Avg ART (min)"
           value={kpis.artAvg.toFixed(1)}
@@ -422,9 +427,9 @@ const SummaryDashboard = ({ ticketAnalyticsData, filteredTickets }: any) => {
                     <td className="px-4 py-3 flex items-center gap-2">
                       <span className="font-bold text-gray-900 dark:text-gray-100">#{i+1}</span>
                       {i < 3 && (
-                        <Trophy 
+                        <EmojiEventsIcon 
                           className={`${i === 0 ? 'text-amber-500' : i === 1 ? 'text-gray-400' : 'text-orange-400'}`} 
-                          size={18} 
+                          sx={{ fontSize: 18 }} 
                         />
                       )}
                     </td>
