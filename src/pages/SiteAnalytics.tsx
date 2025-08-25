@@ -253,10 +253,28 @@ const SiteAnalytics: React.FC = () => {
       
       const uniqueSites = new Set(monthIncidents.map(inc => inc.site || 'Unknown')).size;
       
+      // Calculate average duration for this month
+      const monthDurations = monthIncidents
+        .map(inc => inc.durationMin || 0)
+        .filter(dur => dur > 0);
+      const avgDuration = monthDurations.length > 0 
+        ? monthDurations.reduce((a, b) => a + b, 0) / monthDurations.length 
+        : 0;
+      
+      // Calculate resolution rate for this month
+      const monthResolved = monthIncidents.filter(inc => 
+        (inc.status || '').toLowerCase() === 'done'
+      ).length;
+      const resolutionRate = monthIncidents.length > 0 
+        ? (monthResolved / monthIncidents.length) * 100 
+        : 0;
+      
       siteTrends.push({
         month: months[i],
         incidents: monthIncidents.length,
-        uniqueSites
+        uniqueSites,
+        avgDuration,
+        resolutionRate
       });
     }
 
@@ -317,6 +335,12 @@ const SiteAnalytics: React.FC = () => {
     month: item.month,
     incidents: item.incidents,
     uniqueSites: item.uniqueSites
+  }));
+
+  const sitePerformanceData = siteStats.siteTrends.map(item => ({
+    month: item.month,
+    avgDuration: item.avgDuration || 0,
+    resolutionRate: item.resolutionRate || 0
   }));
 
   useEffect(() => {
@@ -821,21 +845,24 @@ const SiteAnalytics: React.FC = () => {
           </Card>
 
         {/* Site Incident Trend Analysis */}
-        <Card className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <TimelineIcon className="w-5 h-5 text-blue-600" />
-              Site Incident Trend Analysis
-            </CardTitle>
-            <CardDescription className="text-gray-600 dark:text-gray-400">Monthly incident trends and site activity patterns</CardDescription>
-          </CardHeader>
-          <CardContent>
-                                     <div className="h-[160px] w-full">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Site Incident Volume Trend */}
+          <Card className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg border border-gray-200 dark:border-zinc-800">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-lg font-extrabold text-gray-900 dark:text-gray-100">
+                <TimelineIcon className="w-5 h-5 text-blue-600" />
+                Site Incident Volume Trend
+              </CardTitle>
+              <CardDescription className="text-gray-600 dark:text-gray-400">
+                Monthly incident volume trends by top sites
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
               <ChartContainer config={{
                 incidents: { label: "Total Incidents", color: "#3b82f6" },
                 uniqueSites: { label: "Unique Sites", color: "#10b981" }
               }}>
-                <LineChart data={siteTrendData} height={160} width={undefined} margin={{ top: 5, right: 10, left: 5, bottom: 5 }}>
+                <LineChart data={siteTrendData} height={300} width={undefined} margin={{ top: 5, right: 10, left: 5, bottom: 5 }}>
                   <CartesianGrid stroke="#e5e7eb" />
                   <XAxis 
                     dataKey="month" 
@@ -843,6 +870,11 @@ const SiteAnalytics: React.FC = () => {
                     axisLine={false}
                     tickMargin={8}
                     tick={{ fill: '#6b7280', fontSize: 12 }}
+                    tickFormatter={(value: string) => {
+                      const [year, month] = value.split('-');
+                      const names = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+                      return `${names[parseInt(month) - 1]} ${year}`;
+                    }}
                   />
                   <YAxis 
                     tickLine={false}
@@ -869,19 +901,88 @@ const SiteAnalytics: React.FC = () => {
                   />
                 </LineChart>
               </ChartContainer>
+              <div className="mt-4 flex justify-center gap-6">
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                  <span className="text-sm text-gray-600 dark:text-gray-400">Total Incidents</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                  <span className="text-sm text-gray-600 dark:text-gray-400">Unique Sites</span>
+                </div>
               </div>
-            <div className="mt-4 flex justify-center gap-6">
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-                <span className="text-sm text-gray-600 dark:text-gray-400">Total Incidents</span>
+            </CardContent>
+          </Card>
+
+          {/* Site Performance Trend */}
+          <Card className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg border border-gray-200 dark:border-zinc-800">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-lg font-extrabold text-gray-900 dark:text-gray-100">
+                <TrackChangesIcon className="w-5 h-5 text-green-600" />
+                Site Performance Trend
+              </CardTitle>
+              <CardDescription className="text-gray-600 dark:text-gray-400">
+                Average resolution time trends by top sites
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ChartContainer config={{
+                avgDuration: { label: "Average Duration", color: "#f59e0b" },
+                resolutionRate: { label: "Resolution Rate", color: "#ef4444" }
+              }}>
+                <LineChart data={sitePerformanceData} height={300} width={undefined} margin={{ top: 5, right: 10, left: 5, bottom: 5 }}>
+                  <CartesianGrid stroke="#e5e7eb" />
+                  <XAxis 
+                    dataKey="month" 
+                    tickLine={false}
+                    axisLine={false}
+                    tickMargin={8}
+                    tick={{ fill: '#6b7280', fontSize: 12 }}
+                    tickFormatter={(value: string) => {
+                      const [year, month] = value.split('-');
+                      const names = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+                      return `${names[parseInt(month) - 1]} ${year}`;
+                    }}
+                  />
+                  <YAxis 
+                    tickLine={false}
+                    axisLine={false}
+                    tickMargin={8}
+                    tick={{ fill: '#6b7280', fontSize: 12 }}
+                    tickFormatter={(v: number) => formatDurationHMS(v)}
+                  />
+                  <ChartTooltip content={<ChartTooltipContent formatter={(value: number) => formatDurationHMS(value)} />} />
+                  <Line 
+                    type="monotone" 
+                    dataKey="avgDuration" 
+                    stroke="#f59e0b" 
+                    strokeWidth={2}
+                    dot={{ fill: '#f59e0b', strokeWidth: 2, r: 4 }}
+                    activeDot={{ r: 6, stroke: '#f59e0b', strokeWidth: 2 }}
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="resolutionRate" 
+                    stroke="#ef4444" 
+                    strokeWidth={2}
+                    dot={{ fill: '#ef4444', strokeWidth: 2, r: 4 }}
+                    activeDot={{ r: 6, stroke: '#ef4444', strokeWidth: 2 }}
+                  />
+                </LineChart>
+              </ChartContainer>
+              <div className="mt-4 flex justify-center gap-6">
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
+                  <span className="text-sm text-gray-600 dark:text-gray-400">Avg Duration</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 bg-red-500 rounded-full"></div>
+                  <span className="text-sm text-gray-600 dark:text-gray-400">Resolution Rate</span>
+                </div>
               </div>
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                <span className="text-sm text-gray-600 dark:text-gray-400">Unique Sites</span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </PageWrapper>
   );
