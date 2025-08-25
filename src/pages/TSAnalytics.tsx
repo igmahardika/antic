@@ -981,43 +981,42 @@ const TSAnalytics: React.FC = () => {
 
   return (
     <PageWrapper>
-      <div className="max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="space-y-6">
-          {/* Header */}
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Technical Support Analytics</h1>
-              <p className="text-gray-600 dark:text-gray-400 mt-2">
-                Comprehensive analytics with Vendor vs Internal TS separation
-              </p>
-            </div>
-            {/* Period Filter */}
-            <div className="flex items-center gap-2">
-              <FilterListIcon className="w-4 h-4 text-gray-600 dark:text-gray-400" />
-              <div className="flex bg-white/80 dark:bg-zinc-900/80 rounded-2xl shadow-lg border border-gray-200 dark:border-zinc-800 p-1">
-                {[
-                  { key: '3m', label: '3M' },
-                  { key: '6m', label: '6M' },
-                  { key: '1y', label: '1Y' },
-                  { key: 'all', label: 'All' }
-                ].map(({ key, label }) => (
-                  <Button
-                    key={key}
-                    variant={selectedPeriod === key ? 'default' : 'ghost'}
-                    size="sm"
-                    onClick={() => setSelectedPeriod(key as any)}
-                    className={`text-xs rounded-xl ${
-                      selectedPeriod === key 
-                        ? 'bg-blue-600 hover:bg-blue-700 text-white' 
-                        : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-zinc-800'
-                    }`}
-                  >
-                    {label}
-                  </Button>
-                ))}
-              </div>
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Technical Support Analytics</h1>
+            <p className="text-gray-600 dark:text-gray-400 mt-2">
+              Comprehensive analytics with Vendor vs Internal TS separation
+            </p>
+          </div>
+          {/* Period Filter */}
+          <div className="flex items-center gap-2">
+            <FilterListIcon className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+            <div className="flex bg-white/80 dark:bg-zinc-900/80 rounded-2xl shadow-lg border border-gray-200 dark:border-zinc-800 p-1">
+              {[
+                { key: '3m', label: '3M' },
+                { key: '6m', label: '6M' },
+                { key: '1y', label: '1Y' },
+                { key: 'all', label: 'All' }
+              ].map(({ key, label }) => (
+                <Button
+                  key={key}
+                  variant={selectedPeriod === key ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setSelectedPeriod(key as any)}
+                  className={`text-xs rounded-xl ${
+                    selectedPeriod === key 
+                      ? 'bg-blue-600 hover:bg-blue-700 text-white' 
+                      : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-zinc-800'
+                  }`}
+                >
+                  {label}
+                </Button>
+              ))}
             </div>
           </div>
+        </div>
         {/* Overall Summary */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <SummaryCard
@@ -1785,7 +1784,6 @@ const TSAnalytics: React.FC = () => {
             )}
           </CardContent>
         </Card>
-        </div>
       </div>
     </PageWrapper>
   );
