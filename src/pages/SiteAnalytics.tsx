@@ -339,7 +339,7 @@ const SiteAnalytics: React.FC = () => {
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Site Analytics</h1>
+            <h1 className="text-3xl md:text-4xl font-extrabold text-gray-900 dark:text-gray-100">Site Analytics</h1>
             <p className="text-gray-600 dark:text-gray-400 mt-2">
               Comprehensive analytics and performance metrics for affected sites
             </p>
@@ -413,7 +413,7 @@ const SiteAnalytics: React.FC = () => {
           {/* Top Affected Sites */}
           <Card className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg border border-gray-200 dark:border-zinc-800">
             <CardHeader className="pb-3">
-              <CardTitle className="flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-gray-100">
+              <CardTitle className="flex items-center gap-2 text-lg font-extrabold text-gray-900 dark:text-gray-100">
                 <ErrorOutlineIcon className="w-5 h-5 text-red-600" />
                 Top Affected Sites
               </CardTitle>
@@ -451,7 +451,7 @@ const SiteAnalytics: React.FC = () => {
                     </div>
                       </div>
                       <div className="flex-shrink-0 text-right">
-                        <div className="text-2xl font-bold text-red-600">
+                                        <div className="text-lg font-bold text-red-600">
                         {site.count}
                       </div>
                         <div className="text-xs text-gray-500 dark:text-gray-400">Total Incidents</div>
@@ -513,7 +513,7 @@ const SiteAnalytics: React.FC = () => {
         {/* Site Risk Assessment */}
           <Card className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg border border-gray-200 dark:border-zinc-800">
             <CardHeader className="pb-3">
-              <CardTitle className="flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-gray-100">
+              <CardTitle className="flex items-center gap-2 text-lg font-extrabold text-gray-900 dark:text-gray-100">
                 <WarningAmberIcon className="w-5 h-5 text-amber-600" />
                 Site Risk Assessment
               </CardTitle>
@@ -556,7 +556,7 @@ const SiteAnalytics: React.FC = () => {
                       </div>
                           </div>
                           <div className="flex-shrink-0 text-right">
-                            <div className={`text-2xl font-bold ${
+                            <div className={`text-lg font-bold ${
                               siteData.level === 'High' ? 'text-red-600' : siteData.level === 'Medium' ? 'text-yellow-600' : 'text-green-600'
                             }`}>
                               {siteData.riskScore.toFixed(1)}
@@ -623,7 +623,7 @@ const SiteAnalytics: React.FC = () => {
         {/* Site Performance Overview */}
         <Card className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg border border-gray-200 dark:border-zinc-800">
           <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-gray-100">
+            <CardTitle className="flex items-center gap-2 text-lg font-extrabold text-gray-900 dark:text-gray-100">
               <AssessmentIcon className="w-5 h-5 text-indigo-600" />
               Site Performance Overview
               </CardTitle>
@@ -634,7 +634,7 @@ const SiteAnalytics: React.FC = () => {
               {/* Reliability Rate */}
               <div className="text-center p-4 bg-green-50 dark:bg-green-900/20 rounded-xl border border-green-200 dark:border-green-800 shadow-sm">
                 <CheckCircleIcon className="w-6 h-6 text-green-600 mx-auto mb-2" />
-                <div className="text-2xl font-bold text-green-600">
+                <div className="text-lg font-bold text-green-600">
                   {siteStats.siteReliability.toFixed(1)}%
                 </div>
                 <div className="text-sm text-gray-600 dark:text-gray-400">Reliability Rate</div>
@@ -644,7 +644,7 @@ const SiteAnalytics: React.FC = () => {
               {/* Unique Sites */}
               <div className="text-center p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-200 dark:border-blue-800 shadow-sm">
                 <LocationOnIcon className="w-6 h-6 text-blue-600 mx-auto mb-2" />
-                <div className="text-2xl font-bold text-blue-600">
+                <div className="text-lg font-bold text-blue-600">
                   {siteStats.uniqueSites}
                 </div>
                 <div className="text-sm text-gray-600 dark:text-gray-400">Unique Sites</div>
@@ -664,7 +664,7 @@ const SiteAnalytics: React.FC = () => {
               {/* Risk Assessment */}
               <div className="text-center p-4 bg-red-50 dark:bg-red-900/20 rounded-xl border border-red-200 dark:border-red-800 shadow-sm">
                 <WarningAmberIcon className="w-6 h-6 text-red-600 mx-auto mb-2" />
-                <div className="text-2xl font-bold text-red-600">
+                <div className="text-lg font-bold text-red-600">
                   {Object.values(siteStats.siteRiskScore).filter((site: any) => site.level === 'High').length}
                         </div>
                 <div className="text-sm text-gray-600 dark:text-gray-400">High Risk Sites</div>
@@ -708,7 +708,7 @@ const SiteAnalytics: React.FC = () => {
         {/* NCAL Performance & Compliance Analysis */}
         <Card className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg border border-gray-200 dark:border-zinc-800">
           <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-gray-100">
+            <CardTitle className="flex items-center gap-2 text-lg font-extrabold text-gray-900 dark:text-gray-100">
               <TrackChangesIcon className="w-5 h-5 text-purple-600" />
               NCAL Performance & Compliance Analysis
               </CardTitle>

@@ -326,7 +326,7 @@ const UploadProcess = ({ onUploadComplete }: UploadProcessProps) => {
         ) : (
           <Card className="w-full max-w-6xl mx-auto shadow-md border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-10 mb-8 backdrop-blur-sm flex items-center justify-center min-h-[180px]">
             <CardHeader>
-              <CardTitle className="text-gray-700 dark:text-gray-300 text-lg font-bold">No Data Uploaded</CardTitle>
+              <CardTitle className="text-gray-700 dark:text-gray-300 text-base font-bold">No Data Uploaded</CardTitle>
             </CardHeader>
             <CardContent>
               <p className="mt-4 text-base text-gray-500 break-words whitespace-normal text-center">
@@ -374,7 +374,7 @@ const FileDropZone = ({ onFileUpload, isProcessing, progress }: { onFileUpload: 
       {isProcessing ? (
         <>
           <div className="loader ease-linear rounded-full border-4 border-t-4 border-gray-200 h-12 w-12 mb-4 animate-spin" style={{borderTopColor: '#3b82f6'}}></div>
-          <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300">Processing File...</h3>
+          <h3 className="text-base font-semibold text-gray-700 dark:text-gray-300">Processing File...</h3>
           <progress value={progress} max="100" className="w-full max-w-xs mt-4" />
         </>
       ) : (
@@ -406,7 +406,7 @@ const ErrorLogTable = ({ errors }: { errors: IErrorLog[] }) => {
   return (
     <Card className="w-full max-w-6xl mx-auto shadow-md border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-10 mb-8 min-h-[180px] backdrop-blur-sm">
       <CardHeader className="pb-2">
-        <CardTitle className="text-xl font-bold text-gray-900 dark:text-gray-100 text-left">Failure Log Details</CardTitle>
+        <CardTitle className="text-lg font-bold text-gray-900 dark:text-gray-100 text-left">Failure Log Details</CardTitle>
         <CardDescription className="text-base text-zinc-500 dark:text-zinc-400 text-left">Grouped by error type.</CardDescription>
       </CardHeader>
       <CardContent className="pt-2 text-sm text-gray-700 dark:text-gray-200">

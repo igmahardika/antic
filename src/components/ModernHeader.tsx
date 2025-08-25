@@ -15,7 +15,7 @@ const ModernHeader = () => {
           {/* Logo & Brand */}
           <div className="flex items-center gap-4 md:gap-6">
             <img src="/logo-a.png" alt="Helpdesk Management System Logo" className="h-12 w-auto drop-shadow-lg rounded-xl" />
-            <span className="text-2xl font-extrabold text-primary tracking-tight">Insight Dashboard</span>
+            <span className="text-xl font-extrabold text-primary tracking-tight">Insight Dashboard</span>
           </div>
           {/* Search Bar */}
           <div className="w-full md:flex-1 max-w-lg mx-0 md:mx-8 hidden md:block">

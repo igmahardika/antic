@@ -92,7 +92,7 @@ const GridView = ({ data: propsData }: { data?: ITicket[] }) => {
   return (
     <>
       <div className="mb-6">
-        <h1 className="text-3xl md:text-4xl font-extrabold mb-2 text-gray-900 dark:text-gray-100">Data Grid</h1>
+        <h1 className="text-2xl md:text-3xl font-extrabold mb-2 text-gray-900 dark:text-gray-100">Data Grid</h1>
         <p className="text-gray-500 dark:text-gray-400">
           View, search, and manage all ticket data in an easy-to-use grid view.
         </p>
