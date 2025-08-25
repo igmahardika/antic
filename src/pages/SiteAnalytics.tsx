@@ -243,12 +243,13 @@ const SiteAnalytics: React.FC = () => {
     // Site trends by month
     const siteTrends = [];
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const currentYear = new Date().getFullYear();
     
     for (let i = 0; i < 12; i++) {
       const monthIncidents = filteredIncidents.filter(inc => {
         if (!inc.startTime) return false;
         const date = new Date(inc.startTime);
-        return date.getMonth() === i;
+        return date.getMonth() === i && date.getFullYear() === currentYear;
       });
       
       const uniqueSites = new Set(monthIncidents.map(inc => inc.site || 'Unknown')).size;
@@ -270,7 +271,7 @@ const SiteAnalytics: React.FC = () => {
         : 0;
       
       siteTrends.push({
-        month: months[i],
+        month: `${months[i]} ${currentYear}`,
         incidents: monthIncidents.length,
         uniqueSites,
         avgDuration,
@@ -342,6 +343,15 @@ const SiteAnalytics: React.FC = () => {
     avgDuration: item.avgDuration || 0,
     resolutionRate: item.resolutionRate || 0
   }));
+
+  // Debug logging untuk validasi data
+  console.log('Site Analytics Debug:', {
+    totalIncidents: filteredIncidents.length,
+    currentYear: new Date().getFullYear(),
+    siteTrends: siteStats.siteTrends,
+    siteTrendData,
+    sitePerformanceData
+  });
 
   useEffect(() => {
     setIsLoading(false);
@@ -870,11 +880,6 @@ const SiteAnalytics: React.FC = () => {
                     axisLine={false}
                     tickMargin={8}
                     tick={{ fill: '#6b7280', fontSize: 12 }}
-                    tickFormatter={(value: string) => {
-                      const [year, month] = value.split('-');
-                      const names = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-                      return `${names[parseInt(month) - 1]} ${year}`;
-                    }}
                   />
                   <YAxis 
                     tickLine={false}
@@ -928,7 +933,7 @@ const SiteAnalytics: React.FC = () => {
             <CardContent>
               <ChartContainer config={{
                 avgDuration: { label: "Average Duration", color: "#f59e0b" },
-                resolutionRate: { label: "Resolution Rate", color: "#ef4444" }
+                resolutionRate: { label: "Resolution Rate (%)", color: "#ef4444" }
               }}>
                 <LineChart data={sitePerformanceData} height={300} width={undefined} margin={{ top: 5, right: 10, left: 5, bottom: 5 }}>
                   <CartesianGrid stroke="#e5e7eb" />
@@ -938,20 +943,27 @@ const SiteAnalytics: React.FC = () => {
                     axisLine={false}
                     tickMargin={8}
                     tick={{ fill: '#6b7280', fontSize: 12 }}
-                    tickFormatter={(value: string) => {
-                      const [year, month] = value.split('-');
-                      const names = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-                      return `${names[parseInt(month) - 1]} ${year}`;
-                    }}
                   />
                   <YAxis 
                     tickLine={false}
                     axisLine={false}
                     tickMargin={8}
                     tick={{ fill: '#6b7280', fontSize: 12 }}
-                    tickFormatter={(v: number) => formatDurationHMS(v)}
+                    tickFormatter={(v: number) => {
+                      // Check if this is resolution rate (percentage) or duration (time)
+                      const dataPoint = sitePerformanceData.find(d => d.avgDuration === v || d.resolutionRate === v);
+                      if (dataPoint && dataPoint.resolutionRate === v) {
+                        return `${v.toFixed(1)}%`;
+                      }
+                      return formatDurationHMS(v);
+                    }}
                   />
-                  <ChartTooltip content={<ChartTooltipContent formatter={(value: number) => formatDurationHMS(value)} />} />
+                  <ChartTooltip content={<ChartTooltipContent formatter={(value: number, name: string) => {
+                    if (name === 'resolutionRate') {
+                      return `${value.toFixed(1)}%`;
+                    }
+                    return formatDurationHMS(value);
+                  }} />} />
                   <Line 
                     type="monotone" 
                     dataKey="avgDuration" 
@@ -977,7 +989,7 @@ const SiteAnalytics: React.FC = () => {
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-                  <span className="text-sm text-gray-600 dark:text-gray-400">Resolution Rate</span>
+                  <span className="text-sm text-gray-600 dark:text-gray-400">Resolution Rate (%)</span>
                 </div>
               </div>
             </CardContent>
