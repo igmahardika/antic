@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '@/lib/db';
 import {
@@ -151,6 +151,21 @@ const IncidentAnalytics: React.FC = () => {
   // load incidents from indexedDB
   const allIncidents = useLiveQuery(() => db.incidents.toArray());
 
+  // Debug logging untuk memeriksa data incidents
+  useEffect(() => {
+    console.log('🔍 Incidents Data Debug:', {
+      allIncidents: allIncidents?.length || 0,
+      hasIncidents: !!allIncidents && allIncidents.length > 0,
+      sampleIncident: allIncidents?.[0] || null,
+      ncalFields: allIncidents?.slice(0, 5).map(inc => ({
+        id: inc.id,
+        ncal: inc.ncal,
+        normalizedNcal: normalizeNCAL(inc.ncal),
+        startTime: inc.startTime
+      })) || []
+    });
+  }, [allIncidents]);
+
   // Normalize NCAL text to capitalized key
   const normalizeNCAL = (ncal: string | null | undefined): string => {
     if (!ncal) return 'Unknown';
@@ -232,6 +247,20 @@ const IncidentAnalytics: React.FC = () => {
       const ncal = normalizeNCAL(inc.ncal);
       map[ncal] = (map[ncal] || 0) + 1;
     });
+    
+    // Debug logging untuk NCAL Distribution
+    console.log('🔍 NCAL Distribution Debug:', {
+      totalIncidents: filteredIncidents.length,
+      byNCAL: map,
+      ncalOrder: NCAL_ORDER,
+      pieChartData: NCAL_ORDER.map((ncal) => ({ 
+        name: ncal, 
+        value: map[ncal] || 0, 
+        color: NCAL_COLORS[ncal] 
+      })),
+      hasData: Object.values(map).some(v => v > 0)
+    });
+    
     return map;
   }, [filteredIncidents]);
 
