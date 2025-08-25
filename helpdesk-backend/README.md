@@ -1,6 +1,6 @@
-# AN-TIC Backend API
+# Helpdesk Management System Backend API
 
-Backend API untuk AN-TIC Analytics Dashboard dengan implementasi Redis caching dan MySQL database.
+Backend API untuk Helpdesk Management System dengan implementasi Redis caching dan MySQL database.
 
 ## 🚀 Fitur Utama
 

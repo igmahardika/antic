@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Fix Vulnerabilities Script for AN-TIC Analytics Dashboard
+# Fix Vulnerabilities Script for Helpdesk Management System
 # This script addresses Dependabot security alerts
 
 echo "🔒 Fixing Security Vulnerabilities"

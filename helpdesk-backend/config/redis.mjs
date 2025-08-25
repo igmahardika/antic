@@ -1,5 +1,5 @@
 /**
- * Redis Configuration for AN-TIC Analytics Dashboard
+ * Redis Configuration for Helpdesk Management System
  * 
  * This module handles Redis connection, caching utilities, and session management
  */

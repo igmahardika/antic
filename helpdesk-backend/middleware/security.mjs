@@ -1,5 +1,5 @@
 /**
- * Security Middleware for AN-TIC Analytics Dashboard
+ * Security Middleware for Helpdesk Management System
  * Implements OWASP security best practices
  */
 

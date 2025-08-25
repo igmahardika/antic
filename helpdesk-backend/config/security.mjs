@@ -1,5 +1,5 @@
 /**
- * Security Configuration for AN-TIC Analytics Dashboard
+ * Security Configuration for Helpdesk Management System
  * Centralizes all security-related configurations
  */
 

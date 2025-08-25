@@ -177,7 +177,7 @@ const ChartTooltipContent = React.forwardRef<
       <div
         ref={ref}
         className={cn(
-          "grid min-w-[8rem] items-start gap-1.5 rounded-lg border border-border/50 bg-background px-2.5 py-1.5 text-xs shadow-xl",
+          "grid min-w-[8rem] items-start gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs shadow-xl",
           className
         )}
       >
@@ -206,9 +206,9 @@ const ChartTooltipContent = React.forwardRef<
                       !hideIndicator && (
                         <div
                           className={cn(
-                            "shrink-0 rounded-[2px] border-[--color-border] bg-[--color-bg]",
+                            "shrink-0 rounded-sm border border-gray-300 bg-[--color-bg]",
                             {
-                              "h-2.5 w-2.5": indicator === "dot",
+                              "h-3 w-3": indicator === "dot",
                               "w-1": indicator === "line",
                               "w-0 border-[1.5px] border-dashed bg-transparent":
                                 indicator === "dashed",
@@ -218,7 +218,6 @@ const ChartTooltipContent = React.forwardRef<
                           style={
                             {
                               "--color-bg": indicatorColor,
-                              "--color-border": indicatorColor,
                             } as React.CSSProperties
                           }
                         />
@@ -232,12 +231,12 @@ const ChartTooltipContent = React.forwardRef<
                     >
                       <div className="grid gap-1.5">
                         {nestLabel ? tooltipLabel : null}
-                        <span className="text-muted-foreground">
+                        <span className="text-gray-700 font-medium">
                           {itemConfig?.label || item.name}
                         </span>
                       </div>
                       {item.value && (
-                        <span className="font-mono font-medium tabular-nums text-foreground">
+                        <span className="font-mono font-semibold tabular-nums text-gray-900">
                           {item.value.toLocaleString()}
                         </span>
                       )}

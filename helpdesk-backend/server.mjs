@@ -1,5 +1,5 @@
 // -----------------------------------------------------------------------------
-//  AN-TIC BACKEND  –  server.mjs
+//  Helpdesk Management System BACKEND  –  server.mjs
 // -----------------------------------------------------------------------------
 
 import 'dotenv/config';
@@ -1089,6 +1089,6 @@ app.get('/api/migration/status',
 // -----------------------------------------------------------------------------
 const PORT = Number(process.env.PORT) || 3001;
 app.listen(PORT, () => {
-  console.log(`🚀 AN-TIC API  → http://localhost:${PORT}`);
+  console.log(`🚀 Helpdesk Management System API  → http://localhost:${PORT}`);
   console.log(`🔧 ENV        : ${process.env.NODE_ENV || 'development'}`);
 });

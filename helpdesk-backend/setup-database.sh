@@ -1,9 +1,9 @@
 #!/bin/bash
 
-# Database setup script for AN-TIC Analytics Dashboard
+# Database setup script for Helpdesk Management System
 # This script creates all necessary tables and inserts default data
 
-echo "🚀 Setting up AN-TIC Analytics Database..."
+echo "🚀 Setting up Helpdesk Management System Database..."
 
 # Database credentials
 DB_HOST="localhost"

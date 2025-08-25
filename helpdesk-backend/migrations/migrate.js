@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Database Migration Script for AN-TIC Analytics Dashboard
+ * Database Migration Script for Helpdesk Management System
  *
  * Usage:
  *   node migrations/migrate.js           → jalankan semua migration & seeding

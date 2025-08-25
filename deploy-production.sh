@@ -1,9 +1,9 @@
 #!/bin/bash
 
-# Production deployment script for AN-TIC Analytics Dashboard
+# Production deployment script for Helpdesk Management System
 # This script builds and deploys the application to production
 
-echo "🚀 AN-TIC Analytics Dashboard - Production Deployment"
+echo "🚀 Helpdesk Management System - Production Deployment"
 echo "====================================================="
 
 # Colors for output
@@ -124,4 +124,4 @@ echo ""
 echo "📊 Backend Log:"
 echo "   tail -f /var/log/antic-backend.log"
 echo ""
-print_success "✅ AN-TIC Analytics Dashboard is live!"
+print_success "✅ Helpdesk Management System is live!"
