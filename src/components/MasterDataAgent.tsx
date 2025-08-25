@@ -7,12 +7,12 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/t
 
 const CURRENT_YEAR = 2025;
 
-// function formatDateDMY(date: Date | number | string) {
-//   if (!date) return '-';
-//   const d = new Date(date);
-//   if (isNaN(d.getTime())) return '-';
-//   return d.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' });
-// }
+function formatDateDMY(date: Date | number | string) {
+  if (!date) return '-';
+  const d = new Date(date);
+  if (isNaN(d.getTime())) return '-';
+  return d.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' });
+}
 function formatDurationHMS(hours: number) {
   if (!isFinite(hours)) return '-';
   const totalSeconds = Math.round(hours * 3600);
@@ -21,16 +21,16 @@ function formatDurationHMS(hours: number) {
   const s = totalSeconds % 60;
   return [h, m, s].map(v => String(v).padStart(2, '0')).join(':');
 }
-// function getShift(openTime: string | number | Date) {
-//   if (!openTime) return '-';
-//   const d = new Date(openTime);
-//   if (isNaN(d.getTime())) return '-';
-//   const hour = d.getHours();
-//   if (hour >= 8 && hour < 17) return 'Pagi';
-//   if (hour >= 17 || hour < 1) return 'Sore';
-//   if (hour >= 1 && hour < 8) return 'Malam';
-//   return '-';
-// }
+function getShift(openTime: string | number | Date) {
+  if (!openTime) return '-';
+  const d = new Date(openTime);
+  if (isNaN(d.getTime())) return '-';
+  const hour = d.getHours();
+  if (hour >= 8 && hour < 17) return 'Pagi';
+  if (hour >= 17 || hour < 1) return 'Sore';
+  if (hour >= 1 && hour < 8) return 'Malam';
+  return '-';
+}
 function formatMasaAktif(first: string | number | Date, last: string | number | Date) {
   if (!first || !last) return '-';
   const d1 = new Date(first);

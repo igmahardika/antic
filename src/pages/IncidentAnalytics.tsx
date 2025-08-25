@@ -778,13 +778,6 @@ const IncidentAnalytics: React.FC = () => {
                   </Pie>
                 </PieChart>
               </ChartContainer>
-              
-              {/* Debug info */}
-              <div className="mt-4 text-xs text-gray-500 text-center">
-                <div>Total Incidents: {filteredIncidents.length}</div>
-                <div>NCAL Data: {JSON.stringify(byNCAL)}</div>
-                <div>Has Data: {Object.values(byNCAL).some(count => count > 0) ? 'Yes' : 'No'}</div>
-              </div>
             </CardContent>
           </Card>
         </div>
