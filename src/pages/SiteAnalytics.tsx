@@ -944,19 +944,24 @@ const SiteAnalytics: React.FC = () => {
                     tickMargin={8}
                     tick={{ fill: '#6b7280', fontSize: 12 }}
                   />
+                  {/* Left Y-axis for Average Duration */}
                   <YAxis 
+                    yAxisId="left"
                     tickLine={false}
                     axisLine={false}
                     tickMargin={8}
                     tick={{ fill: '#6b7280', fontSize: 12 }}
-                    tickFormatter={(v: number) => {
-                      // Check if this is resolution rate (percentage) or duration (time)
-                      const dataPoint = sitePerformanceData.find(d => d.avgDuration === v || d.resolutionRate === v);
-                      if (dataPoint && dataPoint.resolutionRate === v) {
-                        return `${v.toFixed(1)}%`;
-                      }
-                      return formatDurationHMS(v);
-                    }}
+                    tickFormatter={(v: number) => formatDurationHMS(v)}
+                  />
+                  {/* Right Y-axis for Resolution Rate */}
+                  <YAxis 
+                    yAxisId="right"
+                    orientation="right"
+                    tickLine={false}
+                    axisLine={false}
+                    tickMargin={8}
+                    tick={{ fill: '#6b7280', fontSize: 12 }}
+                    tickFormatter={(v: number) => `${v.toFixed(0)}%`}
                   />
                   <ChartTooltip content={<ChartTooltipContent formatter={(value: number, name: string) => {
                     if (name === 'resolutionRate') {
@@ -965,6 +970,7 @@ const SiteAnalytics: React.FC = () => {
                     return formatDurationHMS(value);
                   }} />} />
                   <Line 
+                    yAxisId="left"
                     type="monotone" 
                     dataKey="avgDuration" 
                     stroke="#f59e0b" 
@@ -973,6 +979,7 @@ const SiteAnalytics: React.FC = () => {
                     activeDot={{ r: 6, stroke: '#f59e0b', strokeWidth: 2 }}
                   />
                   <Line 
+                    yAxisId="right"
                     type="monotone" 
                     dataKey="resolutionRate" 
                     stroke="#ef4444" 
@@ -985,11 +992,11 @@ const SiteAnalytics: React.FC = () => {
               <div className="mt-4 flex justify-center gap-6">
                 <div className="flex items-center gap-2">
                   <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
-                  <span className="text-sm text-gray-600 dark:text-gray-400">Avg Duration</span>
+                  <span className="text-sm text-gray-600 dark:text-gray-400">Avg Duration (Left)</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-                  <span className="text-sm text-gray-600 dark:text-gray-400">Resolution Rate (%)</span>
+                  <span className="text-sm text-gray-600 dark:text-gray-400">Resolution Rate % (Right)</span>
                 </div>
               </div>
             </CardContent>
