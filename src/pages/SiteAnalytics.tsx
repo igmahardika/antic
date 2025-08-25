@@ -23,7 +23,7 @@ import PageWrapper from '@/components/PageWrapper';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import AssessmentIcon from '@mui/icons-material/Assessment';
-import SpeedIcon from '@mui/icons-material/Speed';
+// import SpeedIcon from '@mui/icons-material/Speed'; // Removed unused import
 import TimelineIcon from '@mui/icons-material/Timeline';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
@@ -59,18 +59,18 @@ const formatDurationHMS = (minutes: number): string => {
   return `${hrs}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
 };
 
-const normalizeNCAL = (ncal: string | null | undefined): string => {
-  if (!ncal) return 'Unknown';
+  const normalizeNCAL = (ncal: string | null | undefined): string => {
+    if (!ncal) return 'Unknown';
   const value = ncal.toString().trim().toLowerCase();
   switch (value) {
-    case 'blue': return 'Blue';
-    case 'yellow': return 'Yellow';
-    case 'orange': return 'Orange';
-    case 'red': return 'Red';
-    case 'black': return 'Black';
-    default: return ncal.trim();
-  }
-};
+      case 'blue': return 'Blue';
+      case 'yellow': return 'Yellow';
+      case 'orange': return 'Orange';
+      case 'red': return 'Red';
+      case 'black': return 'Black';
+      default: return ncal.trim();
+    }
+  };
 
 const SiteAnalytics: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
@@ -438,42 +438,42 @@ const SiteAnalytics: React.FC = () => {
                       <div className="flex items-center gap-3 min-w-0 flex-1">
                         <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold text-white ${
                           index < 3 ? 'bg-red-500' : index < 5 ? 'bg-orange-500' : 'bg-yellow-500'
-                        }`}>
-                          {index + 1}
-                        </div>
+                      }`}>
+                        {index + 1}
+                      </div>
                         <div className="min-w-0 flex-1">
                           <div className="font-semibold text-gray-900 dark:text-gray-100 truncate text-base">
-                            {site.name}
-                          </div>
+                          {site.name}
+                        </div>
                           <div className="text-sm text-gray-600 dark:text-gray-400">
                             {site.count} incidents • {formatDurationHMS(site.avgDuration)} avg resolution
-                          </div>
-                        </div>
+                      </div>
+                    </div>
                       </div>
                       <div className="flex-shrink-0 text-right">
                         <div className="text-2xl font-bold text-red-600">
-                          {site.count}
-                        </div>
-                        <div className="text-xs text-gray-500 dark:text-gray-400">Total Incidents</div>
+                        {site.count}
                       </div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400">Total Incidents</div>
                     </div>
+                  </div>
                     
                     {/* Detailed Metrics */}
                     <div className="grid grid-cols-3 gap-3 pt-3 border-t border-gray-200 dark:border-gray-600">
                       <div className="text-center">
                         <div className="text-lg font-bold text-blue-600">
                           {site.count}
-                        </div>
+                  </div>
                         <div className="text-xs text-gray-600 dark:text-gray-400">Incident Count</div>
                         <div className="text-xs text-blue-600 font-medium">
                           {((site.count / siteStats.totalSites) * 100).toFixed(1)}% of total
-                        </div>
+              </div>
                       </div>
                       
                       <div className="text-center">
                         <div className="text-lg font-bold text-orange-600">
                           {formatDurationHMS(site.avgDuration)}
-                        </div>
+                      </div>
                         <div className="text-xs text-gray-600 dark:text-gray-400">Avg Resolution</div>
                         <div className="text-xs text-orange-600 font-medium">
                           {site.avgDuration > siteStats.avgSiteRecovery ? 'Above avg' : 'Below avg'}
@@ -483,11 +483,11 @@ const SiteAnalytics: React.FC = () => {
                       <div className="text-center">
                         <div className="text-lg font-bold text-green-600">
                           {site.resolutionRate.toFixed(1)}%
-                        </div>
+                    </div>
                         <div className="text-xs text-gray-600 dark:text-gray-400">Resolution Rate</div>
                         <div className="text-xs text-green-600 font-medium">
                           {site.resolutionRate === 100 ? 'All resolved' : 'Some pending'}
-                        </div>
+                      </div>
                       </div>
                     </div>
                     
@@ -510,7 +510,7 @@ const SiteAnalytics: React.FC = () => {
             </CardContent>
           </Card>
 
-          {/* Site Risk Assessment */}
+        {/* Site Risk Assessment */}
           <Card className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg border border-gray-200 dark:border-zinc-800">
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-gray-100">
@@ -543,49 +543,49 @@ const SiteAnalytics: React.FC = () => {
                           <div className="flex items-center gap-3 min-w-0 flex-1">
                             <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold text-white ${
                               siteData.level === 'High' ? 'bg-red-500' : siteData.level === 'Medium' ? 'bg-yellow-500' : 'bg-green-500'
-                            }`}>
-                              {index + 1}
-                            </div>
+                        }`}>
+                          {index + 1}
+                        </div>
                             <div className="min-w-0 flex-1">
                               <div className="font-semibold text-gray-900 dark:text-gray-100 truncate text-base">
-                                {site}
-                              </div>
+                            {site}
+                          </div>
                               <div className="text-sm text-gray-600 dark:text-gray-400">
                                 {siteData.level} Risk Level
-                              </div>
-                            </div>
+                        </div>
+                      </div>
                           </div>
                           <div className="flex-shrink-0 text-right">
                             <div className={`text-2xl font-bold ${
                               siteData.level === 'High' ? 'text-red-600' : siteData.level === 'Medium' ? 'text-yellow-600' : 'text-green-600'
                             }`}>
                               {siteData.riskScore.toFixed(1)}
-                            </div>
-                            <div className="text-xs text-gray-500 dark:text-gray-400">Risk Score</div>
-                          </div>
                         </div>
+                            <div className="text-xs text-gray-500 dark:text-gray-400">Risk Score</div>
+                        </div>
+                      </div>
                         
                         {/* Risk Factors Breakdown */}
                         <div className="grid grid-cols-3 gap-3 pt-3 border-t border-gray-200 dark:border-gray-600">
                           <div className="text-center">
                             <div className="text-lg font-bold text-purple-600">
                               {siteData.count || 0}
-                            </div>
+                    </div>
                             <div className="text-xs text-gray-600 dark:text-gray-400">Incident Count</div>
                             <div className="text-xs text-purple-600 font-medium">
                               Frequency Factor
-                            </div>
-                          </div>
+                    </div>
+              </div>
                           
                           <div className="text-center">
                             <div className="text-lg font-bold text-orange-600">
                               {formatDurationHMS(siteData.avgDuration || 0)}
-                            </div>
+                    </div>
                             <div className="text-xs text-gray-600 dark:text-gray-400">Avg Duration</div>
                             <div className="text-xs text-orange-600 font-medium">
                               Duration Factor
-                            </div>
-                          </div>
+                  </div>
+                    </div>
                           
                           <div className="text-center">
                             <div className="text-lg font-bold text-blue-600">
@@ -595,9 +595,9 @@ const SiteAnalytics: React.FC = () => {
                             <div className="text-xs text-blue-600 font-medium">
                               Resolution Factor
                             </div>
-                          </div>
-                        </div>
-                        
+                  </div>
+                </div>
+                
                         {/* Risk Calculation Explanation */}
                         <div className="mt-3 p-2 bg-gray-100 dark:bg-gray-700 rounded-lg">
                           <div className="text-xs text-gray-600 dark:text-gray-400 mb-1">Risk Calculation:</div>
@@ -606,14 +606,14 @@ const SiteAnalytics: React.FC = () => {
                             Score: {siteData.riskScore.toFixed(1)} • 
                             {siteData.level === 'High' ? ' Requires immediate attention' : siteData.level === 'Medium' ? ' Monitor closely' : ' Low priority'} • 
                             {siteData.count >= 5 ? ' High frequency' : siteData.count >= 3 ? ' Moderate frequency' : ' Low frequency'} incidents
-                          </div>
-                        </div>
-                      </div>
+                  </div>
+                  </div>
+                  </div>
                     );
                   }) : (
                     <div className="text-center py-6 text-gray-500 dark:text-gray-400">
                       No risk assessment data available
-                    </div>
+                </div>
                   )}
               </div>
             </CardContent>
@@ -626,10 +626,10 @@ const SiteAnalytics: React.FC = () => {
             <CardTitle className="flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-gray-100">
               <AssessmentIcon className="w-5 h-5 text-indigo-600" />
               Site Performance Overview
-            </CardTitle>
+              </CardTitle>
             <CardDescription className="text-gray-600 dark:text-gray-400">Comprehensive site reliability and performance metrics</CardDescription>
-          </CardHeader>
-          <CardContent>
+            </CardHeader>
+            <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               {/* Reliability Rate */}
               <div className="text-center p-4 bg-green-50 dark:bg-green-900/20 rounded-xl border border-green-200 dark:border-green-800 shadow-sm">
@@ -656,21 +656,21 @@ const SiteAnalytics: React.FC = () => {
                 <AccessTimeIcon className="w-6 h-6 text-orange-600 mx-auto mb-2" />
                 <div className="text-lg font-bold text-orange-600">
                   {formatDurationHMS(siteStats.avgSiteRecovery)}
-                </div>
+                        </div>
                 <div className="text-sm text-gray-600 dark:text-gray-400">Avg Recovery</div>
                 <div className="text-xs text-orange-600 mt-1">Time per Site</div>
-              </div>
-
+                      </div>
+                      
               {/* Risk Assessment */}
               <div className="text-center p-4 bg-red-50 dark:bg-red-900/20 rounded-xl border border-red-200 dark:border-red-800 shadow-sm">
                 <WarningAmberIcon className="w-6 h-6 text-red-600 mx-auto mb-2" />
                 <div className="text-2xl font-bold text-red-600">
                   {Object.values(siteStats.siteRiskScore).filter((site: any) => site.level === 'High').length}
-                </div>
+                        </div>
                 <div className="text-sm text-gray-600 dark:text-gray-400">High Risk Sites</div>
                 <div className="text-xs text-red-600 mt-1">Requires Attention</div>
-              </div>
-            </div>
+                        </div>
+                        </div>
 
             {/* Additional Metrics */}
             <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 border-t border-gray-200 dark:border-gray-700">
@@ -678,32 +678,32 @@ const SiteAnalytics: React.FC = () => {
                 <div className="flex items-center gap-2">
                   <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
                   <span className="text-sm text-gray-600 dark:text-gray-400">Total Incidents:</span>
-                </div>
+                        </div>
                 <span className="font-semibold text-gray-900 dark:text-gray-100">{siteStats.totalSites}</span>
-              </div>
-              
+                      </div>
+                      
               <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
                 <div className="flex items-center gap-2">
                   <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
                   <span className="text-sm text-gray-600 dark:text-gray-400">Medium Risk:</span>
-                </div>
+                        </div>
                 <span className="font-semibold text-yellow-600">
                   {Object.values(siteStats.siteRiskScore).filter((site: any) => site.level === 'Medium').length}
                 </span>
-              </div>
+                        </div>
               
               <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
                 <div className="flex items-center gap-2">
                   <div className="w-3 h-3 bg-green-500 rounded-full"></div>
                   <span className="text-sm text-gray-600 dark:text-gray-400">Low Risk:</span>
-                </div>
+                      </div>
                 <span className="font-semibold text-green-600">
                   {Object.values(siteStats.siteRiskScore).filter((site: any) => site.level === 'Low').length}
                 </span>
+                    </div>
               </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
 
         {/* NCAL Performance & Compliance Analysis */}
         <Card className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg border border-gray-200 dark:border-zinc-800">
@@ -711,10 +711,10 @@ const SiteAnalytics: React.FC = () => {
             <CardTitle className="flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-gray-100">
               <TrackChangesIcon className="w-5 h-5 text-purple-600" />
               NCAL Performance & Compliance Analysis
-            </CardTitle>
+              </CardTitle>
             <CardDescription className="text-gray-600 dark:text-gray-400">Comprehensive NCAL target compliance and performance metrics by severity levels</CardDescription>
-          </CardHeader>
-          <CardContent>
+            </CardHeader>
+            <CardContent>
             {/* Summary Stats */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
               <div className="text-center p-3 bg-green-50 dark:bg-green-900/20 rounded-xl border border-green-200 dark:border-green-800 shadow-sm">
@@ -759,66 +759,66 @@ const SiteAnalytics: React.FC = () => {
                 const avgDuration = item.avgDuration;
                 const isCompliant = avgDuration <= target;
                 const efficiency = target > 0 ? Math.max(0, ((target - avgDuration) / target) * 100) : 0;
-                
-                return (
+                  
+                  return (
                   <div key={item.name} className="p-4 bg-gray-50 dark:bg-zinc-800 rounded-xl border border-gray-200 dark:border-zinc-700 shadow-sm">
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="flex items-center gap-2">
-                        <div 
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-2">
+                          <div 
                           className="w-5 h-5 rounded-full border-2 border-white dark:border-zinc-700 shadow-sm" 
                           style={{ backgroundColor: item.fill }}
                         />
                         <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">
                           {item.name} NCAL
                         </span>
-                      </div>
+                        </div>
                       <Badge className={isCompliant ? 'bg-green-600' : 'bg-red-600'}>
                         {isCompliant ? 'Compliant' : 'Exceeded'}
-                      </Badge>
-                    </div>
-                    
+                        </Badge>
+                      </div>
+                      
                     <div className="space-y-2">
                       <div className="flex items-center justify-between text-sm">
-                        <span className="text-gray-600 dark:text-gray-400">Target:</span>
+                          <span className="text-gray-600 dark:text-gray-400">Target:</span>
                         <span className="font-medium">{formatDurationHMS(target)}</span>
-                      </div>
+                        </div>
                       <div className="flex items-center justify-between text-sm">
-                        <span className="text-gray-600 dark:text-gray-400">Average:</span>
+                          <span className="text-gray-600 dark:text-gray-400">Average:</span>
                         <span className={`font-medium ${isCompliant ? 'text-green-600' : 'text-red-600'}`}>
-                          {formatDurationHMS(avgDuration)}
-                        </span>
-                      </div>
+                            {formatDurationHMS(avgDuration)}
+                          </span>
+                        </div>
                       <div className="flex items-center justify-between text-sm">
-                        <span className="text-gray-600 dark:text-gray-400">Incidents:</span>
+                          <span className="text-gray-600 dark:text-gray-400">Incidents:</span>
                         <span className="font-medium">{item.count}</span>
-                      </div>
+                        </div>
                       <div className="flex items-center justify-between text-sm">
-                        <span className="text-gray-600 dark:text-gray-400">Efficiency:</span>
+                          <span className="text-gray-600 dark:text-gray-400">Efficiency:</span>
                         <span className={`font-medium ${isCompliant ? 'text-green-600' : 'text-red-600'}`}>
                           {efficiency.toFixed(1)}%
-                        </span>
+                          </span>
+                        </div>
                       </div>
-                    </div>
-                    
+                      
                     {/* Progress Bar */}
-                    <div className="mt-3">
-                      <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 mb-1">
-                        <span>Performance vs Target</span>
-                        <span>{isCompliant ? 'Compliant' : 'Non-Compliant'}</span>
-                      </div>
-                      <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                        <div 
-                          className={`h-2 rounded-full ${isCompliant ? 'bg-green-500' : 'bg-red-500'}`}
+                      <div className="mt-3">
+                        <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 mb-1">
+                          <span>Performance vs Target</span>
+                          <span>{isCompliant ? 'Compliant' : 'Non-Compliant'}</span>
+                        </div>
+                        <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                          <div 
+                            className={`h-2 rounded-full ${isCompliant ? 'bg-green-500' : 'bg-red-500'}`}
                           style={{ width: `${Math.min(efficiency, 100)}%` }}
-                        ></div>
+                          ></div>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                );
-              })}
-            </div>
-          </CardContent>
-        </Card>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
 
         {/* Site Incident Trend Analysis */}
         <Card className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg">
@@ -869,7 +869,7 @@ const SiteAnalytics: React.FC = () => {
                   />
                 </LineChart>
               </ChartContainer>
-            </div>
+              </div>
             <div className="mt-4 flex justify-center gap-6">
               <div className="flex items-center gap-2">
                 <div className="w-3 h-3 bg-blue-500 rounded-full"></div>

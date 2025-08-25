@@ -7,14 +7,30 @@ import MigrationPanel from '../components/MigrationPanel';
 const allRoles = ['super admin', 'admin', 'user'] as const;
 type Role = typeof allRoles[number];
 const allMenus = [
+  // Dashboard & Overview
   'Dashboard',
+  
+  // Ticket Management
   'Data Grid',
-  'Customer Analytics',
+  'Kanban Board',
   'Ticket Analytics',
   'Agent Analytics',
+  
+  // Incident Management
+  'Incident Data',
+  'Incident Analytics',
+  'Technical Support Analytics',
+  'Site Analytics',
+  
+  // Master Data
+  'Agent Data',
+  'Customer Data',
+  
+  // Documentation & Tools
   'Upload Data',
-  'Master Data Agent',
-  'Rumus Analytics',
+  'Formulas',
+  
+  // Administration
   'Admin Panel',
 ];
 
@@ -294,9 +310,178 @@ const AdminPanel: React.FC = () => {
                 {allRoles.map(r => <option key={r} value={r}>{r}</option>)}
               </select>
             </div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-              {allMenus.map(menu => (
-                <div key={menu} className="flex items-center">
+            
+            <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+              <div className="text-sm font-medium text-blue-800 dark:text-blue-200 mb-1">Menu Permissions Guide:</div>
+              <div className="text-xs text-blue-700 dark:text-blue-300">
+                <strong>Super Admin:</strong> Full access to all features<br/>
+                <strong>Admin:</strong> Access to most features except user management<br/>
+                <strong>User:</strong> Limited access to view data and basic features
+              </div>
+            </div>
+            
+            <div className="mb-4 flex gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  const allMenuNames = allMenus;
+                  menuPermissionAPI.updatePermissions(selectedRoleForEditing, allMenuNames);
+                  loadData();
+                }}
+                className="bg-green-500 hover:bg-green-600 text-white text-xs font-semibold px-3 py-1 rounded shadow transition-all"
+              >
+                Select All
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  menuPermissionAPI.updatePermissions(selectedRoleForEditing, []);
+                  loadData();
+                }}
+                className="bg-red-500 hover:bg-red-600 text-white text-xs font-semibold px-3 py-1 rounded shadow transition-all"
+              >
+                Deselect All
+              </button>
+            </div>
+            <div className="mb-3 flex justify-between items-center">
+              <div className="text-sm text-gray-600 dark:text-gray-400">
+                Selected: <span className="font-semibold text-blue-600">{getMenusForRole(selectedRoleForEditing).length}</span> of <span className="font-semibold">{allMenus.length}</span> menus
+              </div>
+            </div>
+            
+            <div className="space-y-6">
+              {/* Dashboard & Overview */}
+              <div>
+                <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 border-b border-gray-200 dark:border-gray-600 pb-1">
+                  📊 Dashboard & Overview
+                </h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {allMenus.slice(0, 1).map(menu => (
+                    <div key={menu} className={`flex items-center p-3 rounded-lg border transition-all ${
+                      getMenusForRole(selectedRoleForEditing).includes(menu)
+                        ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800'
+                        : 'bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600'
+                    }`}>
+                      <input
+                        type="checkbox"
+                        id={`perm-${selectedRoleForEditing}-${menu}`}
+                        className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        checked={getMenusForRole(selectedRoleForEditing).includes(menu)}
+                        onChange={() => handlePermissionChange(menu, selectedRoleForEditing)}
+                      />
+                      <label htmlFor={`perm-${selectedRoleForEditing}-${menu}`} className="ml-3 block text-sm font-medium text-gray-900 dark:text-gray-200 cursor-pointer flex-1">
+                        {menu}
+                      </label>
+                      {getMenusForRole(selectedRoleForEditing).includes(menu) && (
+                        <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Ticket Management */}
+              <div>
+                <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 border-b border-gray-200 dark:border-gray-600 pb-1">
+                  🎫 Ticket Management
+                </h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {allMenus.slice(1, 5).map(menu => (
+                    <div key={menu} className={`flex items-center p-3 rounded-lg border transition-all ${
+                      getMenusForRole(selectedRoleForEditing).includes(menu)
+                        ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800'
+                        : 'bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600'
+                    }`}>
+                      <input
+                        type="checkbox"
+                        id={`perm-${selectedRoleForEditing}-${menu}`}
+                        className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        checked={getMenusForRole(selectedRoleForEditing).includes(menu)}
+                        onChange={() => handlePermissionChange(menu, selectedRoleForEditing)}
+                      />
+                      <label htmlFor={`perm-${selectedRoleForEditing}-${menu}`} className="ml-3 block text-sm font-medium text-gray-900 dark:text-gray-200 cursor-pointer flex-1">
+                        {menu}
+                      </label>
+                      {getMenusForRole(selectedRoleForEditing).includes(menu) && (
+                        <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Incident Management */}
+              <div>
+                <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 border-b border-gray-200 dark:border-gray-600 pb-1">
+                  ⚠️ Incident Management
+                </h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {allMenus.slice(5, 9).map(menu => (
+                    <div key={menu} className={`flex items-center p-3 rounded-lg border transition-all ${
+                      getMenusForRole(selectedRoleForEditing).includes(menu)
+                        ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800'
+                        : 'bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600'
+                    }`}>
+                      <input
+                        type="checkbox"
+                        id={`perm-${selectedRoleForEditing}-${menu}`}
+                        className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        checked={getMenusForRole(selectedRoleForEditing).includes(menu)}
+                        onChange={() => handlePermissionChange(menu, selectedRoleForEditing)}
+                      />
+                      <label htmlFor={`perm-${selectedRoleForEditing}-${menu}`} className="ml-3 block text-sm font-medium text-gray-900 dark:text-gray-200 cursor-pointer flex-1">
+                        {menu}
+                      </label>
+                      {getMenusForRole(selectedRoleForEditing).includes(menu) && (
+                        <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Master Data */}
+              <div>
+                <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 border-b border-gray-200 dark:border-gray-600 pb-1">
+                  👥 Master Data
+                </h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {allMenus.slice(9, 11).map(menu => (
+                    <div key={menu} className={`flex items-center p-3 rounded-lg border transition-all ${
+                      getMenusForRole(selectedRoleForEditing).includes(menu)
+                        ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800'
+                        : 'bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600'
+                    }`}>
+                      <input
+                        type="checkbox"
+                        id={`perm-${selectedRoleForEditing}-${menu}`}
+                        className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        checked={getMenusForRole(selectedRoleForEditing).includes(menu)}
+                        onChange={() => handlePermissionChange(menu, selectedRoleForEditing)}
+                      />
+                      <label htmlFor={`perm-${selectedRoleForEditing}-${menu}`} className="ml-3 block text-sm font-medium text-gray-900 dark:text-gray-200 cursor-pointer flex-1">
+                        {menu}
+                      </label>
+                      {getMenusForRole(selectedRoleForEditing).includes(menu) && (
+                        <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Documentation & Tools */}
+              <div>
+                <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 border-b border-gray-200 dark:border-gray-600 pb-1">
+                  📚 Documentation & Tools
+                </h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {allMenus.slice(11, 13).map(menu => (
+                    <div key={menu} className={`flex items-center p-3 rounded-lg border transition-all ${
+                      getMenusForRole(selectedRoleForEditing).includes(menu)
+                        ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800'
+                        : 'bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600'
+                    }`}>
                   <input
                     type="checkbox"
                     id={`perm-${selectedRoleForEditing}-${menu}`}
@@ -304,11 +489,46 @@ const AdminPanel: React.FC = () => {
                     checked={getMenusForRole(selectedRoleForEditing).includes(menu)}
                     onChange={() => handlePermissionChange(menu, selectedRoleForEditing)}
                   />
-                  <label htmlFor={`perm-${selectedRoleForEditing}-${menu}`} className="ml-2 block text-sm text-gray-900 dark:text-gray-200">
+                      <label htmlFor={`perm-${selectedRoleForEditing}-${menu}`} className="ml-3 block text-sm font-medium text-gray-900 dark:text-gray-200 cursor-pointer flex-1">
                     {menu}
                   </label>
+                      {getMenusForRole(selectedRoleForEditing).includes(menu) && (
+                        <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Administration */}
+              <div>
+                <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 border-b border-gray-200 dark:border-gray-600 pb-1">
+                  ⚙️ Administration
+                </h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {allMenus.slice(13, 14).map(menu => (
+                    <div key={menu} className={`flex items-center p-3 rounded-lg border transition-all ${
+                      getMenusForRole(selectedRoleForEditing).includes(menu)
+                        ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800'
+                        : 'bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600'
+                    }`}>
+                      <input
+                        type="checkbox"
+                        id={`perm-${selectedRoleForEditing}-${menu}`}
+                        className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        checked={getMenusForRole(selectedRoleForEditing).includes(menu)}
+                        onChange={() => handlePermissionChange(menu, selectedRoleForEditing)}
+                      />
+                      <label htmlFor={`perm-${selectedRoleForEditing}-${menu}`} className="ml-3 block text-sm font-medium text-gray-900 dark:text-gray-200 cursor-pointer flex-1">
+                        {menu}
+                      </label>
+                      {getMenusForRole(selectedRoleForEditing).includes(menu) && (
+                        <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                      )}
                 </div>
               ))}
+                </div>
+              </div>
             </div>
           </div>
           {/* User List Card */}

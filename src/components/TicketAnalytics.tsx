@@ -18,7 +18,7 @@ import ShowChartIcon from '@mui/icons-material/ShowChart';
 
 import AssignmentIcon from '@mui/icons-material/Assignment';
 import TrackChangesIcon from '@mui/icons-material/TrackChanges';
-import { CheckCircle2 as CheckCircleIcon, Clock as ClockIcon } from 'lucide-react';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Legend as RechartsLegend, Tooltip as RechartsTooltip, BarChart, Bar } from 'recharts';
 import PageWrapper from './PageWrapper';
 import { PDFDownloadLink, Document, Page, Text, View } from '@react-pdf/renderer';
@@ -1032,14 +1032,14 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
                 iconBg="bg-amber-600"
               />
               <SummaryCard
-                icon={<ClockIcon className="w-7 h-7 text-white" />}
+                icon={<AccessTimeIcon className="w-7 h-7 text-white" />}
                 title="Backlog Age P50"
                 value={formatDurationHMS(p50)}
                 description="Median umur backlog (jam)"
                 iconBg="bg-sky-600"
               />
               <SummaryCard
-                icon={<ClockIcon className="w-7 h-7 text-white" />}
+                icon={<AccessTimeIcon className="w-7 h-7 text-white" />}
                 title="Backlog Age P90"
                 value={formatDurationHMS(p90)}
                 description="90% backlog lebih muda dari ini"

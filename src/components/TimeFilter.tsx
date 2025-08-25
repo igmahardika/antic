@@ -1,5 +1,5 @@
 import React, { useRef, useCallback } from 'react';
-import { Calendar } from 'lucide-react';
+import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import * as Select from '@radix-ui/react-select';
 import { Button } from './ui/button';
 
@@ -76,7 +76,7 @@ const TimeFilter: React.FC<TimeFilterProps> = ({
   const debouncedSetSelectedYear = useDebouncedCallback(setSelectedYear, 300);
   return (
   <div className="flex items-center gap-3 p-2 bg-white/70 dark:bg-zinc-900/70 rounded-xl shadow border border-gray-100 dark:border-zinc-800 mb-4">
-    <Calendar className="h-4 w-4 text-blue-400 mr-1" />
+    <CalendarTodayIcon className="h-4 w-4 text-blue-400 mr-1" />
     <span className="text-xs font-semibold text-gray-600 dark:text-gray-200 mr-1">Time:</span>
     <RadixSelect
       value={startMonth}

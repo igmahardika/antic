@@ -1,1568 +1,1323 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
-import TrackChangesIcon from '@mui/icons-material/TrackChanges';
-import TrendingUpIcon from '@mui/icons-material/TrendingUp';
-import TrendingDownIcon from '@mui/icons-material/TrendingDown';
-import ScheduleIcon from '@mui/icons-material/Schedule';
-import AssignmentIcon from '@mui/icons-material/Assignment';
-import BarChartIcon from '@mui/icons-material/BarChart';
 import LightbulbIcon from '@mui/icons-material/Lightbulb';
-import BalanceIcon from '@mui/icons-material/Balance';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import ExpandLessIcon from '@mui/icons-material/ExpandLess';
+import DashboardIcon from '@mui/icons-material/Dashboard';
+import PeopleIcon from '@mui/icons-material/People';
+import ConfirmationNumberIcon from '@mui/icons-material/ConfirmationNumber';
+import BusinessIcon from '@mui/icons-material/Business';
+import AnalyticsIcon from '@mui/icons-material/Analytics';
+import StorageIcon from '@mui/icons-material/Storage';
+import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
+import DescriptionIcon from '@mui/icons-material/Description';
+import SettingsIcon from '@mui/icons-material/Settings';
+
+interface CollapsibleSectionProps {
+  title: string;
+  icon: React.ReactNode;
+  children: React.ReactNode;
+  defaultExpanded?: boolean;
+}
+
+const CollapsibleSection: React.FC<CollapsibleSectionProps> = ({ 
+  title, 
+  icon, 
+  children, 
+  defaultExpanded = false 
+}) => {
+  const [isExpanded, setIsExpanded] = useState(defaultExpanded);
+
+  return (
+    <Card className="w-full bg-white dark:bg-zinc-900 rounded-xl border shadow">
+      <CardHeader 
+        className="p-6 cursor-pointer hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors"
+        onClick={() => setIsExpanded(!isExpanded)}
+      >
+            <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+                {icon}
+            <CardTitle className="text-xl font-bold text-gray-900 dark:text-gray-100">
+                {title}
+              </CardTitle>
+          </div>
+          {isExpanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+            </div>
+          </CardHeader>
+      {isExpanded && (
+          <CardContent className="p-6 pt-0">
+            {children}
+        </CardContent>
+      )}
+      </Card>
+  );
+};
 
 export default function AdminRumus() {
   return (
-    <div className="max-w-full w-full py-10 px-2 sm:px-6 space-y-10">
-      <h1 className="text-3xl font-bold mb-2 text-gray-900 dark:text-gray-100 text-left">Dokumentasi Rumus & Perhitungan Analytics</h1>
-      <p className="mb-8 text-base text-gray-700 dark:text-gray-300 text-left">Halaman ini berisi dokumentasi lengkap semua rumus, bobot, dan logika perhitungan yang digunakan di seluruh fitur dashboard analytics. Setiap bagian dikelompokkan berdasarkan fitur/halaman utama dengan penjelasan detail implementasi, contoh perhitungan, dan metodologi yang digunakan.</p>
-
+    <div className="max-w-full w-full py-8 px-4 sm:px-6 space-y-8">
+            {/* Header */}
+      <div className="text-center space-y-4">
+        <h1 className="text-4xl font-bold text-gray-900 dark:text-gray-100">
+          Helpdesk Management System
+        </h1>
+        <h2 className="text-2xl font-semibold text-gray-700 dark:text-gray-300">
+          Dokumentasi Teknis & Arsitektur Sistem
+        </h2>
+        <p className="text-lg text-gray-600 dark:text-gray-400 max-w-4xl mx-auto">
+          Dokumentasi komprehensif untuk semua komponen sistem, algoritma analitik, 
+          metodologi pemrosesan data, dan implementasi teknis untuk pengembangan dan pemeliharaan sistem.
+        </p>
+      </div>
+            
       {/* Table of Contents */}
-      <Card className="w-full bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-zinc-800 dark:to-zinc-900 rounded-xl border shadow p-0">
-        <CardHeader className="p-8 pb-2">
-          <CardTitle className="text-lg font-bold text-gray-900 dark:text-gray-100 text-left">Daftar Isi</CardTitle>
-        </CardHeader>
-        <CardContent className="p-8 pt-2">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-            <div>
-              <h4 className="font-semibold mb-2">Analytics Features</h4>
-              <ul className="space-y-1 text-gray-600 dark:text-gray-400">
-                <li>• Agent Analytics</li>
-                <li>• Ticket Analytics</li>
-                <li>• Customer Analytics / Kanban Board</li>
-                <li>• Summary Dashboard</li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="font-semibold mb-2">Technical Sections</h4>
-              <ul className="space-y-1 text-gray-600 dark:text-gray-400">
-                <li>• Data Processing & Validation</li>
-                <li>• Advanced Analytics Features</li>
-                <li>• Statistical Methods</li>
-                <li>• Performance Optimization</li>
-              </ul>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Agent Analytics */}
-      <Card className="w-full bg-white dark:bg-zinc-900 rounded-xl border shadow p-0">
-        <CardHeader className="p-8 pb-2">
-          <CardTitle className="text-lg font-bold text-gray-900 dark:text-gray-100 text-left">Agent Analytics</CardTitle>
-        </CardHeader>
-        <CardContent className="p-8 pt-2 space-y-6">
-          <div className="space-y-4 text-base text-gray-700 dark:text-gray-300 text-left">
-            <p>
-              Fitur Agent Analytics menampilkan performa agent berdasarkan skor gabungan dari beberapa KPI utama. Sistem menggunakan dua metodologi scoring yang berbeda untuk memberikan evaluasi komprehensif: <strong>Primary Scoring System</strong> (digunakan di interface utama) dan <strong>Alternative Scoring System</strong> (digunakan di agentStore dan beberapa kalkulasi backend).
-            </p>
-            
-            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-              <h4 className="font-semibold text-blue-800 dark:text-blue-200 mb-2">
-                <TrackChangesIcon className="inline mr-2" />
-                Primary Scoring System (Interface Utama)
-              </h4>
-              <p className="text-sm text-blue-700 dark:text-blue-300">Digunakan di AgentAnalytics.tsx untuk ranking dan display utama</p>
-            </div>
-            
-            <div>
-              <div className="font-semibold mb-1 text-base">1. Bobot KPI Utama</div>
-              <ul className="list-disc pl-6 mb-2">
-                <li><strong>FCR (First Contact Resolution): 30%</strong> - Resolusi di kontak pertama</li>
-                <li><strong>SLA (Service Level Agreement): 25%</strong> - Ketepatan waktu respon</li>
-                <li><strong>FRT (First Response Time): 15%</strong> - Kecepatan respon pertama</li>
-                <li><strong>ART (Average Resolution Time): 15%</strong> - Kecepatan penyelesaian</li>
-                <li><strong>Backlog: 5%</strong> - Jumlah tiket tertunda</li>
-                <li><strong>Ticket Volume: 10%</strong> - Jumlah tiket yang ditangani</li>
-              </ul>
-              <div className="mb-2"><strong>Rumus Skor Akhir:</strong></div>
-              <pre className="bg-zinc-900 text-white rounded-lg p-4 text-xs overflow-x-auto mb-2">{`Score = FCR*0.3 + SLA*0.25 + FRT*0.15 + ART*0.15 + Backlog*0.05 + Ticket*0.10`}</pre>
-            </div>
-
-            <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4">
-              <h4 className="font-semibold text-amber-800 dark:text-amber-200 mb-2">⚖️ Alternative Scoring System (Backend Store)</h4>
-              <p className="text-sm text-amber-700 dark:text-amber-300">Digunakan di agentStore.ts dan beberapa kalkulasi backend</p>
-              <div className="mt-3">
-                <div className="font-medium mb-1">Bobot Alternatif:</div>
-                <ul className="list-disc pl-6 text-sm">
-                  <li>FRT: 25%, ART: 20%, FCR: 20%, SLA: 15%, Volume: 10%, Backlog: 10%</li>
-                </ul>
-              </div>
-            </div>
-            <div>
-              <div className="font-semibold mb-1 text-base">2. Metodologi Normalisasi KPI</div>
-              
-              <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4 mb-4">
-                <h5 className="font-semibold text-green-800 dark:text-green-200 mb-2">
-                  <TrendingUpIcon className="inline mr-2" />
-                  KPI Positif (Semakin tinggi semakin baik)
-                </h5>
-                <div className="text-sm space-y-2">
-                  <div><strong>Berlaku untuk:</strong> FCR, SLA, Ticket Volume</div>
-                  <div><strong>Rumus:</strong> <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">Skor = min((Aktual / Target) × 100, 120)</code></div>
-                  <div><strong>Contoh FCR:</strong> Target 75%, Aktual 70% → Skor = min((70/75)×100, 120) = 93.3</div>
-                  <div><strong>Cap Maximum:</strong> 120 untuk menghindari outlier yang ekstrem</div>
-                </div>
-              </div>
-
-              <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 mb-4">
-                <h5 className="font-semibold text-red-800 dark:text-red-200 mb-2">
-                  <TrendingDownIcon className="inline mr-2" />
-                  KPI Negatif (Semakin rendah semakin baik)
-                </h5>
-                <div className="text-sm space-y-2">
-                  <div><strong>Berlaku untuk:</strong> FRT, ART</div>
-                  <div><strong>Rumus:</strong> <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">Skor = min((Target / Aktual) × 100, 120)</code></div>
-                  <div><strong>Contoh FRT:</strong> Target 15 menit, Aktual 3000 menit → Skor = min((15/3000)×100, 120) = 0.5</div>
-                  <div><strong>Handling Zero:</strong> Jika aktual = 0, skor = 0 (bukan infinity)</div>
-                </div>
-              </div>
-
-              <div className="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg p-4">
-                <h5 className="font-semibold text-purple-800 dark:text-purple-200 mb-2">🔧 Normalisasi Khusus</h5>
-                <div className="text-sm space-y-2">
-                  <div><strong>Backlog Scoring:</strong></div>
-                                        <ul className="list-disc pl-6 mt-1">
-                        <li>Backlog = 0 → Skor = 100</li>
-                        <li>Backlog ≤ 10 → Skor = max(100 - backlog × 5, 0)</li>
-                        <li>Backlog &gt; 10 → Skor = 0</li>
-                      </ul>
-                  <div className="mt-2"><strong>Ticket Volume Scoring:</strong></div>
-                  <ul className="list-disc pl-6 mt-1">
-                    <li>Skor = min((Ticket Agent / Max Ticket Semua Agent) × 100, 120)</li>
-                    <li>Mendorong produktivitas tanpa memberikan penalty berlebihan</li>
-              </ul>
-                </div>
-              </div>
-            </div>
-            <div>
-              <div className="font-semibold mb-1 text-base">3. Detail Perhitungan Masing-masing KPI</div>
-              <div className="space-y-4">
-                <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-                  <div className="font-semibold text-green-600 dark:text-green-400 mb-2">🎯 FCR (First Contact Resolution)</div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <div><strong>Definisi:</strong> Persentase tiket yang diselesaikan dalam satu kontak tanpa eskalasi</div>
-                      <div><strong>Target:</strong> 75%</div>
-                      <div><strong>Indikator:</strong> Tiket tanpa field Penanganan2</div>
-                    </div>
-                <div>
-                      <div><strong>Rumus:</strong> <code>FCR = (Tiket tanpa follow-up / Total tiket) × 100%</code></div>
-                      <div><strong>Scoring:</strong> <code>min((FCR / 75) × 100, 120)</code></div>
-                      <div><strong>Contoh:</strong> FCR 70% → Skor = 93.3</div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-                  <div className="font-semibold text-blue-600 dark:text-blue-400 mb-2">⏱️ SLA (Service Level Agreement)</div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <div><strong>Definisi:</strong> Persentase tiket yang diselesaikan dalam batas waktu 24 jam</div>
-                      <div><strong>Target:</strong> 85%</div>
-                      <div><strong>Batas Waktu:</strong> ≤ 1440 menit (24 jam)</div>
-                </div>
-                <div>
-                      <div><strong>Rumus:</strong> <code>SLA = (Tiket ≤ 24 jam / Total tiket) × 100%</code></div>
-                      <div><strong>Scoring:</strong> <code>min((SLA / 85) × 100, 120)</code></div>
-                      <div><strong>Contoh:</strong> SLA 69.8% → Skor = 82.1</div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-                  <div className="font-semibold text-orange-600 dark:text-orange-400 mb-2">🚀 FRT (First Response Time)</div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <div><strong>Definisi:</strong> Rata-rata waktu dari buka tiket hingga respon pertama</div>
-                      <div><strong>Target:</strong> 15 menit</div>
-                      <div><strong>Pengukuran:</strong> ClosePenanganan - WaktuOpen</div>
-                </div>
-                <div>
-                  <div><strong>Rumus:</strong> <code>FRT = Σ(waktu respon) / Jumlah tiket</code></div>
-                  <div><strong>Target baru:</strong> 60 menit (1 jam)</div>
-                  <div><strong>Scoring:</strong> <code>min((60 / FRT) × 100, 120)</code></div>
-                      <div><strong>Contoh:</strong> FRT 3000 menit → Skor = 2.0</div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-                  <div className="font-semibold text-purple-600 dark:text-purple-400 mb-2">🔧 ART (Average Resolution Time)</div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <div><strong>Definisi:</strong> Rata-rata waktu dari buka tiket hingga selesai</div>
-                  <div><strong>Target baru:</strong> 1440 menit (24 jam)</div>
-                      <div><strong>Pengukuran:</strong> WaktuCloseTicket - WaktuOpen</div>
-                </div>
-                <div>
-                      <div><strong>Rumus:</strong> <code>ART = Σ(waktu penyelesaian) / Jumlah tiket</code></div>
-                  <div><strong>Scoring:</strong> <code>min((1440 / ART) × 100, 120)</code></div>
-                      <div><strong>Contoh:</strong> ART 4440 menit → Skor = 32.4</div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-                  <div className="font-semibold text-red-600 dark:text-red-400 mb-2">📋 Backlog Management</div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <div><strong>Definisi:</strong> Tiket yang masih terbuka atau tertunda</div>
-                      <div><strong>Kriteria:</strong> Status "OPEN TICKET", closeTime kosong, atau close di bulan berikutnya</div>
-                      <div><strong>Tujuan:</strong> Mendorong penyelesaian tepat waktu</div>
-                </div>
-                <div>
-                      <div><strong>Rumus Scoring:</strong></div>
-                      <ul className="list-disc pl-4 mt-1">
-                        <li>Backlog = 0 → Skor = 100</li>
-                        <li>Backlog ≤ 10 → Skor = max(100 - backlog × 5, 0)</li>
-                        <li>Backlog &gt; 10 → Skor = 0</li>
-                      </ul>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-                  <div className="font-semibold text-indigo-600 dark:text-indigo-400 mb-2">📊 Ticket Volume (Produktivitas)</div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <div><strong>Definisi:</strong> Jumlah tiket yang ditangani relatif terhadap agent paling produktif</div>
-                      <div><strong>Filosofi:</strong> Mendorong produktivitas tanpa over-penalize</div>
-                      <div><strong>Normalisasi:</strong> Berbasis performa maksimal tim</div>
-                </div>
-                <div>
-                      <div><strong>Rumus:</strong> <code>Volume Score = (Tiket Agent / Max Tiket Tim) × 100</code></div>
-                      <div><strong>Cap:</strong> Maksimal 120 untuk fairness</div>
-                      <div><strong>Contoh:</strong> 814/814 tiket → Skor = 100</div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div>
-              <div className="font-semibold mb-1 text-base">4. Sistem Ranking & Grade</div>
-              <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <h5 className="font-semibold mb-2">📊 Ranking Logic</h5>
-                    <ul className="text-sm space-y-1">
-                      <li>• Urutkan berdasarkan skor akhir (tertinggi ke terendah)</li>
-                      <li>• Tampilkan posisi numerik (Rank #1, #2, dst)</li>
-                      <li>• Highlight top 3 performers dengan badge khusus</li>
-                      <li>• Automatic tie-breaking berdasarkan volume tiket</li>
-                    </ul>
-                  </div>
-                  <div>
-                    <h5 className="font-semibold mb-2">🎖️ Grade Classification</h5>
-                    <ul className="text-sm space-y-1">
-                      <li>• <strong>Grade A:</strong> Skor ≥ 75 (Excellent)</li>
-                      <li>• <strong>Grade B:</strong> Skor 60-74 (Good)</li>
-                      <li>• <strong>Grade C:</strong> Skor 45-59 (Fair)</li>
-                      <li>• <strong>Grade D:</strong> Skor &lt; 45 (Needs Improvement)</li>
-                    </ul>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div>
-              <div className="font-semibold mb-3 text-base">5. Monthly Performance & Trend Analysis</div>
-              <div className="bg-cyan-50 dark:bg-cyan-900/20 border border-cyan-200 dark:border-cyan-800 rounded-lg p-4">
-                <h5 className="font-semibold text-cyan-800 dark:text-cyan-200 mb-2">📈 Agent Monthly Chart</h5>
-                <div className="text-sm space-y-2">
-                  <div><strong>Metodologi:</strong> Tracking performa bulanan dengan bobot khusus</div>
-                  <div><strong>Bobot Monthly:</strong> w1=0.3 (FCR), w2=0.25 (SLA), w3=0.003 (ART), w4=0.1 (Backlog)</div>
-                  <div><strong>Normalisasi ART:</strong> ART_norm = (ART / 1440) × 100 (24 jam sebagai base)</div>
-                  <div><strong>Score Formula:</strong> <code>Score = w1×FCR + w2×SLA - w3×ART_norm - w4×backlog</code></div>
-                  <div><strong>Range:</strong> 0-100, capped untuk konsistensi</div>
-                </div>
-              </div>
-            </div>
-
-            <div>
-              <div className="font-semibold mb-3 text-base">6. Automated Insights & Intelligence</div>
-              <div className="space-y-3">
-                <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-3">
-                  <h6 className="font-semibold text-yellow-800 dark:text-yellow-200 mb-1">🧠 Smart Insights</h6>
-                  <ul className="text-sm space-y-1">
-                                          <li>• Auto-detect agents dengan FRT &gt; 15 menit</li>
-                      <li>• Identifikasi agents dengan SLA &lt; 85%</li>
-                    <li>• Highlight improvement trends dan degradasi performa</li>
-                    <li>• Rekomendasi action items berdasarkan weakest KPI</li>
-                  </ul>
-                </div>
-                <div className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-lg p-3">
-                  <h6 className="font-semibold text-emerald-800 dark:text-emerald-200 mb-1">🏆 Recognition System</h6>
-                  <ul className="text-sm space-y-1">
-                    <li>• <strong>Top Overall Agent:</strong> Highest composite score</li>
-                    <li>• <strong>Fastest Responder:</strong> Lowest FRT</li>
-                    <li>• <strong>Fastest Resolution:</strong> Lowest ART</li>
-                    <li>• <strong>Best SLA Performer:</strong> Highest SLA %</li>
-                    <li>• <strong>Most Reliable:</strong> Highest FCR + zero backlog</li>
-                    <li>• <strong>Most Improved:</strong> Biggest score delta increase</li>
-                    <li>• <strong>Most Engaged:</strong> Highest ticket volume</li>
-              </ul>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div className="mt-8">
-            <div className="font-semibold mb-3 text-base">Breakdown Fitur & Komponen Teknis</div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <h6 className="font-medium">🎯 Core Features</h6>
-                <ul className="text-sm space-y-1 text-gray-600 dark:text-gray-400">
-                  <li>• Agent Leaderboard dengan live ranking</li>
-                  <li>• KPI Breakdown Cards dengan progress bars</li>
-                  <li>• Monthly trend chart dengan drill-down</li>
-                  <li>• Agent detail modal dengan complete metrics</li>
-                </ul>
-              </div>
-              <div className="space-y-2">
-                <h6 className="font-medium">⚡ Advanced Features</h6>
-                <ul className="text-sm space-y-1 text-gray-600 dark:text-gray-400">
-                  <li>• Real-time performance monitoring</li>
-                  <li>• Automated insight generation</li>
-                  <li>• Performance badges & recognition</li>
-                  <li>• Export capabilities (PDF/CSV)</li>
+      <CollapsibleSection 
+        title="Table of Contents" 
+        icon={<DescriptionIcon className="text-blue-600" />}
+        defaultExpanded={true}
+      >
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="space-y-3">
+            <h4 className="font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+              <DashboardIcon className="text-green-600" />
+              Core Analytics
+            </h4>
+            <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
+              <li>• Summary Dashboard</li>
+              <li>• Agent Analytics</li>
+              <li>• Ticket Analytics</li>
+              <li>• Customer Analytics</li>
             </ul>
-              </div>
-            </div>
           </div>
-        </CardContent>
-      </Card>
-
-      {/* Ticket Analytics */}
-      <Card className="w-full bg-white dark:bg-zinc-900 rounded-xl border shadow p-0">
-        <CardHeader className="p-8 pb-2">
-          <CardTitle className="text-lg font-bold text-gray-900 dark:text-gray-100 text-left">Ticket Analytics</CardTitle>
-        </CardHeader>
-        <CardContent className="p-8 pt-2 space-y-6">
-          <div className="space-y-4 text-base text-gray-700 dark:text-gray-300 text-left">
-            <p>
-              Fitur Ticket Analytics menganalisis statistik tiket, tren, dan kategori komplain untuk monitoring performa layanan dan workload operasional. Sistem ini menggunakan berbagai metode statistik dan analisis multidimensional untuk memberikan insight yang actionable.
-            </p>
-
-            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-              <h4 className="font-semibold text-blue-800 dark:text-blue-200 mb-2">Perubahan Definisi (2025-08)</h4>
-              <ul className="list-disc pl-6 text-sm space-y-1">
-                <li><strong>Active Clients per Month:</strong> Denominator memakai total baris upload per bulan (<code>customerMonthRowCount</code>), bukan jumlah nama unik.</li>
-                <li><strong>Active per Type/Category:</strong> Denominator memakai agregat baris upload per bulan per tipe/kategori (<code>customerMonthRowCountByType</code>/<code>...ByCategory</code>).</li>
-                <li><strong>Unique Complaining Clients:</strong> Nama dinormalisasi (trim/lowercase), harus aktif di bulan tersebut (<code>customerMonthMap</code> berisi bulan terkait), exclude klasifikasi <em>Di Luar Layanan</em>, <em>Gangguan Diluar Layanan</em>, dan <em>Request</em>.</li>
-                <li><strong>Total (Union):</strong> Baris "Total" di tabel unique adalah <em>union</em> lintas tipe/kategori per bulan (bukan penjumlahan) agar tidak double count.</li>
-                <li><strong>Rasio:</strong> Numerator = unique sesuai definisi; Denominator = agregat baris upload sesuai konteks (total/tipe/kategori).</li>
-              </ul>
-            </div>
-            
-            <div className="bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800 rounded-lg p-4">
-              <h4 className="font-semibold text-indigo-800 dark:text-indigo-200 mb-2">📊 Overview Statistik Utama</h4>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                <div>Total Tickets, Closed, Open</div>
-                <div>Average Duration & Resolution Rate</div>
-                <div>SLA, FRT, ART Metrics</div>
-                <div>Backlog, Overdue, Escalated</div>
-              </div>
-            </div>
-
-            <div>
-              <div className="font-semibold mb-3 text-base">1. Core KPI Calculations</div>
-              
-              <div className="space-y-4">
-                <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-                  <div className="font-semibold text-blue-600 dark:text-blue-400 mb-2">⏱️ SLA (Service Level Agreement)</div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <div><strong>Definisi:</strong> Persentase tiket yang diselesaikan dalam batas waktu SLA (≤ 24 jam)</div>
-                      <div><strong>Batas Waktu:</strong> 1440 menit (24 jam)</div>
-                      <div><strong>Tujuan:</strong> Monitoring ketepatan waktu layanan</div>
-                    </div>
-                    <div>
-                      <div><strong>Rumus:</strong></div>
-                      <pre className="bg-zinc-900 text-white rounded p-2 text-xs mt-1">{`SLA = (Tiket ≤ 24 jam / Total tiket) × 100%`}</pre>
-                      <div className="mt-2"><strong>Implementasi:</strong> Hitung durasi dari openTime hingga closeTime</div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-                  <div className="font-semibold text-orange-600 dark:text-orange-400 mb-2">🚀 FRT (First Response Time)</div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <div><strong>Definisi:</strong> Rata-rata waktu dari buka tiket hingga respon pertama</div>
-                      <div><strong>Unit:</strong> Menit</div>
-                      <div><strong>Data Source:</strong> closeHandling - openTime</div>
-                    </div>
-                    <div>
-                      <div><strong>Rumus:</strong></div>
-                      <pre className="bg-zinc-900 text-white rounded p-2 text-xs mt-1">{`FRT = Σ(waktu respon pertama) / Jumlah tiket valid`}</pre>
-                      <div className="mt-2"><strong>Validasi:</strong> Hanya tiket dengan closeHandling yang valid</div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-                  <div className="font-semibold text-purple-600 dark:text-purple-400 mb-2">🔧 ART (Average Resolution Time)</div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <div><strong>Definisi:</strong> Rata-rata waktu dari buka hingga close tiket</div>
-                      <div><strong>Unit:</strong> Jam (duration.rawHours)</div>
-                      <div><strong>Data Source:</strong> closeTime - openTime</div>
-                    </div>
-                    <div>
-                      <div><strong>Rumus:</strong></div>
-                      <pre className="bg-zinc-900 text-white rounded p-2 text-xs mt-1">{`ART = Σ(total durasi penyelesaian) / Jumlah tiket closed`}</pre>
-                      <div className="mt-2"><strong>Format:</strong> Menggunakan formatDurationDHM() untuk display</div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div>
-              <div className="font-semibold mb-3 text-base">2. Advanced Metrics & Status Classification</div>
-              
-              <div className="space-y-4">
-                <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-                  <div className="font-semibold text-red-600 dark:text-red-400 mb-2">📋 Backlog & Open Tickets</div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <div><strong>Open Tickets:</strong> Tiket yang masih aktif/belum selesai</div>
-                      <div><strong>Kriteria:</strong> Status bukan "closed" DAN (closeTime kosong ATAU closeTime di bulan berikutnya)</div>
-                      <div><strong>Perhitungan:</strong> totalTickets - closedTickets</div>
-                    </div>
-                    <div>
-                      <div><strong>Backlog Logic:</strong></div>
-                      <ul className="list-disc pl-4 mt-1">
-                        <li>Status = "OPEN TICKET"</li>
-                        <li>closeTime kosong/null</li>
-                                                  <li>closeTime &gt; akhir bulan periode filter</li>
-              </ul>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-                  <div className="font-semibold text-yellow-600 dark:text-yellow-400 mb-2">⏰ Overdue Tickets</div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <div><strong>Definisi:</strong> Tiket yang melebihi batas waktu SLA (&gt; 24 jam)</div>
-                      <div><strong>Threshold:</strong> rawHours &gt; 24</div>
-                      <div><strong>Impact:</strong> Indikator kegagalan SLA</div>
-            </div>
-            <div>
-                      <div><strong>Rumus:</strong></div>
-                      <pre className="bg-zinc-900 text-white rounded p-2 text-xs mt-1">{`Overdue = COUNT(tickets WHERE duration.rawHours > 24)`}</pre>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-                  <div className="font-semibold text-indigo-600 dark:text-indigo-400 mb-2">🔄 Escalated Tickets</div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <div><strong>Definisi:</strong> Tiket yang memerlukan multiple handling steps</div>
-                      <div><strong>Indikator:</strong> Ada closeHandling2, closeHandling3, closeHandling4, atau closeHandling5 yang tidak kosong</div>
-                      <div><strong>Impact:</strong> Menunjukkan kompleksitas masalah</div>
-            </div>
-            <div>
-                      <div><strong>Detection Logic:</strong></div>
-                      <pre className="bg-zinc-900 text-white rounded p-2 text-xs mt-1">{`Escalated = tickets.filter(t => 
-  [t.closeHandling2, t.closeHandling3, 
-   t.closeHandling4, t.closeHandling5]
-  .some(h => h && h.trim() !== ''))`}</pre>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div>
-              <div className="font-semibold mb-3 text-base">3. Statistical Analysis & Insights</div>
-              
-              <div className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-lg p-4">
-                <h5 className="font-semibold text-emerald-800 dark:text-emerald-200 mb-2">📈 Shift Analysis</h5>
-                <div className="text-sm space-y-2">
-                  <div><strong>Shift Classification:</strong></div>
-                  <ul className="list-disc pl-6">
-                    <li>Pagi: 06:00 - 14:00</li>
-                    <li>Sore: 14:00 - 22:00</li>
-                    <li>Malam: 22:00 - 06:00</li>
-              </ul>
-                  <div><strong>Metrics per Shift:</strong> Average duration, Median, Count, Formatted duration (HH:MM:SS)</div>
-                  <div><strong>Chart Data:</strong> Comparative performance visualization dengan insights shift tersibuk</div>
-                </div>
-              </div>
-
-              <div className="bg-cyan-50 dark:bg-cyan-900/20 border border-cyan-200 dark:border-cyan-800 rounded-lg p-4 mt-4">
-                <h5 className="font-semibold text-cyan-800 dark:text-cyan-200 mb-2">🏷️ Category Analysis</h5>
-                <div className="text-sm space-y-2">
-                  <div><strong>Category Breakdown:</strong> Analisis per kategori komplain dengan metrics lengkap</div>
-                  <div><strong>Metrics:</strong> Count, Average duration, Median, Range (min-max)</div>
-                  <div><strong>Insight Generation:</strong> Identifikasi kategori dengan handling time terlama</div>
-                  <div><strong>Top Complaints Table:</strong> Ranking berdasarkan Impact Score = count × avgDuration</div>
-                </div>
-              </div>
-            </div>
-
-            <div>
-              <div className="font-semibold mb-3 text-base">4. Automated Intelligence & Pattern Recognition</div>
-              
-              <div className="space-y-3">
-                <div className="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg p-3">
-                  <h6 className="font-semibold text-purple-800 dark:text-purple-200 mb-1">🧠 Keyword Analysis</h6>
-                  <ul className="text-sm space-y-1">
-                    <li>• Ekstraksi top 15 keywords dari deskripsi tiket</li>
-                    <li>• Text processing untuk mengidentifikasi pola masalah</li>
-                    <li>• Frequency analysis untuk trend detection</li>
-              </ul>
-            </div>
-                
-                <div className="bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg p-3">
-                  <h6 className="font-semibold text-orange-800 dark:text-orange-200 mb-1">📅 Monthly Trend Analysis</h6>
-                  <ul className="text-sm space-y-1">
-                    <li>• Aggregasi data per bulan untuk trend analysis</li>
-                    <li>• Identifikasi bulan tersibuk berdasarkan volume dan complexity</li>
-                    <li>• Seasonal pattern recognition</li>
-                    <li>• Forecasting capability untuk capacity planning</li>
+          
+          <div className="space-y-3">
+            <h4 className="font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+              <AnalyticsIcon className="text-purple-600" />
+              Specialized Analytics
+            </h4>
+            <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
+              <li>• Incident Analytics</li>
+              <li>• Technical Support Analytics</li>
+              <li>• Site Analytics</li>
               </ul>
             </div>
 
-                <div className="bg-rose-50 dark:bg-rose-900/20 border border-rose-200 dark:border-rose-800 rounded-lg p-3">
-                  <h6 className="font-semibold text-rose-800 dark:text-rose-200 mb-1">🎯 Performance Insights</h6>
-                  <ul className="text-sm space-y-1">
-                    <li>• Resolution rate calculation dan benchmark</li>
-                    <li>• SLA compliance monitoring dengan alert thresholds</li>
-                    <li>• Bottleneck identification dalam workflow</li>
-                    <li>• Recommendation engine untuk process improvement</li>
-              </ul>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div className="mt-8">
-            <div className="font-semibold mb-3 text-base">Breakdown Fitur & Komponen Teknis</div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-3">
-                <h6 className="font-medium text-blue-600 dark:text-blue-400">📊 Core Analytics</h6>
-                <ul className="text-sm space-y-1 text-gray-600 dark:text-gray-400">
-                  <li>• Statistik Cards: Total, Closed, Open, Duration</li>
-                  <li>• KPI Monitoring: SLA, FRT, ART dengan thresholds</li>
-                  <li>• Status Tracking: Backlog, Overdue, Escalated</li>
-                  <li>• Resolution Rate Calculator dengan benchmarks</li>
+          <div className="space-y-3">
+            <h4 className="font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+              <StorageIcon className="text-orange-600" />
+              Data Management
+            </h4>
+            <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
+              <li>• Master Data</li>
+              <li>• Agent Data</li>
+              <li>• Customer Data</li>
+              <li>• Upload Data</li>
                 </ul>
               </div>
-              <div className="space-y-3">
-                <h6 className="font-medium text-green-600 dark:text-green-400">🎯 Advanced Features</h6>
-                <ul className="text-sm space-y-1 text-gray-600 dark:text-gray-400">
-                  <li>• Shift Analysis dengan trend comparison</li>
-                  <li>• Category Impact Scoring dengan ranking</li>
-                  <li>• Monthly Pattern Recognition</li>
-                  <li>• Automated Insight Generation</li>
-                </ul>
-              </div>
-              <div className="space-y-3">
-                <h6 className="font-medium text-purple-600 dark:text-purple-400">📈 Visualizations</h6>
-                <ul className="text-sm space-y-1 text-gray-600 dark:text-gray-400">
-                  <li>• Interactive Charts untuk trend analysis</li>
-                  <li>• Pie Charts untuk category distribution</li>
-                  <li>• Bar Charts untuk shift comparison</li>
-                  <li>• Timeline views untuk monthly patterns</li>
-                </ul>
-              </div>
-              <div className="space-y-3">
-                <h6 className="font-medium text-orange-600 dark:text-orange-400">🔧 Data Operations</h6>
-                <ul className="text-sm space-y-1 text-gray-600 dark:text-gray-400">
-                  <li>• Real-time filtering dengan date ranges</li>
-                  <li>• Export capabilities (PDF/CSV/Excel)</li>
-                  <li>• Data validation dan quality checks</li>
-                  <li>• Performance optimization untuk large datasets</li>
-            </ul>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Customer Analytics / Kanban Board */}
-      <Card className="w-full bg-white dark:bg-zinc-900 rounded-xl border shadow p-0">
-        <CardHeader className="p-8 pb-2">
-          <CardTitle className="text-lg font-bold text-gray-900 dark:text-gray-100 text-left">Customer Analytics / Kanban Board</CardTitle>
-        </CardHeader>
-        <CardContent className="p-8 pt-2 space-y-6">
-          <div className="space-y-4 text-base text-gray-700 dark:text-gray-300 text-left">
-            <p>
-              Fitur Customer Analytics / Kanban Board mengimplementasikan sistem klasifikasi risiko pelanggan berdasarkan pola komplain dan analisis statistik. Sistem ini menggunakan metodologi distribusi normal untuk segmentasi pelanggan dan menghasilkan insight actionable untuk customer relationship management.
-            </p>
-            
-            <div className="bg-teal-50 dark:bg-teal-900/20 border border-teal-200 dark:border-teal-800 rounded-lg p-4">
-              <h4 className="font-semibold text-teal-800 dark:text-teal-200 mb-2">🎯 Customer Risk Classification Overview</h4>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                <div className="text-center">
-                  <div className="font-medium text-green-600">Normal</div>
-                  <div>Low Risk</div>
-                </div>
-                <div className="text-center">
-                  <div className="font-medium text-yellow-600">Persisten</div>
-                  <div>Medium Risk</div>
-                </div>
-                <div className="text-center">
-                  <div className="font-medium text-orange-600">Kronis</div>
-                  <div>High Risk</div>
-                </div>
-                <div className="text-center">
-                  <div className="font-medium text-red-600">Ekstrem</div>
-                  <div>Critical Risk</div>
-                </div>
-              </div>
-            </div>
-
-            <div>
-              <div className="font-semibold mb-3 text-base">1. Statistical Classification Methodology</div>
-              
-              <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-4">
-                <h5 className="font-semibold text-blue-800 dark:text-blue-200 mb-2">📊 Distribution Analysis</h5>
-                <div className="text-sm space-y-2">
-                  <div><strong>Data Preparation:</strong></div>
-                  <pre className="bg-zinc-900 text-white rounded p-2 text-xs mt-1">{`// Agregasi tiket per customer
-const customerTicketCounts = {};
-gridData.forEach(ticket => {
-  const customer = ticket.name || ticket.customerId || 'Unknown';
-  customerTicketCounts[customer] = (customerTicketCounts[customer] || 0) + 1;
-});`}</pre>
-                  
-                  <div className="mt-3"><strong>Statistical Calculation:</strong></div>
-                  <pre className="bg-zinc-900 text-white rounded p-2 text-xs mt-1">{`const countsArr = Object.values(customerTicketCounts);
-const mean = countsArr.reduce((a,b) => a+b, 0) / countsArr.length;
-const variance = countsArr.reduce((acc, val) => acc + Math.pow(val - mean, 2), 0) / countsArr.length;
-const stddev = Math.sqrt(variance);`}</pre>
-                </div>
-              </div>
-
-              <div className="space-y-4">
-                <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-                  <div className="font-semibold text-green-600 dark:text-green-400 mb-2">🟢 Normal Customers</div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <div><strong>Kriteria:</strong> Ticket count ≤ mean</div>
-                      <div><strong>Karakteristik:</strong> Pelanggan dengan pola komplain normal</div>
-                      <div><strong>Risk Level:</strong> Low - Maintenance required</div>
-                    </div>
-                    <div>
-                      <div><strong>Rumus Klasifikasi:</strong></div>
-                      <pre className="bg-zinc-900 text-white rounded p-2 text-xs mt-1">{`if (ticketCount <= mean) {
-  classification = 'Normal';
-  riskLevel = 'Low';
-}`}</pre>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-                  <div className="font-semibold text-yellow-600 dark:text-yellow-400 mb-2">🟡 Persisten Customers</div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                    <div>
-                                              <div><strong>Kriteria:</strong> mean &lt; count ≤ mean + 1σ</div>
-                      <div><strong>Karakteristik:</strong> Pelanggan dengan komplain berulang</div>
-                      <div><strong>Risk Level:</strong> Medium - Attention needed</div>
-                    </div>
-                    <div>
-                      <div><strong>Rumus Klasifikasi:</strong></div>
-                      <pre className="bg-zinc-900 text-white rounded p-2 text-xs mt-1">{`if (ticketCount <= mean + stddev) {
-  classification = 'Persisten';
-  riskLevel = 'Medium';
-}`}</pre>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-                  <div className="font-semibold text-orange-600 dark:text-orange-400 mb-2">🟠 Kronis Customers</div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <div><strong>Kriteria:</strong> mean+1σ &lt; count ≤ mean+2σ</div>
-                      <div><strong>Karakteristik:</strong> Pelanggan dengan masalah sistemik</div>
-                      <div><strong>Risk Level:</strong> High - Immediate action</div>
-                    </div>
-                    <div>
-                      <div><strong>Rumus Klasifikasi:</strong></div>
-                      <pre className="bg-zinc-900 text-white rounded p-2 text-xs mt-1">{`if (ticketCount <= mean + 2*stddev) {
-  classification = 'Kronis';
-  riskLevel = 'High';
-}`}</pre>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-                  <div className="font-semibold text-red-600 dark:text-red-400 mb-2">🔴 Ekstrem Customers</div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <div><strong>Kriteria:</strong> count &gt; mean + 2σ</div>
-                      <div><strong>Karakteristik:</strong> Outlier customers dengan masalah severe</div>
-                      <div><strong>Risk Level:</strong> Critical - Executive escalation</div>
-                    </div>
-                    <div>
-                      <div><strong>Rumus Klasifikasi:</strong></div>
-                      <pre className="bg-zinc-900 text-white rounded p-2 text-xs mt-1">{`if (ticketCount > mean + 2*stddev) {
-  classification = 'Ekstrem';
-  riskLevel = 'Critical';
-}`}</pre>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div>
-              <div className="font-semibold mb-3 text-base">2. Complaint Analysis & Pattern Recognition</div>
-              
-              <div className="space-y-4">
-                <div className="bg-violet-50 dark:bg-violet-900/20 border border-violet-200 dark:border-violet-800 rounded-lg p-4">
-                  <h5 className="font-semibold text-violet-800 dark:text-violet-200 mb-2">🔍 Multi-Dimensional Analysis</h5>
-                  <div className="text-sm space-y-2">
-                    <div><strong>Category Analysis:</strong> Agregasi tiket berdasarkan kategori utama komplain</div>
-                    <div><strong>Sub-Category Breakdown:</strong> Drilling down ke level masalah spesifik</div>
-                    <div><strong>Keyword Extraction:</strong> NLP-based analysis untuk pattern identification</div>
-                    <div><strong>Temporal Analysis:</strong> Trend komplain sepanjang waktu</div>
-                  </div>
-                </div>
-
-                <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-                  <div className="font-semibold text-purple-600 dark:text-purple-400 mb-2">📊 Impact Scoring Algorithm</div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <div><strong>Formula:</strong> Impact Score = Count × Average Duration</div>
-                      <div><strong>Logic:</strong> Mengkombinasikan frequency dan complexity</div>
-                      <div><strong>Purpose:</strong> Prioritization berdasarkan business impact</div>
-                    </div>
-                    <div>
-                      <div><strong>Implementation:</strong></div>
-                      <pre className="bg-zinc-900 text-white rounded p-2 text-xs mt-1">{`const impactScore = data.tickets.length * avgDuration;
-const categoryRanking = categories
-  .sort((a, b) => b.impactScore - a.impactScore);`}</pre>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div>
-              <div className="font-semibold mb-3 text-base">3. Intelligent Insights & Recommendation Engine</div>
-              
-              <div className="space-y-3">
-                <div className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-lg p-3">
-                  <h6 className="font-semibold text-emerald-800 dark:text-emerald-200 mb-1">🎯 Insight Generation</h6>
-                  <ul className="text-sm space-y-1">
-                    <li>• <strong>Root Cause Analysis:</strong> Identifikasi masalah fundamental berdasarkan pattern</li>
-                    <li>• <strong>Customer Journey Mapping:</strong> Tracking touchpoint yang problematic</li>
-                    <li>• <strong>Predictive Risk Scoring:</strong> Early warning system untuk customer churn</li>
-                    <li>• <strong>Service Quality Assessment:</strong> Gap analysis antara expectation vs delivery</li>
-                  </ul>
-                </div>
-                
-                <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-3">
-                  <h6 className="font-semibold text-amber-800 dark:text-amber-200 mb-1">💡 Automated Recommendations</h6>
-                  <ul className="text-sm space-y-1">
-                    <li>• <strong>Proactive Education:</strong> Customer training untuk mengurangi repeat issues</li>
-                    <li>• <strong>Process Optimization:</strong> SOP improvement berdasarkan failure patterns</li>
-                    <li>• <strong>Resource Allocation:</strong> Staffing recommendation untuk high-risk segments</li>
-                    <li>• <strong>Technology Solutions:</strong> Automation opportunities untuk common issues</li>
-              </ul>
-                </div>
-
-                <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3">
-                  <h6 className="font-semibold text-red-800 dark:text-red-200 mb-1">🚨 Escalation Triggers</h6>
-                  <ul className="text-sm space-y-1">
-                    <li>• <strong>Customer Risk Level:</strong> Auto-escalate Kronis & Ekstrem customers</li>
-                    <li>• <strong>Complaint Velocity:</strong> Alert pada sudden spike in complaints</li>
-                    <li>• <strong>Resolution Time:</strong> Flag customers dengan extended resolution times</li>
-                    <li>• <strong>Satisfaction Threshold:</strong> Proactive intervention untuk declining satisfaction</li>
+          
+          <div className="space-y-3">
+            <h4 className="font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+              <SettingsIcon className="text-red-600" />
+              System Administration
+            </h4>
+            <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
+              <li>• Admin Panel</li>
+              <li>• Formulas & Calculations</li>
+              <li>• System Architecture</li>
               </ul>
                 </div>
               </div>
-            </div>
+      </CollapsibleSection>
 
-            <div>
-              <div className="font-semibold mb-3 text-base">4. Kanban Board Implementation & Workflow</div>
-              
-              <div className="bg-slate-50 dark:bg-slate-800 rounded-lg p-4">
-                <h5 className="font-semibold text-slate-700 dark:text-slate-200 mb-2">📋 Board Logic & Card Management</h5>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <div><strong>Column Organization:</strong></div>
-                    <ul className="list-disc pl-4 mt-1">
-                      <li>Normal → Green column (Low priority)</li>
-                      <li>Persisten → Yellow column (Medium priority)</li>
-                      <li>Kronis → Orange column (High priority)</li>
-                      <li>Ekstrem → Red column (Critical priority)</li>
-                    </ul>
-                  </div>
-                  <div>
-                    <div><strong>Card Information:</strong></div>
-                    <ul className="list-disc pl-4 mt-1">
-                      <li>Customer Name & ID</li>
-                      <li>Ticket Count & Classification</li>
-                      <li>Recent Complaint Categories</li>
-                      <li>Risk Score & Priority Level</li>
-                      <li>Last Contact Date & Next Action</li>
-              </ul>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div className="mt-8">
-            <div className="font-semibold mb-3 text-base">Breakdown Fitur & Komponen Teknis</div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-3">
-                <h6 className="font-medium text-teal-600 dark:text-teal-400">🎯 Customer Classification</h6>
-                <ul className="text-sm space-y-1 text-gray-600 dark:text-gray-400">
-                  <li>• Kanban Board dengan 4 risk-based columns</li>
-                  <li>• Customer cards dengan classification badges</li>
-                  <li>• Statistical distribution visualization</li>
-                  <li>• Real-time risk score calculation</li>
-                </ul>
-              </div>
-              <div className="space-y-3">
-                <h6 className="font-medium text-violet-600 dark:text-violet-400">🔍 Complaint Analysis</h6>
-                <ul className="text-sm space-y-1 text-gray-600 dark:text-gray-400">
-                  <li>• Multi-dimensional category breakdown</li>
-                  <li>• Impact scoring dengan business priority</li>
-                  <li>• Keyword extraction & pattern recognition</li>
-                  <li>• Temporal trend analysis</li>
-                </ul>
-              </div>
-              <div className="space-y-3">
-                <h6 className="font-medium text-emerald-600 dark:text-emerald-400">💡 Intelligence Engine</h6>
-                <ul className="text-sm space-y-1 text-gray-600 dark:text-gray-400">
-                  <li>• Automated insight generation</li>
-                  <li>• Recommendation algorithms</li>
-                  <li>• Root cause analysis</li>
-                  <li>• Predictive risk modeling</li>
-                </ul>
-              </div>
-              <div className="space-y-3">
-                <h6 className="font-medium text-amber-600 dark:text-amber-400">🚨 Action Management</h6>
-                <ul className="text-sm space-y-1 text-gray-600 dark:text-gray-400">
-                  <li>• Escalation trigger system</li>
-                  <li>• Priority-based workflow routing</li>
-                  <li>• Customer detail modal dengan history</li>
-                  <li>• Action plan generator</li>
-            </ul>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Summary Dashboard */}
-      <Card className="w-full bg-white dark:bg-zinc-900 rounded-xl border shadow p-0">
-        <CardHeader className="p-8 pb-2">
-          <CardTitle className="text-lg font-bold text-gray-900 dark:text-gray-100 text-left">Summary Dashboard</CardTitle>
-        </CardHeader>
-        <CardContent className="p-8 pt-2 space-y-6">
-          <div className="space-y-4 text-base text-gray-700 dark:text-gray-300 text-left">
-            <p>
-              Summary Dashboard mengintegrasikan semua analytics modules untuk memberikan executive overview yang komprehensif. Sistem ini menggunakan algoritma ranking multifaktor dan recognition system yang canggih untuk mengidentifikasi top performers dalam berbagai kategori.
-            </p>
-            
-            <div className="bg-gradient-to-r from-yellow-50 to-orange-50 dark:from-yellow-900/20 dark:to-orange-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
-              <h4 className="font-semibold text-yellow-800 dark:text-yellow-200 mb-2">🏆 Performance Recognition System</h4>
-              <p className="text-sm text-yellow-700 dark:text-yellow-300">Algoritma pintar untuk mengidentifikasi dan merayakan excellence dalam berbagai dimensi performa</p>
-            </div>
-
-            <div>
-              <div className="font-semibold mb-3 text-base">1. Top Agent Rankings & Calculation Logic</div>
-              
-              <div className="space-y-4">
-                <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-                  <div className="font-semibold text-yellow-600 dark:text-yellow-400 mb-2">🥇 Top Overall Agent</div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <div><strong>Definisi:</strong> Agent dengan composite score tertinggi dari semua KPI</div>
-                      <div><strong>Basis:</strong> Primary scoring system (FCR 30%, SLA 25%, dst)</div>
-                                              <div><strong>Selection:</strong> agentWithScore.reduce((a, b) =&gt; (b.score &gt; a.score ? b : a))</div>
-                    </div>
-                    <div>
-                      <div><strong>Calculation Method:</strong></div>
-                      <pre className="bg-zinc-900 text-white rounded p-2 text-xs mt-1">{`const topOverall = sortedAgents[0]; // Highest score
-const displayScore = Math.round(topOverall.score);
-const recognition = "Highest overall performance";`}</pre>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-                  <div className="font-semibold text-blue-600 dark:text-blue-400 mb-2">⚡ Fastest Responder</div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <div><strong>Definisi:</strong> Agent dengan First Response Time (FRT) terendah</div>
-                      <div><strong>Unit:</strong> Menit, display dengan formatDurationDHM()</div>
-                      <div><strong>Criteria:</strong> Minimum FRT dari semua agents</div>
-                    </div>
-                    <div>
-                      <div><strong>Selection Algorithm:</strong></div>
-                      <pre className="bg-zinc-900 text-white rounded p-2 text-xs mt-1">{`const fastestResponder = dataSource.reduce(
-  (min, agent) => agent.frt < min.frt ? agent : min,
-  dataSource[0]
-);`}</pre>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-                  <div className="font-semibold text-green-600 dark:text-green-400 mb-2">🚀 Fastest Resolution</div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <div><strong>Definisi:</strong> Agent dengan Average Resolution Time (ART) terendah</div>
-                      <div><strong>Measurement:</strong> Total waktu dari open hingga close ticket</div>
-                      <div><strong>Display:</strong> Formatted duration (HH:MM:SS)</div>
-                    </div>
-                    <div>
-                      <div><strong>Selection Algorithm:</strong></div>
-                      <pre className="bg-zinc-900 text-white rounded p-2 text-xs mt-1">{`const fastestResolution = dataSource.reduce(
-  (min, agent) => agent.art < min.art ? agent : min,
-  dataSource[0]
-);`}</pre>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-                  <div className="font-semibold text-indigo-600 dark:text-indigo-400 mb-2">📈 Best SLA Performer</div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <div><strong>Definisi:</strong> Agent dengan percentage SLA compliance tertinggi</div>
-                      <div><strong>Threshold:</strong> Target 85%, display actual percentage</div>
-                      <div><strong>Calculation:</strong> (Tiket ≤24 jam / Total tiket) × 100%</div>
-                    </div>
-                    <div>
-                      <div><strong>Selection Algorithm:</strong></div>
-                      <pre className="bg-zinc-900 text-white rounded p-2 text-xs mt-1">{`const bestSLA = dataSource.reduce(
-  (max, agent) => agent.sla > max.sla ? agent : max,
-  dataSource[0]
-);`}</pre>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-                  <div className="font-semibold text-purple-600 dark:text-purple-400 mb-2">🎯 Most Reliable</div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <div><strong>Definisi:</strong> Agent dengan FCR tertinggi DAN backlog = 0</div>
-                      <div><strong>Dual Criteria:</strong> Excellence in first-contact resolution + zero backlog</div>
-                      <div><strong>Philosophy:</strong> Reliability = Quality + Consistency</div>
-                    </div>
-                    <div>
-                      <div><strong>Selection Algorithm:</strong></div>
-                      <pre className="bg-zinc-900 text-white rounded p-2 text-xs mt-1">{`const reliableCandidates = dataSource.filter(a => a.backlog === 0);
-const mostReliable = reliableCandidates.reduce(
-  (max, agent) => agent.fcr > max.fcr ? agent : max,
-  reliableCandidates[0]
-);`}</pre>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-                  <div className="font-semibold text-rose-600 dark:text-rose-400 mb-2">📊 Most Improved Agent</div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <div><strong>Definisi:</strong> Agent dengan delta score increase terbesar</div>
-                      <div><strong>Calculation:</strong> Current score - Previous period score</div>
-                      <div><strong>Time Period:</strong> Month-over-month comparison</div>
-                    </div>
-                    <div>
-                      <div><strong>Trend Analysis:</strong></div>
-                      <pre className="bg-zinc-900 text-white rounded p-2 text-xs mt-1">{`const agentWithDelta = agentWithScore.map(a => {
-  const trend = getAgentScoreTrend(a.agent);
-  const delta = trend.length > 1 ? 
-    trend[trend.length-1] - trend[trend.length-2] : 0;
-  return { ...a, delta };
-});`}</pre>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-                  <div className="font-semibold text-orange-600 dark:text-orange-400 mb-2">💼 Most Engaged</div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <div><strong>Definisi:</strong> Agent dengan volume tiket tertinggi</div>
-                      <div><strong>Metric:</strong> Total jumlah tiket yang ditangani</div>
-                      <div><strong>Philosophy:</strong> Engagement = Productivity + Dedication</div>
-                    </div>
-                    <div>
-                      <div><strong>Selection Algorithm:</strong></div>
-                      <pre className="bg-zinc-900 text-white rounded p-2 text-xs mt-1">{`const mostEngaged = agentWithScore.reduce(
-  (max, agent) => agent.vol > max.vol ? agent : max,
-  agentWithScore[0]
-);`}</pre>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div>
-              <div className="font-semibold mb-3 text-base">2. Summary Cards & Executive Metrics</div>
-              
-              <div className="bg-slate-50 dark:bg-slate-800 rounded-lg p-4">
-                <h5 className="font-semibold text-slate-700 dark:text-slate-200 mb-2">📋 Summary Statistics</h5>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <div><strong>Total Active Agents:</strong> agents.length</div>
-                    <div><strong>Average Response Time:</strong> Weighted average dari semua agents</div>
-                    <div><strong>Top Performer Name:</strong> Nama agent dengan skor tertinggi</div>
-                  </div>
-                  <div>
-                    <div><strong>Busiest Agent:</strong> Agent dengan volume tiket terbanyak</div>
-                    <div><strong>Most Efficient:</strong> Best ART performer</div>
-                    <div><strong>Highest Resolution:</strong> Best overall resolution metrics</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div>
-              <div className="font-semibold mb-3 text-base">3. Data Integration & Cross-Module Analytics</div>
-              
-              <div className="bg-cyan-50 dark:bg-cyan-900/20 border border-cyan-200 dark:border-cyan-800 rounded-lg p-4">
-                <h5 className="font-semibold text-cyan-800 dark:text-cyan-200 mb-2">🔗 Module Integration</h5>
-                <div className="text-sm space-y-2">
-                  <div><strong>Agent Analytics:</strong> Source untuk performance scores dan rankings</div>
-                  <div><strong>Ticket Analytics:</strong> Aggregate statistics untuk context</div>
-                  <div><strong>Customer Analytics:</strong> Risk distribution dan satisfaction insights</div>
-                  <div><strong>Real-time Updates:</strong> Live data refresh untuk accurate rankings</div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Data Processing & Validation */}
-      <Card className="w-full bg-white dark:bg-zinc-900 rounded-xl border shadow p-0">
-        <CardHeader className="p-8 pb-2">
-          <CardTitle className="text-lg font-bold text-gray-900 dark:text-gray-100 text-left">Data Processing & Validation</CardTitle>
-        </CardHeader>
-        <CardContent className="p-8 pt-2 space-y-6">
-          <div className="space-y-4 text-base text-gray-700 dark:text-gray-300 text-left">
-            <p>
-              Sistem data processing mengimplementasikan multiple layers validasi, cleaning, dan transformation untuk memastikan kualitas data dan akurasi analytics. Proses ini melibatkan real-time validation, error handling, dan data quality monitoring.
-            </p>
-            
-            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-              <h4 className="font-semibold text-blue-800 dark:text-blue-200 mb-2">🔄 Data Pipeline Overview</h4>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                <div className="text-center">
-                  <div className="font-medium">Ingestion</div>
-                  <div>Excel/CSV Upload</div>
-                </div>
-                <div className="text-center">
-                  <div className="font-medium">Validation</div>
-                  <div>Schema & Rules</div>
-                </div>
-                <div className="text-center">
-                  <div className="font-medium">Processing</div>
-                  <div>Transform & Clean</div>
-                </div>
-                <div className="text-center">
-                  <div className="font-medium">Storage</div>
-                  <div>IndexedDB</div>
-                </div>
-              </div>
-            </div>
-
-            <div>
-              <div className="font-semibold mb-3 text-base">1. Data Validation Rules & Schema</div>
-              
-              <div className="space-y-4">
-                <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-                  <div className="font-semibold text-green-600 dark:text-green-400 mb-2">✅ Required Field Validation</div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <div><strong>Critical Fields:</strong></div>
-                      <ul className="list-disc pl-4 mt-1">
-                        <li>openTime - Timestamp buka tiket</li>
-                        <li>openBy - Agent yang menangani</li>
-                        <li>customerId/name - Identifikasi customer</li>
-                        <li>category - Kategori masalah</li>
-                      </ul>
-                    </div>
-                    <div>
-                      <div><strong>Validation Logic:</strong></div>
-                      <pre className="bg-zinc-900 text-white rounded p-2 text-xs mt-1">{`const isValidTicket = (ticket) => {
-  return ticket.openTime && 
-         ticket.openBy && 
-         (ticket.customerId || ticket.name) &&
-         ticket.category;
-};`}</pre>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-                  <div className="font-semibold text-blue-600 dark:text-blue-400 mb-2">📅 Date/Time Processing</div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <div><strong>Date Validation:</strong> Parsing multiple formats</div>
-                      <div><strong>Timezone Handling:</strong> Normalisasi ke local timezone</div>
-                      <div><strong>Range Checks:</strong> Logical date boundaries</div>
-                    </div>
-                    <div>
-                      <div><strong>Processing Function:</strong></div>
-                      <pre className="bg-zinc-900 text-white rounded p-2 text-xs mt-1">{`const parseDate = (dateValue) => {
-  const date = new Date(dateValue);
-  if (isNaN(date.getTime())) {
-    throw new Error('Invalid date format');
-  }
-  return date;
-};`}</pre>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-                  <div className="font-semibold text-purple-600 dark:text-purple-400 mb-2">🔢 Numeric Data Validation</div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <div><strong>Duration Calculations:</strong> Automatic dari date fields</div>
-                      <div><strong>Range Validation:</strong> Logical boundaries (0-999999 menit)</div>
-                      <div><strong>Type Coercion:</strong> String to number conversion</div>
-                    </div>
-                    <div>
-                      <div><strong>Duration Processing:</strong></div>
-                      <pre className="bg-zinc-900 text-white rounded p-2 text-xs mt-1">{`const calculateDuration = (open, close) => {
-  if (!open || !close) return null;
-  const diffMs = close.getTime() - open.getTime();
-  return {
-    rawHours: diffMs / (1000 * 60 * 60),
-    rawMinutes: diffMs / (1000 * 60)
-  };
-};`}</pre>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-                  <div className="font-semibold text-orange-600 dark:text-orange-400 mb-2">🧹 Data Cleaning & Normalization</div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <div><strong>String Cleaning:</strong> Trim whitespace, normalize case</div>
-                      <div><strong>Category Mapping:</strong> Standardisasi nama kategori</div>
-                      <div><strong>Agent Name Consistency:</strong> Unifikasi format nama</div>
-                    </div>
-                    <div>
-                      <div><strong>Cleaning Pipeline:</strong></div>
-                      <pre className="bg-zinc-900 text-white rounded p-2 text-xs mt-1">{`const cleanTicket = (ticket) => ({
-  ...ticket,
-  openBy: ticket.openBy?.trim(),
-  category: normalizeCategory(ticket.category),
-  name: ticket.name?.trim()?.toLowerCase()
-});`}</pre>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div>
-              <div className="font-semibold mb-3 text-base">2. Filter Implementation & Time Period Logic</div>
-              
-              <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
-                <h5 className="font-semibold text-gray-700 dark:text-gray-200 mb-2">📊 Smart Filtering System</h5>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <div><strong>Time Period Filtering:</strong></div>
-                    <ul className="list-disc pl-4 mt-1">
-                      <li>Month/Year range selection</li>
-                      <li>Automatic boundary calculation</li>
-                      <li>Timezone-aware comparisons</li>
-                      <li>Edge case handling (month boundaries)</li>
-                    </ul>
-                  </div>
-                  <div>
-                    <div><strong>Filter Implementation:</strong></div>
-                    <pre className="bg-zinc-900 text-white rounded p-2 text-xs mt-1">{`const filteredTickets = allTickets.filter(ticket => {
-  if (!cutoffStart || !cutoffEnd) return true;
-  const ticketDate = new Date(ticket.openTime);
-  return ticketDate >= cutoffStart && 
-         ticketDate <= cutoffEnd;
-});`}</pre>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div>
-              <div className="font-semibold mb-3 text-base">3. Error Handling & Recovery Mechanisms</div>
-              
-              <div className="space-y-3">
-                <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3">
-                  <h6 className="font-semibold text-red-800 dark:text-red-200 mb-1">🚨 Error Categories</h6>
-                  <ul className="text-sm space-y-1">
-                    <li>• <strong>Schema Violations:</strong> Missing required fields, invalid data types</li>
-                    <li>• <strong>Business Logic Errors:</strong> Illogical date sequences, negative durations</li>
-                    <li>• <strong>Reference Integrity:</strong> Invalid agent names, unknown categories</li>
-                    <li>• <strong>Performance Issues:</strong> Large dataset handling, memory constraints</li>
-                  </ul>
-                </div>
-
-                <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-3">
-                  <h6 className="font-semibold text-yellow-800 dark:text-yellow-200 mb-1">🔧 Recovery Strategies</h6>
-                  <ul className="text-sm space-y-1">
-                    <li>• <strong>Graceful Degradation:</strong> Skip invalid records dengan logging</li>
-                    <li>• <strong>Default Value Injection:</strong> Smart defaults untuk missing data</li>
-                    <li>• <strong>Progressive Loading:</strong> Batch processing untuk large files</li>
-                    <li>• <strong>User Feedback:</strong> Clear error messages dengan suggested fixes</li>
-                  </ul>
-                </div>
-              </div>
-            </div>
-
-            <div>
-              <div className="font-semibold mb-3 text-base">4. Data Quality Monitoring & Metrics</div>
-              
-              <div className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-lg p-4">
-                <h5 className="font-semibold text-emerald-800 dark:text-emerald-200 mb-2">📈 Quality Indicators</h5>
-                <div className="text-sm space-y-2">
-                  <div><strong>Completeness Rate:</strong> Percentage records dengan semua required fields</div>
-                  <div><strong>Validity Rate:</strong> Percentage records yang pass semua validation rules</div>
-                  <div><strong>Consistency Score:</strong> Uniformity dalam format dan conventions</div>
-                  <div><strong>Timeliness Metric:</strong> Freshness dan currency dari data</div>
-                  <div><strong>Accuracy Assessment:</strong> Cross-validation dengan business rules</div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Advanced Analytics Features */}
-      <Card className="w-full bg-white dark:bg-zinc-900 rounded-xl border shadow p-0">
-        <CardHeader className="p-8 pb-2">
-          <CardTitle className="text-lg font-bold text-gray-900 dark:text-gray-100 text-left">Advanced Analytics Features</CardTitle>
-        </CardHeader>
-        <CardContent className="p-8 pt-2 space-y-6">
-          <div className="space-y-4 text-base text-gray-700 dark:text-gray-300 text-left">
-            <p>
-              Advanced Analytics Features mengimplementasikan cutting-edge algorithms untuk predictive analytics, trend forecasting, dan machine learning-based insights. Sistem ini menggunakan statistical models dan AI techniques untuk memberikan actionable intelligence.
-            </p>
-            
-            <div className="bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20 border border-purple-200 dark:border-purple-800 rounded-lg p-4">
-              <h4 className="font-semibold text-purple-800 dark:text-purple-200 mb-2">🤖 AI-Powered Analytics</h4>
-              <p className="text-sm text-purple-700 dark:text-purple-300">Machine learning algorithms untuk pattern recognition, forecasting, dan automated decision support</p>
-            </div>
-
-            <div>
-              <div className="font-semibold mb-3 text-base">1. Trend Analysis & Pattern Recognition</div>
-              
-              <div className="space-y-4">
-                <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-                  <div className="font-semibold text-indigo-600 dark:text-indigo-400 mb-2">📈 Time Series Analysis</div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <div><strong>Seasonal Decomposition:</strong> Identifikasi pola musiman dan trend</div>
-                      <div><strong>Moving Averages:</strong> Smoothing untuk noise reduction</div>
-                      <div><strong>Cyclical Patterns:</strong> Weekly, monthly, quarterly cycles</div>
-                    </div>
-                    <div>
-                      <div><strong>Trend Detection Algorithm:</strong></div>
-                      <pre className="bg-zinc-900 text-white rounded p-2 text-xs mt-1">{`const detectTrend = (timeSeries) => {
-  const ma7 = movingAverage(timeSeries, 7);
-  const ma30 = movingAverage(timeSeries, 30);
-  return {
-    shortTerm: ma7[ma7.length-1] - ma7[ma7.length-7],
-    longTerm: ma30[ma30.length-1] - ma30[ma30.length-30]
-  };
-};`}</pre>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-                  <div className="font-semibold text-cyan-600 dark:text-cyan-400 mb-2">🔍 Anomaly Detection</div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <div><strong>Statistical Outliers:</strong> Z-score dan IQR methods</div>
-                      <div><strong>Behavioral Anomalies:</strong> Deviasi dari historical patterns</div>
-                      <div><strong>Performance Spikes:</strong> Sudden changes dalam KPIs</div>
-                    </div>
-                    <div>
-                      <div><strong>Anomaly Algorithm:</strong></div>
-                      <pre className="bg-zinc-900 text-white rounded p-2 text-xs mt-1">{`const detectAnomalies = (data) => {
-  const mean = data.reduce((a,b) => a+b) / data.length;
-  const stdDev = Math.sqrt(data.reduce((sq, n) => 
-    sq + Math.pow(n - mean, 2)) / data.length);
-  return data.filter(x => Math.abs(x - mean) > 2 * stdDev);
-};`}</pre>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div>
-              <div className="font-semibold mb-3 text-base">2. Predictive Modeling & Forecasting</div>
-              
-              <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-                <h5 className="font-semibold text-blue-800 dark:text-blue-200 mb-2">🔮 Forecasting Models</h5>
-                <div className="text-sm space-y-2">
-                  <div><strong>Ticket Volume Forecasting:</strong> Prediksi load untuk capacity planning</div>
-                  <div><strong>Performance Projection:</strong> Agent performance trends</div>
-                  <div><strong>Seasonal Adjustment:</strong> Holiday dan peak period compensation</div>
-                  <div><strong>Confidence Intervals:</strong> Uncertainty quantification dalam predictions</div>
-                </div>
-              </div>
-            </div>
-
-            <div>
-              <div className="font-semibold mb-3 text-base">3. Automated Insight Generation</div>
-              
-              <div className="space-y-3">
-                <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-3">
-                  <h6 className="font-semibold text-green-800 dark:text-green-200 mb-1">🧠 Natural Language Insights</h6>
-                  <ul className="text-sm space-y-1">
-                    <li>• <strong>Performance Narratives:</strong> Human-readable performance summaries</li>
-                    <li>• <strong>Comparative Analysis:</strong> Period-over-period comparisons</li>
-                    <li>• <strong>Root Cause Identification:</strong> Automated problem diagnosis</li>
-                    <li>• <strong>Action Recommendations:</strong> Data-driven improvement suggestions</li>
-                  </ul>
-                </div>
-
-                <div className="bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg p-3">
-                  <h6 className="font-semibold text-orange-800 dark:text-orange-200 mb-1">⚡ Real-time Intelligence</h6>
-                  <ul className="text-sm space-y-1">
-                    <li>• <strong>Live Monitoring:</strong> Continuous performance tracking</li>
-                    <li>• <strong>Alert Generation:</strong> Proactive notification system</li>
-                    <li>• <strong>Dynamic Thresholds:</strong> Adaptive alerting berdasarkan historical data</li>
-                    <li>• <strong>Contextual Recommendations:</strong> Situational guidance untuk managers</li>
-                  </ul>
-                </div>
-              </div>
-            </div>
-
-            <div>
-              <div className="font-semibold mb-3 text-base">4. Performance Optimization & Scalability</div>
-              
-              <div className="bg-slate-50 dark:bg-slate-800 rounded-lg p-4">
-                <h5 className="font-semibold text-slate-700 dark:text-slate-200 mb-2">⚙️ Technical Architecture</h5>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <div><strong>Data Processing:</strong></div>
-                    <ul className="list-disc pl-4 mt-1">
-                      <li>Client-side processing dengan Web Workers</li>
-                      <li>Incremental computation untuk large datasets</li>
-                      <li>Memory-efficient algorithms</li>
-                      <li>Progressive loading dan virtualization</li>
-                    </ul>
-                  </div>
+            {/* Summary Dashboard */}
+      <CollapsibleSection 
+        title="Summary Dashboard" 
+        icon={<DashboardIcon className="text-green-600" />}
+      >
+        <div className="space-y-6">
           <div>
-                    <div><strong>Caching Strategy:</strong></div>
-                    <ul className="list-disc pl-4 mt-1">
-                      <li>IndexedDB untuk persistent storage</li>
-                      <li>In-memory caching untuk frequently accessed data</li>
-                      <li>Intelligent cache invalidation</li>
-                      <li>Background data refresh</li>
-            </ul>
+            <h4 className="font-semibold text-lg mb-3">Ringkasan Umum</h4>
+            <p className="text-gray-700 dark:text-gray-300 mb-4">
+              Summary Dashboard adalah halaman utama yang menampilkan ringkasan komprehensif dari semua 
+              Key Performance Indicators (KPI) dan metrik sistem secara real-time. Berfungsi sebagai 
+              titik masuk utama untuk memantau kesehatan dan performa keseluruhan sistem.
+            </p>
+          </div>
+
+          <div className="space-y-6">
+            <div>
+              <h5 className="font-semibold text-gray-900 dark:text-gray-100 mb-3">Flow Pemrosesan Data</h5>
+              <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                <div className="space-y-3 text-sm">
+                  <div className="flex items-start gap-2">
+                    <span className="font-semibold text-blue-800 dark:text-blue-200">1.</span>
+                    <div>
+                      <strong>Data Collection:</strong> Mengambil data dari IndexedDB (Dexie.js) 
+                      untuk incidents, agents, dan customers
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <span className="font-semibold text-blue-800 dark:text-blue-200">2.</span>
+                    <div>
+                      <strong>Real-time Aggregation:</strong> Menghitung KPI utama secara real-time 
+                      menggunakan useMemo hooks untuk optimasi performa
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <span className="font-semibold text-blue-800 dark:text-blue-200">3.</span>
+                    <div>
+                      <strong>Visualization:</strong> Menampilkan data dalam bentuk cards, charts, 
+                      dan metrics dengan Recharts library
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <span className="font-semibold text-blue-800 dark:text-blue-200">4.</span>
+                    <div>
+                      <strong>Auto-refresh:</strong> Data diperbarui otomatis setiap 30 detik 
+                      menggunakan polling mechanism
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
-        </CardContent>
-      </Card>
 
-      {/* Database Architecture & Storage */}
-      <Card className="w-full bg-white dark:bg-zinc-900 rounded-xl border shadow p-0">
-        <CardHeader className="p-8 pb-2">
-          <CardTitle className="text-lg font-bold text-gray-900 dark:text-gray-100 text-left flex items-center gap-2">
-            <BarChartIcon className="w-6 h-6" />
-            Database Architecture & Storage
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="p-8 pt-2 space-y-6">
-          <div className="space-y-4 text-base text-gray-700 dark:text-gray-300 text-left">
-            <p>
-              Sistem menggunakan <strong>IndexedDB (Dexie.js)</strong> sebagai database utama untuk penyimpanan lokal yang powerful dan scalable. Database ini menyimpan semua data tiket, incident, customer, dan user dengan struktur yang terorganisir dan teroptimasi.
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-4">
+                <h5 className="font-semibold text-gray-900 dark:text-gray-100">Komponen Utama</h5>
+                <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
+                  <li>• <strong>KPI Cards:</strong> Metrik real-time untuk tickets, agents, dan customers</li>
+                  <li>• <strong>Trend Charts:</strong> Grafik performa bulanan dan trend analisis</li>
+                  <li>• <strong>Status Overview:</strong> Ringkasan status sistem dan alerts</li>
+                  <li>• <strong>Quick Navigation:</strong> Link cepat ke halaman analitik detail</li>
+                  <li>• <strong>Performance Metrics:</strong> MTTR, SLA compliance, dan resolution rates</li>
+                </ul>
+              </div>
+              
+              <div className="space-y-4">
+                <h5 className="font-semibold text-gray-900 dark:text-gray-100">Fitur Teknis</h5>
+                <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
+                  <li>• <strong>Live Updates:</strong> Data diperbarui otomatis via Dexie.js live queries</li>
+                  <li>• <strong>Responsive Design:</strong> Tampilan optimal di semua perangkat dengan Tailwind CSS</li>
+                  <li>• <strong>Theme Support:</strong> Dukungan tema gelap dan terang</li>
+                  <li>• <strong>Performance:</strong> Optimasi rendering dengan React.memo dan useMemo</li>
+                  <li>• <strong>Error Handling:</strong> Graceful error handling dengan fallback UI</li>
+                </ul>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <h5 className="font-semibold text-gray-900 dark:text-gray-100">Algoritma Perhitungan</h5>
+              <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
+                <div className="space-y-3 text-sm">
+                  <div><strong>Total Tickets:</strong> COUNT(incidents) dengan filter periode waktu</div>
+                  <div><strong>Active Tickets:</strong> COUNT(incidents WHERE status != 'Closed')</div>
+                  <div><strong>Resolution Rate:</strong> (Closed tickets / Total tickets) × 100</div>
+                  <div><strong>Average MTTR:</strong> AVG(duration) untuk tickets yang sudah resolved</div>
+                  <div><strong>SLA Compliance:</strong> (Tickets within SLA / Total tickets) × 100</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </CollapsibleSection>
+
+                {/* Agent Analytics */}
+      <CollapsibleSection 
+        title="Agent Analytics" 
+        icon={<PeopleIcon className="text-blue-600" />}
+      >
+        <div className="space-y-6">
+          <div>
+            <h4 className="font-semibold text-lg mb-3">Sistem Penilaian Performa Agent</h4>
+            <p className="text-gray-700 dark:text-gray-300 mb-4">
+              Agent Analytics mengimplementasikan sistem scoring yang canggih untuk mengevaluasi 
+              performa agent berdasarkan multiple KPI dengan perhitungan berbobot dan algoritma normalisasi.
             </p>
-            
-            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-              <h4 className="font-semibold text-blue-800 dark:text-blue-200 mb-2">
-                <LightbulbIcon className="inline mr-2" />
-                Database Overview
-              </h4>
-              <div className="text-sm space-y-2">
-                <div><strong>Database Name:</strong> InsightTicketDatabase</div>
-                <div><strong>Technology:</strong> IndexedDB (Dexie.js wrapper)</div>
-                <div><strong>Storage Location:</strong> Browser Local Storage</div>
-                <div><strong>Current Version:</strong> 5</div>
-                <div><strong>Total Tables:</strong> 5 (tickets, users, menuPermissions, customers, incidents)</div>
-              </div>
-            </div>
+          </div>
 
+          <div className="space-y-6">
             <div>
-              <div className="font-semibold mb-1 text-base">1. Database Schema & Tables</div>
-              
-              <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4 mb-4">
-                <h5 className="font-semibold text-green-800 dark:text-green-200 mb-2">📊 Tickets Table</h5>
-                <div className="text-sm space-y-2">
-                  <div><strong>Primary Key:</strong> id (UUID string)</div>
-                  <div><strong>Indexes:</strong> id, openTime, name, uploadTimestamp, cabang</div>
-                  <div><strong>Key Fields:</strong> customerId, name, category, description, cause, handling</div>
-                  <div><strong>Time Fields:</strong> openTime, closeTime (ISO String format)</div>
-                  <div><strong>Duration Fields:</strong> duration, handlingDuration (rawHours + formatted)</div>
-                  <div><strong>Status Fields:</strong> status, classification, subClassification</div>
-                  <div><strong>Handling Fields:</strong> handling1-5, closeHandling1-5, handlingDuration1-5</div>
-                  <div><strong>Metadata:</strong> openBy, cabang, uploadTimestamp, repClass</div>
-                </div>
-              </div>
-
-              <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4 mb-4">
-                <h5 className="font-semibold text-yellow-800 dark:text-yellow-200 mb-2">👥 Users Table</h5>
-                <div className="text-sm space-y-2">
-                  <div><strong>Primary Key:</strong> id (auto-increment number)</div>
-                  <div><strong>Indexes:</strong> ++id, username, role</div>
-                  <div><strong>Fields:</strong> username, password (hashed), role (super admin/admin/user)</div>
-                </div>
-              </div>
-
-              <div className="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg p-4 mb-4">
-                <h5 className="font-semibold text-purple-800 dark:text-purple-200 mb-2">🔐 Menu Permissions Table</h5>
-                <div className="text-sm space-y-2">
-                  <div><strong>Primary Key:</strong> id (auto-increment number)</div>
-                  <div><strong>Indexes:</strong> ++id, role</div>
-                  <div><strong>Fields:</strong> role, menus (array of menu strings)</div>
-                </div>
-              </div>
-
-              <div className="bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg p-4 mb-4">
-                <h5 className="font-semibold text-orange-800 dark:text-orange-200 mb-2">🏢 Customers Table</h5>
-                <div className="text-sm space-y-2">
-                  <div><strong>Primary Key:</strong> id (UUID string)</div>
-                  <div><strong>Indexes:</strong> id, nama, jenisKlien, layanan, kategori</div>
-                  <div><strong>Fields:</strong> nama, jenisKlien, layanan, kategori</div>
-                </div>
-              </div>
-
-              <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 mb-4">
-                <h5 className="font-semibold text-red-800 dark:text-red-200 mb-2">🚨 Incidents Table</h5>
-                <div className="text-sm space-y-2">
-                  <div><strong>Primary Key:</strong> id (computed hash from noCase + startTime)</div>
-                  <div><strong>Indexes:</strong> id, startTime, status, priority, site, klasifikasiGangguan, level, ncal, noCase</div>
-                  <div><strong>Core Fields:</strong> noCase, priority, site, ncal, status, level, ts, odpBts</div>
-                  <div><strong>Time Fields:</strong> startTime, startEscalationVendor, endTime</div>
-                  <div><strong>Duration Fields:</strong> durationMin, durationVendorMin, totalDurationPauseMin, totalDurationVendorMin, netDurationMin</div>
-                  <div><strong>Problem Fields:</strong> problem, penyebab, actionTerakhir, note, klasifikasiGangguan</div>
-                  <div><strong>Power Fields:</strong> powerBefore, powerAfter</div>
-                  <div><strong>Pause Fields:</strong> startPause1, endPause1, startPause2, endPause2</div>
-                  <div><strong>Metadata:</strong> batchId, importedAt</div>
+              <h5 className="font-semibold text-gray-900 dark:text-gray-100 mb-3">Flow Pemrosesan Data Agent</h5>
+              <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                <div className="space-y-3 text-sm">
+                  <div className="flex items-start gap-2">
+                    <span className="font-semibold text-blue-800 dark:text-blue-200">1.</span>
+                    <div>
+                      <strong>Data Collection:</strong> Mengumpulkan data incidents per agent dari IndexedDB
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <span className="font-semibold text-blue-800 dark:text-blue-200">2.</span>
+                    <div>
+                      <strong>KPI Calculation:</strong> Menghitung FCR, SLA, FRT, ART, Backlog, dan Volume per agent
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <span className="font-semibold text-blue-800 dark:text-blue-200">3.</span>
+                    <div>
+                      <strong>Normalization:</strong> Menormalisasi setiap KPI menggunakan target values
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <span className="font-semibold text-blue-800 dark:text-blue-200">4.</span>
+                    <div>
+                      <strong>Weighted Scoring:</strong> Menghitung skor akhir dengan bobot yang telah ditentukan
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <span className="font-semibold text-blue-800 dark:text-blue-200">5.</span>
+                    <div>
+                      <strong>Ranking & Visualization:</strong> Mengurutkan agent berdasarkan skor dan menampilkan dalam charts
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
 
-            <div>
-              <div className="font-semibold mb-1 text-base">2. Data Processing & Storage Locations</div>
-              
-              <div className="bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800 rounded-lg p-4 mb-4">
-                <h5 className="font-semibold text-indigo-800 dark:text-indigo-200 mb-2">📥 Data Input Sources</h5>
-                <div className="text-sm space-y-2">
-                  <div><strong>Excel File Upload:</strong> UploadProcess.tsx → processAndAnalyzeData() → db.tickets.bulkPut()</div>
-                  <div><strong>Customer Data Upload:</strong> CustomerData.tsx → Papa Parse → db.customers.bulkAdd()</div>
-                  <div><strong>Incident Data Upload:</strong> IncidentUpload.tsx → XLSX → saveIncidentsChunked() → db.incidents.bulkPut()</div>
-                  <div><strong>User Management:</strong> AdminPanel.tsx → bcrypt hash → db.users.add()</div>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="space-y-4">
+                <h5 className="font-semibold text-gray-900 dark:text-gray-100">Algoritma Scoring Utama</h5>
+                <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                  <div className="space-y-2 text-sm">
+                    <div><strong>FCR (First Contact Resolution):</strong> 30% - Resolusi di kontak pertama</div>
+                    <div><strong>SLA (Service Level Agreement):</strong> 25% - Ketepatan waktu respon</div>
+                    <div><strong>FRT (First Response Time):</strong> 15% - Kecepatan respon pertama</div>
+                    <div><strong>ART (Average Resolution Time):</strong> 15% - Kecepatan penyelesaian</div>
+                    <div><strong>Backlog:</strong> 5% - Jumlah tiket tertunda</div>
+                    <div><strong>Ticket Volume:</strong> 10% - Jumlah tiket yang ditangani</div>
+                  </div>
+                  <div className="mt-3 p-3 bg-gray-100 dark:bg-gray-800 rounded text-xs font-mono">
+                    Skor = FCR×0.3 + SLA×0.25 + FRT×0.15 + ART×0.15 + Backlog×0.05 + Volume×0.10
+                  </div>
                 </div>
               </div>
 
-              <div className="bg-teal-50 dark:bg-teal-900/20 border border-teal-200 dark:border-teal-800 rounded-lg p-4 mb-4">
-                <h5 className="font-semibold text-teal-800 dark:text-teal-200 mb-2">📤 Data Output & Processing</h5>
-                <div className="text-sm space-y-2">
-                  <div><strong>Analytics Context:</strong> useLiveQuery() → db.tickets.toArray() → filtered data</div>
-                  <div><strong>Agent Analytics:</strong> AgentAnalyticsContext.tsx → db.tickets.toArray() → agent performance calculation</div>
-                  <div><strong>Ticket Analytics:</strong> TicketAnalyticsContext.tsx → db.tickets.toArray() → ticket metrics</div>
-                  <div><strong>Incident Analytics:</strong> TSAnalytics.tsx/SiteAnalytics.tsx → db.incidents.toArray() → NCAL analysis</div>
-                  <div><strong>Grid View:</strong> GridView.tsx → db.tickets.toArray() → paginated display</div>
-                  <div><strong>Master Data:</strong> MasterDataAgent.tsx → db.tickets.toArray() → agent statistics</div>
-                </div>
-              </div>
-            </div>
-
-            <div>
-              <div className="font-semibold mb-1 text-base">3. Database Operations & Utilities</div>
-              
-              <div className="bg-pink-50 dark:bg-pink-900/20 border border-pink-200 dark:border-pink-800 rounded-lg p-4 mb-4">
-                <h5 className="font-semibold text-pink-800 dark:text-pink-200 mb-2">🔧 Core Database Functions</h5>
-                <div className="text-sm space-y-2">
-                  <div><strong>Bulk Operations:</strong> bulkPut(), bulkAdd(), bulkDelete() untuk operasi massal</div>
-                  <div><strong>Query Operations:</strong> where(), between(), orderBy(), reverse() untuk filtering</div>
-                  <div><strong>Count Operations:</strong> count() untuk statistik data</div>
-                  <div><strong>Clear Operations:</strong> clear() untuk reset table</div>
-                  <div><strong>Chunked Processing:</strong> saveIncidentsChunked() untuk data besar</div>
-                </div>
-              </div>
-
-              <div className="bg-cyan-50 dark:bg-cyan-900/20 border border-cyan-200 dark:border-cyan-800 rounded-lg p-4 mb-4">
-                <h5 className="font-semibold text-cyan-800 dark:text-cyan-200 mb-2">📊 Analytics Functions</h5>
-                <div className="text-sm space-y-2">
-                  <div><strong>computeStats():</strong> Menghitung statistik incident (total, open, MTTR, etc.)</div>
-                  <div><strong>queryIncidents():</strong> Query dengan filter dan pagination</div>
-                  <div><strong>formatDurationHMS():</strong> Konversi menit ke HH:MM:SS format</div>
-                  <div><strong>parseDateSafe():</strong> Parse tanggal dengan multiple format support</div>
-                  <div><strong>toMinutes():</strong> Konversi berbagai format durasi ke menit</div>
+              <div className="space-y-4">
+                <h5 className="font-semibold text-gray-900 dark:text-gray-100">Metode Normalisasi</h5>
+                <div className="space-y-3">
+                  <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-3">
+                    <div className="font-semibold text-green-800 dark:text-green-200 mb-2">KPI Positif (Semakin tinggi semakin baik)</div>
+                    <div className="text-sm text-green-700 dark:text-green-300">
+                      Berlaku untuk: FCR, SLA, Ticket Volume<br/>
+                      Skor = min((Aktual / Target) × 100, 120)
+                    </div>
+                  </div>
+                  <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3">
+                    <div className="font-semibold text-red-800 dark:text-red-200 mb-2">KPI Negatif (Semakin rendah semakin baik)</div>
+                    <div className="text-sm text-red-700 dark:text-red-300">
+                      Berlaku untuk: FRT, ART, Backlog<br/>
+                      Skor = max(120 - (Aktual / Target) × 100, 0)
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
 
-            <div>
-              <div className="font-semibold mb-1 text-base">4. Data Validation & Error Handling</div>
-              
-              <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4 mb-4">
-                <h5 className="font-semibold text-amber-800 dark:text-amber-200 mb-2">✅ Data Validation</h5>
-                <div className="text-sm space-y-2">
-                  <div><strong>Header Validation:</strong> EXPECTED_HEADERS check di UploadProcess.tsx</div>
-                  <div><strong>Date Validation:</strong> parseDateSafe() dengan multiple format support</div>
-                  <div><strong>Duration Validation:</strong> toMinutes() dengan format detection</div>
-                  <div><strong>ID Generation:</strong> mkId() untuk unique incident ID</div>
-                  <div><strong>Error Logging:</strong> IErrorLog interface untuk tracking errors</div>
+            <div className="space-y-4">
+              <h5 className="font-semibold text-gray-900 dark:text-gray-100">Perhitungan Detail KPI</h5>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="p-4 border rounded-lg">
+                  <h6 className="font-semibold mb-2">FCR (First Contact Resolution)</h6>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    <strong>Rumus:</strong> (Tickets resolved in first contact / Total tickets) × 100<br/>
+                    <strong>Target:</strong> 85%<br/>
+                    <strong>Normalisasi:</strong> min((FCR_actual / 85) × 100, 120)
+                  </p>
                 </div>
-              </div>
-
-              <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 mb-4">
-                <h5 className="font-semibold text-red-800 dark:text-red-200 mb-2">⚠️ Error Handling</h5>
-                <div className="text-sm space-y-2">
-                  <div><strong>Upload Errors:</strong> Error rows disimpan di localStorage</div>
-                  <div><strong>Validation Errors:</strong> Invalid data ditolak dengan feedback</div>
-                  <div><strong>Database Errors:</strong> Try-catch blocks untuk operasi database</div>
-                  <div><strong>Format Errors:</strong> Graceful fallback untuk format yang tidak dikenali</div>
+                <div className="p-4 border rounded-lg">
+                  <h6 className="font-semibold mb-2">SLA (Service Level Agreement)</h6>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    <strong>Rumus:</strong> (Tickets within SLA / Total tickets) × 100<br/>
+                    <strong>Target:</strong> 95%<br/>
+                    <strong>Normalisasi:</strong> min((SLA_actual / 95) × 100, 120)
+                  </p>
+                </div>
+                <div className="p-4 border rounded-lg">
+                  <h6 className="font-semibold mb-2">FRT (First Response Time)</h6>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    <strong>Rumus:</strong> Average time to first response in minutes<br/>
+                    <strong>Target:</strong> 15 menit<br/>
+                    <strong>Normalisasi:</strong> max(120 - (FRT_actual / 15) × 100, 0)
+                  </p>
+                </div>
+                <div className="p-4 border rounded-lg">
+                  <h6 className="font-semibold mb-2">ART (Average Resolution Time)</h6>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    <strong>Rumus:</strong> Average time to resolution in minutes<br/>
+                    <strong>Target:</strong> 120 menit<br/>
+                    <strong>Normalisasi:</strong> max(120 - (ART_actual / 120) × 100, 0)
+                  </p>
                 </div>
               </div>
             </div>
 
-            <div>
-              <div className="font-semibold mb-1 text-base">5. Performance & Optimization</div>
-              
-              <div className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-lg p-4 mb-4">
-                <h5 className="font-semibold text-emerald-800 dark:text-emerald-200 mb-2">⚡ Performance Features</h5>
-                <div className="text-sm space-y-2">
-                  <div><strong>Indexed Queries:</strong> Optimized indexes untuk field yang sering di-query</div>
-                  <div><strong>Chunked Processing:</strong> Data besar diproses dalam batch 2000 records</div>
-                  <div><strong>Live Queries:</strong> useLiveQuery() untuk real-time data sync</div>
-                  <div><strong>Memory Management:</strong> Efficient data structures dan garbage collection</div>
-                  <div><strong>Caching:</strong> React Query caching untuk akses data cepat</div>
+            <div className="space-y-4">
+              <h5 className="font-semibold text-gray-900 dark:text-gray-100">Fitur Lanjutan</h5>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="p-4 border rounded-lg">
+                  <h6 className="font-semibold mb-2">Analisis Trend</h6>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    Tracking performa bulan-over-bulan dengan indikator trend dan prediksi
+                  </p>
                 </div>
-              </div>
-
-              <div className="bg-violet-50 dark:bg-violet-900/20 border border-violet-200 dark:border-violet-800 rounded-lg p-4 mb-4">
-                <h5 className="font-semibold text-violet-800 dark:text-violet-200 mb-2">🔄 Data Flow</h5>
-                <div className="text-sm space-y-2">
-                  <div><strong>Upload → Parse → Validate → Store:</strong> Excel → XLSX/Papa Parse → Validation → IndexedDB</div>
-                  <div><strong>Query → Filter → Process → Display:</strong> IndexedDB → useLiveQuery → Filtering → Analytics</div>
-                  <div><strong>Real-time Updates:</strong> Database changes → Automatic UI updates</div>
-                  <div><strong>Export → Local Storage:</strong> Error logs dan upload summaries</div>
+                <div className="p-4 border rounded-lg">
+                  <h6 className="font-semibold mb-2">Kategorisasi Performa</h6>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                                         Kategorisasi otomatis: Top Performers (skor &gt; 90), Average (70-90), Needs Improvement (&lt; 70)
+                  </p>
+                </div>
+                <div className="p-4 border rounded-lg">
+                  <h6 className="font-semibold mb-2">Analisis Komparatif</h6>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    Perbandingan peer dan benchmarking terhadap rata-rata tim
+                  </p>
                 </div>
               </div>
             </div>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </CollapsibleSection>
+
+            {/* Ticket Analytics */}
+      <CollapsibleSection 
+        title="Ticket Analytics" 
+        icon={<ConfirmationNumberIcon className="text-purple-600" />}
+      >
+        <div className="space-y-6">
+          <div>
+            <h4 className="font-semibold text-lg mb-3">Analitik Performa Tiket</h4>
+            <p className="text-gray-700 dark:text-gray-300 mb-4">
+              Analitik komprehensif untuk manajemen siklus hidup tiket, efisiensi resolusi, 
+              dan metrik kepuasan pelanggan dengan filtering lanjutan dan analisis trend.
+            </p>
+          </div>
+
+          <div className="space-y-6">
+            <div>
+              <h5 className="font-semibold text-gray-900 dark:text-gray-100 mb-3">Flow Pemrosesan Data Tiket</h5>
+              <div className="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg p-4">
+                <div className="space-y-3 text-sm">
+                  <div className="flex items-start gap-2">
+                    <span className="font-semibold text-purple-800 dark:text-purple-200">1.</span>
+                    <div>
+                      <strong>Data Filtering:</strong> Filter data incidents berdasarkan periode waktu, status, priority, dan NCAL
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <span className="font-semibold text-purple-800 dark:text-purple-200">2.</span>
+                    <div>
+                      <strong>Aggregation:</strong> Mengelompokkan data berdasarkan kategori (bulan, priority, status, NCAL)
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <span className="font-semibold text-purple-800 dark:text-purple-200">3.</span>
+                    <div>
+                      <strong>Calculation:</strong> Menghitung metrik seperti volume, durasi, MTTR, dan SLA compliance
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <span className="font-semibold text-purple-800 dark:text-purple-200">4.</span>
+                    <div>
+                      <strong>Visualization:</strong> Menampilkan data dalam berbagai chart types (line, bar, pie, area)
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <span className="font-semibold text-purple-800 dark:text-purple-200">5.</span>
+                    <div>
+                      <strong>Real-time Updates:</strong> Data diperbarui otomatis saat ada perubahan di database
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="space-y-4">
+                <h5 className="font-semibold text-gray-900 dark:text-gray-100">Metrik Utama</h5>
+                <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
+                  <li>• <strong>Volume Trends:</strong> Trend volume tiket per bulan/priode</li>
+                  <li>• <strong>Resolution Time:</strong> Analisis waktu penyelesaian (MTTR)</li>
+                  <li>• <strong>Priority Distribution:</strong> Distribusi berdasarkan priority level</li>
+                  <li>• <strong>Status Tracking:</strong> Tracking transisi status tiket</li>
+                  <li>• <strong>Satisfaction Scores:</strong> Skor kepuasan pelanggan</li>
+                  <li>• <strong>Escalation Patterns:</strong> Pola eskalasi dan routing</li>
+                </ul>
+              </div>
+
+              <div className="space-y-4">
+                <h5 className="font-semibold text-gray-900 dark:text-gray-100">Fitur Analitik</h5>
+                <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
+                  <li>• <strong>Real-time Visualization:</strong> Visualisasi data real-time</li>
+                  <li>• <strong>Multi-dimensional Filtering:</strong> Filter multi-dimensi</li>
+                  <li>• <strong>Predictive Analysis:</strong> Analisis prediktif trend</li>
+                  <li>• <strong>Performance Benchmarking:</strong> Benchmarking performa</li>
+                  <li>• <strong>Automated Reporting:</strong> Laporan otomatis</li>
+                  <li>• <strong>Export Capabilities:</strong> Kemampuan ekspor data</li>
+                </ul>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <h5 className="font-semibold text-gray-900 dark:text-gray-100">Algoritma Perhitungan</h5>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="p-4 border rounded-lg">
+                  <h6 className="font-semibold mb-2">Volume Analysis</h6>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    <strong>Monthly Volume:</strong> COUNT(incidents) GROUP BY month<br/>
+                    <strong>Growth Rate:</strong> ((Current - Previous) / Previous) × 100<br/>
+                    <strong>Trend Analysis:</strong> Linear regression untuk prediksi
+                  </p>
+                </div>
+                <div className="p-4 border rounded-lg">
+                  <h6 className="font-semibold mb-2">Duration Analysis</h6>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    <strong>MTTR:</strong> AVG(endTime - startTime) dalam menit<br/>
+                    <strong>Net Duration:</strong> MTTR - Total pause time<br/>
+                    <strong>Efficiency:</strong> (Net Duration / Total Duration) × 100
+                  </p>
+                </div>
+                <div className="p-4 border rounded-lg">
+                  <h6 className="font-semibold mb-2">SLA Compliance</h6>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    <strong>Compliance Rate:</strong> (Tickets within SLA / Total tickets) × 100<br/>
+                    <strong>SLA Targets:</strong> Priority 1: 1 jam, Priority 2: 4 jam, Priority 3: 8 jam<br/>
+                    <strong>Breach Analysis:</strong> Analisis penyebab SLA breach
+                  </p>
+                </div>
+                <div className="p-4 border rounded-lg">
+                  <h6 className="font-semibold mb-2">NCAL Analysis</h6>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    <strong>Distribution:</strong> COUNT per NCAL level (Blue, Yellow, Orange, Red, Black)<br/>
+                    <strong>Impact Score:</strong> Weighted average berdasarkan NCAL severity<br/>
+                    <strong>Trend:</strong> Perubahan distribusi NCAL over time
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <h5 className="font-semibold text-gray-900 dark:text-gray-100">Pemrosesan Data</h5>
+              <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
+                <div className="text-sm space-y-2">
+                  <div><strong>Sumber Data:</strong> Database incidents, Customer records, Agent performance data</div>
+                  <div><strong>Pemrosesan:</strong> Real-time aggregation dengan Dexie.js live queries</div>
+                  <div><strong>Visualisasi:</strong> Recharts library dengan custom tooltips dan legends</div>
+                  <div><strong>Performa:</strong> Dioptimasi dengan React.memo dan useMemo hooks</div>
+                  <div><strong>Format Durasi:</strong> HH:MM:SS untuk display duration dengan formatDurationHMS function</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </CollapsibleSection>
+
+            {/* Customer Analytics */}
+      <CollapsibleSection 
+        title="Customer Analytics" 
+        icon={<BusinessIcon className="text-indigo-600" />}
+      >
+        <div className="space-y-6">
+          <div>
+            <h4 className="font-semibold text-lg mb-3">Analitik Pengalaman Customer</h4>
+            <p className="text-gray-700 dark:text-gray-300 mb-4">
+              Analitik customer lanjutan dengan visualisasi Kanban board, pemetaan customer journey, 
+              dan analisis metrik kepuasan untuk manajemen pengalaman customer yang komprehensif.
+            </p>
+          </div>
+
+          <div className="space-y-6">
+            <div>
+              <h5 className="font-semibold text-gray-900 dark:text-gray-100 mb-3">Flow Pemrosesan Data Customer</h5>
+              <div className="bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800 rounded-lg p-4">
+                <div className="space-y-3 text-sm">
+                  <div className="flex items-start gap-2">
+                    <span className="font-semibold text-indigo-800 dark:text-indigo-200">1.</span>
+                    <div>
+                      <strong>Customer Data Collection:</strong> Mengumpulkan data customer dan interaction history
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <span className="font-semibold text-indigo-800 dark:text-indigo-200">2.</span>
+                    <div>
+                      <strong>Journey Mapping:</strong> Memetakan customer journey dari first contact hingga resolution
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <span className="font-semibold text-indigo-800 dark:text-indigo-200">3.</span>
+                    <div>
+                      <strong>Satisfaction Analysis:</strong> Menganalisis metrik kepuasan dan feedback
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <span className="font-semibold text-indigo-800 dark:text-indigo-200">4.</span>
+                    <div>
+                      <strong>Kanban Visualization:</strong> Menampilkan workflow dalam format Kanban board
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <span className="font-semibold text-indigo-800 dark:text-indigo-200">5.</span>
+                    <div>
+                      <strong>Performance Metrics:</strong> Menghitung dan menampilkan metrik performa customer
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="space-y-4">
+                <h5 className="font-semibold text-gray-900 dark:text-gray-100">Fitur Kanban Board</h5>
+                <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
+                  <li>• <strong>Drag-and-drop:</strong> Manajemen tiket dengan drag-and-drop</li>
+                  <li>• <strong>Real-time Updates:</strong> Update status real-time</li>
+                  <li>• <strong>Workflow Visualization:</strong> Visualisasi workflow yang jelas</li>
+                  <li>• <strong>Team Collaboration:</strong> Tools kolaborasi tim</li>
+                  <li>• <strong>Progress Tracking:</strong> Tracking progress tiket</li>
+                  <li>• <strong>Performance Metrics:</strong> Metrik performa real-time</li>
+                </ul>
+              </div>
+
+              <div className="space-y-4">
+                <h5 className="font-semibold text-gray-900 dark:text-gray-100">Metrik Customer</h5>
+                <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
+                  <li>• <strong>Satisfaction Scores:</strong> Skor kepuasan customer</li>
+                  <li>• <strong>Response Time:</strong> Analisis waktu respon</li>
+                  <li>• <strong>Resolution Quality:</strong> Metrik kualitas resolusi</li>
+                  <li>• <strong>Retention Rates:</strong> Tingkat retensi customer</li>
+                  <li>• <strong>SLA Compliance:</strong> Kepatuhan service level</li>
+                  <li>• <strong>Feedback Analysis:</strong> Analisis feedback customer</li>
+                </ul>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <h5 className="font-semibold text-gray-900 dark:text-gray-100">Algoritma Perhitungan</h5>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="p-4 border rounded-lg">
+                  <h6 className="font-semibold mb-2">Customer Satisfaction</h6>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    <strong>CSAT Score:</strong> (Satisfied customers / Total customers) × 100<br/>
+                    <strong>NPS Calculation:</strong> Promoters - Detractors<br/>
+                    <strong>Sentiment Analysis:</strong> Text analysis dari feedback
+                  </p>
+                </div>
+                <div className="p-4 border rounded-lg">
+                  <h6 className="font-semibold mb-2">Customer Journey</h6>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    <strong>Touchpoint Analysis:</strong> Analisis setiap touchpoint customer<br/>
+                    <strong>Journey Duration:</strong> Total waktu dari first contact hingga resolution<br/>
+                    <strong>Bottleneck Identification:</strong> Identifikasi bottleneck dalam journey
+                  </p>
+                </div>
+                <div className="p-4 border rounded-lg">
+                  <h6 className="font-semibold mb-2">Retention Metrics</h6>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    <strong>Retention Rate:</strong> (Retained customers / Total customers) × 100<br/>
+                    <strong>Churn Analysis:</strong> Analisis customer yang churn<br/>
+                    <strong>Lifetime Value:</strong> Perhitungan customer lifetime value
+                  </p>
+                </div>
+                <div className="p-4 border rounded-lg">
+                  <h6 className="font-semibold mb-2">Service Quality</h6>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    <strong>First Contact Resolution:</strong> Resolusi di kontak pertama<br/>
+                    <strong>Resolution Time:</strong> Waktu rata-rata penyelesaian<br/>
+                    <strong>Quality Score:</strong> Skor kualitas layanan berdasarkan multiple factors
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <h5 className="font-semibold text-gray-900 dark:text-gray-100">Implementasi Teknis</h5>
+              <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
+                <div className="text-sm space-y-2">
+                  <div><strong>Frontend:</strong> React dengan TypeScript, Tailwind CSS untuk styling</div>
+                  <div><strong>State Management:</strong> React hooks dengan custom contexts</div>
+                  <div><strong>Database:</strong> IndexedDB via Dexie.js untuk offline capability</div>
+                  <div><strong>Real-time Updates:</strong> Live queries dengan automatic UI updates</div>
+                  <div><strong>Drag & Drop:</strong> React DnD untuk Kanban board functionality</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </CollapsibleSection>
+
+            {/* Incident Analytics */}
+      <CollapsibleSection 
+        title="Incident Analytics" 
+        icon={<AnalyticsIcon className="text-red-600" />}
+      >
+        <div className="space-y-6">
+          <div>
+            <h4 className="font-semibold text-lg mb-3">Analitik Manajemen Insiden</h4>
+            <p className="text-gray-700 dark:text-gray-300 mb-4">
+              Analitik insiden komprehensif dengan analisis NCAL (Network Criticality Assessment Level), 
+              identifikasi root cause, dan penilaian dampak performa jaringan.
+            </p>
+          </div>
+
+          <div className="space-y-6">
+            <div>
+              <h5 className="font-semibold text-gray-900 dark:text-gray-100 mb-3">Flow Pemrosesan Data Insiden</h5>
+              <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
+                <div className="space-y-3 text-sm">
+                  <div className="flex items-start gap-2">
+                    <span className="font-semibold text-red-800 dark:text-red-200">1.</span>
+                    <div>
+                      <strong>Data Collection:</strong> Mengumpulkan data insiden dari IndexedDB dengan filter periode waktu
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <span className="font-semibold text-red-800 dark:text-red-200">2.</span>
+                    <div>
+                      <strong>NCAL Classification:</strong> Mengklasifikasikan insiden berdasarkan NCAL level (Blue, Yellow, Orange, Red, Black)
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <span className="font-semibold text-red-800 dark:text-red-200">3.</span>
+                    <div>
+                      <strong>Impact Analysis:</strong> Menganalisis dampak berdasarkan durasi, site affected, dan customer impact
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <span className="font-semibold text-red-800 dark:text-red-200">4.</span>
+                    <div>
+                      <strong>Pattern Recognition:</strong> Mengidentifikasi pola root cause dan trend insiden
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <span className="font-semibold text-red-800 dark:text-red-200">5.</span>
+                    <div>
+                      <strong>Visualization:</strong> Menampilkan analisis dalam berbagai chart dan dashboard
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="space-y-4">
+                <h5 className="font-semibold text-gray-900 dark:text-gray-100">Analisis NCAL</h5>
+                <div className="space-y-3">
+                  <div className="p-3 border rounded-lg">
+                    <div className="flex items-center gap-2 mb-1">
+                      <div className="w-4 h-4 bg-blue-500 rounded"></div>
+                      <strong>Blue:</strong> Dampak rendah, maintenance rutin
+                    </div>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      Insiden dengan dampak minimal, tidak mempengaruhi layanan customer
+                    </p>
+                  </div>
+                  <div className="p-3 border rounded-lg">
+                    <div className="flex items-center gap-2 mb-1">
+                      <div className="w-4 h-4 bg-yellow-500 rounded"></div>
+                      <strong>Yellow:</strong> Dampak minor, prosedur standar
+                    </div>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      Insiden dengan dampak terbatas, dapat ditangani dengan prosedur normal
+                    </p>
+                  </div>
+                  <div className="p-3 border rounded-lg">
+                    <div className="flex items-center gap-2 mb-1">
+                      <div className="w-4 h-4 bg-orange-500 rounded"></div>
+                      <strong>Orange:</strong> Dampak sedang, monitoring enhanced
+                    </div>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      Insiden dengan dampak signifikan, memerlukan monitoring intensif
+                    </p>
+                  </div>
+                  <div className="p-3 border rounded-lg">
+                    <div className="flex items-center gap-2 mb-1">
+                      <div className="w-4 h-4 bg-red-500 rounded"></div>
+                      <strong>Red:</strong> Dampak tinggi, perhatian segera
+                    </div>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      Insiden kritis yang mempengaruhi layanan customer secara signifikan
+                    </p>
+                  </div>
+                  <div className="p-3 border rounded-lg">
+                    <div className="flex items-center gap-2 mb-1">
+                      <div className="w-4 h-4 bg-black rounded"></div>
+                      <strong>Black:</strong> Dampak kritis, respons darurat
+                    </div>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      Insiden sangat kritis yang memerlukan respons darurat dan eskalasi
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <h5 className="font-semibold text-gray-900 dark:text-gray-100">Metrik Utama</h5>
+                <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
+                  <li>• <strong>Incident Frequency:</strong> Frekuensi insiden per NCAL level</li>
+                  <li>• <strong>MTTR by NCAL:</strong> Mean time to resolution per level kritis</li>
+                  <li>• <strong>Root Cause Patterns:</strong> Pola analisis root cause</li>
+                  <li>• <strong>Impact Assessment:</strong> Skor penilaian dampak</li>
+                  <li>• <strong>Prevention Effectiveness:</strong> Efektivitas pencegahan</li>
+                  <li>• <strong>Cost Analysis:</strong> Analisis biaya per insiden</li>
+                </ul>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <h5 className="font-semibold text-gray-900 dark:text-gray-100">Algoritma Perhitungan</h5>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="p-4 border rounded-lg">
+                  <h6 className="font-semibold mb-2">NCAL Distribution</h6>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    <strong>Calculation:</strong> COUNT(incidents) GROUP BY ncal_level<br/>
+                    <strong>Percentage:</strong> (Count per level / Total incidents) × 100<br/>
+                    <strong>Trend:</strong> Month-over-month comparison
+                  </p>
+                </div>
+                <div className="p-4 border rounded-lg">
+                  <h6 className="font-semibold mb-2">Impact Score</h6>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    <strong>Weighted Score:</strong> Blue(1) + Yellow(2) + Orange(3) + Red(4) + Black(5)<br/>
+                    <strong>Average Impact:</strong> Total weighted score / Total incidents<br/>
+                    <strong>Risk Level:</strong> Based on impact score thresholds
+                  </p>
+                </div>
+                <div className="p-4 border rounded-lg">
+                  <h6 className="font-semibold mb-2">MTTR Analysis</h6>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    <strong>By NCAL:</strong> AVG(duration) GROUP BY ncal_level<br/>
+                    <strong>Efficiency:</strong> (Target MTTR / Actual MTTR) × 100<br/>
+                    <strong>Improvement:</strong> Month-over-month MTTR reduction
+                  </p>
+                </div>
+                <div className="p-4 border rounded-lg">
+                  <h6 className="font-semibold mb-2">Prevention Metrics</h6>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    <strong>Repeat Incidents:</strong> COUNT incidents with same root cause<br/>
+                    <strong>Prevention Rate:</strong> (Prevented incidents / Total potential) × 100<br/>
+                    <strong>Learning Effectiveness:</strong> Reduction in repeat incidents
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <h5 className="font-semibold text-gray-900 dark:text-gray-100">Fitur Lanjutan</h5>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="p-4 border rounded-lg">
+                  <h6 className="font-semibold mb-2">Analitik Prediktif</h6>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    Model machine learning untuk prediksi dan pencegahan insiden berdasarkan pola historis
+                  </p>
+                </div>
+                <div className="p-4 border rounded-lg">
+                  <h6 className="font-semibold mb-2">Laporan Otomatis</h6>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    Laporan terjadwal dengan template yang dapat disesuaikan dan pengiriman otomatis
+                  </p>
+                </div>
+                <div className="p-4 border rounded-lg">
+                  <h6 className="font-semibold mb-2">Integrasi Sistem</h6>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    Integrasi API dengan sistem monitoring dan ticketing eksternal
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </CollapsibleSection>
+
+            {/* Technical Support Analytics */}
+      <CollapsibleSection 
+        title="Technical Support Analytics" 
+        icon={<SettingsIcon className="text-orange-600" />}
+      >
+        <div className="space-y-6">
+          <div>
+            <h4 className="font-semibold text-lg mb-3">Analitik Performa Technical Support</h4>
+            <p className="text-gray-700 dark:text-gray-300 mb-4">
+              Analitik khusus untuk tim technical support dengan skill-based routing, 
+              efektivitas knowledge base, dan metrik resolusi teknis.
+            </p>
+          </div>
+
+          <div className="space-y-6">
+            <div>
+              <h5 className="font-semibold text-gray-900 dark:text-gray-100 mb-3">Flow Pemrosesan Data Technical Support</h5>
+              <div className="bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg p-4">
+                <div className="space-y-3 text-sm">
+                  <div className="flex items-start gap-2">
+                    <span className="font-semibold text-orange-800 dark:text-orange-200">1.</span>
+                    <div>
+                      <strong>Skill Assessment:</strong> Menilai skill dan kompetensi technical support agent
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <span className="font-semibold text-orange-800 dark:text-orange-200">2.</span>
+                    <div>
+                      <strong>Ticket Routing:</strong> Routing tiket berdasarkan skill dan complexity
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <span className="font-semibold text-orange-800 dark:text-orange-200">3.</span>
+                    <div>
+                      <strong>Knowledge Base Analysis:</strong> Menganalisis penggunaan dan efektivitas knowledge base
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <span className="font-semibold text-orange-800 dark:text-orange-200">4.</span>
+                    <div>
+                      <strong>Resolution Tracking:</strong> Tracking resolusi teknis dan quality metrics
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <span className="font-semibold text-orange-800 dark:text-orange-200">5.</span>
+                    <div>
+                      <strong>Performance Analytics:</strong> Menganalisis performa dan improvement areas
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="space-y-4">
+                <h5 className="font-semibold text-gray-900 dark:text-gray-100">Metrik Support</h5>
+                <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
+                  <li>• <strong>Technical Resolution Rates:</strong> Tingkat resolusi teknis</li>
+                  <li>• <strong>Knowledge Base Utilization:</strong> Pemanfaatan knowledge base</li>
+                  <li>• <strong>Escalation Patterns:</strong> Pola eskalasi tiket</li>
+                  <li>• <strong>Skill-based Performance:</strong> Performa berdasarkan skill</li>
+                  <li>• <strong>Training Effectiveness:</strong> Efektivitas training</li>
+                  <li>• <strong>Tool Proficiency:</strong> Kemahiran penggunaan tools</li>
+                </ul>
+              </div>
+
+              <div className="space-y-4">
+                <h5 className="font-semibold text-gray-900 dark:text-gray-100">Quality Assurance</h5>
+                <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
+                  <li>• <strong>Solution Accuracy:</strong> Tracking akurasi solusi</li>
+                  <li>• <strong>Customer Feedback:</strong> Analisis feedback customer</li>
+                  <li>• <strong>Resolution Quality:</strong> Skor kualitas resolusi</li>
+                  <li>• <strong>Follow-up Effectiveness:</strong> Efektivitas follow-up</li>
+                  <li>• <strong>Knowledge Sharing:</strong> Metrik berbagi pengetahuan</li>
+                  <li>• <strong>Continuous Improvement:</strong> Tracking improvement berkelanjutan</li>
+                </ul>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <h5 className="font-semibold text-gray-900 dark:text-gray-100">Algoritma Perhitungan</h5>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="p-4 border rounded-lg">
+                  <h6 className="font-semibold mb-2">Skill-based Routing</h6>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    <strong>Skill Score:</strong> Weighted average dari technical skills<br/>
+                    <strong>Complexity Matching:</strong> Matching ticket complexity dengan agent skill<br/>
+                    <strong>Load Balancing:</strong> Distribusi workload berdasarkan availability
+                  </p>
+                </div>
+                <div className="p-4 border rounded-lg">
+                  <h6 className="font-semibold mb-2">Knowledge Base Metrics</h6>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    <strong>Utilization Rate:</strong> (KB usage / Total tickets) × 100<br/>
+                    <strong>Effectiveness Score:</strong> Success rate dari KB solutions<br/>
+                    <strong>Update Frequency:</strong> Frequency of KB content updates
+                  </p>
+                </div>
+                <div className="p-4 border rounded-lg">
+                  <h6 className="font-semibold mb-2">Quality Metrics</h6>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    <strong>Accuracy Score:</strong> (Correct solutions / Total solutions) × 100<br/>
+                    <strong>Customer Satisfaction:</strong> CSAT scores untuk technical support<br/>
+                    <strong>Resolution Time:</strong> Average time untuk technical resolution
+                  </p>
+                </div>
+                <div className="p-4 border rounded-lg">
+                  <h6 className="font-semibold mb-2">Training Impact</h6>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    <strong>Skill Improvement:</strong> Pre vs post training skill assessment<br/>
+                    <strong>Performance Uplift:</strong> Performance improvement setelah training<br/>
+                    <strong>Knowledge Retention:</strong> Long-term knowledge retention rate
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </CollapsibleSection>
+
+            {/* Site Analytics */}
+      <CollapsibleSection 
+        title="Site Analytics" 
+        icon={<BusinessIcon className="text-green-600" />}
+      >
+        <div className="space-y-6">
+          <div>
+            <h4 className="font-semibold text-lg mb-3">Analitik Performa Site</h4>
+            <p className="text-gray-700 dark:text-gray-300 mb-4">
+              Analitik khusus site dengan pemetaan performa geografis, 
+              monitoring kesehatan infrastruktur, dan analisis insiden regional.
+            </p>
+          </div>
+
+          <div className="space-y-6">
+            <div>
+              <h5 className="font-semibold text-gray-900 dark:text-gray-100 mb-3">Flow Pemrosesan Data Site</h5>
+              <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
+                <div className="space-y-3 text-sm">
+                  <div className="flex items-start gap-2">
+                    <span className="font-semibold text-green-800 dark:text-green-200">1.</span>
+                    <div>
+                      <strong>Site Data Collection:</strong> Mengumpulkan data performa dan insiden per site
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <span className="font-semibold text-green-800 dark:text-green-200">2.</span>
+                    <div>
+                      <strong>Geographic Mapping:</strong> Memetakan data berdasarkan lokasi geografis
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <span className="font-semibold text-green-800 dark:text-green-200">3.</span>
+                    <div>
+                      <strong>Infrastructure Analysis:</strong> Menganalisis kesehatan infrastruktur per site
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <span className="font-semibold text-green-800 dark:text-green-200">4.</span>
+                    <div>
+                      <strong>Regional Pattern Recognition:</strong> Mengidentifikasi pola insiden regional
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <span className="font-semibold text-green-800 dark:text-green-200">5.</span>
+                    <div>
+                      <strong>Performance Benchmarking:</strong> Benchmarking performa antar site
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="space-y-4">
+                <h5 className="font-semibold text-gray-900 dark:text-gray-100">Metrik Site</h5>
+                <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
+                  <li>• <strong>Site Availability:</strong> Tingkat ketersediaan site</li>
+                  <li>• <strong>Performance Benchmarks:</strong> Benchmark performa site</li>
+                  <li>• <strong>Infrastructure Health:</strong> Skor kesehatan infrastruktur</li>
+                  <li>• <strong>Regional Incidents:</strong> Pola insiden regional</li>
+                  <li>• <strong>Maintenance Effectiveness:</strong> Efektivitas maintenance</li>
+                  <li>• <strong>Capacity Utilization:</strong> Pemanfaatan kapasitas</li>
+                </ul>
+              </div>
+
+              <div className="space-y-4">
+                <h5 className="font-semibold text-gray-900 dark:text-gray-100">Analisis Geografis</h5>
+                <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
+                  <li>• <strong>Regional Performance:</strong> Perbandingan performa regional</li>
+                  <li>• <strong>Geographic Clustering:</strong> Clustering insiden geografis</li>
+                  <li>• <strong>Weather Impact:</strong> Analisis dampak cuaca</li>
+                  <li>• <strong>Resource Allocation:</strong> Optimasi alokasi sumber daya</li>
+                  <li>• <strong>Network Topology:</strong> Analisis topologi jaringan</li>
+                  <li>• <strong>Disaster Recovery:</strong> Metrik disaster recovery</li>
+                </ul>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <h5 className="font-semibold text-gray-900 dark:text-gray-100">Algoritma Perhitungan</h5>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="p-4 border rounded-lg">
+                  <h6 className="font-semibold mb-2">Site Availability</h6>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    <strong>Uptime Calculation:</strong> (Total uptime / Total time) × 100<br/>
+                    <strong>MTBF:</strong> Mean Time Between Failures<br/>
+                    <strong>MTTR:</strong> Mean Time To Repair per site
+                  </p>
+                </div>
+                <div className="p-4 border rounded-lg">
+                  <h6 className="font-semibold mb-2">Infrastructure Health</h6>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    <strong>Health Score:</strong> Weighted average dari multiple factors<br/>
+                    <strong>Risk Assessment:</strong> Evaluasi risiko berdasarkan historical data<br/>
+                    <strong>Predictive Maintenance:</strong> Prediksi kebutuhan maintenance
+                  </p>
+                </div>
+                <div className="p-4 border rounded-lg">
+                  <h6 className="font-semibold mb-2">Regional Analysis</h6>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    <strong>Incident Density:</strong> Incidents per area per time period<br/>
+                    <strong>Weather Correlation:</strong> Correlation dengan data cuaca<br/>
+                    <strong>Geographic Patterns:</strong> Identifikasi pola geografis
+                  </p>
+                </div>
+                <div className="p-4 border rounded-lg">
+                  <h6 className="font-semibold mb-2">Performance Benchmarking</h6>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    <strong>Site Comparison:</strong> Perbandingan antar site<br/>
+                    <strong>Industry Standards:</strong> Benchmark terhadap standar industri<br/>
+                    <strong>Improvement Tracking:</strong> Tracking improvement per site
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </CollapsibleSection>
+
+      {/* Data Management */}
+      <CollapsibleSection 
+        title="Data Management" 
+        icon={<StorageIcon className="text-gray-600" />}
+      >
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="space-y-4">
+              <h5 className="font-semibold text-gray-900 dark:text-gray-100">Master Data</h5>
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                Centralized data management for system configuration, 
+                reference data, and organizational structure.
+              </p>
+              <ul className="space-y-1 text-sm text-gray-600 dark:text-gray-400">
+                <li>• System configuration</li>
+                <li>• Reference data</li>
+                <li>• Organizational structure</li>
+                <li>• Data validation rules</li>
+              </ul>
+                </div>
+
+            <div className="space-y-4">
+              <h5 className="font-semibold text-gray-900 dark:text-gray-100">Agent Data</h5>
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                Comprehensive agent profile management with performance history, 
+                skills tracking, and training records.
+              </p>
+              <ul className="space-y-1 text-sm text-gray-600 dark:text-gray-400">
+                <li>• Agent profiles</li>
+                <li>• Performance history</li>
+                <li>• Skills assessment</li>
+                <li>• Training records</li>
+                    </ul>
+                  </div>
+
+            <div className="space-y-4">
+              <h5 className="font-semibold text-gray-900 dark:text-gray-100">Customer Data</h5>
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                Customer relationship management with interaction history, 
+                preferences, and service level agreements.
+              </p>
+              <ul className="space-y-1 text-sm text-gray-600 dark:text-gray-400">
+                <li>• Customer profiles</li>
+                <li>• Interaction history</li>
+                <li>• Service agreements</li>
+                <li>• Communication preferences</li>
+                  </ul>
+            </div>
+          </div>
+
+                    <div className="space-y-4">
+            <h5 className="font-semibold text-gray-900 dark:text-gray-100">Upload Data</h5>
+            <div className="space-y-6">
+              <div>
+                <h6 className="font-semibold text-gray-900 dark:text-gray-100 mb-3">Flow Pemrosesan Upload Data</h6>
+                <div className="bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg p-4">
+                  <div className="space-y-3 text-sm">
+                    <div className="flex items-start gap-2">
+                      <span className="font-semibold text-orange-800 dark:text-orange-200">1.</span>
+                      <div>
+                        <strong>File Validation:</strong> Validasi format file (Excel .xlsx/.xls, CSV) dan ukuran
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <span className="font-semibold text-orange-800 dark:text-orange-200">2.</span>
+                      <div>
+                        <strong>Header Validation:</strong> Memvalidasi header kolom sesuai dengan schema yang dibutuhkan
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <span className="font-semibold text-orange-800 dark:text-orange-200">3.</span>
+                      <div>
+                        <strong>Data Parsing:</strong> Parsing data dari Excel/CSV ke format JSON dengan validasi tipe data
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <span className="font-semibold text-orange-800 dark:text-orange-200">4.</span>
+                      <div>
+                        <strong>Data Transformation:</strong> Transformasi data ke format Incident dengan validasi business rules
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <span className="font-semibold text-orange-800 dark:text-orange-200">5.</span>
+                      <div>
+                        <strong>Database Storage:</strong> Menyimpan data ke IndexedDB dengan chunking untuk file besar
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <span className="font-semibold text-orange-800 dark:text-orange-200">6.</span>
+                      <div>
+                        <strong>Result Reporting:</strong> Menampilkan laporan hasil upload dengan detail success/error
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="p-4 border rounded-lg">
+                  <h6 className="font-semibold mb-2">Format Data yang Didukung</h6>
+                  <ul className="text-sm text-gray-600 dark:text-gray-400 space-y-1">
+                    <li>• <strong>Excel:</strong> .xlsx, .xls dengan multiple sheets</li>
+                    <li>• <strong>CSV:</strong> Comma-separated values</li>
+                    <li>• <strong>Encoding:</strong> UTF-8, ISO-8859-1</li>
+                    <li>• <strong>Max Size:</strong> 50MB per file</li>
+                  </ul>
+                </div>
+                <div className="p-4 border rounded-lg">
+                  <h6 className="font-semibold mb-2">Validasi Data</h6>
+                  <ul className="text-sm text-gray-600 dark:text-gray-400 space-y-1">
+                    <li>• <strong>Schema Validation:</strong> Validasi struktur kolom</li>
+                    <li>• <strong>Data Type:</strong> Validasi tipe data per kolom</li>
+                    <li>• <strong>Business Rules:</strong> Validasi aturan bisnis</li>
+                    <li>• <strong>Duplicate Check:</strong> Pengecekan data duplikat</li>
+                  </ul>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <h6 className="font-semibold text-gray-900 dark:text-gray-100">Algoritma Pemrosesan</h6>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="p-4 border rounded-lg">
+                    <h6 className="font-semibold mb-2">Data Parsing</h6>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      <strong>Excel Processing:</strong> Menggunakan XLSX library untuk parsing<br/>
+                      <strong>CSV Processing:</strong> Papa Parse untuk CSV files<br/>
+                      <strong>Error Handling:</strong> Graceful handling untuk corrupted files<br/>
+                      <strong>Progress Tracking:</strong> Real-time progress untuk file besar
+                    </p>
+                  </div>
+                  <div className="p-4 border rounded-lg">
+                    <h6 className="font-semibold mb-2">Data Transformation</h6>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      <strong>Date Parsing:</strong> parseDateSafe untuk berbagai format tanggal<br/>
+                      <strong>Duration Conversion:</strong> toMinutes untuk konversi durasi<br/>
+                      <strong>ID Generation:</strong> mkId untuk generate unique ID<br/>
+                      <strong>Batch Processing:</strong> Chunking untuk optimasi memory
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
+                <div className="text-sm space-y-2">
+                  <div><strong>Supported Formats:</strong> Excel (.xlsx, .xls), CSV dengan encoding UTF-8</div>
+                  <div><strong>Data Validation:</strong> Validasi schema otomatis dan error reporting detail</div>
+                  <div><strong>Batch Processing:</strong> Handling file besar dengan progress tracking</div>
+                  <div><strong>Error Handling:</strong> Error logging komprehensif dan recovery mechanism</div>
+                  <div><strong>Performance:</strong> Optimasi memory dengan chunking dan streaming</div>
+                </div>
+              </div>
+            </div>
+          </div>
+            </div>
+      </CollapsibleSection>
+
+      {/* System Administration */}
+      <CollapsibleSection 
+        title="System Administration" 
+        icon={<AdminPanelSettingsIcon className="text-red-600" />}
+      >
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="space-y-4">
+              <h5 className="font-semibold text-gray-900 dark:text-gray-100">Admin Panel Features</h5>
+              <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
+                <li>• User management and permissions</li>
+                <li>• System configuration</li>
+                <li>• Data backup and restore</li>
+                <li>• Audit logging</li>
+                <li>• Performance monitoring</li>
+                <li>• Security settings</li>
+                  </ul>
+                </div>
+
+            <div className="space-y-4">
+              <h5 className="font-semibold text-gray-900 dark:text-gray-100">Formulas & Calculations</h5>
+              <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
+                <li>• KPI calculation algorithms</li>
+                <li>• Performance scoring formulas</li>
+                <li>• Trend analysis methods</li>
+                <li>• Statistical computations</li>
+                <li>• Custom metric definitions</li>
+                <li>• Weight adjustment tools</li>
+                    </ul>
+                  </div>
+                </div>
+            
+          <div className="space-y-4">
+            <h5 className="font-semibold text-gray-900 dark:text-gray-100">System Architecture</h5>
+            <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
+              <div className="text-sm space-y-2">
+                <div><strong>Frontend:</strong> React 18 with TypeScript, Vite build system</div>
+                <div><strong>Styling:</strong> Tailwind CSS with custom design system</div>
+                <div><strong>Database:</strong> IndexedDB via Dexie.js for offline-first architecture</div>
+                <div><strong>State Management:</strong> React Context API with custom hooks</div>
+                <div><strong>Charts:</strong> Recharts library with custom components</div>
+                <div><strong>Icons:</strong> Material-UI Icons for consistency</div>
+              </div>
+            </div>
+              </div>
+                </div>
+      </CollapsibleSection>
+
+      {/* Technical Specifications */}
+      <CollapsibleSection 
+        title="Technical Specifications" 
+        icon={<LightbulbIcon className="text-yellow-600" />}
+      >
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="space-y-4">
+              <h5 className="font-semibold text-gray-900 dark:text-gray-100">Performance Optimization</h5>
+              <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
+                <li>• React.memo for component optimization</li>
+                <li>• useMemo and useCallback hooks</li>
+                <li>• Virtual scrolling for large datasets</li>
+                <li>• Lazy loading of components</li>
+                <li>• Efficient re-rendering strategies</li>
+                <li>• Memory leak prevention</li>
+              </ul>
+              </div>
+
+            <div className="space-y-4">
+              <h5 className="font-semibold text-gray-900 dark:text-gray-100">Data Processing</h5>
+              <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
+                <li>• Real-time data aggregation</li>
+                <li>• Efficient filtering algorithms</li>
+                <li>• Caching strategies</li>
+                <li>• Background processing</li>
+                <li>• Data validation pipelines</li>
+                <li>• Error recovery mechanisms</li>
+              </ul>
+                </div>
+              </div>
+
+          <div className="space-y-4">
+            <h5 className="font-semibold text-gray-900 dark:text-gray-100">Development Guidelines</h5>
+            <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
+              <div className="text-sm space-y-2">
+                <div><strong>Code Style:</strong> ESLint + Prettier configuration</div>
+                <div><strong>Type Safety:</strong> Strict TypeScript configuration</div>
+                <div><strong>Testing:</strong> Jest + React Testing Library</div>
+                <div><strong>Documentation:</strong> JSDoc comments and README files</div>
+                <div><strong>Version Control:</strong> Git with conventional commits</div>
+                <div><strong>Deployment:</strong> Vercel/Netlify ready configuration</div>
+              </div>
+                </div>
+              </div>
+            </div>
+      </CollapsibleSection>
     </div>
   );
 } 
