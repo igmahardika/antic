@@ -5,7 +5,7 @@ import PageWrapper from '../components/PageWrapper';
 import SummaryCard from '../components/ui/SummaryCard';
 import TableChartIcon from '@mui/icons-material/TableChart';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../components/ui/table';
-import { Card, CardContent } from '../components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { db } from '../lib/db';
 
 const CUSTOMER_HEADERS = ["Nama", "Jenis Klien", "Layanan", "Kategori"];
@@ -71,7 +71,7 @@ const CustomerData: React.FC = () => {
             skipEmptyLines: true,
             complete: async (results) => {
             const dataBulan: { [bulan: string]: any[] } = {};
-            // let valid = true;
+            let valid = true;
             
             // For CSV, we treat the entire file as one sheet
             const json: any[] = results.data as any[];

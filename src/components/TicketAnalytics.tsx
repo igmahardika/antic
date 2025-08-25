@@ -27,12 +27,12 @@ import { Badge } from './ui/badge';
 import { db } from '@/lib/db';
 import { useLiveQuery } from 'dexie-react-hooks';
 
-// type ClassificationDetails = {
-//   count: number;
-//   sub: { [key: string]: number };
-//   trendline?: { labels: string[]; data: number[] };
-//   trendPercent?: number;
-// };
+type ClassificationDetails = {
+  count: number;
+  sub: { [key: string]: number };
+  trendline?: { labels: string[]; data: number[] };
+  trendPercent?: number;
+};
 
 
 
@@ -1461,7 +1461,7 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
                 <thead className="bg-white dark:bg-zinc-900">
                   <tr>
                     <th className="px-4 py-2">Tipe</th>
-                    {monthlyStatsData.labels.map((month) => (
+                    {monthlyStatsData.labels.map((month, idx) => (
                       <th key={month} className="px-4 py-2 font-bold font-mono text-center">{month}</th>
                     ))}
                   </tr>
@@ -1523,7 +1523,7 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
                     <thead className="bg-white dark:bg-zinc-900">
                       <tr>
                         <th className="px-4 py-2">Shift</th>
-                        {agentShiftAreaData.map((row) => (
+                        {agentShiftAreaData.map((row, idx) => (
                           <th key={row.month} className="px-4 py-2 font-bold font-mono text-center">{row.month}</th>
                         ))}
                       </tr>
@@ -1531,19 +1531,19 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
                     <tbody className="bg-white dark:bg-zinc-900">
                       <tr>
                         <td className="px-4 py-2 font-bold text-green-600">Pagi</td>
-                        {agentShiftAreaData.map((row) => (
+                        {agentShiftAreaData.map((row, idx) => (
                           <td key={row.month} className="px-4 py-2 text-center font-mono">{row.Pagi}</td>
                         ))}
                       </tr>
                       <tr>
                         <td className="px-4 py-2 font-bold text-blue-600">Sore</td>
-                        {agentShiftAreaData.map((row) => (
+                        {agentShiftAreaData.map((row, idx) => (
                           <td key={row.month} className="px-4 py-2 text-center font-mono">{row.Sore}</td>
                         ))}
                       </tr>
                       <tr>
                         <td className="px-4 py-2 font-bold text-red-600">Malam</td>
-                        {agentShiftAreaData.map((row) => (
+                        {agentShiftAreaData.map((row, idx) => (
                           <td key={row.month} className="px-4 py-2 text-center font-mono">{row.Malam}</td>
                         ))}
                       </tr>
@@ -2428,7 +2428,7 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
                     let trendValue: number | null = null;
                     if (monthlyStatsData && monthlyStatsData.labels && monthlyStatsData.labels.length > 1) {
                       const monthKeys = monthlyStatsData.labels;
-                      const catTicketsPerMonth: number[] = monthKeys.map((label) => {
+                      const catTicketsPerMonth: number[] = monthKeys.map((label, i) => {
                         const [monthName, year] = label.split(' ');
                         const monthIdx = ["Jan","Feb","Mar","Apr","Mei","Jun","Jul","Agu","Sep","Okt","Nov","Des"].indexOf(monthName);
                         const tickets = gridData.filter(t => {
