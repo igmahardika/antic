@@ -79,6 +79,72 @@ const takeTop = <T extends string>(map: Record<T, number>, n = 5) => {
     .slice(0, n);
 };
 
+// Custom tooltip component for NCAL charts
+const NCALTooltip = ({ active, payload, label, formatter }: any) => {
+  if (!active || !payload || !payload.length) return null;
+  
+  const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const [year, month] = label.split('-');
+  const monthName = monthNames[parseInt(month) - 1];
+  
+  return (
+    <div className="bg-white dark:bg-zinc-900 rounded-xl shadow-lg border border-gray-200 dark:border-zinc-700 p-4 max-h-52 overflow-y-auto min-w-[200px] text-xs">
+      <div className="font-bold text-sm mb-3 text-gray-900 dark:text-gray-100">
+        {monthName} {year}
+      </div>
+      <div className="space-y-2">
+        {payload.map((entry: any, idx: number) => (
+          <div key={idx} className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div 
+                className="w-3 h-3 rounded-full" 
+                style={{ backgroundColor: entry.color }}
+              />
+              <span className="font-semibold text-gray-900 dark:text-gray-100">
+                {entry.name} NCAL
+              </span>
+            </div>
+            <span className="font-mono text-gray-800 dark:text-gray-200">
+              {formatter ? formatter(entry.value) : entry.value}
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+// Custom tooltip for SLA Breach Analysis
+const SLABreachTooltip = ({ active, payload, label }: any) => {
+  if (!active || !payload || !payload.length) return null;
+  
+  return (
+    <div className="bg-white dark:bg-zinc-900 rounded-xl shadow-lg border border-gray-200 dark:border-zinc-700 p-4 min-w-[180px] text-xs">
+      <div className="font-bold text-sm mb-2 text-gray-900 dark:text-gray-100">
+        {label} NCAL
+      </div>
+      <div className="space-y-1">
+        {payload.map((entry: any, idx: number) => (
+          <div key={idx} className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div 
+                className="w-3 h-3 rounded-full" 
+                style={{ backgroundColor: entry.color }}
+              />
+              <span className="font-semibold text-gray-900 dark:text-gray-100">
+                Breach Count
+              </span>
+            </div>
+            <span className="font-mono text-red-600 dark:text-red-400 font-bold">
+              {entry.value}
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
 // Main component
 const IncidentAnalytics: React.FC = () => {
   const [selectedPeriod, setSelectedPeriod] = useState<'3m' | '6m' | '1y' | 'all'>('6m');
@@ -830,7 +896,7 @@ const IncidentAnalytics: React.FC = () => {
                     }}
                   />
                   <YAxis tickLine={false} axisLine={false} tickMargin={8} tick={{ fill: '#6b7280', fontSize: 12 }} />
-                  <ChartTooltip content={<ChartTooltipContent hideLabel />} />
+                  <ChartTooltip content={<NCALTooltip />} />
                   <ChartLegend />
                   {NCAL_ORDER.map((ncal, index) => (
                     <Bar
@@ -881,7 +947,7 @@ const IncidentAnalytics: React.FC = () => {
                     tick={{ fill: '#6b7280', fontSize: 12 }}
                     tickFormatter={(v: number) => formatDurationHMS(v)}
                   />
-                  <ChartTooltip content={<ChartTooltipContent formatter={(value: number) => formatDurationHMS(value)} />} />
+                  <ChartTooltip content={<NCALTooltip formatter={(value: number) => formatDurationHMS(value)} />} />
                   {NCAL_ORDER.map((ncal) => (
                     <Line
                       key={ncal}
@@ -935,7 +1001,7 @@ const IncidentAnalytics: React.FC = () => {
                     tick={{ fill: '#6b7280', fontSize: 12 }}
                     tickFormatter={(v: number) => formatDurationHMS(v)}
                   />
-                  <ChartTooltip content={<ChartTooltipContent formatter={(value: number) => formatDurationHMS(value)} />} />
+                  <ChartTooltip content={<NCALTooltip formatter={(value: number) => formatDurationHMS(value)} />} />
                   {NCAL_ORDER.map((ncal) => (
                     <Line
                       key={ncal}
@@ -987,7 +1053,7 @@ const IncidentAnalytics: React.FC = () => {
                   <CartesianGrid vertical={false} stroke="#e5e7eb" />
                   <XAxis dataKey="ncal" tickLine={false} axisLine={false} tickMargin={8} tick={{ fill: '#6b7280', fontSize: 12 }} />
                   <YAxis tickLine={false} axisLine={false} tickMargin={8} tick={{ fill: '#6b7280', fontSize: 12 }} />
-                  <ChartTooltip content={<ChartTooltipContent />} />
+                  <ChartTooltip content={<SLABreachTooltip />} />
                   <Bar dataKey="value" radius={8} fill="#ef4444">
                     {NCAL_ORDER.map((ncal) => (
                       <Cell key={ncal} fill={NCAL_COLORS[ncal]} />
