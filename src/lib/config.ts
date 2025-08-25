@@ -6,6 +6,8 @@
  *  • fallback prod tanpa env → /api   (akan diproxy Nginx)
  */
 
+
+
 const envBase =
   import.meta.env.VITE_API_URL ||
   (import.meta.env.DEV ? 'http://localhost:3001' : '/api');
@@ -17,9 +19,9 @@ export const API_CONFIG = {
 };
 
 export const APP_CONFIG = {
-  name: 'AN-TIC Analytics Dashboard',
+  name: 'Helpdesk Management System',
   version: '1.0.0',
-  description: 'Insightful Ticket Analytics & Agent Performance',
+  description: 'Comprehensive Ticket Management & Analytics Platform',
 };
 
 /* ---------- helper util ---------- */

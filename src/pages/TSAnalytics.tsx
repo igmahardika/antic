@@ -25,9 +25,7 @@ import {
   ReferenceLine,
   Cell
 } from 'recharts';
-import { 
-  Filter
-} from 'lucide-react';
+
 
 import PageWrapper from '@/components/PageWrapper';
 
@@ -43,6 +41,7 @@ import InsightsIcon from '@mui/icons-material/Insights';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import BusinessIcon from '@mui/icons-material/Business';
 import EngineeringIcon from '@mui/icons-material/Engineering';
+import FilterListIcon from '@mui/icons-material/FilterList';
 
 // Constants sesuai requirements
 const VENDOR_SLA_MINUTES = 240; // 4 jam
@@ -993,7 +992,7 @@ const TSAnalytics: React.FC = () => {
           </div>
           {/* Period Filter */}
           <div className="flex items-center gap-2">
-            <Filter className="w-4 h-4 text-gray-500" />
+            <FilterListIcon className="w-4 h-4 text-gray-600 dark:text-gray-400" />
             <div className="flex bg-white/80 dark:bg-zinc-900/80 rounded-2xl shadow-lg border border-gray-200 dark:border-zinc-800 p-1">
               {[
                 { key: '3m', label: '3M' },
@@ -1006,7 +1005,11 @@ const TSAnalytics: React.FC = () => {
                   variant={selectedPeriod === key ? 'default' : 'ghost'}
                   size="sm"
                   onClick={() => setSelectedPeriod(key as any)}
-                  className="text-xs rounded-xl"
+                  className={`text-xs rounded-xl ${
+                    selectedPeriod === key 
+                      ? 'bg-blue-600 hover:bg-blue-700 text-white' 
+                      : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-zinc-800'
+                  }`}
                 >
                   {label}
                 </Button>
@@ -1218,15 +1221,15 @@ const TSAnalytics: React.FC = () => {
                   SLA Focus
                 </Badge>
               </CardTitle>
-              <CardDescription className="text-sm text-muted-foreground">
+              <CardDescription className="text-sm text-gray-600 dark:text-gray-400">
                 Vendor performance against NCAL levels
               </CardDescription>
             </CardHeader>
             <CardContent className="p-4">
               <div className="space-y-4">
                 <ChartContainer config={{
-                  slaCompliant: { label: "SLA Compliant", color: "var(--chart-2)" },
-                  slaExceeded: { label: "SLA Exceeded", color: "var(--chart-1)" },
+                  slaCompliant: { label: "SLA Compliant", color: "#10b981" },
+                  slaExceeded: { label: "SLA Exceeded", color: "#ef4444" },
                 }}>
                   <BarChart 
                     accessibilityLayer
@@ -1238,19 +1241,21 @@ const TSAnalytics: React.FC = () => {
                         slaExceeded: data.total - data.slaCompliant
                       }))}
                   >
-                    <CartesianGrid vertical={false} />
+                    <CartesianGrid vertical={false} stroke="#e5e7eb" />
                     <XAxis 
                       dataKey="month" 
                       tickLine={false} 
                       tickMargin={10} 
                       axisLine={false}
+                      tick={{ fill: '#6b7280', fontSize: 12 }}
                       tickFormatter={(value) => value.slice(0, 3)}
                     />
+                    <YAxis tickLine={false} axisLine={false} tickMargin={8} tick={{ fill: '#6b7280', fontSize: 12 }} />
                     <ChartTooltip
                       cursor={false}
                       content={<ChartTooltipContent indicator="dashed" />}
                     />
-                    <Bar dataKey="slaCompliant" fill="#3b82f6" radius={4} />
+                    <Bar dataKey="slaCompliant" fill="#10b981" radius={4} />
                     <Bar dataKey="slaExceeded" fill="#ef4444" radius={4} />
                   </BarChart>
                 </ChartContainer>
@@ -1261,21 +1266,21 @@ const TSAnalytics: React.FC = () => {
           <Card className="rounded-xl border bg-card text-card-foreground shadow">
             <CardHeader className="flex flex-col gap-1 pb-1">
               <CardTitle className="font-extrabold text-xl text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
-                <AssessmentIcon className="w-6 h-6 text-emerald-600" />
+                <AssessmentIcon className="w-6 h-6 text-green-600" />
                 Internal NCAL Compliance
-                <Badge className="bg-emerald-600 text-white text-xs px-3 py-1 rounded-full w-fit font-semibold shadow-md">
+                <Badge className="bg-green-600 text-white text-xs px-3 py-1 rounded-full w-fit font-semibold shadow-md">
                   Target Focus
                 </Badge>
               </CardTitle>
-              <CardDescription className="text-sm text-muted-foreground">
+              <CardDescription className="text-sm text-gray-600 dark:text-gray-400">
                 Internal TS performance against NCAL targets
               </CardDescription>
             </CardHeader>
             <CardContent className="p-4">
               <div className="space-y-4">
                 <ChartContainer config={{
-                  compliant: { label: "Compliant", color: "var(--chart-2)" },
-                  exceeded: { label: "Exceeded", color: "var(--chart-1)" },
+                  compliant: { label: "Compliant", color: "#10b981" },
+                  exceeded: { label: "Exceeded", color: "#ef4444" },
                 }}>
                   <BarChart 
                     accessibilityLayer
@@ -1288,14 +1293,16 @@ const TSAnalytics: React.FC = () => {
                       };
                     })}
                   >
-                    <CartesianGrid vertical={false} />
+                    <CartesianGrid vertical={false} stroke="#e5e7eb" />
                     <XAxis 
                       dataKey="ncal" 
                       tickLine={false} 
                       tickMargin={10} 
                       axisLine={false}
+                      tick={{ fill: '#6b7280', fontSize: 12 }}
                       tickFormatter={(value) => value.slice(0, 3)}
                     />
+                    <YAxis tickLine={false} axisLine={false} tickMargin={8} tick={{ fill: '#6b7280', fontSize: 12 }} />
                     <ChartTooltip
                       cursor={false}
                       content={<ChartTooltipContent indicator="dashed" />}

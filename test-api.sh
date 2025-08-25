@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# AN-TIC Analytics Dashboard - API Testing Script
+# Helpdesk Management System - API Testing Script
 # This script tests all API endpoints and Redis functionality
 
 set -e
@@ -323,7 +323,7 @@ print_summary() {
     echo -e "${BLUE}📊 Total Tests: $total_tests${NC}"
     
     if [[ $TESTS_FAILED -eq 0 ]]; then
-        echo -e "\n${GREEN}🎉 All tests passed! Your AN-TIC backend is working correctly.${NC}"
+        echo -e "\n${GREEN}🎉 All tests passed! Your Helpdesk Management System backend is working correctly.${NC}"
         exit 0
     else
         echo -e "\n${RED}⚠️  Some tests failed. Please check the logs above.${NC}"
@@ -335,7 +335,7 @@ print_summary() {
 main() {
     echo -e "${BLUE}"
     echo "=================================================="
-    echo "     AN-TIC Analytics Dashboard API Tests"
+    echo "     Helpdesk Management System API Tests"
     echo "=================================================="
     echo -e "${NC}"
     

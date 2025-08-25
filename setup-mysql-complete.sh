@@ -1,9 +1,9 @@
 #!/bin/bash
 
-# Complete MySQL setup and migration script for AN-TIC Analytics Dashboard
+# Complete MySQL setup and migration script for Helpdesk Management System
 # This script will set up the database, run migrations, and start the services
 
-echo "🚀 AN-TIC Analytics Dashboard - Complete MySQL Setup"
+echo "🚀 Helpdesk Management System - Complete MySQL Setup"
 echo "=================================================="
 
 # Colors for output
@@ -92,4 +92,4 @@ echo "   - Password: admin123"
 echo ""
 echo "5. Go to Admin Panel to migrate data from IndexedDB to MySQL"
 echo ""
-print_success "🎉 AN-TIC Analytics Dashboard is ready!"
+print_success "🎉 Helpdesk Management System is ready!"

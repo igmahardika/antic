@@ -1,4 +1,4 @@
-# 🚀 AN-TIC Analytics Dashboard
+# 🚀 Helpdesk Management System
 
 > **Aplikasi dashboard analitik modern dengan Redis caching, MySQL database, dan JWT authentication**
 
@@ -8,7 +8,7 @@
 
 ## 📋 Overview
 
-AN-TIC adalah aplikasi dashboard analitik modern untuk monitoring performa agent, tiket, dan customer secara profesional. Dirancang dengan arsitektur fullstack yang scalable menggunakan:
+Helpdesk Management System adalah aplikasi dashboard analitik modern untuk monitoring performa agent, tiket, dan customer secara profesional. Dirancang dengan arsitektur fullstack yang scalable menggunakan:
 
 - **Frontend**: React + TypeScript + Tailwind CSS
 - **Backend**: Node.js + Express + MySQL + Redis

@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# AN-TIC Frontend Startup Script
-echo "🌐 Starting AN-TIC Frontend..."
+# Helpdesk Management System Frontend Startup Script
+echo "🌐 Starting Helpdesk Management System Frontend..."
 
 # Set environment variables to prevent Qt issues
 export QT_QPA_PLATFORM=offscreen

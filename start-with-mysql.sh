@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# AN-TIC Analytics Dashboard - MySQL Version Startup Script
-echo "🚀 Starting AN-TIC Analytics Dashboard with MySQL..."
+# Helpdesk Management System - MySQL Version Startup Script
+echo "🚀 Starting Helpdesk Management System with MySQL..."
 
 # Colors for output
 GREEN='\033[0;32m'
@@ -130,7 +130,7 @@ done
 
 # Display success message
 echo ""
-echo -e "${GREEN}🎉 AN-TIC Analytics Dashboard is now running!${NC}"
+echo -e "${GREEN}🎉 Helpdesk Management System is now running!${NC}"
 echo ""
 echo "📋 Application URLs:"
 echo -e "   ${BLUE}Frontend:${NC} http://localhost:5173"

@@ -31,7 +31,7 @@ import AdminRumus from './pages/AdminRumus';
 import MasterDataAgent from './components/MasterDataAgent';
 import CustomerData from './pages/CustomerData';
 import { IncidentData } from './pages/IncidentData';
-import { IncidentAnalytics } from './pages/IncidentAnalytics';
+import IncidentAnalytics from './pages/IncidentAnalytics';
 import TSAnalytics from './pages/TSAnalytics';
 import SiteAnalytics from './pages/SiteAnalytics';
 

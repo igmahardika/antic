@@ -1,92 +1,78 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '@/lib/db';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-
 import SummaryCard from '@/components/ui/SummaryCard';
 import { 
-  ChartConfig,
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart";
 import { 
-  BarChart, 
-  Bar, 
   XAxis, 
   YAxis, 
   CartesianGrid, 
-  PieChart,
-  Pie,
-  Cell,
-  Label,
-  LabelList,
   LineChart,
-  Line,
-  Legend
+  Line
 } from 'recharts';
-import { 
-  Filter,
-  MapPin,
-  Clock,
-  TrendingUp,
-  AlertTriangle,
-  Target
-} from 'lucide-react';
-
 import PageWrapper from '@/components/PageWrapper';
 
 // MUI Icons for consistency with project standards
-import BarChartIcon from '@mui/icons-material/BarChart';
-import PieChartIconMUI from '@mui/icons-material/PieChart';
-import ShowChartIcon from '@mui/icons-material/ShowChart';
-import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
-import ConfirmationNumberIcon from '@mui/icons-material/ConfirmationNumber';
-import HowToRegIcon from '@mui/icons-material/HowToReg';
-import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
-import AssignmentIcon from '@mui/icons-material/Assignment';
-import TrackChangesIcon from '@mui/icons-material/TrackChanges';
-import LabelIcon from '@mui/icons-material/Label';
-import MonitorIcon from '@mui/icons-material/Monitor';
-import BugReportIcon from '@mui/icons-material/BugReport';
-import SupportIcon from '@mui/icons-material/Support';
-import GroupIcon from '@mui/icons-material/Group';
-import SpeedIcon from '@mui/icons-material/Speed';
 import AssessmentIcon from '@mui/icons-material/Assessment';
-import AnalyticsIcon from '@mui/icons-material/Analytics';
+import SpeedIcon from '@mui/icons-material/Speed';
 import TimelineIcon from '@mui/icons-material/Timeline';
-import TrendingDownIcon from '@mui/icons-material/TrendingDown';
-import TrendingFlatIcon from '@mui/icons-material/TrendingFlat';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import CancelIcon from '@mui/icons-material/Cancel';
-import PendingIcon from '@mui/icons-material/Pending';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
+import FilterListIcon from '@mui/icons-material/FilterList';
+import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
+import TrackChangesIcon from '@mui/icons-material/TrackChanges';
 
 // NCAL Color mapping - using project standard colors
 const NCAL_COLORS = {
-  Blue: '#3b82f6',    // blue-500
-  Yellow: '#eab308',  // yellow-500
-  Orange: '#f97316',  // orange-500
-  Red: '#ef4444',     // red-500
-  Black: '#1f2937'    // gray-800
+  Blue: '#3b82f6',
+  Yellow: '#eab308',
+  Orange: '#f97316',
+  Red: '#ef4444',
+  Black: '#1f2937'
 };
 
-// NCAL Target durations in minutes
 const NCAL_TARGETS = {
-  Blue: 6 * 60,    // 6:00:00
-  Yellow: 5 * 60,  // 5:00:00
-  Orange: 4 * 60,  // 4:00:00
-  Red: 3 * 60,     // 3:00:00
-  Black: 1 * 60    // 1:00:00
+  Blue: 360,    // 6:00:00
+  Yellow: 300,  // 5:00:00
+  Orange: 240,  // 4:00:00
+  Red: 180,     // 3:00:00
+  Black: 60     // 1:00:00
 };
 
 const NCAL_ORDER = ['Blue', 'Yellow', 'Orange', 'Red', 'Black'];
 
-export const SiteAnalytics: React.FC = () => {
+// Helper functions
+const formatDurationHMS = (minutes: number): string => {
+  if (!minutes || minutes <= 0) return '0:00:00';
+  const hrs = Math.floor(minutes / 60);
+  const mins = Math.floor(minutes % 60);
+  const secs = Math.floor((minutes % 1) * 60);
+  return `${hrs}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+};
+
+const normalizeNCAL = (ncal: string | null | undefined): string => {
+  if (!ncal) return 'Unknown';
+  const value = ncal.toString().trim().toLowerCase();
+  switch (value) {
+    case 'blue': return 'Blue';
+    case 'yellow': return 'Yellow';
+    case 'orange': return 'Orange';
+    case 'red': return 'Red';
+    case 'black': return 'Black';
+    default: return ncal.trim();
+  }
+};
+
+const SiteAnalytics: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [selectedPeriod, setSelectedPeriod] = useState<'3m' | '6m' | '1y' | 'all'>('6m');
 
@@ -95,262 +81,219 @@ export const SiteAnalytics: React.FC = () => {
     db.incidents.toArray()
   );
 
-  // Helper function to normalize NCAL values
-  const normalizeNCAL = (ncal: string | null | undefined): string => {
-    if (!ncal) return 'Unknown';
-    const normalized = ncal.trim().toLowerCase();
-    switch (normalized) {
-      case 'blue': return 'Blue';
-      case 'yellow': return 'Yellow';
-      case 'orange': return 'Orange';
-      case 'red': return 'Red';
-      case 'black': return 'Black';
-      default: return ncal.trim();
-    }
-  };
-
-  // Helper function to format duration
-  const formatDurationHMS = (minutes: number): string => {
-    if (!minutes || minutes <= 0) return '0:00:00';
-    const hours = Math.floor(minutes / 60);
-    const mins = Math.floor(minutes % 60);
-    const secs = Math.floor((minutes % 1) * 60);
-    return `${hours}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-  };
-
-  // Filter incidents by selected period
+  // Filter incidents by period
   const filteredIncidents = useMemo(() => {
     if (!allIncidents) return [];
-    
     const now = new Date();
-    let cutoffDate: Date;
-    
+    let cutoff: Date;
     switch (selectedPeriod) {
       case '3m':
-        cutoffDate = new Date(now.getFullYear(), now.getMonth() - 3, now.getDate());
+        cutoff = new Date(now.getFullYear(), now.getMonth() - 3, now.getDate());
         break;
       case '6m':
-        cutoffDate = new Date(now.getFullYear(), now.getMonth() - 6, now.getDate());
+        cutoff = new Date(now.getFullYear(), now.getMonth() - 6, now.getDate());
         break;
       case '1y':
-        cutoffDate = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate());
+        cutoff = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate());
         break;
       default:
         return allIncidents;
     }
-    
-    return allIncidents.filter(incident => {
-      if (!incident.startTime) return false;
-      const incidentDate = new Date(incident.startTime);
-      return incidentDate >= cutoffDate;
+    return allIncidents.filter((inc) => {
+      if (!inc.startTime) return false;
+      const date = new Date(inc.startTime);
+      return date >= cutoff;
     });
   }, [allIncidents, selectedPeriod]);
 
-  // Define incidentsWithSite outside useMemo so it can be used in the component
-  const incidentsWithSite = useMemo(() => {
-    return filteredIncidents.filter(i => i.site);
-  }, [filteredIncidents]);
-
-  // Calculate Site-focused statistics
+  // Calculate site statistics
   const siteStats = useMemo(() => {
     if (!filteredIncidents || filteredIncidents.length === 0) {
       return {
         totalSites: 0,
         uniqueSites: 0,
         avgSiteDuration: 0,
-        avgSiteRecovery: 0,
         siteReliability: 0,
+        avgSiteRecovery: 0,
         bySite: {},
-        bySiteDuration: {},
-        bySiteNCAL: {},
-        bySiteMonth: {},
-        sitePerformance: {},
-        siteRiskScore: {},
         topAffectedSites: [],
-        siteProblemAnalysis: {}
+        siteRiskScore: {},
+        sitePerformance: [],
+        siteTrends: [],
+        ncalBySite: {},
+        ncalPerformance: []
       };
     }
 
-    const resolvedIncidents = filteredIncidents.filter(i => i.endTime);
-
-    // Site Performance Analysis
-    const bySite = incidentsWithSite.reduce((acc, incident) => {
-      const site = incident.site || 'Unknown';
-      if (!acc[site]) {
-        acc[site] = {
-          count: 0,
-          totalDuration: 0,
-          avgDuration: 0,
-          resolved: 0,
-          byNCAL: {},
-          byPriority: {},
-          byProblem: {},
-          totalRecoveryTime: 0,
-          avgRecoveryTime: 0
-        };
-      }
-      acc[site].count += 1;
-      
-      if (incident.durationMin && incident.durationMin > 0) {
-        acc[site].totalDuration += incident.durationMin;
-      }
-      
-      if (incident.endTime) {
-        acc[site].resolved += 1;
-      }
-
-      // NCAL breakdown
-      const ncal = normalizeNCAL(incident.ncal);
-      acc[site].byNCAL[ncal] = (acc[site].byNCAL[ncal] || 0) + 1;
-
-      // Priority breakdown
-      const priority = incident.priority || 'Unknown';
-      acc[site].byPriority[priority] = (acc[site].byPriority[priority] || 0) + 1;
-
-      // Problem breakdown
-      const problem = incident.problem || 'Unknown';
-      acc[site].byProblem[problem] = (acc[site].byProblem[problem] || 0) + 1;
-
-      return acc;
-    }, {} as Record<string, any>);
-
-    // Calculate averages and recovery times
-    Object.keys(bySite).forEach(site => {
-      if (bySite[site].count > 0) {
-        bySite[site].avgDuration = bySite[site].totalDuration / bySite[site].count;
-        bySite[site].resolutionRate = (bySite[site].resolved / bySite[site].count) * 100;
-      }
+    // Group incidents by site
+    const siteGroups: Record<string, any[]> = {};
+    filteredIncidents.forEach(inc => {
+      const site = inc.site || 'Unknown Site';
+      if (!siteGroups[site]) siteGroups[site] = [];
+      siteGroups[site].push(inc);
     });
 
-    // Site Duration Analysis
-    const bySiteDuration = incidentsWithSite.reduce((acc, incident) => {
-      const site = incident.site || 'Unknown';
-      if (!acc[site]) {
-        acc[site] = { total: 0, count: 0, avg: 0, max: 0, min: Infinity };
-      }
-      const duration = incident.durationMin || 0;
-      acc[site].total += duration;
-      acc[site].count += 1;
-      acc[site].max = Math.max(acc[site].max, duration);
-      acc[site].min = Math.min(acc[site].min, duration);
-      return acc;
-    }, {} as Record<string, { total: number; count: number; avg: number; max: number; min: number }>);
+    // Calculate site statistics
+    const bySite: Record<string, any> = {};
+    const sites = Object.keys(siteGroups);
+    
+    sites.forEach(site => {
+      const incidents = siteGroups[site];
+      const totalIncidents = incidents.length;
+      const resolvedIncidents = incidents.filter(inc => 
+        (inc.status || '').toLowerCase() === 'done'
+      ).length;
+      
+      const durations = incidents
+        .map(inc => inc.durationMin || 0)
+        .filter(dur => dur > 0);
+      
+      const avgDuration = durations.length > 0 
+        ? durations.reduce((a, b) => a + b, 0) / durations.length 
+        : 0;
+      
+      const resolutionRate = totalIncidents > 0 
+        ? (resolvedIncidents / totalIncidents) * 100 
+        : 0;
 
-    // Calculate averages
-    Object.keys(bySiteDuration).forEach(site => {
-      if (bySiteDuration[site].count > 0) {
-        bySiteDuration[site].avg = bySiteDuration[site].total / bySiteDuration[site].count;
-      }
+      // Calculate risk score based on frequency and duration
+      const frequencyScore = totalIncidents * 10;
+      const durationScore = avgDuration > 240 ? 50 : avgDuration > 120 ? 30 : 10;
+      const riskScore = frequencyScore + durationScore;
+      
+      let riskLevel = 'Low';
+      if (riskScore > 100) riskLevel = 'High';
+      else if (riskScore > 50) riskLevel = 'Medium';
+
+      bySite[site] = {
+        count: totalIncidents,
+        resolved: resolvedIncidents,
+        avgDuration,
+        resolutionRate,
+        riskScore,
+        level: riskLevel
+      };
     });
 
-    // Site by NCAL
-    const bySiteNCAL = incidentsWithSite.reduce((acc, incident) => {
-      const site = incident.site || 'Unknown';
-      const ncal = normalizeNCAL(incident.ncal);
-      
-      if (!acc[site]) acc[site] = {};
-      if (!acc[site][ncal]) acc[site][ncal] = 0;
-      acc[site][ncal] += 1;
-      return acc;
-    }, {} as Record<string, Record<string, number>>);
-
-    // Site by Month
-    const bySiteMonth = incidentsWithSite.reduce((acc, incident) => {
-      if (!incident.startTime) return acc;
-      const date = new Date(incident.startTime);
-      const monthKey = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`;
-      const site = incident.site || 'Unknown';
-      
-      if (!acc[monthKey]) acc[monthKey] = {};
-      acc[monthKey][site] = (acc[monthKey][site] || 0) + 1;
-      return acc;
-    }, {} as Record<string, Record<string, number>>);
-
-    // Site Performance Ranking
-    const sitePerformance = Object.entries(bySite)
-      .map(([site, data]) => ({
-        site,
-        count: data.count,
-        avgDuration: data.avgDuration,
-        resolutionRate: data.resolutionRate,
-        riskScore: data.count * (data.avgDuration / 60) // Risk score based on frequency and duration
-      }))
-      .sort((a, b) => b.count - a.count)
-      .slice(0, 15);
-
-    // Top Affected Sites
+    // Top affected sites
     const topAffectedSites = Object.entries(bySite)
-      .sort((a, b) => b[1].count - a[1].count)
-      .slice(0, 10)
       .map(([site, data]) => ({
         site,
         count: data.count,
         avgDuration: data.avgDuration,
         resolutionRate: data.resolutionRate
-      }));
+      }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 10);
 
-    // Site Problem Analysis
-    const siteProblemAnalysis = incidentsWithSite.reduce((acc, incident) => {
-      const site = incident.site || 'Unknown';
-      const problem = incident.problem || 'Unknown';
-      
-      if (!acc[site]) acc[site] = {};
-      if (!acc[site][problem]) acc[site][problem] = 0;
-      acc[site][problem] += 1;
-      return acc;
-    }, {} as Record<string, Record<string, number>>);
+    // Site risk assessment
+    const siteRiskScore = Object.entries(bySite)
+      .map(([site, data]) => ({
+        site,
+        riskScore: data.riskScore,
+        level: data.level
+      }))
+      .sort((a, b) => b.riskScore - a.riskScore)
+      .slice(0, 10)
+      .reduce((acc, item) => {
+        acc[item.site] = item;
+        return acc;
+      }, {} as Record<string, any>);
 
-    // Site Risk Score
-    const siteRiskScore = Object.entries(bySite).reduce((acc, [site, data]) => {
-      const frequencyScore = data.count / Math.max(...Object.values(bySite).map((d: any) => d.count));
-      const durationScore = data.avgDuration / Math.max(...Object.values(bySite).map((d: any) => d.avgDuration));
-      const riskScore = (frequencyScore * 0.6 + durationScore * 0.4) * 100;
+    // NCAL analysis by site
+    const ncalBySite: Record<string, Record<string, number>> = {};
+    sites.forEach(site => {
+      const incidents = siteGroups[site];
+      const ncalCounts: Record<string, number> = {};
       
-      acc[site] = {
-        riskScore: Math.min(riskScore, 100),
-        frequencyScore: frequencyScore * 100,
-        durationScore: durationScore * 100,
-        level: riskScore > 80 ? 'High' : riskScore > 50 ? 'Medium' : 'Low'
+      incidents.forEach(inc => {
+        const ncal = normalizeNCAL(inc.ncal);
+        ncalCounts[ncal] = (ncalCounts[ncal] || 0) + 1;
+      });
+      
+      ncalBySite[site] = ncalCounts;
+    });
+
+    // NCAL performance analysis
+    const ncalPerformance = NCAL_ORDER.map(ncal => {
+      const ncalIncidents = filteredIncidents.filter(inc => 
+        normalizeNCAL(inc.ncal) === ncal
+      );
+      
+      const durations = ncalIncidents
+        .map(inc => inc.durationMin || 0)
+        .filter(dur => dur > 0);
+      
+      const avgDuration = durations.length > 0 
+        ? durations.reduce((a, b) => a + b, 0) / durations.length 
+        : 0;
+      
+      const target = NCAL_TARGETS[ncal as keyof typeof NCAL_TARGETS] || 0;
+      const compliance = target > 0 ? Math.max(0, ((target - avgDuration) / target) * 100) : 0;
+
+      return {
+        ncal,
+        count: ncalIncidents.length,
+        avgDuration,
+        target,
+        compliance
       };
-      return acc;
-    }, {} as Record<string, any>);
+    });
 
-    const avgSiteDuration = incidentsWithSite.length > 0
-      ? incidentsWithSite.reduce((sum, i) => sum + (i.durationMin || 0), 0) / incidentsWithSite.length
+    // Site trends by month
+    const siteTrends = [];
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    
+    for (let i = 0; i < 12; i++) {
+      const monthIncidents = filteredIncidents.filter(inc => {
+        if (!inc.startTime) return false;
+        const date = new Date(inc.startTime);
+        return date.getMonth() === i;
+      });
+      
+      const uniqueSites = new Set(monthIncidents.map(inc => inc.site || 'Unknown')).size;
+      
+      siteTrends.push({
+        month: months[i],
+        incidents: monthIncidents.length,
+        uniqueSites
+      });
+    }
+
+    // Overall statistics
+    const totalSites = sites.length;
+    const uniqueSites = new Set(filteredIncidents.map(inc => inc.site || 'Unknown')).size;
+    const allDurations = filteredIncidents
+      .map(inc => inc.durationMin || 0)
+      .filter(dur => dur > 0);
+    const avgSiteDuration = allDurations.length > 0 
+      ? allDurations.reduce((a, b) => a + b, 0) / allDurations.length 
       : 0;
-
-    const siteReliability = incidentsWithSite.length > 0
-      ? (resolvedIncidents.length / incidentsWithSite.length) * 100
+    
+    const totalResolved = filteredIncidents.filter(inc => 
+      (inc.status || '').toLowerCase() === 'done'
+    ).length;
+    const siteReliability = filteredIncidents.length > 0 
+      ? (totalResolved / filteredIncidents.length) * 100 
       : 0;
 
     return {
-      totalSites: incidentsWithSite.length,
-      uniqueSites: Object.keys(bySite).length,
+      totalSites,
+      uniqueSites,
       avgSiteDuration,
-      avgSiteRecovery: avgSiteDuration,
       siteReliability,
+      avgSiteRecovery: avgSiteDuration,
       bySite,
-      bySiteDuration,
-      bySiteNCAL,
-      bySiteMonth,
-      sitePerformance,
-      siteRiskScore,
       topAffectedSites,
-      siteProblemAnalysis
+      siteRiskScore,
+      sitePerformance: topAffectedSites,
+      siteTrends,
+      ncalBySite,
+      ncalPerformance
     };
   }, [filteredIncidents]);
 
   // Prepare chart data
-  const sitePerformanceData = Array.isArray(siteStats.sitePerformance) ? siteStats.sitePerformance.map((site, index) => ({
-    name: site.site,
-    count: site.count,
-    avgDuration: site.avgDuration,
-    resolutionRate: site.resolutionRate,
-    riskScore: site.riskScore,
-    rank: index + 1,
-    fill: index < 3 ? '#ef4444' : index < 7 ? '#f97316' : '#eab308'
-  })) : [];
-
   const topAffectedSitesData = Array.isArray(siteStats.topAffectedSites) ? siteStats.topAffectedSites.map((site, index) => ({
     name: site.site,
     count: site.count,
@@ -359,15 +302,22 @@ export const SiteAnalytics: React.FC = () => {
     rank: index + 1
   })) : [];
 
-  const siteReliabilityData = Object.entries(siteStats.bySite || {})
-    .map(([site, data]) => ({
-      name: site,
-      reliability: data.resolutionRate,
-      count: data.count,
-      avgDuration: data.avgDuration
-    }))
-    .sort((a, b) => b.reliability - a.reliability)
-    .slice(0, 10);
+
+
+  const ncalPerformanceData = siteStats.ncalPerformance.map(item => ({
+    name: item.ncal,
+    count: item.count,
+    avgDuration: item.avgDuration,
+    target: item.target,
+    compliance: item.compliance,
+    fill: NCAL_COLORS[item.ncal as keyof typeof NCAL_COLORS] || '#6b7280'
+  }));
+
+  const siteTrendData = siteStats.siteTrends.map(item => ({
+    month: item.month,
+    incidents: item.incidents,
+    uniqueSites: item.uniqueSites
+  }));
 
   useEffect(() => {
     setIsLoading(false);
@@ -397,7 +347,7 @@ export const SiteAnalytics: React.FC = () => {
           
           {/* Period Filter */}
           <div className="flex items-center gap-2">
-            <Filter className="w-4 h-4 text-gray-500" />
+            <FilterListIcon className="w-4 h-4 text-gray-600 dark:text-gray-400" />
             <div className="flex bg-white/80 dark:bg-zinc-900/80 rounded-2xl shadow-lg border border-gray-200 dark:border-zinc-800 p-1">
               {[
                 { key: '3m', label: '3M' },
@@ -410,7 +360,11 @@ export const SiteAnalytics: React.FC = () => {
                   variant={selectedPeriod === key ? 'default' : 'ghost'}
                   size="sm"
                   onClick={() => setSelectedPeriod(key as any)}
-                  className="text-xs rounded-xl"
+                  className={`text-xs rounded-xl ${
+                    selectedPeriod === key 
+                      ? 'bg-blue-600 hover:bg-blue-700 text-white' 
+                      : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-zinc-800'
+                  }`}
                 >
                   {label}
                 </Button>
@@ -446,7 +400,7 @@ export const SiteAnalytics: React.FC = () => {
           />
 
           <SummaryCard
-            icon={<AlertTriangle className="w-7 h-7 text-white" />}
+            icon={<ErrorOutlineIcon className="w-7 h-7 text-white" />}
             title="High Risk Sites"
             value={Object.values(siteStats.siteRiskScore).filter((site: any) => site.level === 'High').length}
             description="Sites with high risk score"
@@ -454,428 +408,478 @@ export const SiteAnalytics: React.FC = () => {
           />
         </div>
 
-        {/* Site Performance Dashboard */}
+        {/* Top Affected Sites & Site Risk Assessment */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Top Affected Sites */}
-          <Card className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <AlertTriangle className="w-5 h-5" />
+          <Card className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg border border-gray-200 dark:border-zinc-800">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-gray-100">
+                <ErrorOutlineIcon className="w-5 h-5 text-red-600" />
                 Top Affected Sites
               </CardTitle>
-              <CardDescription>Most frequently affected sites</CardDescription>
+                          <CardDescription className="text-gray-600 dark:text-gray-400">
+              Sites ranked by incident frequency, resolution time, and impact severity
+            </CardDescription>
+            <div className="mt-2 p-3 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800">
+              <div className="text-xs font-medium text-red-800 dark:text-red-200 mb-1">Ranking Criteria:</div>
+              <div className="text-xs text-red-700 dark:text-red-300">
+                <strong>Primary: Incident Count</strong> • <strong>Secondary: Resolution Time</strong> • <strong>Tertiary: Resolution Rate</strong><br/>
+                <span className="text-red-600 dark:text-red-400">
+                  • 🔴 Top 3: Critical sites • 🟡 Rank 4-5: High priority • 🟢 Rank 6-8: Monitor
+                </span>
+              </div>
+            </div>
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                {topAffectedSitesData.length > 0 ? topAffectedSitesData.map((site, index) => (
-                  <div key={site.name} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-zinc-800 rounded-lg border border-gray-200 dark:border-zinc-700">
-                    <div className="flex items-center gap-3">
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold ${
-                        index < 3 ? 'bg-red-500' : index < 7 ? 'bg-orange-500' : 'bg-yellow-500'
-                      }`}>
-                        {index + 1}
+                {topAffectedSitesData.length > 0 ? topAffectedSitesData.slice(0, 8).map((site, index) => (
+                  <div key={site.name} className="p-4 bg-gray-50 dark:bg-zinc-800 rounded-xl border border-gray-200 dark:border-zinc-700 shadow-sm">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-3 min-w-0 flex-1">
+                        <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold text-white ${
+                          index < 3 ? 'bg-red-500' : index < 5 ? 'bg-orange-500' : 'bg-yellow-500'
+                        }`}>
+                          {index + 1}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="font-semibold text-gray-900 dark:text-gray-100 truncate text-base">
+                            {site.name}
+                          </div>
+                          <div className="text-sm text-gray-600 dark:text-gray-400">
+                            {site.count} incidents • {formatDurationHMS(site.avgDuration)} avg resolution
+                          </div>
+                        </div>
                       </div>
-                      <div className="flex-1">
-                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                          {site.name}
-                        </span>
-                        <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                          {site.count} incidents • {formatDurationHMS(site.avgDuration)} avg
+                      <div className="flex-shrink-0 text-right">
+                        <div className="text-2xl font-bold text-red-600">
+                          {site.count}
+                        </div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400">Total Incidents</div>
+                      </div>
+                    </div>
+                    
+                    {/* Detailed Metrics */}
+                    <div className="grid grid-cols-3 gap-3 pt-3 border-t border-gray-200 dark:border-gray-600">
+                      <div className="text-center">
+                        <div className="text-lg font-bold text-blue-600">
+                          {site.count}
+                        </div>
+                        <div className="text-xs text-gray-600 dark:text-gray-400">Incident Count</div>
+                        <div className="text-xs text-blue-600 font-medium">
+                          {((site.count / siteStats.totalSites) * 100).toFixed(1)}% of total
+                        </div>
+                      </div>
+                      
+                      <div className="text-center">
+                        <div className="text-lg font-bold text-orange-600">
+                          {formatDurationHMS(site.avgDuration)}
+                        </div>
+                        <div className="text-xs text-gray-600 dark:text-gray-400">Avg Resolution</div>
+                        <div className="text-xs text-orange-600 font-medium">
+                          {site.avgDuration > siteStats.avgSiteRecovery ? 'Above avg' : 'Below avg'}
+                        </div>
+                      </div>
+                      
+                      <div className="text-center">
+                        <div className="text-lg font-bold text-green-600">
+                          {site.resolutionRate.toFixed(1)}%
+                        </div>
+                        <div className="text-xs text-gray-600 dark:text-gray-400">Resolution Rate</div>
+                        <div className="text-xs text-green-600 font-medium">
+                          {site.resolutionRate === 100 ? 'All resolved' : 'Some pending'}
                         </div>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <Badge variant="secondary" className="bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200">
-                        {site.count}
-                      </Badge>
-                      <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                        {site.resolutionRate.toFixed(1)}% resolved
+                    
+                    {/* Impact Assessment */}
+                    <div className="mt-3 p-2 bg-gray-100 dark:bg-gray-700 rounded-lg">
+                      <div className="text-xs text-gray-600 dark:text-gray-400 mb-1">Impact Assessment:</div>
+                      <div className="text-xs text-gray-700 dark:text-gray-300">
+                        {site.count >= 6 ? '🔴 High Impact' : site.count >= 4 ? '🟡 Medium Impact' : '🟢 Low Impact'} • 
+                        {site.avgDuration > 1440 ? ' Long resolution time' : site.avgDuration > 720 ? ' Moderate resolution time' : ' Quick resolution'} • 
+                        {site.resolutionRate === 100 ? ' Fully resolved' : ' Has pending cases'}
                       </div>
                     </div>
                   </div>
                 )) : (
-                  <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-                    No site data available
+                  <div className="text-center py-6 text-gray-500 dark:text-gray-400">
+                    No site data available for the selected period
                   </div>
                 )}
               </div>
             </CardContent>
           </Card>
 
-          {/* Site Reliability Analysis */}
-          <Card className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <CheckCircleIcon className="w-5 h-5" />
-                Site Reliability Analysis
-              </CardTitle>
-              <CardDescription>Most reliable sites by resolution rate</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {siteReliabilityData.length > 0 ? siteReliabilityData.map((site, index) => (
-                  <div key={site.name} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-zinc-800 rounded-lg border border-gray-200 dark:border-zinc-700">
-                    <div className="flex items-center gap-3">
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold ${
-                        index < 3 ? 'bg-green-500' : index < 7 ? 'bg-blue-500' : 'bg-gray-500'
-                      }`}>
-                        {index + 1}
-                      </div>
-                      <div className="flex-1">
-                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                          {site.name}
-                        </span>
-                        <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                          {site.count} incidents handled
-                        </div>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-sm font-bold text-green-600">
-                        {site.reliability.toFixed(1)}%
-                      </div>
-                      <div className="text-xs text-gray-500 dark:text-gray-400">
-                        reliability
-                      </div>
-                    </div>
-                  </div>
-                )) : (
-                  <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-                    No reliability data available
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Site Risk Assessment */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Site Risk Score */}
-          <Card className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <WarningAmberIcon className="w-5 h-5" />
+          {/* Site Risk Assessment */}
+          <Card className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg border border-gray-200 dark:border-zinc-800">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-gray-100">
+                <WarningAmberIcon className="w-5 h-5 text-amber-600" />
                 Site Risk Assessment
               </CardTitle>
-              <CardDescription>Risk score based on frequency and duration</CardDescription>
+                          <CardDescription className="text-gray-600 dark:text-gray-400">
+              Risk score calculated from incident frequency, duration, and resolution patterns
+            </CardDescription>
+            <div className="mt-2 p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800">
+              <div className="text-xs font-medium text-amber-800 dark:text-amber-200 mb-1">Risk Score Formula:</div>
+              <div className="text-xs text-amber-700 dark:text-amber-300">
+                <strong>Risk Score = (Incident Count × 10) + (Avg Duration in hours × 2) + (100 - Resolution Rate)</strong><br/>
+                <span className="text-amber-600 dark:text-amber-400">
+                  • High Risk: Score ≥ 100 • Medium Risk: Score 50-99 • Low Risk: Score &lt; 50
+                </span>
+              </div>
+            </div>
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
                 {Object.keys(siteStats.siteRiskScore || {}).length > 0 ? Object.entries(siteStats.siteRiskScore || {})
-                  .sort((a, b) => b[1].riskScore - a[1].riskScore)
-                  .slice(0, 10)
-                  .map(([site, data], index) => (
-                    <div key={site} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-zinc-800 rounded-lg border border-gray-200 dark:border-zinc-700">
-                      <div className="flex items-center gap-3">
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold ${
-                          data.level === 'High' ? 'bg-red-500' : data.level === 'Medium' ? 'bg-yellow-500' : 'bg-green-500'
-                        }`}>
-                          {index + 1}
+                  .sort((a, b) => (b[1] as any).riskScore - (a[1] as any).riskScore)
+                  .slice(0, 8)
+                  .map(([site, data], index) => {
+                    const siteData = data as any;
+                    return (
+                      <div key={site} className="p-4 bg-gray-50 dark:bg-zinc-800 rounded-xl border border-gray-200 dark:border-zinc-700 shadow-sm">
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex items-center gap-3 min-w-0 flex-1">
+                            <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold text-white ${
+                              siteData.level === 'High' ? 'bg-red-500' : siteData.level === 'Medium' ? 'bg-yellow-500' : 'bg-green-500'
+                            }`}>
+                              {index + 1}
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <div className="font-semibold text-gray-900 dark:text-gray-100 truncate text-base">
+                                {site}
+                              </div>
+                              <div className="text-sm text-gray-600 dark:text-gray-400">
+                                {siteData.level} Risk Level
+                              </div>
+                            </div>
+                          </div>
+                          <div className="flex-shrink-0 text-right">
+                            <div className={`text-2xl font-bold ${
+                              siteData.level === 'High' ? 'text-red-600' : siteData.level === 'Medium' ? 'text-yellow-600' : 'text-green-600'
+                            }`}>
+                              {siteData.riskScore.toFixed(1)}
+                            </div>
+                            <div className="text-xs text-gray-500 dark:text-gray-400">Risk Score</div>
+                          </div>
                         </div>
-                        <div className="flex-1">
-                          <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                            {site}
-                          </span>
-                          <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                            {data.level} Risk Level
+                        
+                        {/* Risk Factors Breakdown */}
+                        <div className="grid grid-cols-3 gap-3 pt-3 border-t border-gray-200 dark:border-gray-600">
+                          <div className="text-center">
+                            <div className="text-lg font-bold text-purple-600">
+                              {siteData.count || 0}
+                            </div>
+                            <div className="text-xs text-gray-600 dark:text-gray-400">Incident Count</div>
+                            <div className="text-xs text-purple-600 font-medium">
+                              Frequency Factor
+                            </div>
+                          </div>
+                          
+                          <div className="text-center">
+                            <div className="text-lg font-bold text-orange-600">
+                              {formatDurationHMS(siteData.avgDuration || 0)}
+                            </div>
+                            <div className="text-xs text-gray-600 dark:text-gray-400">Avg Duration</div>
+                            <div className="text-xs text-orange-600 font-medium">
+                              Duration Factor
+                            </div>
+                          </div>
+                          
+                          <div className="text-center">
+                            <div className="text-lg font-bold text-blue-600">
+                              {siteData.resolutionRate ? siteData.resolutionRate.toFixed(1) : '0'}%
+                            </div>
+                            <div className="text-xs text-gray-600 dark:text-gray-400">Resolution Rate</div>
+                            <div className="text-xs text-blue-600 font-medium">
+                              Resolution Factor
+                            </div>
+                          </div>
+                        </div>
+                        
+                        {/* Risk Calculation Explanation */}
+                        <div className="mt-3 p-2 bg-gray-100 dark:bg-gray-700 rounded-lg">
+                          <div className="text-xs text-gray-600 dark:text-gray-400 mb-1">Risk Calculation:</div>
+                          <div className="text-xs text-gray-700 dark:text-gray-300">
+                            {siteData.level === 'High' ? '🔴 High Risk' : siteData.level === 'Medium' ? '🟡 Medium Risk' : '🟢 Low Risk'} • 
+                            Score: {siteData.riskScore.toFixed(1)} • 
+                            {siteData.level === 'High' ? ' Requires immediate attention' : siteData.level === 'Medium' ? ' Monitor closely' : ' Low priority'} • 
+                            {siteData.count >= 5 ? ' High frequency' : siteData.count >= 3 ? ' Moderate frequency' : ' Low frequency'} incidents
                           </div>
                         </div>
                       </div>
-                      <div className="text-right">
-                        <div className={`text-sm font-bold ${
-                          data.level === 'High' ? 'text-red-600' : data.level === 'Medium' ? 'text-yellow-600' : 'text-green-600'
-                        }`}>
-                          {data.riskScore.toFixed(1)}
-                        </div>
-                        <div className="text-xs text-gray-500 dark:text-gray-400">
-                          risk score
-                        </div>
-                      </div>
-                    </div>
-                  )) : (
-                    <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                    );
+                  }) : (
+                    <div className="text-center py-6 text-gray-500 dark:text-gray-400">
                       No risk assessment data available
                     </div>
                   )}
               </div>
             </CardContent>
           </Card>
+        </div>
 
-          {/* Site Performance Metrics */}
-          <Card className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <AssessmentIcon className="w-5 h-5" />
-                Site Performance Metrics
-              </CardTitle>
-              <CardDescription>Key performance indicators for sites</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="text-center p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
-                    <div className="text-xl font-bold text-green-600">
-                      {siteStats.siteReliability.toFixed(1)}%
-                    </div>
-                    <div className="text-xs text-gray-600 dark:text-gray-400">Reliability Rate</div>
-                  </div>
-                  <div className="text-center p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                    <div className="text-xl font-bold text-blue-600">
-                      {siteStats.uniqueSites}
-                    </div>
-                    <div className="text-xs text-gray-600 dark:text-gray-400">Unique Sites</div>
-                  </div>
+        {/* Site Performance Overview */}
+        <Card className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg border border-gray-200 dark:border-zinc-800">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-gray-100">
+              <AssessmentIcon className="w-5 h-5 text-indigo-600" />
+              Site Performance Overview
+            </CardTitle>
+            <CardDescription className="text-gray-600 dark:text-gray-400">Comprehensive site reliability and performance metrics</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {/* Reliability Rate */}
+              <div className="text-center p-4 bg-green-50 dark:bg-green-900/20 rounded-xl border border-green-200 dark:border-green-800 shadow-sm">
+                <CheckCircleIcon className="w-6 h-6 text-green-600 mx-auto mb-2" />
+                <div className="text-2xl font-bold text-green-600">
+                  {siteStats.siteReliability.toFixed(1)}%
                 </div>
+                <div className="text-sm text-gray-600 dark:text-gray-400">Reliability Rate</div>
+                <div className="text-xs text-green-600 mt-1">Resolution Success</div>
+              </div>
+
+              {/* Unique Sites */}
+              <div className="text-center p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-200 dark:border-blue-800 shadow-sm">
+                <LocationOnIcon className="w-6 h-6 text-blue-600 mx-auto mb-2" />
+                <div className="text-2xl font-bold text-blue-600">
+                  {siteStats.uniqueSites}
+                </div>
+                <div className="text-sm text-gray-600 dark:text-gray-400">Unique Sites</div>
+                <div className="text-xs text-blue-600 mt-1">Affected Locations</div>
+              </div>
+
+              {/* Recovery Time */}
+              <div className="text-center p-4 bg-orange-50 dark:bg-orange-900/20 rounded-xl border border-orange-200 dark:border-orange-800 shadow-sm">
+                <AccessTimeIcon className="w-6 h-6 text-orange-600 mx-auto mb-2" />
+                <div className="text-lg font-bold text-orange-600">
+                  {formatDurationHMS(siteStats.avgSiteRecovery)}
+                </div>
+                <div className="text-sm text-gray-600 dark:text-gray-400">Avg Recovery</div>
+                <div className="text-xs text-orange-600 mt-1">Time per Site</div>
+              </div>
+
+              {/* Risk Assessment */}
+              <div className="text-center p-4 bg-red-50 dark:bg-red-900/20 rounded-xl border border-red-200 dark:border-red-800 shadow-sm">
+                <WarningAmberIcon className="w-6 h-6 text-red-600 mx-auto mb-2" />
+                <div className="text-2xl font-bold text-red-600">
+                  {Object.values(siteStats.siteRiskScore).filter((site: any) => site.level === 'High').length}
+                </div>
+                <div className="text-sm text-gray-600 dark:text-gray-400">High Risk Sites</div>
+                <div className="text-xs text-red-600 mt-1">Requires Attention</div>
+              </div>
+            </div>
+
+            {/* Additional Metrics */}
+            <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+              <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
+                  <span className="text-sm text-gray-600 dark:text-gray-400">Total Incidents:</span>
+                </div>
+                <span className="font-semibold text-gray-900 dark:text-gray-100">{siteStats.totalSites}</span>
+              </div>
+              
+              <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
+                  <span className="text-sm text-gray-600 dark:text-gray-400">Medium Risk:</span>
+                </div>
+                <span className="font-semibold text-yellow-600">
+                  {Object.values(siteStats.siteRiskScore).filter((site: any) => site.level === 'Medium').length}
+                </span>
+              </div>
+              
+              <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                  <span className="text-sm text-gray-600 dark:text-gray-400">Low Risk:</span>
+                </div>
+                <span className="font-semibold text-green-600">
+                  {Object.values(siteStats.siteRiskScore).filter((site: any) => site.level === 'Low').length}
+                </span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* NCAL Performance & Compliance Analysis */}
+        <Card className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg border border-gray-200 dark:border-zinc-800">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-gray-100">
+              <TrackChangesIcon className="w-5 h-5 text-purple-600" />
+              NCAL Performance & Compliance Analysis
+            </CardTitle>
+            <CardDescription className="text-gray-600 dark:text-gray-400">Comprehensive NCAL target compliance and performance metrics by severity levels</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {/* Summary Stats */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+              <div className="text-center p-3 bg-green-50 dark:bg-green-900/20 rounded-xl border border-green-200 dark:border-green-800 shadow-sm">
+                <div className="text-lg font-bold text-green-600">
+                  {ncalPerformanceData.filter(item => {
+                    const target = NCAL_TARGETS[item.name as keyof typeof NCAL_TARGETS] || 0;
+                    return item.avgDuration <= target;
+                  }).length}
+                </div>
+                <div className="text-xs text-gray-600 dark:text-gray-400">Compliant Levels</div>
+              </div>
+              
+              <div className="text-center p-3 bg-red-50 dark:bg-red-900/20 rounded-xl border border-red-200 dark:border-red-800 shadow-sm">
+                <div className="text-lg font-bold text-red-600">
+                  {ncalPerformanceData.filter(item => {
+                    const target = NCAL_TARGETS[item.name as keyof typeof NCAL_TARGETS] || 0;
+                    return item.avgDuration > target;
+                  }).length}
+                </div>
+                <div className="text-xs text-gray-600 dark:text-gray-400">Exceeded Levels</div>
+              </div>
+              
+              <div className="text-center p-3 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-200 dark:border-blue-800 shadow-sm">
+                <div className="text-lg font-bold text-blue-600">
+                  {ncalPerformanceData.reduce((sum, item) => sum + item.count, 0)}
+                </div>
+                <div className="text-xs text-gray-600 dark:text-gray-400">Total Incidents</div>
+              </div>
+              
+              <div className="text-center p-3 bg-orange-50 dark:bg-orange-900/20 rounded-xl border border-orange-200 dark:border-orange-800 shadow-sm">
+                <div className="text-lg font-bold text-orange-600">
+                  {formatDurationHMS(ncalPerformanceData.reduce((sum, item) => sum + item.avgDuration, 0) / ncalPerformanceData.length)}
+                </div>
+                <div className="text-xs text-gray-600 dark:text-gray-400">Avg Duration</div>
+              </div>
+            </div>
+
+            {/* NCAL Details */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {ncalPerformanceData.map((item) => {
+                const target = NCAL_TARGETS[item.name as keyof typeof NCAL_TARGETS] || 0;
+                const avgDuration = item.avgDuration;
+                const isCompliant = avgDuration <= target;
+                const efficiency = target > 0 ? Math.max(0, ((target - avgDuration) / target) * 100) : 0;
                 
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-600 dark:text-gray-400">Avg Recovery Time:</span>
-                    <span className="font-medium">{formatDurationHMS(siteStats.avgSiteRecovery)}</span>
-                  </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-600 dark:text-gray-400">High Risk Sites:</span>
-                    <span className="font-medium text-red-600">
-                      {Object.values(siteStats.siteRiskScore).filter((site: any) => site.level === 'High').length}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-600 dark:text-gray-400">Total Incidents:</span>
-                    <span className="font-medium">{siteStats.totalSites}</span>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* NCAL Target Compliance Analysis for Sites */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <Card className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Target className="w-5 h-5" />
-                Site NCAL Target Compliance
-              </CardTitle>
-              <CardDescription>Compliance analysis by NCAL categories and targets for sites</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {NCAL_ORDER.map((ncal) => {
-                  const ncalIncidents = incidentsWithSite.filter(i => normalizeNCAL(i.ncal) === ncal);
-                  const target = NCAL_TARGETS[ncal as keyof typeof NCAL_TARGETS] || 0;
-                  const avgDuration = ncalIncidents.length > 0 
-                    ? ncalIncidents.reduce((sum, i) => sum + (i.durationMin || 0), 0) / ncalIncidents.length 
-                    : 0;
-                  const compliant = ncalIncidents.filter(i => (i.durationMin || 0) <= target).length;
-                  const complianceRate = ncalIncidents.length > 0 ? (compliant / ncalIncidents.length) * 100 : 0;
-                  
-                  if (ncalIncidents.length === 0) return null;
-                  
-                  return (
-                    <div key={ncal} className="p-4 bg-gray-50 dark:bg-zinc-800 rounded-lg border border-gray-200 dark:border-zinc-700">
-                      <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center gap-2">
-                          <div 
-                            className="w-4 h-4 rounded-full" 
-                            style={{ backgroundColor: NCAL_COLORS[ncal as keyof typeof NCAL_COLORS] }}
-                          ></div>
-                          <span className="font-medium text-gray-700 dark:text-gray-300">{ncal}</span>
-                        </div>
-                        <Badge 
-                          variant={complianceRate >= 80 ? "success" : complianceRate >= 60 ? "warning" : "danger"}
-                          className="text-xs"
-                        >
-                          {complianceRate.toFixed(1)}%
-                        </Badge>
+                return (
+                  <div key={item.name} className="p-4 bg-gray-50 dark:bg-zinc-800 rounded-xl border border-gray-200 dark:border-zinc-700 shadow-sm">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-2">
+                        <div 
+                          className="w-5 h-5 rounded-full border-2 border-white dark:border-zinc-700 shadow-sm" 
+                          style={{ backgroundColor: item.fill }}
+                        />
+                        <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                          {item.name} NCAL
+                        </span>
                       </div>
-                      
-                      <div className="grid grid-cols-2 gap-4 text-sm">
-                        <div>
-                          <span className="text-gray-600 dark:text-gray-400">Target:</span>
-                          <span className="ml-2 font-medium">{formatDurationHMS(target)}</span>
-                        </div>
-                        <div>
-                          <span className="text-gray-600 dark:text-gray-400">Average:</span>
-                          <span className={`ml-2 font-medium ${avgDuration <= target ? 'text-green-600' : 'text-red-600'}`}>
-                            {formatDurationHMS(avgDuration)}
-                          </span>
-                        </div>
-                        <div>
-                          <span className="text-gray-600 dark:text-gray-400">Incidents:</span>
-                          <span className="ml-2 font-medium">{ncalIncidents.length}</span>
-                        </div>
-                        <div>
-                          <span className="text-gray-600 dark:text-gray-400">Compliant:</span>
-                          <span className="ml-2 font-medium text-green-600">{compliant}</span>
-                        </div>
+                      <Badge className={isCompliant ? 'bg-green-600' : 'bg-red-600'}>
+                        {isCompliant ? 'Compliant' : 'Exceeded'}
+                      </Badge>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-gray-600 dark:text-gray-400">Target:</span>
+                        <span className="font-medium">{formatDurationHMS(target)}</span>
                       </div>
-                      
-                      <div className="mt-3">
-                        <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 mb-1">
-                          <span>Compliance Rate</span>
-                          <span>{complianceRate.toFixed(1)}%</span>
-                        </div>
-                        <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                          <div 
-                            className={`h-2 rounded-full ${
-                              complianceRate >= 80 ? 'bg-green-500' : 
-                              complianceRate >= 60 ? 'bg-yellow-500' : 'bg-red-500'
-                            }`}
-                            style={{ width: `${Math.min(complianceRate, 100)}%` }}
-                          ></div>
-                        </div>
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-gray-600 dark:text-gray-400">Average:</span>
+                        <span className={`font-medium ${isCompliant ? 'text-green-600' : 'text-red-600'}`}>
+                          {formatDurationHMS(avgDuration)}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-gray-600 dark:text-gray-400">Incidents:</span>
+                        <span className="font-medium">{item.count}</span>
+                      </div>
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-gray-600 dark:text-gray-400">Efficiency:</span>
+                        <span className={`font-medium ${isCompliant ? 'text-green-600' : 'text-red-600'}`}>
+                          {efficiency.toFixed(1)}%
+                        </span>
                       </div>
                     </div>
-                  );
-                })}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Site Performance by NCAL */}
-          <Card className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <SpeedIcon className="w-5 h-5" />
-                Site Performance by NCAL
-              </CardTitle>
-              <CardDescription>Average resolution time vs target by NCAL category for sites</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {NCAL_ORDER.map((ncal) => {
-                  const ncalIncidents = incidentsWithSite.filter(i => normalizeNCAL(i.ncal) === ncal);
-                  const target = NCAL_TARGETS[ncal as keyof typeof NCAL_TARGETS] || 0;
-                  const avgDuration = ncalIncidents.length > 0 
-                    ? ncalIncidents.reduce((sum, i) => sum + (i.durationMin || 0), 0) / ncalIncidents.length 
-                    : 0;
-                  const isCompliant = avgDuration <= target;
-                  const efficiencyRate = target > 0 ? (target / avgDuration) * 100 : 0;
-                  
-                  if (ncalIncidents.length === 0) return null;
-                  
-                  return (
-                    <div key={ncal} className="p-4 bg-gray-50 dark:bg-zinc-800 rounded-lg border border-gray-200 dark:border-zinc-700">
-                      <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center gap-2">
-                          <div 
-                            className="w-4 h-4 rounded-full" 
-                            style={{ backgroundColor: NCAL_COLORS[ncal as keyof typeof NCAL_COLORS] }}
-                          ></div>
-                          <span className="font-medium text-gray-700 dark:text-gray-300">{ncal}</span>
-                        </div>
-                        <Badge 
-                          variant={isCompliant ? "success" : "danger"}
-                          className="text-xs"
-                        >
-                          {isCompliant ? 'On Target' : 'Over Target'}
-                        </Badge>
+                    
+                    {/* Progress Bar */}
+                    <div className="mt-3">
+                      <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 mb-1">
+                        <span>Performance vs Target</span>
+                        <span>{isCompliant ? 'Compliant' : 'Non-Compliant'}</span>
                       </div>
-                      
-                      <div className="grid grid-cols-2 gap-4 text-sm">
-                        <div>
-                          <span className="text-gray-600 dark:text-gray-400">Target:</span>
-                          <span className="ml-2 font-medium">{formatDurationHMS(target)}</span>
-                        </div>
-                        <div>
-                          <span className="text-gray-600 dark:text-gray-400">Average:</span>
-                          <span className={`ml-2 font-medium ${isCompliant ? 'text-green-600' : 'text-red-600'}`}>
-                            {formatDurationHMS(avgDuration)}
-                          </span>
-                        </div>
-                        <div>
-                          <span className="text-gray-600 dark:text-gray-400">Incidents:</span>
-                          <span className="ml-2 font-medium">{ncalIncidents.length}</span>
-                        </div>
-                        <div>
-                          <span className="text-gray-600 dark:text-gray-400">Efficiency:</span>
-                          <span className={`ml-2 font-medium ${isCompliant ? 'text-green-600' : 'text-red-600'}`}>
-                            {efficiencyRate.toFixed(1)}%
-                          </span>
-                        </div>
-                      </div>
-                      
-                      <div className="mt-3">
-                        <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 mb-1">
-                          <span>Performance vs Target</span>
-                          <span>{isCompliant ? 'Compliant' : 'Non-Compliant'}</span>
-                        </div>
-                        <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                          <div 
-                            className={`h-2 rounded-full ${isCompliant ? 'bg-green-500' : 'bg-red-500'}`}
-                            style={{ width: `${Math.min(efficiencyRate, 100)}%` }}
-                          ></div>
-                        </div>
+                      <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                        <div 
+                          className={`h-2 rounded-full ${isCompliant ? 'bg-green-500' : 'bg-red-500'}`}
+                          style={{ width: `${Math.min(efficiency, 100)}%` }}
+                        ></div>
                       </div>
                     </div>
-                  );
-                })}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+                  </div>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
 
-        {/* Site Trend Analysis */}
+        {/* Site Incident Trend Analysis */}
         <Card className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <TimelineIcon className="w-5 h-5" />
-              Site Incident Trend
+              <TimelineIcon className="w-5 h-5 text-blue-600" />
+              Site Incident Trend Analysis
             </CardTitle>
-            <CardDescription>Monthly incident trend for affected sites</CardDescription>
+            <CardDescription className="text-gray-600 dark:text-gray-400">Monthly incident trends and site activity patterns</CardDescription>
           </CardHeader>
           <CardContent>
-            {Object.keys(siteStats.bySiteMonth || {}).length > 0 ? (
-              <ChartContainer config={{}}>
-                <LineChart
-                  data={Object.entries(siteStats.bySiteMonth || {})
-                    .sort((a, b) => a[0].localeCompare(b[0]))
-                    .map(([month, siteData]) => ({
-                      month,
-                      totalIncidents: Object.values(siteData).reduce((sum: number, count: any) => sum + count, 0),
-                      uniqueSites: Object.keys(siteData).length
-                    }))}
-                  margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" />
+                                     <div className="h-[160px] w-full">
+              <ChartContainer config={{
+                incidents: { label: "Total Incidents", color: "#3b82f6" },
+                uniqueSites: { label: "Unique Sites", color: "#10b981" }
+              }}>
+                <LineChart data={siteTrendData} height={160} width={undefined} margin={{ top: 5, right: 10, left: 5, bottom: 5 }}>
+                  <CartesianGrid stroke="#e5e7eb" />
                   <XAxis 
                     dataKey="month" 
-                    tickFormatter={(value) => {
-                      const [year, month] = value.split('-');
-                      const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
-                                        'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-                      return `${monthNames[parseInt(month) - 1]} ${year}`;
-                    }}
+                    tickLine={false}
+                    axisLine={false}
+                    tickMargin={8}
+                    tick={{ fill: '#6b7280', fontSize: 12 }}
                   />
-                  <YAxis />
-                  <ChartTooltip
-                    cursor={false}
-                    content={<ChartTooltipContent hideLabel />}
+                  <YAxis 
+                    tickLine={false}
+                    axisLine={false}
+                    tickMargin={8}
+                    tick={{ fill: '#6b7280', fontSize: 12 }}
                   />
+                  <ChartTooltip content={<ChartTooltipContent />} />
                   <Line 
                     type="monotone" 
-                    dataKey="totalIncidents" 
-                    stroke="#ef4444" 
+                    dataKey="incidents" 
+                    stroke="#3b82f6" 
                     strokeWidth={2}
-                    dot={{ fill: '#ef4444', strokeWidth: 2, r: 4 }}
-                    name="Total Incidents"
+                    dot={{ fill: '#3b82f6', strokeWidth: 2, r: 4 }}
+                    activeDot={{ r: 6, stroke: '#3b82f6', strokeWidth: 2 }}
                   />
                   <Line 
                     type="monotone" 
                     dataKey="uniqueSites" 
-                    stroke="#3b82f6" 
+                    stroke="#10b981" 
                     strokeWidth={2}
-                    dot={{ fill: '#3b82f6', strokeWidth: 2, r: 4 }}
-                    name="Unique Sites"
+                    dot={{ fill: '#10b981', strokeWidth: 2, r: 4 }}
+                    activeDot={{ r: 6, stroke: '#10b981', strokeWidth: 2 }}
                   />
                 </LineChart>
               </ChartContainer>
-            ) : (
-              <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-                No trend data available
+            </div>
+            <div className="mt-4 flex justify-center gap-6">
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                <span className="text-sm text-gray-600 dark:text-gray-400">Total Incidents</span>
               </div>
-            )}
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                <span className="text-sm text-gray-600 dark:text-gray-400">Unique Sites</span>
+              </div>
+            </div>
           </CardContent>
         </Card>
       </div>

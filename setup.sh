@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# AN-TIC Analytics Dashboard - Automated Setup Script
+# Helpdesk Management System - Automated Setup Script
 # This script automates the setup process for the entire application
 
 set -e  # Exit on any error
@@ -250,7 +250,7 @@ export const API_CONFIG = {
 };
 
 export const APP_CONFIG = {
-  name: 'AN-TIC Analytics Dashboard',
+      name: 'Helpdesk Management System',
   version: '1.0.0',
   description: 'Insightful Ticket Analytics & Agent Performance'
 };
@@ -311,7 +311,7 @@ create_startup_scripts() {
     # Backend startup script
     cat > start-backend.sh << 'EOF'
 #!/bin/bash
-echo "🚀 Starting AN-TIC Backend..."
+echo "🚀 Starting Helpdesk Management System Backend..."
 cd antic-backend
 npm start
 EOF
@@ -319,14 +319,14 @@ EOF
     # Frontend startup script
     cat > start-frontend.sh << 'EOF'
 #!/bin/bash
-echo "🌐 Starting AN-TIC Frontend..."
+echo "🌐 Starting Helpdesk Management System Frontend..."
 npm run dev
 EOF
     
     # Combined startup script
     cat > start-all.sh << 'EOF'
 #!/bin/bash
-echo "🚀 Starting AN-TIC Analytics Dashboard..."
+echo "🚀 Starting Helpdesk Management System..."
 
 # Start backend in background
 echo "Starting backend..."
@@ -364,7 +364,7 @@ EOF
 print_final_instructions() {
     log_header "Setup Complete!"
     
-    echo -e "${GREEN}🎉 AN-TIC Analytics Dashboard setup completed successfully!${NC}\n"
+    echo -e "${GREEN}🎉 Helpdesk Management System setup completed successfully!${NC}\n"
     
     echo "📋 Default Users Created:"
     echo "  • Username: admin     | Password: admin123     | Role: super admin"
@@ -408,7 +408,7 @@ print_final_instructions() {
 main() {
     echo -e "${BLUE}"
     echo "=================================================="
-    echo "   AN-TIC Analytics Dashboard Setup Script"
+    echo "   Helpdesk Management System Setup Script"
     echo "=================================================="
     echo -e "${NC}"
     

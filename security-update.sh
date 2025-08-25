@@ -1,9 +1,9 @@
 #!/bin/bash
 
-# Security Update Script for AN-TIC Analytics Dashboard
+# Security Update Script for Helpdesk Management System
 # This script updates vulnerable dependencies and applies security patches
 
-echo "🔒 AN-TIC Analytics Dashboard - Security Update"
+echo "🔒 Helpdesk Management System - Security Update"
 echo "=============================================="
 
 # Colors for output

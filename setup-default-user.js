@@ -1,18 +1,18 @@
 #!/usr/bin/env node
 
 /**
- * Setup Default User Script for AN-TIC Analytics Dashboard
+ * Setup Default User Script for Helpdesk Management System
  * 
  * This script creates the default admin user in IndexedDB
  * Run this in browser console if login fails
  */
 
-console.log('🔐 AN-TIC Analytics Dashboard - Default User Setup');
+console.log('🔐 Helpdesk Management System - Default User Setup');
 console.log('================================================');
 
 // Browser Console Script
 const browserScript = `
-// AN-TIC Default User Setup Script
+// Helpdesk Management System Default User Setup Script
 console.log('🚀 Setting up default admin user...');
 
 async function setupDefaultUser() {

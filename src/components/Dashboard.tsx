@@ -626,11 +626,11 @@ const Dashboard = () => {
   useEffect(() => {
     // Tambahkan pengecekan untuk memastikan tabs[selectedIndex] tidak undefined
     if (tabs.length > 0 && selectedIndex < tabs.length) {
-    document.title = `AN-TIC | ${tabs[selectedIndex].name}`;
+    document.title = `Helpdesk Management System | ${tabs[selectedIndex].name}`;
     } else if (tabs.length > 0) {
-      document.title = `AN-TIC | ${tabs[0].name}`;
+      document.title = `Helpdesk Management System | ${tabs[0].name}`;
     } else {
-      document.title = 'AN-TIC';
+      document.title = 'Helpdesk Management System';
     }
   }, [selectedIndex, tabs]);
 
