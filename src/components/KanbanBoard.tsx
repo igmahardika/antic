@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ITicket } from '@/lib/db';
 import { formatDurationDHM, formatDateTimeDDMMYYYY } from '@/lib/utils';
@@ -39,11 +39,6 @@ interface KanbanCustomer {
 }
 
 // Main Kanban Board Component
-interface KanbanBoardProps {
-  data?: KanbanCustomer[];
-  cutoffStart: Date;
-  cutoffEnd: Date;
-}
 const KanbanBoard = () => {
   const analytics = useAnalytics();
   const { allTickets, startMonth, setStartMonth, endMonth, setEndMonth, selectedYear, setSelectedYear } = analytics;
@@ -456,7 +451,7 @@ const KanbanBoard = () => {
     const closed = tickets.filter(t => t.status === 'Closed').length;
     const percentClosed = tickets.length > 0 ? Math.round(Number(closed) / Number(tickets.length) * 100) : 0;
     // Hitung rata-rata durasi handling (dalam format HH:mm:ss)
-    const avgHandling = avgDuration(tickets);
+    // const avgHandling = avgDuration(tickets);
     // Top agent
     const agentCount = {};
     tickets.forEach(t => { if (t.openBy) agentCount[t.openBy] = (agentCount[t.openBy] || 0) + 1; });
@@ -746,7 +741,7 @@ const KanbanBoard = () => {
           </Pie>
         </PieChart>
         <div className="flex flex-col gap-2">
-          {chartData.map((entry, i) => (
+          {chartData.map((_, i) => (
             <div key={entry.name} className="flex items-center gap-2">
               <span className="w-3 h-3 rounded-full" style={{ background: COLORS[i] }}></span>
               <span className={`text-xs ${COLORS[i] === '#facc15' || COLORS[i] === '#fb923c' ? 'dark:text-black' : ''}`} style={{ color: COLORS[i], fontWeight: 400 }}>{entry.name}</span>
