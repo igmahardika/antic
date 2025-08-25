@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '@/lib/db';
 import {
@@ -151,20 +151,17 @@ const IncidentAnalytics: React.FC = () => {
   // load incidents from indexedDB
   const allIncidents = useLiveQuery(() => db.incidents.toArray());
 
-  // Debug logging untuk memeriksa data incidents
-  useEffect(() => {
-    console.log('🔍 Incidents Data Debug:', {
-      allIncidents: allIncidents?.length || 0,
-      hasIncidents: !!allIncidents && allIncidents.length > 0,
-      sampleIncident: allIncidents?.[0] || null,
-      ncalFields: allIncidents?.slice(0, 5).map(inc => ({
-        id: inc.id,
-        ncal: inc.ncal,
-        normalizedNcal: normalizeNCAL(inc.ncal),
-        startTime: inc.startTime
-      })) || []
-    });
-  }, [allIncidents]);
+  // Debug: Check if incidents data exists
+  console.log('🔍 Incident Data Debug:', {
+    allIncidentsCount: allIncidents?.length || 0,
+    hasIncidents: !!allIncidents && allIncidents.length > 0,
+    sampleIncidents: allIncidents?.slice(0, 3).map(inc => ({
+      id: inc.id,
+      ncal: inc.ncal,
+      startTime: inc.startTime,
+      status: inc.status
+    })) || []
+  });
 
   // Normalize NCAL text to capitalized key
   const normalizeNCAL = (ncal: string | null | undefined): string => {
@@ -248,17 +245,16 @@ const IncidentAnalytics: React.FC = () => {
       map[ncal] = (map[ncal] || 0) + 1;
     });
     
-    // Debug logging untuk NCAL Distribution
+    // Debug: Log NCAL data
     console.log('🔍 NCAL Distribution Debug:', {
       totalIncidents: filteredIncidents.length,
       byNCAL: map,
-      ncalOrder: NCAL_ORDER,
-      pieChartData: NCAL_ORDER.map((ncal) => ({ 
-        name: ncal, 
-        value: map[ncal] || 0, 
-        color: NCAL_COLORS[ncal] 
+      sampleNCALValues: filteredIncidents.slice(0, 10).map(inc => ({
+        id: inc.id,
+        ncal: inc.ncal,
+        normalized: normalizeNCAL(inc.ncal)
       })),
-      hasData: Object.values(map).some(v => v > 0)
+      hasNCALData: Object.values(map).some(count => count > 0)
     });
     
     return map;
@@ -771,7 +767,7 @@ const IncidentAnalytics: React.FC = () => {
               </CardTitle>
               <CardDescription className="text-gray-600 dark:text-gray-400">Volume distribution across NCAL levels</CardDescription>
             </CardHeader>
-            <CardContent className="flex justify-center">
+            <CardContent className="flex flex-col items-center">
               <ChartContainer config={{}}>
                 <PieChart width={280} height={220}>
                   <ChartTooltip content={<ChartTooltipContent hideLabel />} />
@@ -782,6 +778,13 @@ const IncidentAnalytics: React.FC = () => {
                   </Pie>
                 </PieChart>
               </ChartContainer>
+              
+              {/* Debug info */}
+              <div className="mt-4 text-xs text-gray-500 text-center">
+                <div>Total Incidents: {filteredIncidents.length}</div>
+                <div>NCAL Data: {JSON.stringify(byNCAL)}</div>
+                <div>Has Data: {Object.values(byNCAL).some(count => count > 0) ? 'Yes' : 'No'}</div>
+              </div>
             </CardContent>
           </Card>
         </div>
