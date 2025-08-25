@@ -350,7 +350,13 @@ const SiteAnalytics: React.FC = () => {
     currentYear: new Date().getFullYear(),
     siteTrends: siteStats.siteTrends,
     siteTrendData,
-    sitePerformanceData
+    sitePerformanceData,
+    resolutionRateValidation: sitePerformanceData.map(item => ({
+      month: item.month,
+      resolutionRate: item.resolutionRate,
+      isPercentage: item.resolutionRate >= 0 && item.resolutionRate <= 100,
+      avgDuration: item.avgDuration
+    }))
   });
 
   useEffect(() => {
@@ -962,6 +968,7 @@ const SiteAnalytics: React.FC = () => {
                     tickMargin={8}
                     tick={{ fill: '#6b7280', fontSize: 12 }}
                     tickFormatter={(v: number) => `${v.toFixed(0)}%`}
+                    domain={[0, 100]}
                   />
                   <ChartTooltip content={<ChartTooltipContent formatter={(value: number, name: string) => {
                     if (name === 'resolutionRate') {
