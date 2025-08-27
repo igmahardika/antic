@@ -14,7 +14,7 @@ const ModernHeader = () => {
         <div className="flex flex-col md:flex-row items-center justify-between h-auto md:h-20 gap-4 md:gap-6">
           {/* Logo & Brand */}
           <div className="flex items-center gap-4 md:gap-6">
-            <img src="/logo-a.png" alt="Helpdesk Management System Logo" className="h-12 w-auto drop-shadow-lg rounded-xl" />
+            <img src="/logo-b.png" alt="Helpdesk Management System Logo" className="h-12 w-auto drop-shadow-lg rounded-xl" />
             <span className="text-xl font-extrabold text-primary tracking-tight">Insight Dashboard</span>
           </div>
           {/* Search Bar */}

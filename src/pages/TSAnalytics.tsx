@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '@/lib/db';
+import { formatDurationDHM } from '@/lib/utils';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -918,7 +919,7 @@ const TSAnalytics: React.FC = () => {
       items.push({
         icon: <AccessTimeIcon className="w-5 h-5 text-amber-600" />, 
         title: 'Longest Extra Time',
-        description: `${longestExtraItem.month}: ${longestExtraHours.toFixed(1)}h`
+        description: `${longestExtraItem.month}: ${formatDurationDHM(longestExtraHours)}`
       });
     }
     // Best NCAL category among internal TS

@@ -364,7 +364,7 @@ export function SidebarNav({ onCollapseChange }: {
         {/* Logo area */}
         <div className="flex flex-col items-center justify-center pt-5 pb-3 gap-2">
           <img
-            src="/logo-a.png"
+            src="/logo-b.png"
             alt="Helpdesk Management System Logo"
             className="max-w-[85%] h-14 object-contain mx-auto"
             style={{ display: autoCollapsed ? 'none' : 'block' }}

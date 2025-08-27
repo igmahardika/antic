@@ -22,6 +22,7 @@ import {
   auditLogger,
 } from './middleware/security.mjs';
 import { body } from 'express-validator';
+import { generateCustomerReportPDF } from './pdfGenerator.js';
 
 // -----------------------------------------------------------------------------
 // 1. App & basic helpers
@@ -1091,4 +1092,28 @@ const PORT = Number(process.env.PORT) || 3001;
 app.listen(PORT, () => {
   console.log(`🚀 Helpdesk Management System API  → http://localhost:${PORT}`);
   console.log(`🔧 ENV        : ${process.env.NODE_ENV || 'development'}`);
+});
+
+// PDF Generation Endpoint
+app.post('/api/generate-pdf', async (req, res) => {
+  try {
+    const { customerData, ticketsData, insightData } = req.body;
+    
+    // Generate PDF using Puppeteer
+    const pdfBuffer = await generateCustomerReportPDF(customerData, ticketsData, insightData);
+    
+    // Set response headers
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="CustomerReport-${customerData.name.replace(/[^a-zA-Z0-9]/g, '_')}.pdf"`);
+    
+    // Send PDF buffer
+    res.send(pdfBuffer);
+    
+  } catch (error) {
+    console.error('PDF generation error:', error);
+    res.status(500).json({ 
+      error: 'Failed to generate PDF',
+      details: error.message 
+    });
+  }
 });

@@ -1,5 +1,4 @@
 import { useMemo, useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ITicket } from '@/lib/db';
 import { formatDurationDHM, formatDateTimeDDMMYYYY } from '@/lib/utils';
@@ -12,31 +11,28 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import WhatshotIcon from '@mui/icons-material/Whatshot';
 import SecurityIcon from '@mui/icons-material/Security';
+import FileTextIcon from '@mui/icons-material/Description';
+import TableChartIcon from '@mui/icons-material/TableChart';
+import TextSnippetIcon from '@mui/icons-material/TextSnippet';
 
-import { PDFDownloadLink, Document, Page, Text, View, StyleSheet } from '@react-pdf/renderer';
+import { PDFDownloadLink, Document, Page, Text, View, StyleSheet, Image } from '@react-pdf/renderer';
+import { exportToExcel, exportToCSV } from '../utils/exportUtils';
 import { LineChart, Line, ResponsiveContainer, XAxis, YAxis, LabelList, PieChart, Pie, Cell } from 'recharts';
 import { FixedSizeList as List } from 'react-window';
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from './ui/tooltip';
 import TimeFilter from './TimeFilter';
 import * as RadixDialog from '@radix-ui/react-dialog';
 
-// Define the structure of the kanban data object
-interface KanbanCustomer {
-  id: string;
-  name: string;
-  customerId: string;
-  ticketCount: number;
-  totalHandlingDurationFormatted: string;
-  allTickets: ITicket[];
-  fullTicketHistory: ITicket[];
-  analysis: {
-    description: string[];
-    cause: string[];
-    handling: string[];
-    conclusion: string;
-  };
-  repClass: string | null;
+// Using built-in fonts for reliability - no external font loading needed
+
+// Buffer polyfill for browser environment
+if (typeof window !== 'undefined' && !window.Buffer) {
+  import('buffer').then(({ Buffer }) => {
+    window.Buffer = Buffer;
+  });
 }
+
+
 
 const KanbanBoard = () => {
   const analytics = useAnalytics();
@@ -116,7 +112,7 @@ const KanbanBoard = () => {
       let trend: 'Naik' | 'Turun' | 'Stabil' = 'Stabil';
       if (tickets.length > 0) {
         // Ambil bulan & tahun dari filter
-        const { startMonth, endMonth, selectedYear } = analytics;
+          const { endMonth, selectedYear } = analytics;
         const y = Number(selectedYear);
         const mEnd = Number(endMonth) - 1;
         const mPrev = mEnd - 1;
@@ -437,13 +433,7 @@ const KanbanBoard = () => {
     );
   }
 
-  function avgDuration(arr) {
-    if (!arr.length) return '-';
-    const totalSeconds = arr.reduce((acc, t) => acc + (typeof t.handlingDuration?.rawSeconds === 'number' ? t.handlingDuration.rawSeconds : Number(t.handlingDuration?.rawSeconds) || 0), 0);
-    const arrLen = typeof arr.length === 'number' ? arr.length : Number(arr.length);
-    const avgSeconds = arrLen > 0 ? Number(totalSeconds) / arrLen : 0;
-    return formatDurationDHM(Number(avgSeconds) / 3600);
-  }
+
 
   function CustomerCard({ customer, tickets }) {
     // tickets: tiket customer ini sesuai filter waktu & risk
@@ -514,65 +504,318 @@ const KanbanBoard = () => {
     return label.toUpperCase();
   }
 
-  // Komponen PDF untuk customer report
+  // Professional PDF Report Component with Cover Page
   const CustomerReportPDF = ({ customer, insight, tickets }) => {
     const styles = StyleSheet.create({
-      page: { padding: 32, fontSize: 11, fontFamily: 'Helvetica' },
-      header: { fontSize: 22, fontWeight: 'bold', marginBottom: 2 },
-      subheader: { fontSize: 13, color: '#555', marginBottom: 8 },
-      badge: { borderRadius: 4, padding: '2 8', fontSize: 10, fontWeight: 'bold', color: '#fff', marginLeft: 8 },
-      badgeUp: { backgroundColor: '#22c55e' },
-      badgeDown: { backgroundColor: '#ef4444' },
-      badgeStable: { backgroundColor: '#6b7280' },
-      sectionTitle: { fontSize: 15, fontWeight: 'bold', marginTop: 18, marginBottom: 6, borderBottom: '1 solid #e5e7eb', paddingBottom: 2 },
-      label: { fontWeight: 'bold', marginTop: 4 },
-      value: { marginBottom: 4 },
-      insightBox: { backgroundColor: '#f1f5f9', borderRadius: 6, padding: 10, marginBottom: 10 },
-      rec: { color: '#2563eb', fontWeight: 'bold', marginTop: 4 },
-      table: { width: 'auto', marginTop: 6, marginBottom: 10 },
-      tableRow: { flexDirection: 'row' },
-      tableHeader: { backgroundColor: '#e0e7ef', fontWeight: 'bold' },
-      tableCell: { padding: 4, fontSize: 10, borderRight: '1 solid #e5e7eb', borderBottom: '1 solid #e5e7eb', flexGrow: 1 },
+      // Cover page styles
+      coverPage: { 
+        padding: 0, 
+        fontSize: 10, 
+        fontFamily: 'Helvetica',
+        backgroundColor: '#ffffff'
+      },
+      coverBackground: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        objectFit: 'cover'
+      },
+      coverContent: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        padding: 40,
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'center',
+        alignItems: 'flex-start',
+        transform: 'translateY(-70%)'
+      },
+      coverTitle: {
+        fontSize: 40,
+        fontFamily: 'Helvetica-Bold',
+        color: '#ffffff',
+        textTransform: 'uppercase',
+        textShadow: '2px 2px 4px rgba(0,0,0,0.8)',
+        marginBottom: 10,
+        textAlign: 'left'
+      },
+      coverCustomerInfo: {
+        marginBottom: 2
+      },
+      coverCustomerName: {
+        fontSize: 10,
+        fontFamily: 'Helvetica-Bold',
+        color: '#ffffff',
+        textShadow: '2px 2px 4px rgba(0,0,0,0.8)',
+        marginBottom: 8
+      },
+      coverCustomerId: {
+        fontSize: 8,
+        color: '#ffffff',
+        textShadow: '2px 2px 4px rgba(0,0,0,0.8)'
+      },
+      // Content page styles
+      contentPage: { 
+        padding: 20, 
+        fontSize: 10, 
+        fontFamily: 'Helvetica',
+        backgroundColor: '#ffffff'
+      },
+      // Page header and footer images
+      pageHeaderImage: {
+        width: '100%',
+        height: 'auto',
+        marginBottom: 10,
+        objectFit: 'contain'
+      },
+      pageFooterImage: {
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        width: '100%',
+        height: 'auto',
+        objectFit: 'contain'
+      },
+      pageHeader: {
+        marginBottom: 20,
+        padding: 15,
+        backgroundColor: '#f8fafc',
+        borderRadius: 8,
+        border: '1px solid #e2e8f0'
+      },
+      pageTitle: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        color: '#1e293b',
+        marginBottom: 5
+      },
+      pageSubtitle: {
+        fontSize: 12,
+        color: '#64748b'
+      },
+      // Customer information section
+      customerHeader: {
+        marginBottom: 12
+      },
+      customerName: {
+        fontSize: 15,
+        fontFamily: 'Helvetica-Bold',
+        color: '#1e293b',
+        marginBottom: 4
+      },
+      customerId: {
+        fontSize: 12,
+        color: '#64748b',
+        fontWeight: '500'
+      },
+      // Summary cards
+      summaryGrid: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        marginBottom: 15,
+        gap: 8
+      },
+      summaryCard: {
+        flex: 1,
+        minWidth: 120,
+        padding: 10,
+        backgroundColor: '#f8fafc',
+        borderRadius: 6,
+        border: '1px solid #e2e8f0',
+        shadow: '0 1px 3px rgba(0,0,0,0.1)'
+      },
+      summaryLabel: {
+        fontSize: 8,
+        color: '#64748b',
+        marginBottom: 4,
+        textTransform: 'uppercase',
+        fontFamily: 'Helvetica-Bold',
+        letterSpacing: 0.5
+      },
+      summaryValue: {
+        fontSize: 14,
+        fontFamily: 'Helvetica-Bold',
+        color: '#1e293b',
+        marginBottom: 0,
+        lineHeight: 1.2
+      },
+      summaryTrend: {
+        fontSize: 10,
+        fontFamily: 'Helvetica-Bold'
+      },
+      trendUp: { color: '#059669' },
+      trendDown: { color: '#dc2626' },
+      trendStable: { color: '#6b7280' },
+      // Performance metrics
+      metricsGrid: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        marginBottom: 20,
+        gap: 12
+      },
+      metricItem: {
+        flex: 1,
+        minWidth: 140,
+        padding: 12,
+        backgroundColor: '#f8fafc',
+        borderRadius: 6,
+        border: '1px solid #e2e8f0'
+      },
+      metricLabel: {
+        fontSize: 10,
+        color: '#64748b',
+        marginBottom: 4,
+        textTransform: 'uppercase',
+        fontFamily: 'Helvetica-Bold'
+      },
+      metricValue: {
+        fontSize: 12,
+        fontFamily: 'Helvetica-Bold',
+        color: '#1e293b',
+        marginBottom: 2
+      },
+      // Section titles
+      sectionTitle: {
+        fontSize: 12,
+        fontFamily: 'Helvetica-Bold',
+        color: '#1e293b',
+        marginTop: 12,
+        marginBottom: 6
+      },
+      // Insight box
+      insightBox: {
+        backgroundColor: '#f8fafc',
+        padding: 12,
+        marginBottom: 15,
+        borderRadius: 8,
+        border: '1px solid #e2e8f0'
+      },
+      insightItem: {
+        marginBottom: 8,
+        display: 'flex',
+        flexDirection: 'row',
+        alignItems: 'flex-start'
+      },
+      insightLabel: {
+        fontSize: 8,
+        fontFamily: 'Helvetica-Bold',
+        color: '#ffffff',
+        marginBottom: 0,
+        paddingHorizontal: 8,
+        paddingVertical: 2,
+        borderRadius: 4,
+        minWidth: 70,
+        textAlign: 'center',
+        letterSpacing: 0.3
+      },
+      insightValue: {
+        fontSize: 9,
+        color: '#1f2937',
+        lineHeight: 1.3,
+        flex: 1,
+        marginLeft: 8,
+        fontWeight: '500'
+      },
+      // Tables
+      table: {
+        width: '100%',
+        marginTop: 4,
+        marginBottom: 8,
+        border: '1px solid #e5e7eb'
+      },
+      historyTable: {
+        width: '100%',
+        marginTop: 10,
+        marginBottom: 15,
+        border: '1px solid #e5e7eb'
+      },
+      monthHeader: {
+        backgroundColor: '#f1f5f9',
+        padding: 2
+      },
+      monthLabel: {
+        fontFamily: 'Helvetica-Bold',
+        fontSize: 8,
+        color: '#1e293b'
+      },
+      tableHeader: {
+        backgroundColor: '#f3f4f6',
+        fontFamily: 'Helvetica-Bold',
+        fontSize: 12
+      },
+      tableRow: {
+        flexDirection: 'row',
+        borderBottom: '1px solid #e5e7eb'
+      },
+      tableCell: {
+        padding: 3,
+        fontSize: 8,
+        borderRight: '1px solid #e5e7eb',
+        flex: 1,
+        lineHeight: 1.0
+      },
+      tableCellHeader: {
+        padding: 3,
+        fontSize: 8,
+        borderRight: '1px solid #e5e7eb',
+        flex: 1,
+        fontFamily: 'Helvetica-Bold',
+        color: '#374151',
+        lineHeight: 1.0
+      },
       zebra: { backgroundColor: '#f9fafb' },
-      summaryGrid: { flexDirection: 'row', flexWrap: 'wrap', marginBottom: 10, marginTop: 8, gap: 8 },
-      summaryRow: { flexDirection: 'row', width: '100%', marginBottom: 4 },
-      summaryItem: { flex: 1, minWidth: 120, marginRight: 12, marginBottom: 8 },
-      summaryLabel: { fontSize: 10, color: '#555', marginBottom: 2 },
-      summaryValue: { fontSize: 14, fontWeight: 'bold', color: '#1e3a8a', marginBottom: 0 },
-      trendUp: { color: '#22c55e', fontWeight: 'bold' },
-      trendDown: { color: '#ef4444', fontWeight: 'bold' },
-      trendStable: { color: '#6b7280', fontWeight: 'bold' },
-      miniChartTable: { width: 'auto', marginTop: 2, marginBottom: 10 },
-      miniChartHeader: { backgroundColor: '#e0e7ef', fontWeight: 'bold' },
-      miniChartCell: { padding: 3, fontSize: 10, borderRight: '1 solid #e5e7eb', borderBottom: '1 solid #e5e7eb', flexGrow: 1 },
-      footer: { marginTop: 18, fontSize: 9, color: '#888', textAlign: 'right' },
+      // Status badges
+      statusBadge: {
+        borderRadius: 8,
+        padding: '1 4',
+        fontSize: 8,
+        fontFamily: 'Helvetica-Bold',
+        textAlign: 'center'
+      },
+      statusClosed: { backgroundColor: '#dcfce7', color: '#166534' },
+      statusOpen: { backgroundColor: '#fef3c7', color: '#92400e' },
+      statusPending: { backgroundColor: '#fce7f3', color: '#be185d' },
+      // Footer
+      footer: {
+        position: 'absolute',
+        bottom: 20,
+        left: 20,
+        right: 20,
+        fontSize: 10,
+        color: '#6b7280',
+        textAlign: 'center',
+        borderTop: '1px solid #e5e7eb',
+        paddingTop: 10
+      },
+      // Page number
+      pageNumber: {
+        position: 'absolute',
+        bottom: 10,
+        right: 20,
+        fontSize: 10,
+        color: '#6b7280'
+      }
     });
-    const trendBadge = customer.trend === 'Naik' ? [styles.badge, styles.badgeUp] : customer.trend === 'Turun' ? [styles.badge, styles.badgeDown] : [styles.badge, styles.badgeStable];
-    const now = new Date();
-
-    // Summary grid data
+    // Calculate summary data
     const closed = customer.allTickets.filter(t => t.status === 'Closed').length;
     const avgHandling = customer.allTickets.length > 0 ?
       (customer.allTickets.reduce((acc, t) => acc + (t.handlingDuration?.rawHours || 0), 0) / customer.allTickets.length) : 0;
-    const topAgent = (() => { const agentCount = {}; customer.allTickets.forEach(t => { if (t.openBy) agentCount[t.openBy] = (agentCount[t.openBy] || 0) + 1; }); return Object.entries(agentCount).sort((a, b) => Number(b[1]) - Number(a[1]))[0]?.[0] || '-'; })();
-    const topIssue = (() => { const issueCount = {}; customer.allTickets.forEach(t => { if (t.description) issueCount[t.description] = (issueCount[t.description] || 0) + 1; }); return Object.entries(issueCount).sort((a, b) => Number(b[1]) - Number(a[1]))[0]?.[0] || '-'; })();
+    
+    // Find top issue
+    const issueCount = {};
+    customer.allTickets.forEach(t => {
+      if (t.description) issueCount[t.description] = (issueCount[t.description] || 0) + 1;
+    });
+    const topIssue = Object.entries(issueCount).sort((a, b) => Number(b[1]) - Number(a[1]))[0]?.[0] || '-';
+    
     const trendLabel = customer.trend === 'Naik' ? 'Up' : customer.trend === 'Turun' ? 'Down' : 'Stable';
     const trendStyle = customer.trend === 'Naik' ? styles.trendUp : customer.trend === 'Turun' ? styles.trendDown : styles.trendStable;
-
-    // Mini trend chart data (bulan & jumlah tiket)
-    const history = (customer.allTickets || []).reduce((acc, t) => {
-      if (!t.openTime) return acc;
-      const d = new Date(t.openTime);
-      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-      acc[key] = (acc[key] || 0) + 1;
-      return acc;
-    }, {});
-    const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-    const sortedKeys = Object.keys(history).sort((a, b) => new Date(a + '-01').getTime() - new Date(b + '-01').getTime());
-    const miniChartData = sortedKeys.map(key => {
-      const [yyyy, mm] = key.split('-');
-      return { label: `${monthNames[parseInt(mm, 10) - 1]} ${yyyy}`, count: history[key] };
-    });
 
     // Group tickets by month-year for ticket history
     const groups = {};
@@ -585,96 +828,226 @@ const KanbanBoard = () => {
     });
     const sortedTicketKeys = Object.keys(groups).sort((a, b) => Number(new Date(b + '-01')) - Number(new Date(a + '-01')));
 
+    // Helper function for status badge
+    const getStatusBadge = (status) => {
+      switch(status) {
+        case 'Closed': return [styles.statusBadge, styles.statusClosed];
+        case 'Open': return [styles.statusBadge, styles.statusOpen];
+        default: return [styles.statusBadge, styles.statusPending];
+      }
+    };
+
     return (
       <Document>
-        <Page size="A4" style={styles.page}>
-          {/* Header */}
-          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 2 }}>
-            <Text style={styles.header}>{customer.name} ({customer.customerId})</Text>
-            <Text style={trendBadge}>Trend: {trendLabel}</Text>
+        {/* Cover Page */}
+        <Page size="A4" style={styles.coverPage}>
+          {/* Full Cover Background */}
+          <Image 
+            src="/Cover.png" 
+            style={styles.coverBackground}
+          />
+          
+          {/* Cover Content */}
+          <View style={styles.coverContent}>
+            {/* Report Title */}
+            <Text style={styles.coverTitle}>TICKET REPORT</Text>
+            
+            {/* Customer Information */}
+            <View style={styles.coverCustomerInfo}>
+              <Text style={styles.coverCustomerName}>{customer.name}</Text>
+              <Text style={styles.coverCustomerId}>Customer ID: {customer.customerId}</Text>
           </View>
-          <Text style={styles.subheader}>Exported: {now.toLocaleString()}</Text>
-          {/* Summary Grid (2 rows x 3 cols) */}
+          </View>
+        </Page>
+
+        {/* Content Page */}
+        <Page size="A4" style={styles.contentPage}>
+          {/* Page Header */}
+          <Image 
+            src="/Header.png" 
+            style={styles.pageHeaderImage}
+          />
+
+          {/* Summary Metrics Section */}
+          <Text style={styles.sectionTitle}>Summary Metrics</Text>
           <View style={styles.summaryGrid}>
-            <View style={styles.summaryRow}>
-              <View style={styles.summaryItem}><Text style={styles.summaryLabel}>Total Tickets</Text><Text style={styles.summaryValue}>{customer.allTickets.length}</Text></View>
-              <View style={styles.summaryItem}><Text style={styles.summaryLabel}>Closed</Text><Text style={styles.summaryValue}>{closed}</Text></View>
-              <View style={styles.summaryItem}><Text style={styles.summaryLabel}>Avg Handling</Text><Text style={styles.summaryValue}>{avgHandling ? avgHandling.toFixed(2) + ' h' : '-'}</Text></View>
+            <View style={styles.summaryCard}>
+              <Text style={styles.summaryLabel}>Total Tickets</Text>
+              <Text style={styles.summaryValue}>{customer.allTickets.length}</Text>
             </View>
-            <View style={styles.summaryRow}>
-              <View style={styles.summaryItem}><Text style={styles.summaryLabel}>Top Agent</Text><Text style={styles.summaryValue}>{topAgent}</Text></View>
-              <View style={styles.summaryItem}><Text style={styles.summaryLabel}>Top Issue</Text><Text style={styles.summaryValue}>{topIssue}</Text></View>
-              <View style={styles.summaryItem}><Text style={styles.summaryLabel}>Risk Trend</Text><Text style={[styles.summaryValue, trendStyle]}>{trendLabel}</Text></View>
+            <View style={styles.summaryCard}>
+              <Text style={styles.summaryLabel}>Closed</Text>
+              <Text style={styles.summaryValue}>{closed}</Text>
             </View>
+            <View style={styles.summaryCard}>
+              <Text style={styles.summaryLabel}>Avg Handling</Text>
+              <Text style={styles.summaryValue}>{avgHandling ? formatDurationDHM(avgHandling) : '-'}</Text>
           </View>
-          {/* Mini Trend Chart (as table) */}
-          <Text style={styles.sectionTitle}>Ticket History Trend</Text>
-          <View style={styles.miniChartTable}>
-            <View style={[styles.tableRow, styles.miniChartHeader]}>
-              <Text style={[styles.miniChartCell, { flex: 2 }]}>Month</Text>
-              <Text style={styles.miniChartCell}>Tickets</Text>
+            <View style={styles.summaryCard}>
+              <Text style={styles.summaryLabel}>Risk Trend</Text>
+              <Text style={[styles.summaryValue, trendStyle]}>{trendLabel}</Text>
             </View>
-            {miniChartData.length > 0 ? miniChartData.map((d, i) => (
-              <View key={i} style={[styles.tableRow, i % 2 === 1 && styles.zebra]}>
-                <Text style={[styles.miniChartCell, { flex: 2 }]}>{d.label}</Text>
-                <Text style={styles.miniChartCell}>{d.count}</Text>
+            <View style={styles.summaryCard}>
+              <Text style={styles.summaryLabel}>Top Issue</Text>
+              <Text style={styles.summaryValue}>{topIssue}</Text>
               </View>
-            )) : (
-              <View style={styles.tableRow}><Text style={styles.miniChartCell}>No data</Text></View>
-            )}
           </View>
-          {/* Automated Insight */}
+
+          {/* Automated Insight Section */}
           <Text style={styles.sectionTitle}>Automated Insight</Text>
           <View style={styles.insightBox}>
-            <Text style={styles.label}>Main Issue:</Text>
-            <Text style={styles.value}>{insight.masalah}</Text>
-            <Text style={styles.label}>Root Cause:</Text>
-            <Text style={styles.value}>{insight.penyebab}</Text>
-            <Text style={styles.label}>General Category:</Text>
-            <Text style={styles.value}>{insight.kategori}</Text>
-            <Text style={styles.label}>Solution:</Text>
-            <Text style={styles.value}>{insight.solusi}</Text>
+            <View style={styles.insightItem}>
+              <Text style={[styles.insightLabel, { backgroundColor: '#3b82f6' }]}>Problem</Text>
+              <Text style={styles.insightValue}>{insight.masalah || 'No specific pattern identified'}</Text>
           </View>
-          {/* Ticket History */}
+            
+            <View style={styles.insightItem}>
+              <Text style={[styles.insightLabel, { backgroundColor: '#f59e0b' }]}>Cause</Text>
+              <Text style={styles.insightValue}>{insight.penyebab || 'Analysis pending'}</Text>
+            </View>
+            
+            <View style={styles.insightItem}>
+              <Text style={[styles.insightLabel, { backgroundColor: '#10b981' }]}>Category</Text>
+              <Text style={styles.insightValue}>{insight.kategori || 'Uncategorized'}</Text>
+            </View>
+            
+            <View style={styles.insightItem}>
+              <Text style={[styles.insightLabel, { backgroundColor: '#1e40af' }]}>Solution</Text>
+              <Text style={styles.insightValue}>{insight.solusi || 'Standard support protocol'}</Text>
+            </View>
+            
+
+          </View>
+
+          {/* Ticket History Section */}
           <Text style={styles.sectionTitle}>Ticket History</Text>
           <View style={styles.table}>
             <View style={[styles.tableRow, styles.tableHeader]}>
-              <Text style={[styles.tableCell, { flex: 1.2 }]}>Date</Text>
-              <Text style={[styles.tableCell, { flex: 2 }]}>Description</Text>
-              <Text style={[styles.tableCell, { flex: 1.5 }]}>Root Cause</Text>
-              <Text style={[styles.tableCell, { flex: 1.5 }]}>Solution</Text>
-              <Text style={styles.tableCell}>Duration</Text>
-              <Text style={styles.tableCell}>Status</Text>
+              <Text style={[styles.tableCellHeader, { flex: 1.2 }]}>Date</Text>
+              <Text style={[styles.tableCellHeader, { flex: 2 }]}>Description</Text>
+              <Text style={[styles.tableCellHeader, { flex: 1.5 }]}>Root Cause</Text>
+              <Text style={[styles.tableCellHeader, { flex: 1.5 }]}>Solution Applied</Text>
+              <Text style={[styles.tableCellHeader, { flex: 1 }]}>Duration</Text>
+              <Text style={[styles.tableCellHeader, { flex: 0.8 }]}>Status</Text>
             </View>
+            
             {sortedTicketKeys.length === 0 ? (
-              <View style={styles.tableRow}><Text style={styles.tableCell}>No tickets in this period.</Text></View>
+              <View style={styles.tableRow}>
+                <Text style={[styles.tableCell, { flex: 6 }]}>No tickets found in this period.</Text>
+              </View>
             ) : (
-              sortedTicketKeys.map((key) => {
+              sortedTicketKeys.slice(0, 1).map((key) => {
                 const [yyyy, mm] = key.split('-');
+                const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
                 const monthLabel = `${monthNames[parseInt(mm, 10) - 1]} ${yyyy}`;
-                // Sort tickets in this month by date ascending
                 const monthTickets = groups[key].slice().sort((a, b) => Number(new Date(a.openTime)) - Number(new Date(b.openTime)));
+                
                 return [
-                  <View key={key + '-label'} style={{ backgroundColor: '#f3f4f6', padding: 4 }}>
-                    <Text style={{ fontWeight: 'bold', fontSize: 12 }}>{monthLabel}</Text>
+                  <View key={key + '-label'} style={styles.monthHeader}>
+                    <Text style={styles.monthLabel}>{monthLabel}</Text>
                   </View>,
                   ...monthTickets.map((t, i) => (
-                    <View key={t.id || t.openTime || i} style={[styles.tableRow, (i % 2 === 1) && styles.zebra]} wrap={false}>
-                      <Text style={[styles.tableCell, { flex: 1.2 }]}>{t.openTime ? String(t.openTime).slice(0, 10) : '-'}</Text>
-                      <Text style={[styles.tableCell, { flex: 2 }]}>{t.description}</Text>
-                      <Text style={[styles.tableCell, { flex: 1.5 }]}>{t.cause}</Text>
-                      <Text style={[styles.tableCell, { flex: 1.5 }]}>{t.handling}</Text>
-                      <Text style={styles.tableCell}>{t.handlingDuration?.formatted || '-'}</Text>
-                      <Text style={styles.tableCell}>{t.status}</Text>
+                    <View key={t.id || t.openTime || i} style={[styles.tableRow, (i % 2 === 1) && styles.zebra]}>
+                      <Text style={[styles.tableCell, { flex: 1.2 }]}>
+                        {t.openTime ? new Date(t.openTime).toLocaleDateString('en-GB') + ' ' + new Date(t.openTime).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) : '-'}
+                      </Text>
+                      <Text style={[styles.tableCell, { flex: 2 }]}>
+                        {t.description || 'No description'}
+                      </Text>
+                      <Text style={[styles.tableCell, { flex: 1.5 }]}>
+                        {t.cause || 'Not specified'}
+                      </Text>
+                      <Text style={[styles.tableCell, { flex: 1.5 }]}>
+                        {t.handling || 'Standard handling'}
+                      </Text>
+                      <Text style={[styles.tableCell, { flex: 1 }]}>
+                        {t.handlingDuration?.formatted || '-'}
+                      </Text>
+                      <Text style={[styles.tableCell, { flex: 0.8 }]}>
+                        <Text style={getStatusBadge(t.status)}>{t.status || 'Unknown'}</Text>
+                      </Text>
                     </View>
                   ))
                 ];
               })
             )}
           </View>
-          {/* Footer */}
-          <Text style={styles.footer}>Generated by Helpdesk Management System</Text>
+
+          {/* Page Footer */}
+          <Image 
+            src="/Footer.png" 
+            style={styles.pageFooterImage}
+          />
+          
+          {/* Page Number */}
+          <Text style={styles.pageNumber}>Page 2</Text>
         </Page>
+
+        {/* Additional Ticket History Pages - One Month Per Page */}
+        {sortedTicketKeys.slice(1).map((key, monthIndex) => {
+          const [yyyy, mm] = key.split('-');
+          const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+          const monthLabel = `${monthNames[parseInt(mm, 10) - 1]} ${yyyy}`;
+          const monthTickets = groups[key].slice().sort((a, b) => Number(new Date(a.openTime)) - Number(new Date(b.openTime)));
+          
+          return (
+            <Page key={`page-${monthIndex + 3}`} size="A4" style={styles.contentPage}>
+              {/* Page Header */}
+              <Image 
+                src="/Header.png" 
+                style={styles.pageHeaderImage}
+              />
+              
+
+              
+              <Text style={styles.sectionTitle}>Ticket History</Text>
+              <View style={styles.table}>
+                <View style={[styles.tableRow, styles.tableHeader]}>
+                  <Text style={[styles.tableCellHeader, { flex: 1.2 }]}>Date</Text>
+                  <Text style={[styles.tableCellHeader, { flex: 2 }]}>Description</Text>
+                  <Text style={[styles.tableCellHeader, { flex: 1.5 }]}>Root Cause</Text>
+                  <Text style={[styles.tableCellHeader, { flex: 1.5 }]}>Solution Applied</Text>
+                  <Text style={[styles.tableCellHeader, { flex: 1 }]}>Duration</Text>
+                  <Text style={[styles.tableCellHeader, { flex: 0.8 }]}>Status</Text>
+                </View>
+                
+                <View style={styles.monthHeader}>
+                  <Text style={styles.monthLabel}>{monthLabel}</Text>
+                </View>
+                
+                {monthTickets.map((t, i) => (
+                  <View key={t.id || t.openTime || i} style={[styles.tableRow, (i % 2 === 1) && styles.zebra]}>
+                    <Text style={[styles.tableCell, { flex: 1.2 }]}>
+                      {t.openTime ? new Date(t.openTime).toLocaleDateString('en-GB') + ' ' + new Date(t.openTime).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) : '-'}
+                    </Text>
+                    <Text style={[styles.tableCell, { flex: 2 }]}>
+                      {t.description || 'No description'}
+                    </Text>
+                    <Text style={[styles.tableCell, { flex: 1.5 }]}>
+                      {t.cause || 'Not specified'}
+                    </Text>
+                    <Text style={[styles.tableCell, { flex: 1.5 }]}>
+                      {t.handling || 'Standard handling'}
+                    </Text>
+                    <Text style={[styles.tableCell, { flex: 1 }]}>
+                      {t.handlingDuration?.formatted || '-'}
+                    </Text>
+                    <Text style={[styles.tableCell, { flex: 0.8 }]}>
+                      <Text style={getStatusBadge(t.status)}>{t.status || 'Unknown'}</Text>
+                    </Text>
+                  </View>
+                ))}
+              </View>
+              
+              {/* Page Footer */}
+              <Image 
+                src="/Footer.png" 
+                style={styles.pageFooterImage}
+              />
+              <Text style={styles.pageNumber}>Page {monthIndex + 3}</Text>
+            </Page>
+          );
+        })}
       </Document>
     );
   };
@@ -891,6 +1264,13 @@ const KanbanBoard = () => {
           <RadixDialog.Content className="fixed right-0 top-0 h-full w-[99vw] md:w-[90vw] max-w-6xl bg-white dark:bg-zinc-900 border-l border-blue-100 dark:border-zinc-800 shadow-2xl z-50 overflow-y-auto transition-all duration-300">
             {selectedCustomer && (
               <>
+                {/* Accessibility: Hidden Title and Description */}
+                <RadixDialog.Title className="sr-only">
+                  Customer Details - {selectedCustomer.name}
+                </RadixDialog.Title>
+                <RadixDialog.Description className="sr-only">
+                  Detailed information about customer {selectedCustomer.name} including ticket history, analytics, and insights.
+                </RadixDialog.Description>
                 {/* Header */}
                 <div className="flex items-center justify-between px-10 pt-8 pb-2 border-b border-blue-100 dark:border-zinc-800">
                   <div className="text-lg font-bold text-gray-900 dark:text-gray-100">{selectedCustomer.name}</div>
@@ -965,15 +1345,87 @@ const KanbanBoard = () => {
                       <TicketHistoryTable tickets={selectedCustomer.allTickets} />
                     </div>
                   </div>
-                {/* Action: Download PDF */}
-                <div className="px-10 pb-8 flex justify-end">
-                  <PDFDownloadLink document={<CustomerReportPDF customer={selectedCustomer} insight={generateInsight(selectedCustomer.allTickets)} tickets={selectedCustomer.allTickets} />} fileName={`CustomerReport-${selectedCustomer.name}.pdf`}>
-                    {({ loading }) => (
-                      <button className="px-5 py-2 bg-blue-600 text-white rounded-lg font-bold shadow hover:bg-blue-700 transition-all">
-                        {loading ? 'Preparing PDF...' : 'Download PDF'}
+                {/* Export Actions */}
+                <div className="px-10 pb-8 flex justify-end gap-3">
+                  {/* PDF Export */}
+                  <PDFDownloadLink 
+                    document={<CustomerReportPDF customer={selectedCustomer} insight={generateInsight(selectedCustomer.allTickets)} tickets={selectedCustomer.allTickets} />} 
+                    fileName={`CustomerReport-${selectedCustomer.name.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`}
+                  >
+                    {({ loading, error }) => (
+                      <button 
+                        className="px-4 py-2 bg-blue-600 text-white rounded-lg font-bold shadow hover:bg-blue-700 transition-all flex items-center gap-2 disabled:opacity-50"
+                        disabled={loading}
+                        onClick={() => {
+                          if (error) {
+                            console.error('PDF generation error:', error);
+                            alert('Error generating PDF. Please try again.');
+                          }
+                        }}
+                      >
+                        <FileTextIcon />
+                        {loading ? 'Generating PDF...' : 'Download PDF'}
                       </button>
                     )}
                   </PDFDownloadLink>
+                  
+                  {/* Excel Export */}
+                  <button 
+                    className="px-4 py-2 bg-green-600 text-white rounded-lg font-bold shadow hover:bg-green-700 transition-all flex items-center gap-2"
+                    onClick={async () => {
+                      try {
+                        const excelData = selectedCustomer.allTickets.map(ticket => ({
+                          'Ticket ID': ticket.ticketId || '-',
+                          'Customer': selectedCustomer.name,
+                          'Customer ID': selectedCustomer.customerId,
+                          'Description': ticket.description || '-',
+                          'Status': ticket.status || '-',
+                          'Open Time': ticket.openTime ? new Date(ticket.openTime).toLocaleString('id-ID') : '-',
+                          'Close Time': ticket.closeTime ? new Date(ticket.closeTime).toLocaleString('id-ID') : '-',
+                          'Handling Duration': ticket.handlingDuration?.formatted || '-',
+                          'Cause': ticket.cause || '-',
+                          'Handling': ticket.handling || '-'
+                        }));
+                        
+                        await exportToExcel(excelData, `CustomerReport-${selectedCustomer.name.replace(/[^a-zA-Z0-9]/g, '_')}`);
+                      } catch (error) {
+                        console.error('Excel export error:', error);
+                        alert('Error exporting Excel. Please try again.');
+                      }
+                    }}
+                  >
+                    <TableChartIcon />
+                    Export Excel
+                  </button>
+                  
+                  {/* CSV Export */}
+                  <button 
+                    className="px-4 py-2 bg-orange-600 text-white rounded-lg font-bold shadow hover:bg-orange-700 transition-all flex items-center gap-2"
+                    onClick={() => {
+                      try {
+                        const csvData = selectedCustomer.allTickets.map(ticket => ({
+                          'Ticket ID': ticket.ticketId || '-',
+                          'Customer': selectedCustomer.name,
+                          'Customer ID': selectedCustomer.customerId,
+                          'Description': ticket.description || '-',
+                          'Status': ticket.status || '-',
+                          'Open Time': ticket.openTime ? new Date(ticket.openTime).toLocaleString('id-ID') : '-',
+                          'Close Time': ticket.closeTime ? new Date(ticket.closeTime).toLocaleString('id-ID') : '-',
+                          'Handling Duration': ticket.handlingDuration?.formatted || '-',
+                          'Cause': ticket.cause || '-',
+                          'Handling': ticket.handling || '-'
+                        }));
+                        
+                        exportToCSV(csvData, `CustomerReport-${selectedCustomer.name.replace(/[^a-zA-Z0-9]/g, '_')}`);
+                      } catch (error) {
+                        console.error('CSV export error:', error);
+                        alert('Error exporting CSV. Please try again.');
+                      }
+                    }}
+                  >
+                    <TextSnippetIcon />
+                    Export CSV
+                  </button>
                   </div>
               </>
             )}
