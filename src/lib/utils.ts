@@ -34,16 +34,15 @@ export function generateAnalysisConclusion(analysis: { description: string[], ca
   return `Kendala umum pelanggan ini seringkali terkait masalah "${description.join(', ') || 'tidak spesifik'}", yang cenderung disebabkan oleh "${cause.join(', ') || 'tidak teridentifikasi'}". Solusi yang sering diterapkan adalah dengan "${handling.join(', ') || 'penanganan standar'}".`;
 }
 
-// Helper untuk format durasi jam desimal ke DD:HH:MM:SS
+// Helper untuk format durasi jam desimal ke HH:MM:SS
 export function formatDurationDHM(hours: number): string {
-  if (!hours || isNaN(hours) || hours < 0) return '00:00:00:00';
+  if (!hours || isNaN(hours) || hours < 0) return '00:00:00';
   const totalSeconds = Math.floor(hours * 3600);
-  const d = Math.floor(totalSeconds / 86400);
-  const h = Math.floor((totalSeconds % 86400) / 3600);
+  const h = Math.floor(totalSeconds / 3600);
   const m = Math.floor((totalSeconds % 3600) / 60);
   const s = totalSeconds % 60;
   const pad = (num: number) => num.toString().padStart(2, '0');
-  return `${pad(d)}:${pad(h)}:${pad(m)}:${pad(s)}`;
+  return `${pad(h)}:${pad(m)}:${pad(s)}`;
 }
 
 // Helper untuk format ISO date string menjadi YYYY-MM-DD HH:mm
