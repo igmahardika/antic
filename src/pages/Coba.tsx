@@ -100,13 +100,13 @@ export const IncidentAnalytics: React.FC = () => {
   // Debug: Log data for verification (background only)
   useEffect(() => {
     if (allIncidents && allIncidents.length > 0) {
-      console.group('🔍 INCIDENT ANALYTICS - DATA VERIFICATION');
-      console.log('📊 Total incidents loaded:', allIncidents.length);
-      console.log('📋 Sample incident:', allIncidents[0]);
+      console.group('INCIDENT ANALYTICS - DATA VERIFICATION');
+              console.log('Total incidents loaded:', allIncidents.length);
+              console.log('Sample incident:', allIncidents[0]);
       
       // Check NCAL values
       const ncalValues = [...new Set(allIncidents.map(i => i.ncal).filter(Boolean))];
-      console.log('🎨 Unique NCAL values:', ncalValues);
+              console.log('Unique NCAL values:', ncalValues);
       
       // Check date ranges
       const dates = allIncidents
@@ -126,7 +126,7 @@ export const IncidentAnalytics: React.FC = () => {
         .filter(i => i.durationMin && i.durationMin > 0)
         .map(i => i.durationMin);
       
-      console.log('⏱️ Duration stats:', {
+              console.log('Duration stats:', {
         totalWithDuration: durations.length,
         avgDuration: durations.length > 0 ? durations.reduce((a, b) => a + b, 0) / durations.length : 0,
         minDuration: durations.length > 0 ? Math.min(...durations) : 0,
@@ -237,8 +237,8 @@ export const IncidentAnalytics: React.FC = () => {
     });
 
       // Debug filtered data (background only)
-  console.group(`🔍 FILTERED DATA - ${selectedPeriod.toUpperCase()}`);
-  console.log('📊 Filtered incidents:', {
+      console.group(`FILTERED DATA - ${selectedPeriod.toUpperCase()}`);
+          console.log('Filtered incidents:', {
     total: filtered.length,
     withStartTime: filtered.filter(i => i.startTime).length,
     withNCAL: filtered.filter(i => i.ncal).length,
@@ -249,7 +249,7 @@ export const IncidentAnalytics: React.FC = () => {
   
   // Sample data for verification
   if (filtered.length > 0) {
-    console.log('📋 Sample incident data:', {
+            console.log('Sample incident data:', {
       priority: filtered[0].priority,
       site: filtered[0].site,
       level: filtered[0].level,
@@ -307,7 +307,7 @@ export const IncidentAnalytics: React.FC = () => {
     const pauseRatio = totalDuration > 0 ? totalPauseTime / totalDuration : 0;
 
     // Ensure we have valid data for calculations
-    console.log('🔍 DATA VALIDATION:', {
+            console.log('DATA VALIDATION:', {
       totalIncidents: total,
       incidentsWithDuration: incidentsWithDuration.length,
       incidentsWithVendor: incidentsWithVendor.length,
@@ -421,12 +421,12 @@ export const IncidentAnalytics: React.FC = () => {
     });
 
     // Debug monthly NCAL data (background only)
-    console.group('📈 MONTHLY NCAL DATA');
-    console.log('📊 Monthly NCAL Count:', byMonthNCAL);
-    console.log('⏱️ Monthly NCAL Duration:', byMonthNCALDuration);
+          console.group('MONTHLY NCAL DATA');
+            console.log('Monthly NCAL Count:', byMonthNCAL);
+            console.log('Monthly NCAL Duration:', byMonthNCALDuration);
     
     // Detailed NCAL Duration Analysis
-    console.group('🔍 DETAILED NCAL DURATION ANALYSIS');
+          console.group('DETAILED NCAL DURATION ANALYSIS');
     
     // Check Yellow and Orange specifically
     ['Yellow', 'Orange'].forEach(ncal => {
@@ -443,7 +443,7 @@ export const IncidentAnalytics: React.FC = () => {
       
       const avgDuration = withDuration.length > 0 ? totalDuration / withDuration.length : 0;
       
-      console.log(`🎨 ${ncal} NCAL Analysis:`, {
+              console.log(`${ncal} NCAL Analysis:`, {
         totalIncidents: incidents.length,
         incidentsWithDuration: withDuration.length,
         totalDurationMinutes: totalDuration,
@@ -457,7 +457,7 @@ export const IncidentAnalytics: React.FC = () => {
       
       // Sample incidents for verification
       if (withDuration.length > 0) {
-        console.log(`📋 Sample ${ncal} incidents:`, withDuration.slice(0, 3).map(i => ({
+        console.log(`Sample ${ncal} incidents:`, withDuration.slice(0, 3).map(i => ({
           noCase: i.noCase,
           durationMin: i.durationMin,
           netDurationMin: i.netDurationMin,
@@ -471,7 +471,7 @@ export const IncidentAnalytics: React.FC = () => {
     console.groupEnd();
 
     // Debug category breakdowns (background only)
-    console.group('📊 CATEGORY BREAKDOWNS');
+          console.group('CATEGORY BREAKDOWNS');
     console.log('Priority Distribution:', Object.entries(byPriority).map(([k, v]) => ({ priority: k, count: v })));
     console.log('Site Distribution:', Object.entries(bySite).sort((a, b) => b[1] - a[1]).slice(0, 10).map(([k, v]) => ({ site: k, count: v })));
     console.log('Level Distribution:', Object.entries(byLevel).map(([k, v]) => ({ level: k, count: v })));
@@ -479,8 +479,8 @@ export const IncidentAnalytics: React.FC = () => {
     console.groupEnd();
 
     // Debug performance metrics (background only)
-    console.group('⚡ PERFORMANCE METRICS');
-    console.log('📊 Vendor Performance:', {
+          console.group('PERFORMANCE METRICS');
+            console.log('Vendor Performance:', {
       avgVendorMin,
       incidentsWithVendor: incidentsWithVendor.length,
       totalIncidents: total
@@ -625,7 +625,7 @@ export const IncidentAnalytics: React.FC = () => {
   }, [selectedLevelMonth, filteredIncidents, levelData]);
 
   // Debug filtered level data
-  console.log('📊 FILTERED LEVEL DATA:', {
+          console.log('FILTERED LEVEL DATA:', {
     selectedLevelMonth,
     totalFilteredData: filteredLevelData.length,
     filteredLevelData,
@@ -633,7 +633,7 @@ export const IncidentAnalytics: React.FC = () => {
   });
 
   // Debug chart data preparation
-  console.log('📊 CHART DATA PREPARATION:', {
+          console.log('CHART DATA PREPARATION:', {
     priorityData,
     siteData: siteData.slice(0, 5), // Show first 5 for debugging
     levelData,
@@ -780,7 +780,7 @@ export const IncidentAnalytics: React.FC = () => {
 
 
   // Debug active NCAL categories
-  console.log('🔍 ACTIVE NCAL CATEGORIES:', {
+          console.log('ACTIVE NCAL CATEGORIES:', {
     allNCAL: NCAL_ORDER,
     activeNCAL: activeNCALCategories,
     originalData: {
@@ -806,7 +806,7 @@ export const IncidentAnalytics: React.FC = () => {
   });
 
   // Validate chart data integrity
-  console.log('✅ CHART DATA VALIDATION:', {
+          console.log('CHART DATA VALIDATION:', {
     ncalCountChart: {
       totalMonths: filteredMonthlyNCALData.length,
       activeCategories: activeNCALCategories.length,
@@ -826,9 +826,9 @@ export const IncidentAnalytics: React.FC = () => {
   });
 
   // Debug chart data (background only)
-  console.group('📊 CHART DATA');
-  console.log('📈 Monthly NCAL Count Chart Data:', monthlyNCALData);
-  console.log('⏱️ Monthly NCAL Duration Chart Data:', monthlyNCALDurationData);
+      console.group('CHART DATA');
+          console.log('Monthly NCAL Count Chart Data:', monthlyNCALData);
+          console.log('Monthly NCAL Duration Chart Data:', monthlyNCALDurationData);
   console.groupEnd();
 
   useEffect(() => {

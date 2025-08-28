@@ -542,7 +542,7 @@ export const IncidentData: React.FC = () => {
             <div>• Unique Start Times: <strong>{dbStats.uniqueStartTimes}</strong></div>
             {dbStats.duplicateGroups > 0 && (
               <div className="text-yellow-600 dark:text-yellow-400">
-                ⚠️ <strong>{dbStats.duplicateGroups} duplicate groups</strong> detected. Consider cleaning duplicates.
+                <strong>{dbStats.duplicateGroups} duplicate groups</strong> detected. Consider cleaning duplicates.
               </div>
             )}
           </div>
@@ -790,7 +790,7 @@ export const IncidentData: React.FC = () => {
       {availableMonths.length === 0 && allIncidents && allIncidents.length > 0 && (
         <div className="mt-4 p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
           <div className="text-sm text-yellow-700 dark:text-yellow-300">
-            ⚠️ No valid months found in data. Please check that the "Start" column contains valid dates.
+            No valid months found in data. Please check that the "Start" column contains valid dates.
           </div>
         </div>
       )}

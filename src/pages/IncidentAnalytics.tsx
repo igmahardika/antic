@@ -152,7 +152,7 @@ const IncidentAnalytics: React.FC = () => {
   const allIncidents = useLiveQuery(() => db.incidents.toArray());
 
   // Debug: Check if incidents data exists
-  console.log('🔍 Incident Data Debug:', {
+        console.log('Incident Data Debug:', {
     allIncidentsCount: allIncidents?.length || 0,
     hasIncidents: !!allIncidents && allIncidents.length > 0,
     sampleIncidents: allIncidents?.slice(0, 3).map(inc => ({
@@ -246,7 +246,7 @@ const IncidentAnalytics: React.FC = () => {
     });
     
     // Debug: Log NCAL data
-    console.log('🔍 NCAL Distribution Debug:', {
+          console.log('NCAL Distribution Debug:', {
       totalIncidents: filteredIncidents.length,
       byNCAL: map,
       sampleNCALValues: filteredIncidents.slice(0, 10).map(inc => ({
@@ -337,9 +337,9 @@ const IncidentAnalytics: React.FC = () => {
       );
       return pause > 0;
     });
-    console.log('🔍 Debug: Incidents with pause data:', pauseDataCheck.length, 'out of', filteredIncidents.length);
+            console.log('Debug: Incidents with pause data:', pauseDataCheck.length, 'out of', filteredIncidents.length);
     if (pauseDataCheck.length > 0) {
-      console.log('🔍 Sample pause data:', pauseDataCheck.slice(0, 3).map(inc => ({
+              console.log('Sample pause data:', pauseDataCheck.slice(0, 3).map(inc => ({
         id: inc.id,
         durationMin: inc.durationMin,
         totalDurationPauseMin: inc.totalDurationPauseMin,
@@ -355,7 +355,7 @@ const IncidentAnalytics: React.FC = () => {
         )
       })));
     } else {
-      console.log('🔍 No pause data found. Checking available fields:', filteredIncidents.slice(0, 3).map(inc => ({
+              console.log('No pause data found. Checking available fields:', filteredIncidents.slice(0, 3).map(inc => ({
         id: inc.id,
         availableFields: Object.keys(inc).filter(key => 
           key.toLowerCase().includes('pause') || 
@@ -424,7 +424,7 @@ const IncidentAnalytics: React.FC = () => {
           
           // Debug: Log differences
           if (Math.abs(realAvg - netAvg) > 0.1) {
-            console.log(`🔍 ${month} ${ncal}: Real=${realAvg.toFixed(2)}, Net=${netAvg.toFixed(2)}, Diff=${(realAvg - netAvg).toFixed(2)}`);
+            console.log(`${month} ${ncal}: Real=${realAvg.toFixed(2)}, Net=${netAvg.toFixed(2)}, Diff=${(realAvg - netAvg).toFixed(2)}`);
           }
         } else {
           realRow[ncal] = 0;
@@ -440,11 +440,11 @@ const IncidentAnalytics: React.FC = () => {
     
     // Debug: Check if realData and netData are identical
     const isIdentical = JSON.stringify(realData) === JSON.stringify(netData);
-    console.log('🔍 Debug: Are realData and netData identical?', isIdentical);
+            console.log('Debug: Are realData and netData identical?', isIdentical);
     if (isIdentical) {
-      console.log('🔍 Warning: Real and Net duration data are identical! This suggests pause data may not be available.');
+              console.log('Warning: Real and Net duration data are identical! This suggests pause data may not be available.');
     } else {
-      console.log('🔍 Success: Real and Net duration data are different!');
+              console.log('Success: Real and Net duration data are different!');
       // Show some sample differences
       realData.forEach((realRow, index) => {
         const netRow = netData[index];
@@ -452,7 +452,7 @@ const IncidentAnalytics: React.FC = () => {
           const realVal = realRow[ncal];
           const netVal = netRow[ncal];
           if (Math.abs(realVal - netVal) > 1) {
-            console.log(`🔍 ${realRow.month} ${ncal}: Real=${realVal.toFixed(2)}, Net=${netVal.toFixed(2)}, Diff=${(realVal - netVal).toFixed(2)}`);
+            console.log(`${realRow.month} ${ncal}: Real=${realVal.toFixed(2)}, Net=${netVal.toFixed(2)}, Diff=${(realVal - netVal).toFixed(2)}`);
           }
         });
       });
