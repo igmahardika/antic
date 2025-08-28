@@ -32,20 +32,44 @@ export function ThemeProvider({
 
   useEffect(() => {
     const root = window.document.documentElement
-
     root.classList.remove("light", "dark")
-
+    
+    // Disable transitions during theme change to prevent flashing
+    root.style.transition = "none"
+    
     if (theme === "system") {
       const systemTheme = window.matchMedia("(prefers-color-scheme: dark)")
         .matches
         ? "dark"
         : "light"
-
       root.classList.add(systemTheme)
-      return
+    } else {
+      root.classList.add(theme)
     }
 
-    root.classList.add(theme)
+    // Re-enable transitions after a short delay
+    const timer = setTimeout(() => {
+      root.style.transition = "color 0.3s ease, background-color 0.3s ease"
+    }, 50)
+
+    return () => clearTimeout(timer)
+  }, [theme])
+
+  // Listen for system theme changes when theme is set to "system"
+  useEffect(() => {
+    if (theme !== "system") return
+
+    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)")
+
+    const handleChange = () => {
+      const root = window.document.documentElement
+      root.classList.remove("light", "dark")
+      const systemTheme = mediaQuery.matches ? "dark" : "light"
+      root.classList.add(systemTheme)
+    }
+
+    mediaQuery.addEventListener('change', handleChange)
+    return () => mediaQuery.removeEventListener('change', handleChange)
   }, [theme])
 
   const value = {

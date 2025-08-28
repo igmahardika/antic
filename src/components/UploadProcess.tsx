@@ -4,6 +4,7 @@ import { Label } from './ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './ui/accordion';
 import { Badge } from './ui/badge';
+import { Progress } from './ui/progress';
 import Papa from 'papaparse';
 import * as ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
@@ -19,6 +20,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import StorageIcon from '@mui/icons-material/Storage';
 import DownloadIcon from '@mui/icons-material/Download';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import PageWrapper from './PageWrapper';
 
 type UploadProcessProps = {
   onUploadComplete: () => void;
@@ -266,7 +268,7 @@ const UploadProcess = ({ onUploadComplete }: UploadProcessProps) => {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-8">
+    <PageWrapper>
       <div className="flex flex-col gap-8">
         <div className="flex flex-col gap-6">
           <div className="flex items-center justify-between p-4 rounded-lg bg-blue-50 dark:bg-zinc-800/50 border border-blue-200 dark:border-zinc-700">
@@ -324,7 +326,7 @@ const UploadProcess = ({ onUploadComplete }: UploadProcessProps) => {
             />
           </div>
         ) : (
-          <Card className="w-full max-w-6xl mx-auto shadow-md border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-10 mb-8 backdrop-blur-sm flex items-center justify-center min-h-[180px]">
+          <Card className="w-full max-w-6xl mx-auto shadow-md border border-gray-200 dark:border-zinc-700 bg-card text-card-foreground border border-border p-10 mb-8 backdrop-blur-sm flex items-center justify-center min-h-[180px]">
             <CardHeader>
               <CardTitle className="text-gray-700 dark:text-gray-300 text-base font-bold">No Data Uploaded</CardTitle>
             </CardHeader>
@@ -344,7 +346,7 @@ const UploadProcess = ({ onUploadComplete }: UploadProcessProps) => {
         )}
         <ErrorLogTable errors={errorLog} />
       </div>
-    </div>
+    </PageWrapper>
   );
 };
 
@@ -375,12 +377,14 @@ const FileDropZone = ({ onFileUpload, isProcessing, progress }: { onFileUpload: 
         <>
           <div className="loader ease-linear rounded-full border-4 border-t-4 border-gray-200 h-12 w-12 mb-4 animate-spin" style={{borderTopColor: '#3b82f6'}}></div>
           <h3 className="text-base font-semibold text-gray-700 dark:text-gray-300">Processing File...</h3>
-          <progress value={progress} max="100" className="w-full max-w-xs mt-4" />
+          <div className="w-full max-w-xs mt-4">
+            <Progress value={progress} className="h-2" />
+          </div>
         </>
       ) : (
         <>
           <CloudUploadIcon className="w-10 h-10 text-gray-400" />
-          <p className="mt-4 text-md text-gray-600 dark:text-gray-400">
+          <p className="mt-4 text-md text-muted-foreground">
             Drop file here, or{' '}
             <label htmlFor="file-upload" className="font-semibold text-blue-600 hover:text-blue-500 cursor-pointer">
               select file
@@ -404,9 +408,9 @@ const ErrorLogTable = ({ errors }: { errors: IErrorLog[] }) => {
   }, {} as Record<string, IErrorLog[]>);
 
   return (
-    <Card className="w-full max-w-6xl mx-auto shadow-md border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-10 mb-8 min-h-[180px] backdrop-blur-sm">
+    <Card className="w-full max-w-6xl mx-auto shadow-md border border-gray-200 dark:border-zinc-700 bg-card text-card-foreground border border-border p-10 mb-8 min-h-[180px] backdrop-blur-sm">
       <CardHeader className="pb-2">
-        <CardTitle className="text-lg font-bold text-gray-900 dark:text-gray-100 text-left">Failure Log Details</CardTitle>
+        <CardTitle className="text-lg font-bold text-card-foreground text-left">Failure Log Details</CardTitle>
         <CardDescription className="text-base text-zinc-500 dark:text-zinc-400 text-left">Grouped by error type.</CardDescription>
       </CardHeader>
       <CardContent className="pt-2 text-sm text-gray-700 dark:text-gray-200">

@@ -376,7 +376,7 @@ export const IncidentUpload: React.FC = () => {
               className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${
                 isDragActive
                   ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
-                  : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500'
+                  : 'border-border hover:border-gray-400 dark:hover:border-gray-500'
               }`}
             >
               <input {...getInputProps()} />
@@ -387,7 +387,7 @@ export const IncidentUpload: React.FC = () => {
                 </p>
               ) : (
                 <div>
-                  <p className="text-lg font-medium text-gray-900 dark:text-gray-100">
+                  <p className="text-lg font-medium text-card-foreground">
                     Drag & drop an Excel file here, or click to select
                   </p>
                   <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
@@ -507,7 +507,7 @@ export const IncidentUpload: React.FC = () => {
                                 <summary className="text-xs text-gray-500 cursor-pointer">
                                   Show details
                                 </summary>
-                                <pre className="text-xs bg-white dark:bg-gray-800 p-2 rounded mt-1 overflow-x-auto">
+                                <pre className="text-xs bg-card text-card-foreground border border-border p-2 rounded mt-1 overflow-x-auto">
                                   {JSON.stringify(entry.details, null, 2)}
                                 </pre>
                               </details>

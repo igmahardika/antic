@@ -416,8 +416,8 @@ export const IncidentData: React.FC = () => {
       <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl md:text-4xl font-extrabold text-gray-900 dark:text-gray-100">Incident Data</h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-2">
+          <h1 className="text-3xl md:text-4xl font-extrabold text-card-foreground">Incident Data</h1>
+          <p className="text-muted-foreground mt-2">
             Manage and view incident data with filtering and search capabilities
           </p>
         </div>
@@ -533,8 +533,8 @@ export const IncidentData: React.FC = () => {
       {dbStats && (
         <div className="bg-gray-50 dark:bg-gray-900/20 rounded-lg p-4 mb-4">
           <div className="flex items-center gap-2 mb-2">
-            <Database className="w-4 h-4 text-gray-600 dark:text-gray-400" />
-            <span className="text-sm font-medium text-gray-800 dark:text-gray-200">Database Status</span>
+            <Database className="w-4 h-4 text-muted-foreground" />
+            <span className="text-sm font-medium text-card-foreground">Database Status</span>
           </div>
           <div className="text-sm text-gray-700 dark:text-gray-300 space-y-1">
             <div>• Total incidents in database: <strong>{dbStats.totalIncidents}</strong></div>
@@ -582,16 +582,16 @@ export const IncidentData: React.FC = () => {
       {/* Reset Confirmation Modal */}
       {showResetConfirm && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full mx-4">
+          <div className="bg-card text-card-foreground border border-border rounded-lg p-6 max-w-md w-full mx-4">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-10 h-10 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center">
                 <Trash2 className="w-5 h-5 text-red-600 dark:text-red-400" />
               </div>
               <div>
-                <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">
+                <h3 className="text-base font-semibold text-card-foreground">
                   Reset Incident Data
                 </h3>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
+                <p className="text-sm text-muted-foreground">
                   This action cannot be undone
                 </p>
               </div>
@@ -624,16 +624,16 @@ export const IncidentData: React.FC = () => {
       {/* Cleanup Duplicates Confirmation Modal */}
       {showCleanupConfirm && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full mx-4">
+          <div className="bg-card text-card-foreground border border-border rounded-lg p-6 max-w-md w-full mx-4">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-10 h-10 bg-yellow-100 dark:bg-yellow-900/30 rounded-full flex items-center justify-center">
                 <AlertTriangle className="w-5 h-5 text-yellow-600 dark:text-yellow-400" />
               </div>
               <div>
-                <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">
+                <h3 className="text-base font-semibold text-card-foreground">
                   Clean Duplicate Incidents
                 </h3>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
+                <p className="text-sm text-muted-foreground">
                   Remove duplicate entries from database
                 </p>
               </div>
@@ -734,7 +734,7 @@ export const IncidentData: React.FC = () => {
           
           {/* Active Filters Display */}
           {(filter.search || selectedMonth || filter.ncal || filter.priority) && (
-            <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+            <div className="mt-3 pt-3 border-t border-border">
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="text-xs text-gray-500 dark:text-gray-400">Active filters:</span>
                 {filter.search && (
@@ -802,16 +802,16 @@ export const IncidentData: React.FC = () => {
       {/* Reset Confirmation Modal */}
       {showResetConfirm && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full mx-4">
+          <div className="bg-card text-card-foreground border border-border rounded-lg p-6 max-w-md w-full mx-4">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-10 h-10 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center">
                 <Trash2 className="w-5 h-5 text-red-600 dark:text-red-400" />
               </div>
               <div>
-                <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">
+                <h3 className="text-base font-semibold text-card-foreground">
                   Reset Incident Data
                 </h3>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
+                <p className="text-sm text-muted-foreground">
                   This action cannot be undone
                 </p>
               </div>
@@ -873,10 +873,10 @@ export const IncidentData: React.FC = () => {
                     ) : (
                       incidents.map((incident, i) => (
                         <tr key={incident.id} className={
-                          i % 2 === 0 ? 'bg-white dark:bg-gray-900' : 'bg-gray-50 dark:bg-gray-800'
+                          i % 2 === 0 ? 'bg-card' : 'bg-muted'
                         }>
                           {columns.map(col => (
-                            <td key={col.key} className="px-5 py-3 whitespace-pre-line text-sm text-gray-800 dark:text-gray-200 align-top">
+                            <td key={col.key} className="px-5 py-3 whitespace-pre-line text-sm text-card-foreground align-top">
                               {col.render ? col.render(incident[col.key as keyof Incident]) : incident[col.key as keyof Incident] || '-'}
                             </td>
                           ))}

@@ -237,7 +237,7 @@ const CustomerData: React.FC = () => {
   return (
     <PageWrapper>
       <div className="mb-8">
-        <h1 className="text-2xl md:text-3xl font-extrabold mb-2 text-gray-900 dark:text-gray-100">Data Customer</h1>
+        <h1 className="text-2xl md:text-3xl font-extrabold mb-2 text-card-foreground">Data Customer</h1>
         <p className="text-gray-500 dark:text-gray-400 mb-6 max-w-2xl">Upload file Excel berisi data customer per bulan (setiap sheet = 1 bulan, header: Nama, Jenis Klien, Layanan, Kategori). Pilih bulan untuk melihat daftar customer.</p>
       </div>
       {/* Summary Cards - Full Width, Modern Layout */}
@@ -262,7 +262,7 @@ const CustomerData: React.FC = () => {
         )}
       </div>
       {/* Filter & Upload Card - Full Width, Modern Layout */}
-      <Card className="w-full mb-8 shadow-lg border border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 min-h-[80px] rounded-2xl">
+      <Card className="w-full mb-8 shadow-lg border border-gray-200 dark:border-zinc-800 bg-card text-card-foreground border border-border min-h-[80px] rounded-2xl">
         <CardContent className="p-6">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-center w-full">
             {/* File Upload */}
@@ -327,7 +327,7 @@ const CustomerData: React.FC = () => {
           </div>
         </CardContent>
       </Card>
-      <div className="overflow-x-auto rounded-xl shadow-lg border border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-900">
+      <div className="overflow-x-auto rounded-xl shadow-lg border border-gray-200 dark:border-zinc-800 bg-card text-card-foreground border border-border">
         <Table>
           <TableHeader>
             <TableRow>

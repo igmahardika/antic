@@ -119,8 +119,8 @@ const MasterDataAgent: React.FC = () => {
 
   const renderTable = (agents: any[], title: string) => (
     <div className="mb-12">
-              <h2 className="text-lg md:text-xl font-bold mb-4 text-gray-900 dark:text-gray-100">{title}</h2>
-      <div className="overflow-x-auto rounded-xl shadow-lg border border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-900">
+              <h2 className="text-lg md:text-xl font-bold mb-4 text-card-foreground">{title}</h2>
+      <div className="overflow-x-auto rounded-xl shadow-lg border border-gray-200 dark:border-zinc-800 bg-card text-card-foreground border border-border">
         <table className="min-w-full table-fixed text-sm rounded-xl overflow-hidden">
           <colgroup>
             <col className="w-14" />
@@ -166,12 +166,12 @@ const MasterDataAgent: React.FC = () => {
                   key={agent.name}
                   className={
                     `transition-colors duration-200 cursor-pointer ` +
-                    (i % 2 === 0 ? 'bg-white dark:bg-gray-900' : 'bg-gray-50 dark:bg-gray-800') +
+                    (i % 2 === 0 ? 'bg-card text-card-foreground border border-border' : 'bg-gray-50 dark:bg-gray-800') +
                     ' hover:bg-blue-50/60 dark:hover:bg-blue-900/40 border-b border-gray-100 dark:border-zinc-800'
                   }
                 >
-                  <td className="w-14 px-4 py-3 text-gray-800 dark:text-gray-200 font-semibold text-center align-top">{i + 1}</td>
-                  <td className="w-[20%] min-w-[160px] px-5 py-3 text-gray-900 dark:text-gray-100 font-semibold align-top whitespace-nowrap">{agent.name}</td>
+                  <td className="w-14 px-4 py-3 text-card-foreground font-semibold text-center align-top">{i + 1}</td>
+                  <td className="w-[20%] min-w-[160px] px-5 py-3 text-card-foreground font-semibold align-top whitespace-nowrap">{agent.name}</td>
                   <td className="w-[13%] min-w-[110px] px-5 py-3 align-top">
                     <div className="flex flex-wrap gap-2">
                       {agent.years.map((y: number) => (
@@ -197,7 +197,7 @@ const MasterDataAgent: React.FC = () => {
   return (
     <PageWrapper>
       <div className="mb-8">
-        <h1 className="text-3xl md:text-4xl font-extrabold mb-2 text-gray-900 dark:text-gray-100">Master Data Agent</h1>
+        <h1 className="text-3xl md:text-4xl font-extrabold mb-2 text-card-foreground">Master Data Agent</h1>
         <p className="text-gray-500 dark:text-gray-400 mb-6">List agent otomatis dari data tiket, beserta tahun aktif masing-masing agent.</p>
       </div>
       {renderTable(activeAgents, `Active Agent (${CURRENT_YEAR})`)}

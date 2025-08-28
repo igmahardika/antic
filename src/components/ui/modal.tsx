@@ -11,7 +11,7 @@ const Modal: React.FC<ModalProps> = ({ open, onClose, children, title }) => {
   if (!open) return null;
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
-      <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-xl max-w-2xl w-full p-6 relative animate-fade-in">
+      <div className="bg-card text-card-foreground border border-border rounded-2xl shadow-xl max-w-2xl w-full p-6 relative animate-fade-in">
         <button
           className="absolute top-3 right-3 text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 text-xl font-bold"
           onClick={onClose}

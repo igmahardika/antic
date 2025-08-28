@@ -12,6 +12,7 @@ import StorageIcon from '@mui/icons-material/Storage';
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 import DescriptionIcon from '@mui/icons-material/Description';
 import SettingsIcon from '@mui/icons-material/Settings';
+import PageWrapper from '../components/PageWrapper';
 
 interface CollapsibleSectionProps {
   title: string;
@@ -29,7 +30,7 @@ const CollapsibleSection: React.FC<CollapsibleSectionProps> = ({
   const [isExpanded, setIsExpanded] = useState(defaultExpanded);
 
   return (
-    <Card className="w-full bg-white dark:bg-zinc-900 rounded-xl border shadow">
+    <Card className="w-full bg-card text-card-foreground border border-border rounded-xl border shadow">
       <CardHeader 
         className="p-6 cursor-pointer hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors"
         onClick={() => setIsExpanded(!isExpanded)}
@@ -37,7 +38,7 @@ const CollapsibleSection: React.FC<CollapsibleSectionProps> = ({
             <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
                 {icon}
-            <CardTitle className="text-lg font-extrabold text-gray-900 dark:text-gray-100">
+            <CardTitle className="text-lg font-extrabold text-card-foreground">
                 {title}
               </CardTitle>
           </div>
@@ -55,16 +56,17 @@ const CollapsibleSection: React.FC<CollapsibleSectionProps> = ({
 
 export default function AdminRumus() {
   return (
-    <div className="max-w-full w-full py-8 px-4 sm:px-6 space-y-8">
+    <PageWrapper>
+      <div className="max-w-full w-full py-8 px-4 sm:px-6 space-y-8">
       {/* Header */}
       <div className="text-center space-y-4">
-        <h1 className="text-3xl md:text-4xl font-extrabold text-gray-900 dark:text-gray-100">
+        <h1 className="text-3xl md:text-4xl font-extrabold text-card-foreground">
           Helpdesk Management System
         </h1>
         <h2 className="text-lg md:text-xl font-bold text-gray-700 dark:text-gray-300">
           Dokumentasi Teknis & Arsitektur Sistem
         </h2>
-        <p className="text-base text-gray-600 dark:text-gray-400 max-w-4xl mx-auto">
+        <p className="text-base text-muted-foreground max-w-4xl mx-auto">
           Dokumentasi komprehensif untuk semua komponen sistem, algoritma analitik, 
           metodologi pemrosesan data, dan implementasi teknis untuk pengembangan dan pemeliharaan sistem.
         </p>
@@ -78,11 +80,11 @@ export default function AdminRumus() {
       >
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           <div className="space-y-3">
-            <h4 className="font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+            <h4 className="font-semibold text-card-foreground flex items-center gap-2">
               <DashboardIcon className="text-green-600" />
               Core Analytics
             </h4>
-            <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
+            <ul className="space-y-2 text-sm text-muted-foreground">
               <li>• Summary Dashboard</li>
               <li>• Agent Analytics</li>
               <li>• Ticket Analytics</li>
@@ -91,11 +93,11 @@ export default function AdminRumus() {
             </div>
 
           <div className="space-y-3">
-            <h4 className="font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+            <h4 className="font-semibold text-card-foreground flex items-center gap-2">
               <AnalyticsIcon className="text-purple-600" />
               Specialized Analytics
             </h4>
-            <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
+            <ul className="space-y-2 text-sm text-muted-foreground">
               <li>• Incident Analytics</li>
               <li>• Technical Support Analytics</li>
               <li>• Site Analytics</li>
@@ -103,11 +105,11 @@ export default function AdminRumus() {
               </div>
           
           <div className="space-y-3">
-            <h4 className="font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+            <h4 className="font-semibold text-card-foreground flex items-center gap-2">
               <StorageIcon className="text-orange-600" />
               Data Management
             </h4>
-            <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
+            <ul className="space-y-2 text-sm text-muted-foreground">
               <li>• Master Data</li>
               <li>• Agent Data</li>
               <li>• Customer Data</li>
@@ -116,11 +118,11 @@ export default function AdminRumus() {
               </div>
           
           <div className="space-y-3">
-            <h4 className="font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+            <h4 className="font-semibold text-card-foreground flex items-center gap-2">
               <SettingsIcon className="text-red-600" />
               System Administration
             </h4>
-            <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
+            <ul className="space-y-2 text-sm text-muted-foreground">
               <li>• Admin Panel</li>
               <li>• Formulas & Calculations</li>
               <li>• System Architecture</li>
@@ -146,7 +148,7 @@ export default function AdminRumus() {
 
           <div className="space-y-6">
                     <div>
-              <h5 className="font-semibold text-gray-900 dark:text-gray-100 mb-3">Flow Pemrosesan Data</h5>
+              <h5 className="font-semibold text-card-foreground mb-3">Flow Pemrosesan Data</h5>
               <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
                 <div className="space-y-3 text-sm">
                   <div className="flex items-start gap-2">
@@ -183,8 +185,8 @@ export default function AdminRumus() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-4">
-                <h5 className="font-semibold text-gray-900 dark:text-gray-100">Komponen Utama</h5>
-                <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
+                <h5 className="font-semibold text-card-foreground">Komponen Utama</h5>
+                <ul className="space-y-2 text-sm text-muted-foreground">
                   <li>• <strong>KPI Cards:</strong> Metrik real-time untuk tickets, agents, dan customers</li>
                   <li>• <strong>Trend Charts:</strong> Grafik performa bulanan dan trend analisis</li>
                   <li>• <strong>Status Overview:</strong> Ringkasan status sistem dan alerts</li>
@@ -194,8 +196,8 @@ export default function AdminRumus() {
               </div>
               
               <div className="space-y-4">
-                <h5 className="font-semibold text-gray-900 dark:text-gray-100">Fitur Teknis</h5>
-                <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
+                <h5 className="font-semibold text-card-foreground">Fitur Teknis</h5>
+                <ul className="space-y-2 text-sm text-muted-foreground">
                   <li>• <strong>Live Updates:</strong> Data diperbarui otomatis via Dexie.js live queries</li>
                   <li>• <strong>Responsive Design:</strong> Tampilan optimal di semua perangkat dengan Tailwind CSS</li>
                   <li>• <strong>Theme Support:</strong> Dukungan tema gelap dan terang</li>
@@ -206,7 +208,7 @@ export default function AdminRumus() {
             </div>
 
             <div className="space-y-4">
-              <h5 className="font-semibold text-gray-900 dark:text-gray-100">Algoritma Perhitungan</h5>
+              <h5 className="font-semibold text-card-foreground">Algoritma Perhitungan</h5>
               <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
                 <div className="space-y-3 text-sm">
                   <div><strong>Total Tickets:</strong> COUNT(incidents) dengan filter periode waktu</div>
@@ -237,7 +239,7 @@ export default function AdminRumus() {
 
           <div className="space-y-6">
                     <div>
-              <h5 className="font-semibold text-gray-900 dark:text-gray-100 mb-3">Flow Pemrosesan Data Agent</h5>
+              <h5 className="font-semibold text-card-foreground mb-3">Flow Pemrosesan Data Agent</h5>
               <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
                 <div className="space-y-3 text-sm">
                   <div className="flex items-start gap-2">
@@ -276,7 +278,7 @@ export default function AdminRumus() {
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <div className="space-y-4">
-                <h5 className="font-semibold text-gray-900 dark:text-gray-100">Algoritma Scoring Utama</h5>
+                <h5 className="font-semibold text-card-foreground">Algoritma Scoring Utama</h5>
                 <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
                   <div className="space-y-2 text-sm">
                     <div><strong>FCR (First Contact Resolution):</strong> 30% - Resolusi di kontak pertama</div>
@@ -293,7 +295,7 @@ export default function AdminRumus() {
               </div>
 
               <div className="space-y-4">
-                <h5 className="font-semibold text-gray-900 dark:text-gray-100">Metode Normalisasi</h5>
+                <h5 className="font-semibold text-card-foreground">Metode Normalisasi</h5>
                 <div className="space-y-3">
                   <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-3">
                     <div className="font-semibold text-green-800 dark:text-green-200 mb-2">KPI Positif (Semakin tinggi semakin baik)</div>
@@ -314,11 +316,11 @@ export default function AdminRumus() {
             </div>
 
             <div className="space-y-4">
-              <h5 className="font-semibold text-gray-900 dark:text-gray-100">Perhitungan Detail KPI</h5>
+              <h5 className="font-semibold text-card-foreground">Perhitungan Detail KPI</h5>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="p-4 border rounded-lg">
                   <h6 className="font-semibold mb-2">FCR (First Contact Resolution)</h6>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                  <p className="text-sm text-muted-foreground">
                     <strong>Rumus:</strong> (Tickets resolved in first contact / Total tickets) × 100<br/>
                     <strong>Target:</strong> 85%<br/>
                     <strong>Normalisasi:</strong> min((FCR_actual / 85) × 100, 120)
@@ -326,7 +328,7 @@ export default function AdminRumus() {
                 </div>
                 <div className="p-4 border rounded-lg">
                   <h6 className="font-semibold mb-2">SLA (Service Level Agreement)</h6>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                  <p className="text-sm text-muted-foreground">
                     <strong>Rumus:</strong> (Tickets within SLA / Total tickets) × 100<br/>
                     <strong>Target:</strong> 95%<br/>
                     <strong>Normalisasi:</strong> min((SLA_actual / 95) × 100, 120)
@@ -334,7 +336,7 @@ export default function AdminRumus() {
                 </div>
                 <div className="p-4 border rounded-lg">
                   <h6 className="font-semibold mb-2">FRT (First Response Time)</h6>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                  <p className="text-sm text-muted-foreground">
                     <strong>Rumus:</strong> Average time to first response in minutes<br/>
                     <strong>Target:</strong> 15 menit<br/>
                     <strong>Normalisasi:</strong> max(120 - (FRT_actual / 15) × 100, 0)
@@ -342,7 +344,7 @@ export default function AdminRumus() {
                 </div>
                 <div className="p-4 border rounded-lg">
                   <h6 className="font-semibold mb-2">ART (Average Resolution Time)</h6>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                  <p className="text-sm text-muted-foreground">
                     <strong>Rumus:</strong> Average time to resolution in minutes<br/>
                     <strong>Target:</strong> 120 menit<br/>
                     <strong>Normalisasi:</strong> max(120 - (ART_actual / 120) × 100, 0)
@@ -352,23 +354,23 @@ export default function AdminRumus() {
             </div>
 
             <div className="space-y-4">
-              <h5 className="font-semibold text-gray-900 dark:text-gray-100">Fitur Lanjutan</h5>
+              <h5 className="font-semibold text-card-foreground">Fitur Lanjutan</h5>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="p-4 border rounded-lg">
                   <h6 className="font-semibold mb-2">Analisis Trend</h6>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                  <p className="text-sm text-muted-foreground">
                     Tracking performa bulan-over-bulan dengan indikator trend dan prediksi
                   </p>
                 </div>
                 <div className="p-4 border rounded-lg">
                   <h6 className="font-semibold mb-2">Kategorisasi Performa</h6>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                  <p className="text-sm text-muted-foreground">
                                          Kategorisasi otomatis: Top Performers (skor &gt; 90), Average (70-90), Needs Improvement (&lt; 70)
                   </p>
                 </div>
                 <div className="p-4 border rounded-lg">
                   <h6 className="font-semibold mb-2">Analisis Komparatif</h6>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                  <p className="text-sm text-muted-foreground">
                     Perbandingan peer dan benchmarking terhadap rata-rata tim
                   </p>
                 </div>
@@ -394,7 +396,7 @@ export default function AdminRumus() {
 
           <div className="space-y-6">
                     <div>
-              <h5 className="font-semibold text-gray-900 dark:text-gray-100 mb-3">Flow Pemrosesan Data Tiket</h5>
+              <h5 className="font-semibold text-card-foreground mb-3">Flow Pemrosesan Data Tiket</h5>
               <div className="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg p-4">
                 <div className="space-y-3 text-sm">
                   <div className="flex items-start gap-2">
@@ -433,8 +435,8 @@ export default function AdminRumus() {
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <div className="space-y-4">
-                <h5 className="font-semibold text-gray-900 dark:text-gray-100">Metrik Utama</h5>
-                <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
+                <h5 className="font-semibold text-card-foreground">Metrik Utama</h5>
+                <ul className="space-y-2 text-sm text-muted-foreground">
                   <li>• <strong>Volume Trends:</strong> Trend volume tiket per bulan/priode</li>
                   <li>• <strong>Resolution Time:</strong> Analisis waktu penyelesaian (MTTR)</li>
                   <li>• <strong>Priority Distribution:</strong> Distribusi berdasarkan priority level</li>
@@ -445,8 +447,8 @@ export default function AdminRumus() {
               </div>
 
               <div className="space-y-4">
-                <h5 className="font-semibold text-gray-900 dark:text-gray-100">Fitur Analitik</h5>
-                <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
+                <h5 className="font-semibold text-card-foreground">Fitur Analitik</h5>
+                <ul className="space-y-2 text-sm text-muted-foreground">
                   <li>• <strong>Real-time Visualization:</strong> Visualisasi data real-time</li>
                   <li>• <strong>Multi-dimensional Filtering:</strong> Filter multi-dimensi</li>
                   <li>• <strong>Predictive Analysis:</strong> Analisis prediktif trend</li>
@@ -458,11 +460,11 @@ export default function AdminRumus() {
             </div>
 
             <div className="space-y-4">
-              <h5 className="font-semibold text-gray-900 dark:text-gray-100">Algoritma Perhitungan</h5>
+              <h5 className="font-semibold text-card-foreground">Algoritma Perhitungan</h5>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="p-4 border rounded-lg">
                   <h6 className="font-semibold mb-2">Volume Analysis</h6>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                  <p className="text-sm text-muted-foreground">
                     <strong>Monthly Volume:</strong> COUNT(incidents) GROUP BY month<br/>
                     <strong>Growth Rate:</strong> ((Current - Previous) / Previous) × 100<br/>
                     <strong>Trend Analysis:</strong> Linear regression untuk prediksi
@@ -470,7 +472,7 @@ export default function AdminRumus() {
                 </div>
                 <div className="p-4 border rounded-lg">
                   <h6 className="font-semibold mb-2">Duration Analysis</h6>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                  <p className="text-sm text-muted-foreground">
                     <strong>MTTR:</strong> AVG(endTime - startTime) dalam menit<br/>
                     <strong>Net Duration:</strong> MTTR - Total pause time<br/>
                     <strong>Efficiency:</strong> (Net Duration / Total Duration) × 100
@@ -478,7 +480,7 @@ export default function AdminRumus() {
                 </div>
                 <div className="p-4 border rounded-lg">
                   <h6 className="font-semibold mb-2">SLA Compliance</h6>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                  <p className="text-sm text-muted-foreground">
                     <strong>Compliance Rate:</strong> (Tickets within SLA / Total tickets) × 100<br/>
                     <strong>SLA Targets:</strong> Priority 1: 1 jam, Priority 2: 4 jam, Priority 3: 8 jam<br/>
                     <strong>Breach Analysis:</strong> Analisis penyebab SLA breach
@@ -486,7 +488,7 @@ export default function AdminRumus() {
                 </div>
                 <div className="p-4 border rounded-lg">
                   <h6 className="font-semibold mb-2">NCAL Analysis</h6>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                  <p className="text-sm text-muted-foreground">
                     <strong>Distribution:</strong> COUNT per NCAL level (Blue, Yellow, Orange, Red, Black)<br/>
                     <strong>Impact Score:</strong> Weighted average berdasarkan NCAL severity<br/>
                     <strong>Trend:</strong> Perubahan distribusi NCAL over time
@@ -496,7 +498,7 @@ export default function AdminRumus() {
             </div>
 
             <div className="space-y-4">
-              <h5 className="font-semibold text-gray-900 dark:text-gray-100">Pemrosesan Data</h5>
+              <h5 className="font-semibold text-card-foreground">Pemrosesan Data</h5>
               <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
                 <div className="text-sm space-y-2">
                   <div><strong>Sumber Data:</strong> Database incidents, Customer records, Agent performance data</div>
@@ -527,7 +529,7 @@ export default function AdminRumus() {
 
           <div className="space-y-6">
                     <div>
-              <h5 className="font-semibold text-gray-900 dark:text-gray-100 mb-3">Flow Pemrosesan Data Customer</h5>
+              <h5 className="font-semibold text-card-foreground mb-3">Flow Pemrosesan Data Customer</h5>
               <div className="bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800 rounded-lg p-4">
                 <div className="space-y-3 text-sm">
                   <div className="flex items-start gap-2">
@@ -566,8 +568,8 @@ export default function AdminRumus() {
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <div className="space-y-4">
-                <h5 className="font-semibold text-gray-900 dark:text-gray-100">Fitur Kanban Board</h5>
-                <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
+                <h5 className="font-semibold text-card-foreground">Fitur Kanban Board</h5>
+                <ul className="space-y-2 text-sm text-muted-foreground">
                   <li>• <strong>Drag-and-drop:</strong> Manajemen tiket dengan drag-and-drop</li>
                   <li>• <strong>Real-time Updates:</strong> Update status real-time</li>
                   <li>• <strong>Workflow Visualization:</strong> Visualisasi workflow yang jelas</li>
@@ -578,8 +580,8 @@ export default function AdminRumus() {
               </div>
 
               <div className="space-y-4">
-                <h5 className="font-semibold text-gray-900 dark:text-gray-100">Metrik Customer</h5>
-                <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
+                <h5 className="font-semibold text-card-foreground">Metrik Customer</h5>
+                <ul className="space-y-2 text-sm text-muted-foreground">
                   <li>• <strong>Satisfaction Scores:</strong> Skor kepuasan customer</li>
                   <li>• <strong>Response Time:</strong> Analisis waktu respon</li>
                   <li>• <strong>Resolution Quality:</strong> Metrik kualitas resolusi</li>
@@ -591,11 +593,11 @@ export default function AdminRumus() {
             </div>
 
             <div className="space-y-4">
-              <h5 className="font-semibold text-gray-900 dark:text-gray-100">Algoritma Perhitungan</h5>
+              <h5 className="font-semibold text-card-foreground">Algoritma Perhitungan</h5>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="p-4 border rounded-lg">
                   <h6 className="font-semibold mb-2">Customer Satisfaction</h6>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                  <p className="text-sm text-muted-foreground">
                     <strong>CSAT Score:</strong> (Satisfied customers / Total customers) × 100<br/>
                     <strong>NPS Calculation:</strong> Promoters - Detractors<br/>
                     <strong>Sentiment Analysis:</strong> Text analysis dari feedback
@@ -603,7 +605,7 @@ export default function AdminRumus() {
                 </div>
                 <div className="p-4 border rounded-lg">
                   <h6 className="font-semibold mb-2">Customer Journey</h6>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                  <p className="text-sm text-muted-foreground">
                     <strong>Touchpoint Analysis:</strong> Analisis setiap touchpoint customer<br/>
                     <strong>Journey Duration:</strong> Total waktu dari first contact hingga resolution<br/>
                     <strong>Bottleneck Identification:</strong> Identifikasi bottleneck dalam journey
@@ -611,7 +613,7 @@ export default function AdminRumus() {
                 </div>
                 <div className="p-4 border rounded-lg">
                   <h6 className="font-semibold mb-2">Retention Metrics</h6>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                  <p className="text-sm text-muted-foreground">
                     <strong>Retention Rate:</strong> (Retained customers / Total customers) × 100<br/>
                     <strong>Churn Analysis:</strong> Analisis customer yang churn<br/>
                     <strong>Lifetime Value:</strong> Perhitungan customer lifetime value
@@ -619,7 +621,7 @@ export default function AdminRumus() {
                 </div>
                 <div className="p-4 border rounded-lg">
                   <h6 className="font-semibold mb-2">Service Quality</h6>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                  <p className="text-sm text-muted-foreground">
                     <strong>First Contact Resolution:</strong> Resolusi di kontak pertama<br/>
                     <strong>Resolution Time:</strong> Waktu rata-rata penyelesaian<br/>
                     <strong>Quality Score:</strong> Skor kualitas layanan berdasarkan multiple factors
@@ -629,7 +631,7 @@ export default function AdminRumus() {
             </div>
 
             <div className="space-y-4">
-              <h5 className="font-semibold text-gray-900 dark:text-gray-100">Implementasi Teknis</h5>
+              <h5 className="font-semibold text-card-foreground">Implementasi Teknis</h5>
               <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
                 <div className="text-sm space-y-2">
                   <div><strong>Frontend:</strong> React dengan TypeScript, Tailwind CSS untuk styling</div>
@@ -660,7 +662,7 @@ export default function AdminRumus() {
 
           <div className="space-y-6">
                     <div>
-              <h5 className="font-semibold text-gray-900 dark:text-gray-100 mb-3">Flow Pemrosesan Data Insiden</h5>
+              <h5 className="font-semibold text-card-foreground mb-3">Flow Pemrosesan Data Insiden</h5>
               <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
                 <div className="space-y-3 text-sm">
                   <div className="flex items-start gap-2">
@@ -699,14 +701,14 @@ export default function AdminRumus() {
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <div className="space-y-4">
-                <h5 className="font-semibold text-gray-900 dark:text-gray-100">Analisis NCAL</h5>
+                <h5 className="font-semibold text-card-foreground">Analisis NCAL</h5>
                 <div className="space-y-3">
                   <div className="p-3 border rounded-lg">
                     <div className="flex items-center gap-2 mb-1">
                       <div className="w-4 h-4 bg-blue-500 rounded"></div>
                       <strong>Blue:</strong> Dampak rendah, maintenance rutin
                     </div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                    <p className="text-sm text-muted-foreground">
                       Insiden dengan dampak minimal, tidak mempengaruhi layanan customer
                     </p>
                   </div>
@@ -715,7 +717,7 @@ export default function AdminRumus() {
                       <div className="w-4 h-4 bg-yellow-500 rounded"></div>
                       <strong>Yellow:</strong> Dampak minor, prosedur standar
                     </div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                    <p className="text-sm text-muted-foreground">
                       Insiden dengan dampak terbatas, dapat ditangani dengan prosedur normal
                     </p>
                   </div>
@@ -724,7 +726,7 @@ export default function AdminRumus() {
                       <div className="w-4 h-4 bg-orange-500 rounded"></div>
                       <strong>Orange:</strong> Dampak sedang, monitoring enhanced
                     </div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                    <p className="text-sm text-muted-foreground">
                       Insiden dengan dampak signifikan, memerlukan monitoring intensif
                     </p>
                   </div>
@@ -733,7 +735,7 @@ export default function AdminRumus() {
                       <div className="w-4 h-4 bg-red-500 rounded"></div>
                       <strong>Red:</strong> Dampak tinggi, perhatian segera
                     </div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                    <p className="text-sm text-muted-foreground">
                       Insiden kritis yang mempengaruhi layanan customer secara signifikan
                     </p>
                   </div>
@@ -742,7 +744,7 @@ export default function AdminRumus() {
                       <div className="w-4 h-4 bg-black rounded"></div>
                       <strong>Black:</strong> Dampak kritis, respons darurat
                     </div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                    <p className="text-sm text-muted-foreground">
                       Insiden sangat kritis yang memerlukan respons darurat dan eskalasi
                     </p>
                   </div>
@@ -750,8 +752,8 @@ export default function AdminRumus() {
               </div>
 
               <div className="space-y-4">
-                <h5 className="font-semibold text-gray-900 dark:text-gray-100">Metrik Utama</h5>
-                <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
+                <h5 className="font-semibold text-card-foreground">Metrik Utama</h5>
+                <ul className="space-y-2 text-sm text-muted-foreground">
                   <li>• <strong>Incident Frequency:</strong> Frekuensi insiden per NCAL level</li>
                   <li>• <strong>MTTR by NCAL:</strong> Mean time to resolution per level kritis</li>
                   <li>• <strong>Root Cause Patterns:</strong> Pola analisis root cause</li>
@@ -763,11 +765,11 @@ export default function AdminRumus() {
                     </div>
 
             <div className="space-y-4">
-              <h5 className="font-semibold text-gray-900 dark:text-gray-100">Algoritma Perhitungan</h5>
+              <h5 className="font-semibold text-card-foreground">Algoritma Perhitungan</h5>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="p-4 border rounded-lg">
                   <h6 className="font-semibold mb-2">NCAL Distribution</h6>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                  <p className="text-sm text-muted-foreground">
                     <strong>Calculation:</strong> COUNT(incidents) GROUP BY ncal_level<br/>
                     <strong>Percentage:</strong> (Count per level / Total incidents) × 100<br/>
                     <strong>Trend:</strong> Month-over-month comparison
@@ -775,7 +777,7 @@ export default function AdminRumus() {
                   </div>
                 <div className="p-4 border rounded-lg">
                   <h6 className="font-semibold mb-2">Impact Score</h6>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                  <p className="text-sm text-muted-foreground">
                     <strong>Weighted Score:</strong> Blue(1) + Yellow(2) + Orange(3) + Red(4) + Black(5)<br/>
                     <strong>Average Impact:</strong> Total weighted score / Total incidents<br/>
                     <strong>Risk Level:</strong> Based on impact score thresholds
@@ -783,7 +785,7 @@ export default function AdminRumus() {
                 </div>
                 <div className="p-4 border rounded-lg">
                   <h6 className="font-semibold mb-2">MTTR Analysis</h6>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                  <p className="text-sm text-muted-foreground">
                     <strong>By NCAL:</strong> AVG(duration) GROUP BY ncal_level<br/>
                     <strong>Efficiency:</strong> (Target MTTR / Actual MTTR) × 100<br/>
                     <strong>Improvement:</strong> Month-over-month MTTR reduction
@@ -791,7 +793,7 @@ export default function AdminRumus() {
                 </div>
                 <div className="p-4 border rounded-lg">
                   <h6 className="font-semibold mb-2">Prevention Metrics</h6>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                  <p className="text-sm text-muted-foreground">
                     <strong>Repeat Incidents:</strong> COUNT incidents with same root cause<br/>
                     <strong>Prevention Rate:</strong> (Prevented incidents / Total potential) × 100<br/>
                     <strong>Learning Effectiveness:</strong> Reduction in repeat incidents
@@ -801,23 +803,23 @@ export default function AdminRumus() {
             </div>
 
             <div className="space-y-4">
-              <h5 className="font-semibold text-gray-900 dark:text-gray-100">Fitur Lanjutan</h5>
+              <h5 className="font-semibold text-card-foreground">Fitur Lanjutan</h5>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="p-4 border rounded-lg">
                   <h6 className="font-semibold mb-2">Analitik Prediktif</h6>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                  <p className="text-sm text-muted-foreground">
                     Model machine learning untuk prediksi dan pencegahan insiden berdasarkan pola historis
                   </p>
                 </div>
                 <div className="p-4 border rounded-lg">
                   <h6 className="font-semibold mb-2">Laporan Otomatis</h6>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                  <p className="text-sm text-muted-foreground">
                     Laporan terjadwal dengan template yang dapat disesuaikan dan pengiriman otomatis
                   </p>
                 </div>
                 <div className="p-4 border rounded-lg">
                   <h6 className="font-semibold mb-2">Integrasi Sistem</h6>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                  <p className="text-sm text-muted-foreground">
                     Integrasi API dengan sistem monitoring dan ticketing eksternal
                   </p>
                 </div>
@@ -843,7 +845,7 @@ export default function AdminRumus() {
 
           <div className="space-y-6">
                     <div>
-              <h5 className="font-semibold text-gray-900 dark:text-gray-100 mb-3">Flow Pemrosesan Data Technical Support</h5>
+              <h5 className="font-semibold text-card-foreground mb-3">Flow Pemrosesan Data Technical Support</h5>
               <div className="bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg p-4">
                 <div className="space-y-3 text-sm">
                   <div className="flex items-start gap-2">
@@ -882,8 +884,8 @@ export default function AdminRumus() {
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <div className="space-y-4">
-                <h5 className="font-semibold text-gray-900 dark:text-gray-100">Metrik Support</h5>
-                <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
+                <h5 className="font-semibold text-card-foreground">Metrik Support</h5>
+                <ul className="space-y-2 text-sm text-muted-foreground">
                   <li>• <strong>Technical Resolution Rates:</strong> Tingkat resolusi teknis</li>
                   <li>• <strong>Knowledge Base Utilization:</strong> Pemanfaatan knowledge base</li>
                   <li>• <strong>Escalation Patterns:</strong> Pola eskalasi tiket</li>
@@ -894,8 +896,8 @@ export default function AdminRumus() {
                     </div>
 
               <div className="space-y-4">
-                <h5 className="font-semibold text-gray-900 dark:text-gray-100">Quality Assurance</h5>
-                <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
+                <h5 className="font-semibold text-card-foreground">Quality Assurance</h5>
+                <ul className="space-y-2 text-sm text-muted-foreground">
                   <li>• <strong>Solution Accuracy:</strong> Tracking akurasi solusi</li>
                   <li>• <strong>Customer Feedback:</strong> Analisis feedback customer</li>
                   <li>• <strong>Resolution Quality:</strong> Skor kualitas resolusi</li>
@@ -907,11 +909,11 @@ export default function AdminRumus() {
                   </div>
 
             <div className="space-y-4">
-              <h5 className="font-semibold text-gray-900 dark:text-gray-100">Algoritma Perhitungan</h5>
+              <h5 className="font-semibold text-card-foreground">Algoritma Perhitungan</h5>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="p-4 border rounded-lg">
                   <h6 className="font-semibold mb-2">Skill-based Routing</h6>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                  <p className="text-sm text-muted-foreground">
                     <strong>Skill Score:</strong> Weighted average dari technical skills<br/>
                     <strong>Complexity Matching:</strong> Matching ticket complexity dengan agent skill<br/>
                     <strong>Load Balancing:</strong> Distribusi workload berdasarkan availability
@@ -919,7 +921,7 @@ export default function AdminRumus() {
                 </div>
                 <div className="p-4 border rounded-lg">
                   <h6 className="font-semibold mb-2">Knowledge Base Metrics</h6>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                  <p className="text-sm text-muted-foreground">
                     <strong>Utilization Rate:</strong> (KB usage / Total tickets) × 100<br/>
                     <strong>Effectiveness Score:</strong> Success rate dari KB solutions<br/>
                     <strong>Update Frequency:</strong> Frequency of KB content updates
@@ -927,7 +929,7 @@ export default function AdminRumus() {
                 </div>
                 <div className="p-4 border rounded-lg">
                   <h6 className="font-semibold mb-2">Quality Metrics</h6>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                  <p className="text-sm text-muted-foreground">
                     <strong>Accuracy Score:</strong> (Correct solutions / Total solutions) × 100<br/>
                     <strong>Customer Satisfaction:</strong> CSAT scores untuk technical support<br/>
                     <strong>Resolution Time:</strong> Average time untuk technical resolution
@@ -935,7 +937,7 @@ export default function AdminRumus() {
                 </div>
                 <div className="p-4 border rounded-lg">
                   <h6 className="font-semibold mb-2">Training Impact</h6>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                  <p className="text-sm text-muted-foreground">
                     <strong>Skill Improvement:</strong> Pre vs post training skill assessment<br/>
                     <strong>Performance Uplift:</strong> Performance improvement setelah training<br/>
                     <strong>Knowledge Retention:</strong> Long-term knowledge retention rate
@@ -963,7 +965,7 @@ export default function AdminRumus() {
 
           <div className="space-y-6">
                     <div>
-              <h5 className="font-semibold text-gray-900 dark:text-gray-100 mb-3">Flow Pemrosesan Data Site</h5>
+              <h5 className="font-semibold text-card-foreground mb-3">Flow Pemrosesan Data Site</h5>
               <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
                 <div className="space-y-3 text-sm">
                   <div className="flex items-start gap-2">
@@ -1002,8 +1004,8 @@ export default function AdminRumus() {
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <div className="space-y-4">
-                <h5 className="font-semibold text-gray-900 dark:text-gray-100">Metrik Site</h5>
-                <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
+                <h5 className="font-semibold text-card-foreground">Metrik Site</h5>
+                <ul className="space-y-2 text-sm text-muted-foreground">
                   <li>• <strong>Site Availability:</strong> Tingkat ketersediaan site</li>
                   <li>• <strong>Performance Benchmarks:</strong> Benchmark performa site</li>
                   <li>• <strong>Infrastructure Health:</strong> Skor kesehatan infrastruktur</li>
@@ -1014,8 +1016,8 @@ export default function AdminRumus() {
                     </div>
 
               <div className="space-y-4">
-                <h5 className="font-semibold text-gray-900 dark:text-gray-100">Analisis Geografis</h5>
-                <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
+                <h5 className="font-semibold text-card-foreground">Analisis Geografis</h5>
+                <ul className="space-y-2 text-sm text-muted-foreground">
                   <li>• <strong>Regional Performance:</strong> Perbandingan performa regional</li>
                   <li>• <strong>Geographic Clustering:</strong> Clustering insiden geografis</li>
                   <li>• <strong>Weather Impact:</strong> Analisis dampak cuaca</li>
@@ -1027,11 +1029,11 @@ export default function AdminRumus() {
                   </div>
 
             <div className="space-y-4">
-              <h5 className="font-semibold text-gray-900 dark:text-gray-100">Algoritma Perhitungan</h5>
+              <h5 className="font-semibold text-card-foreground">Algoritma Perhitungan</h5>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="p-4 border rounded-lg">
                   <h6 className="font-semibold mb-2">Site Availability</h6>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                  <p className="text-sm text-muted-foreground">
                     <strong>Uptime Calculation:</strong> (Total uptime / Total time) × 100<br/>
                     <strong>MTBF:</strong> Mean Time Between Failures<br/>
                     <strong>MTTR:</strong> Mean Time To Repair per site
@@ -1039,7 +1041,7 @@ export default function AdminRumus() {
                 </div>
                 <div className="p-4 border rounded-lg">
                   <h6 className="font-semibold mb-2">Infrastructure Health</h6>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                  <p className="text-sm text-muted-foreground">
                     <strong>Health Score:</strong> Weighted average dari multiple factors<br/>
                     <strong>Risk Assessment:</strong> Evaluasi risiko berdasarkan historical data<br/>
                     <strong>Predictive Maintenance:</strong> Prediksi kebutuhan maintenance
@@ -1047,7 +1049,7 @@ export default function AdminRumus() {
                 </div>
                 <div className="p-4 border rounded-lg">
                   <h6 className="font-semibold mb-2">Regional Analysis</h6>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                  <p className="text-sm text-muted-foreground">
                     <strong>Incident Density:</strong> Incidents per area per time period<br/>
                     <strong>Weather Correlation:</strong> Correlation dengan data cuaca<br/>
                     <strong>Geographic Patterns:</strong> Identifikasi pola geografis
@@ -1055,7 +1057,7 @@ export default function AdminRumus() {
                 </div>
                 <div className="p-4 border rounded-lg">
                   <h6 className="font-semibold mb-2">Performance Benchmarking</h6>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                  <p className="text-sm text-muted-foreground">
                     <strong>Site Comparison:</strong> Perbandingan antar site<br/>
                     <strong>Industry Standards:</strong> Benchmark terhadap standar industri<br/>
                     <strong>Improvement Tracking:</strong> Tracking improvement per site
@@ -1075,12 +1077,12 @@ export default function AdminRumus() {
         <div className="space-y-6">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="space-y-4">
-              <h5 className="font-semibold text-gray-900 dark:text-gray-100">Master Data</h5>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
+              <h5 className="font-semibold text-card-foreground">Master Data</h5>
+              <p className="text-sm text-muted-foreground">
                 Centralized data management for system configuration, 
                 reference data, and organizational structure.
               </p>
-              <ul className="space-y-1 text-sm text-gray-600 dark:text-gray-400">
+              <ul className="space-y-1 text-sm text-muted-foreground">
                 <li>• System configuration</li>
                 <li>• Reference data</li>
                 <li>• Organizational structure</li>
@@ -1089,12 +1091,12 @@ export default function AdminRumus() {
                 </div>
 
             <div className="space-y-4">
-              <h5 className="font-semibold text-gray-900 dark:text-gray-100">Agent Data</h5>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
+              <h5 className="font-semibold text-card-foreground">Agent Data</h5>
+              <p className="text-sm text-muted-foreground">
                 Comprehensive agent profile management with performance history, 
                 skills tracking, and training records.
               </p>
-              <ul className="space-y-1 text-sm text-gray-600 dark:text-gray-400">
+              <ul className="space-y-1 text-sm text-muted-foreground">
                 <li>• Agent profiles</li>
                 <li>• Performance history</li>
                 <li>• Skills assessment</li>
@@ -1103,12 +1105,12 @@ export default function AdminRumus() {
                     </div>
 
             <div className="space-y-4">
-              <h5 className="font-semibold text-gray-900 dark:text-gray-100">Customer Data</h5>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
+              <h5 className="font-semibold text-card-foreground">Customer Data</h5>
+              <p className="text-sm text-muted-foreground">
                 Customer relationship management with interaction history, 
                 preferences, and service level agreements.
               </p>
-              <ul className="space-y-1 text-sm text-gray-600 dark:text-gray-400">
+              <ul className="space-y-1 text-sm text-muted-foreground">
                 <li>• Customer profiles</li>
                 <li>• Interaction history</li>
                 <li>• Service agreements</li>
@@ -1118,10 +1120,10 @@ export default function AdminRumus() {
                 </div>
 
                     <div className="space-y-4">
-            <h5 className="font-semibold text-gray-900 dark:text-gray-100">Upload Data</h5>
+            <h5 className="font-semibold text-card-foreground">Upload Data</h5>
             <div className="space-y-6">
                     <div>
-                <h6 className="font-semibold text-gray-900 dark:text-gray-100 mb-3">Flow Pemrosesan Upload Data</h6>
+                <h6 className="font-semibold text-card-foreground mb-3">Flow Pemrosesan Upload Data</h6>
                 <div className="bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg p-4">
                   <div className="space-y-3 text-sm">
                     <div className="flex items-start gap-2">
@@ -1167,7 +1169,7 @@ export default function AdminRumus() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="p-4 border rounded-lg">
                   <h6 className="font-semibold mb-2">Format Data yang Didukung</h6>
-                  <ul className="text-sm text-gray-600 dark:text-gray-400 space-y-1">
+                  <ul className="text-sm text-muted-foreground space-y-1">
                     <li>• <strong>Excel:</strong> .xlsx, .xls dengan multiple sheets</li>
                     <li>• <strong>CSV:</strong> Comma-separated values</li>
                     <li>• <strong>Encoding:</strong> UTF-8, ISO-8859-1</li>
@@ -1176,7 +1178,7 @@ export default function AdminRumus() {
                 </div>
                 <div className="p-4 border rounded-lg">
                   <h6 className="font-semibold mb-2">Validasi Data</h6>
-                  <ul className="text-sm text-gray-600 dark:text-gray-400 space-y-1">
+                  <ul className="text-sm text-muted-foreground space-y-1">
                     <li>• <strong>Schema Validation:</strong> Validasi struktur kolom</li>
                     <li>• <strong>Data Type:</strong> Validasi tipe data per kolom</li>
                     <li>• <strong>Business Rules:</strong> Validasi aturan bisnis</li>
@@ -1186,11 +1188,11 @@ export default function AdminRumus() {
               </div>
 
               <div className="space-y-4">
-                <h6 className="font-semibold text-gray-900 dark:text-gray-100">Algoritma Pemrosesan</h6>
+                <h6 className="font-semibold text-card-foreground">Algoritma Pemrosesan</h6>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="p-4 border rounded-lg">
                     <h6 className="font-semibold mb-2">Data Parsing</h6>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                    <p className="text-sm text-muted-foreground">
                       <strong>Excel Processing:</strong> Menggunakan XLSX library untuk parsing<br/>
                       <strong>CSV Processing:</strong> Papa Parse untuk CSV files<br/>
                       <strong>Error Handling:</strong> Graceful handling untuk corrupted files<br/>
@@ -1199,7 +1201,7 @@ export default function AdminRumus() {
                   </div>
                   <div className="p-4 border rounded-lg">
                     <h6 className="font-semibold mb-2">Data Transformation</h6>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                    <p className="text-sm text-muted-foreground">
                       <strong>Date Parsing:</strong> parseDateSafe untuk berbagai format tanggal<br/>
                       <strong>Duration Conversion:</strong> toMinutes untuk konversi durasi<br/>
                       <strong>ID Generation:</strong> mkId untuk generate unique ID<br/>
@@ -1231,8 +1233,8 @@ export default function AdminRumus() {
         <div className="space-y-6">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <div className="space-y-4">
-              <h5 className="font-semibold text-gray-900 dark:text-gray-100">Admin Panel Features</h5>
-              <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
+              <h5 className="font-semibold text-card-foreground">Admin Panel Features</h5>
+              <ul className="space-y-2 text-sm text-muted-foreground">
                 <li>• User management and permissions</li>
                 <li>• System configuration</li>
                 <li>• Data backup and restore</li>
@@ -1243,8 +1245,8 @@ export default function AdminRumus() {
                 </div>
 
             <div className="space-y-4">
-              <h5 className="font-semibold text-gray-900 dark:text-gray-100">Formulas & Calculations</h5>
-              <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
+              <h5 className="font-semibold text-card-foreground">Formulas & Calculations</h5>
+              <ul className="space-y-2 text-sm text-muted-foreground">
                 <li>• KPI calculation algorithms</li>
                 <li>• Performance scoring formulas</li>
                 <li>• Trend analysis methods</li>
@@ -1256,7 +1258,7 @@ export default function AdminRumus() {
                 </div>
             
           <div className="space-y-4">
-            <h5 className="font-semibold text-gray-900 dark:text-gray-100">System Architecture</h5>
+            <h5 className="font-semibold text-card-foreground">System Architecture</h5>
             <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
               <div className="text-sm space-y-2">
                 <div><strong>Frontend:</strong> React 18 with TypeScript, Vite build system</div>
@@ -1279,8 +1281,8 @@ export default function AdminRumus() {
         <div className="space-y-6">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div className="space-y-4">
-              <h5 className="font-semibold text-gray-900 dark:text-gray-100">Performance Optimization</h5>
-              <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
+              <h5 className="font-semibold text-card-foreground">Performance Optimization</h5>
+              <ul className="space-y-2 text-sm text-muted-foreground">
                 <li>• React.memo for component optimization</li>
                 <li>• useMemo and useCallback hooks</li>
                 <li>• Virtual scrolling for large datasets</li>
@@ -1291,8 +1293,8 @@ export default function AdminRumus() {
               </div>
 
             <div className="space-y-4">
-              <h5 className="font-semibold text-gray-900 dark:text-gray-100">Data Processing</h5>
-              <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
+              <h5 className="font-semibold text-card-foreground">Data Processing</h5>
+              <ul className="space-y-2 text-sm text-muted-foreground">
                 <li>• Real-time data aggregation</li>
                 <li>• Efficient filtering algorithms</li>
                 <li>• Caching strategies</li>
@@ -1304,7 +1306,7 @@ export default function AdminRumus() {
               </div>
 
           <div className="space-y-4">
-            <h5 className="font-semibold text-gray-900 dark:text-gray-100">Development Guidelines</h5>
+            <h5 className="font-semibold text-card-foreground">Development Guidelines</h5>
             <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
               <div className="text-sm space-y-2">
                 <div><strong>Code Style:</strong> ESLint + Prettier configuration</div>
@@ -1319,5 +1321,6 @@ export default function AdminRumus() {
             </div>
       </CollapsibleSection>
     </div>
+  </PageWrapper>
   );
 } 

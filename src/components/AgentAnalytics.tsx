@@ -90,14 +90,14 @@ function toRechartsAgentTrend(labels: string[], datasets: { label: string, data:
 const CustomTooltip = ({ active = false, payload = [], label = '' } = {}) => {
   if (!active || !payload || !payload.length) return null;
   return (
-    <div className="bg-white dark:bg-zinc-900 rounded-xl shadow-lg border border-gray-200 dark:border-zinc-700 p-4 max-h-52 overflow-y-auto min-w-[180px] text-xs" style={{ fontSize: '12px', lineHeight: '1.5' }}>
-      <div className="font-bold text-sm mb-2 text-gray-900 dark:text-gray-100">{label}</div>
+    <div className="bg-card text-card-foreground border border-border rounded-xl shadow-lg border border-gray-200 dark:border-zinc-700 p-4 max-h-52 overflow-y-auto min-w-[180px] text-xs" style={{ fontSize: '12px', lineHeight: '1.5' }}>
+      <div className="font-bold text-sm mb-2 text-card-foreground">{label}</div>
       <ul className="space-y-1">
         {payload.map((entry, idx) => (
           <li key={idx} className="flex items-center gap-2" style={{ color: entry.color }}>
             <span className="inline-block w-2 h-2 rounded-full mr-2" style={{ background: entry.color }}></span>
             <span className="font-semibold" style={{ color: entry.color }}>{entry.name}:</span>
-            <span className="ml-1 font-mono text-gray-800 dark:text-gray-200">{entry.value}</span>
+            <span className="ml-1 font-mono text-card-foreground">{entry.value}</span>
           </li>
         ))}
       </ul>
@@ -126,7 +126,7 @@ const CustomTooltip = ({ active = false, payload = [], label = '' } = {}) => {
 //     displayLabel = 'SLA';
 //   }
 //   return (
-//     <div className="bg-white dark:bg-zinc-900 rounded shadow px-3 py-2 text-xs">
+//     <div className="bg-card text-card-foreground border border-border rounded shadow px-3 py-2 text-xs">
 //       <div className="font-bold mb-1">{label}</div>
 //       <div><span className="font-semibold mr-2">{displayLabel}:</span><span className="font-mono">{value}</span></div>
 //     </div>
@@ -775,10 +775,10 @@ const AgentAnalytics = () => {
   if (!isDataReady) {
     return (
         <div className="flex flex-col items-center justify-center h-full text-gray-500 p-8">
-          <h1 className="text-3xl md:text-4xl font-extrabold mb-4 text-gray-900 dark:text-gray-100">Agent Analytics</h1>
+          <h1 className="text-3xl md:text-4xl font-extrabold mb-4 text-card-foreground">Agent Analytics</h1>
         <p className="text-gray-500 dark:text-gray-400 mb-6">Analisis performa dan aktivitas agent dalam menangani tiket pada periode terpilih.</p>
           <MenuBookIcon className="w-16 h-16 mb-4" />
-          <h3 className="text-xl md:text-2xl font-semibold mb-2 text-gray-900 dark:text-gray-100">No agent data available</h3>
+          <h3 className="text-xl md:text-2xl font-semibold mb-2 text-card-foreground">No agent data available</h3>
         <p>Please upload a file to see agent analytics.</p>
         </div>
     );
@@ -1037,7 +1037,7 @@ const AgentAnalytics = () => {
     <PageWrapper>
       {/* Page Title & Description */}
       <div className="mb-6">
-        <h1 className="text-3xl md:text-4xl font-extrabold mb-4 text-gray-900 dark:text-gray-100">Agent Analytics</h1>
+        <h1 className="text-3xl md:text-4xl font-extrabold mb-4 text-card-foreground">Agent Analytics</h1>
         <p className="text-gray-500 dark:text-gray-400">Analysis of agent performance and activity in handling tickets during the selected period.</p>
       </div>
       <div className="flex justify-center mb-6">
@@ -1129,7 +1129,7 @@ const AgentAnalytics = () => {
             };
           }
           return (
-            <div key={agent.agent} className="relative bg-white dark:bg-zinc-900 rounded-2xl shadow-lg hover:shadow-2xl transition-all border border-zinc-200 dark:border-zinc-800 overflow-hidden h-80" onClick={() => { setSelectedAgent(agent.agent); setModalOpen(true); }} style={{ cursor: 'pointer' }}>
+            <div key={agent.agent} className="relative bg-card text-card-foreground border border-border rounded-2xl shadow-lg hover:shadow-2xl transition-all border border-zinc-200 dark:border-zinc-800 overflow-hidden h-80" onClick={() => { setSelectedAgent(agent.agent); setModalOpen(true); }} style={{ cursor: 'pointer' }}>
               <div className="flex h-full">
                 {/* Left Section - Agent Photo */}
                 <div className="w-1/3 bg-gradient-to-br from-white via-blue-100 to-purple-100 flex items-center justify-center relative overflow-hidden">
@@ -1236,7 +1236,7 @@ const AgentAnalytics = () => {
       </div>
       {/* Trendline Chart for All Agents */}
       {debouncedTrendData.length > 0 && (
-        <Card className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg p-6 mt-6">
+        <Card className="bg-card text-card-foreground border border-border rounded-2xl shadow-lg p-6 mt-6">
           <CardHeader>
             <CardTitle>Agent Ticket Trends per Month</CardTitle>
           </CardHeader>
@@ -1276,10 +1276,10 @@ const AgentAnalytics = () => {
       <RadixDialog.Root open={modalOpen} onOpenChange={open => { setModalOpen(open); if (!open) setSelectedAgent(open ? selectedAgent : null); }}>
         <RadixDialog.Portal>
           <RadixDialog.Overlay className="fixed inset-0 bg-black/50 z-50" />
-          <RadixDialog.Content className="fixed right-0 top-0 h-full w-full md:w-[900px] max-w-full bg-white dark:bg-zinc-900 shadow-2xl z-50 overflow-y-auto">
+          <RadixDialog.Content className="fixed right-0 top-0 h-full w-full md:w-[900px] max-w-full bg-card text-card-foreground border border-border shadow-2xl z-50 overflow-y-auto">
             <RadixDialog.Title className="sr-only">Agent Detail</RadixDialog.Title>
             {/* Professional Header */}
-            <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 border-b border-gray-200 dark:border-gray-700 p-6">
+            <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 border-b border-border p-6">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-6">
                   {/* Agent Photo */}
@@ -1303,13 +1303,13 @@ const AgentAnalytics = () => {
                     </div>
                   </div>
                   <div>
-                    <div className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-1">{selectedAgent}</div>
-                    <div className="text-sm text-gray-600 dark:text-gray-400 font-medium">Agent Performance Dashboard</div>
+                    <div className="text-3xl font-bold text-card-foreground mb-1">{selectedAgent}</div>
+                    <div className="text-sm text-muted-foreground font-medium">Agent Performance Dashboard</div>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
                   <select 
-                    className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-800 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="px-4 py-2 border border-border rounded-lg text-sm bg-background text-foreground focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     onChange={(e) => setExportYear(e.target.value)}
                     value={exportYear}
                   >
@@ -1342,50 +1342,50 @@ const AgentAnalytics = () => {
                       
                       return (
                         <>
-                          <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-200 dark:border-gray-700">
+                          <div className="bg-card text-card-foreground rounded-xl p-4 shadow-sm border border-border">
                             <div className="flex items-center gap-3">
                               <div className="w-10 h-10 rounded-lg bg-blue-500 flex items-center justify-center">
                                 <span className="text-white text-lg font-bold">#{agentData.rankNum}</span>
                               </div>
                               <div>
-                                <div className="text-sm text-gray-600 dark:text-gray-400">Rank</div>
-                                <div className="text-xl font-bold text-gray-900 dark:text-gray-100">#{agentData.rankNum}</div>
+                                <div className="text-sm text-muted-foreground">Rank</div>
+                                <div className="text-xl font-bold text-card-foreground">#{agentData.rankNum}</div>
                               </div>
                             </div>
                           </div>
                           
-                          <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-200 dark:border-gray-700">
+                          <div className="bg-card text-card-foreground border border-border rounded-xl p-4 shadow-sm border border-border">
                             <div className="flex items-center gap-3">
                               <div className={`w-10 h-10 rounded-lg ${agentData.score >= 75 ? 'bg-green-500' : agentData.score >= 60 ? 'bg-blue-500' : agentData.score >= 45 ? 'bg-orange-500' : 'bg-red-500'} flex items-center justify-center`}>
                                 <span className="text-white text-lg font-bold">{agentData.score}</span>
                               </div>
                               <div>
-                                <div className="text-sm text-gray-600 dark:text-gray-400">Score</div>
-                                <div className="text-xl font-bold text-gray-900 dark:text-gray-100">{agentData.score}</div>
+                                <div className="text-sm text-muted-foreground">Score</div>
+                                <div className="text-xl font-bold text-card-foreground">{agentData.score}</div>
                               </div>
                             </div>
                           </div>
                           
-                          <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-200 dark:border-gray-700">
+                          <div className="bg-card text-card-foreground border border-border rounded-xl p-4 shadow-sm border border-border">
                             <div className="flex items-center gap-3">
                               <div className="w-10 h-10 rounded-lg bg-green-500 flex items-center justify-center">
                                 <ListAltIcon className="text-white" />
                               </div>
                               <div>
-                                <div className="text-sm text-gray-600 dark:text-gray-400">Tickets</div>
-                                <div className="text-xl font-bold text-gray-900 dark:text-gray-100">{agentData.vol || 0}</div>
+                                <div className="text-sm text-muted-foreground">Tickets</div>
+                                <div className="text-xl font-bold text-card-foreground">{agentData.vol || 0}</div>
                               </div>
                             </div>
                           </div>
                           
-                          <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-200 dark:border-gray-700">
+                          <div className="bg-card text-card-foreground border border-border rounded-xl p-4 shadow-sm border border-border">
                             <div className="flex items-center gap-3">
                               <div className="w-10 h-10 rounded-lg bg-purple-500 flex items-center justify-center">
                                 <TrendingUpIcon className="text-white" />
                               </div>
                               <div>
-                                <div className="text-sm text-gray-600 dark:text-gray-400">SLA</div>
-                                <div className="text-xl font-bold text-gray-900 dark:text-gray-100">{agentData.sla ? `${agentData.sla.toFixed(1)}%` : '-'}</div>
+                                <div className="text-sm text-muted-foreground">SLA</div>
+                                <div className="text-xl font-bold text-card-foreground">{agentData.sla ? `${agentData.sla.toFixed(1)}%` : '-'}</div>
                               </div>
                             </div>
                           </div>
@@ -1401,15 +1401,15 @@ const AgentAnalytics = () => {
                     ? scoreTrendArr.map((score, i) => ({ month: data.agentMonthlyChart.labels?.[i] || `Month ${i+1}`, score }))
                     : [];
                   return (
-                    <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700 mb-6">
+                    <div className="bg-card text-card-foreground border border-border rounded-xl p-6 shadow-sm border border-border mb-6">
                       <div className="flex items-center justify-between mb-4">
                         <div>
-                          <div className="text-xl font-bold text-gray-900 dark:text-gray-100">Performance Score Trend</div>
-                          <div className="text-sm text-gray-600 dark:text-gray-400">Monthly score progression</div>
+                          <div className="text-xl font-bold text-card-foreground">Performance Score Trend</div>
+                          <div className="text-sm text-muted-foreground">Monthly score progression</div>
                         </div>
                         <div className="flex items-center gap-2">
                           <div className="w-3 h-3 rounded-full bg-blue-500"></div>
-                          <span className="text-sm text-gray-600 dark:text-gray-400">Score</span>
+                          <span className="text-sm text-muted-foreground">Score</span>
                         </div>
                       </div>
                       <ResponsiveContainer width="100%" height={120}>
@@ -1501,27 +1501,27 @@ const AgentAnalytics = () => {
                     backlog: 'Backlog',
                   };
                   return (
-                    <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700 mb-6">
+                    <div className="bg-card text-card-foreground border border-border rounded-xl p-6 shadow-sm border border-border mb-6">
                       <div className="flex items-center gap-2 mb-4">
                         <LightbulbIcon className="w-5 h-5 text-yellow-500" />
-                        <div className="text-xl font-bold text-gray-900 dark:text-gray-100">Performance Insights</div>
+                        <div className="text-xl font-bold text-card-foreground">Performance Insights</div>
                       </div>
                       
                       {/* Summary Metrics */}
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                         <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
-                          <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">Average Score</div>
-                          <div className="text-2xl font-bold text-gray-900 dark:text-gray-100">{avgScore}</div>
+                          <div className="text-sm text-muted-foreground mb-1">Average Score</div>
+                          <div className="text-2xl font-bold text-card-foreground">{avgScore}</div>
                           {trendBadge}
                         </div>
                         <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
-                          <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">Best Month</div>
-                          <div className="text-lg font-bold text-gray-900 dark:text-gray-100">{bestMonth}</div>
+                          <div className="text-sm text-muted-foreground mb-1">Best Month</div>
+                          <div className="text-lg font-bold text-card-foreground">{bestMonth}</div>
                           <div className="text-sm text-green-600 dark:text-green-400">{bestValue} points</div>
                         </div>
                         <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
-                          <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">Worst Month</div>
-                          <div className="text-lg font-bold text-gray-900 dark:text-gray-100">{worstMonth}</div>
+                          <div className="text-sm text-muted-foreground mb-1">Worst Month</div>
+                          <div className="text-lg font-bold text-card-foreground">{worstMonth}</div>
                           <div className="text-sm text-red-600 dark:text-red-400">{worstValue} points</div>
                         </div>
                       </div>
@@ -1534,7 +1534,7 @@ const AgentAnalytics = () => {
                       
                       {/* KPI Breakdown */}
                       <div>
-                        <div className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-3">KPI Performance Analysis</div>
+                        <div className="text-lg font-bold text-card-foreground mb-3">KPI Performance Analysis</div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                         {Object.keys(kpiTrends).map(kpi => (
                             <div key={kpi} className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
@@ -1542,8 +1542,8 @@ const AgentAnalytics = () => {
                                 {kpiTrends[kpi] === 'up' ? '↗' : kpiTrends[kpi] === 'down' ? '↘' : '→'}
                               </Badge>
                               <div className="flex-1">
-                                <div className="font-semibold text-gray-900 dark:text-gray-100">{kpiLabels[kpi]}</div>
-                                <div className="text-sm text-gray-600 dark:text-gray-400">{generateKpiInsight(kpi, kpiTrends[kpi])}</div>
+                                <div className="font-semibold text-card-foreground">{kpiLabels[kpi]}</div>
+                                <div className="text-sm text-muted-foreground">{generateKpiInsight(kpi, kpiTrends[kpi])}</div>
                             {kpi === 'ticket' && agentTicketShare.length > 0 && (
                                   <div className="text-xs text-gray-500 mt-1">Share: {agentTicketShare.slice(-1)[0]} of total tickets</div>
                             )}
@@ -1708,10 +1708,10 @@ const AgentAnalytics = () => {
                              <CardContent className="p-6">
                                <div className="flex items-center justify-between">
                                  <div>
-                                   <h3 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                                   <h3 className="text-2xl font-bold text-card-foreground">
                                      Career Overview - {selectedAgent}
                                    </h3>
-                                   <p className="text-gray-600 dark:text-gray-400">
+                                   <p className="text-muted-foreground">
                                      Comprehensive career summary and performance index
                                    </p>
                                  </div>
@@ -1732,7 +1732,7 @@ const AgentAnalytics = () => {
                              <Card>
                                <CardContent className="p-4 text-center">
                                  <div className="text-lg font-bold text-blue-600 mb-1">{totalTickets}</div>
-                                 <div className="text-sm text-gray-600 dark:text-gray-400">Total Tickets</div>
+                                 <div className="text-sm text-muted-foreground">Total Tickets</div>
                                  <div className="text-xs text-gray-500">Career Total</div>
                                </CardContent>
                              </Card>
@@ -1740,7 +1740,7 @@ const AgentAnalytics = () => {
                              <Card>
                                <CardContent className="p-4 text-center">
                                  <div className="text-lg font-bold text-green-600 mb-1">{tenure}</div>
-                                 <div className="text-sm text-gray-600 dark:text-gray-400">Active Days</div>
+                                 <div className="text-sm text-muted-foreground">Active Days</div>
                                  <div className="text-xs text-gray-500">Career Tenure</div>
                                </CardContent>
                              </Card>
@@ -1748,7 +1748,7 @@ const AgentAnalytics = () => {
                              <Card>
                                <CardContent className="p-4 text-center">
                                  <div className="text-lg font-bold text-purple-600 mb-1">{slaRate.toFixed(1)}%</div>
-                                 <div className="text-sm text-gray-600 dark:text-gray-400">SLA Rate</div>
+                                 <div className="text-sm text-muted-foreground">SLA Rate</div>
                                  <div className="text-xs text-gray-500">Quality Metric</div>
                                </CardContent>
                              </Card>
@@ -1756,7 +1756,7 @@ const AgentAnalytics = () => {
                              <Card>
                                <CardContent className="p-4 text-center">
                                  <div className="text-lg font-bold text-orange-600 mb-1">{fcrRate.toFixed(1)}%</div>
-                                 <div className="text-sm text-gray-600 dark:text-gray-400">FCR Rate</div>
+                                 <div className="text-sm text-muted-foreground">FCR Rate</div>
                                  <div className="text-xs text-gray-500">Resolution Metric</div>
                                </CardContent>
                              </Card>
@@ -1774,19 +1774,19 @@ const AgentAnalytics = () => {
                                 <CardContent>
                                   <div className="space-y-4">
                                     <div className="flex justify-between items-center">
-                                      <span className="text-sm text-gray-600 dark:text-gray-400">Average Handle Time</span>
+                                      <span className="text-sm text-muted-foreground">Average Handle Time</span>
                                       <span className="font-semibold">{formatDurationDHM(avgAHT)}</span>
                                     </div>
                                     <div className="flex justify-between items-center">
-                                      <span className="text-sm text-gray-600 dark:text-gray-400">Closed Tickets</span>
+                                      <span className="text-sm text-muted-foreground">Closed Tickets</span>
                                       <span className="font-semibold">{closedTickets} / {totalTickets}</span>
                                     </div>
                                     <div className="flex justify-between items-center">
-                                      <span className="text-sm text-gray-600 dark:text-gray-400">Escalation Rate</span>
+                                      <span className="text-sm text-muted-foreground">Escalation Rate</span>
                                       <span className="font-semibold">{escalationRate.toFixed(1)}%</span>
                                     </div>
                                     <div className="flex justify-between items-center">
-                                      <span className="text-sm text-gray-600 dark:text-gray-400">Career Start</span>
+                                      <span className="text-sm text-muted-foreground">Career Start</span>
                                       <span className="font-semibold">{firstTicket ? new Date(firstTicket.openTime).toLocaleDateString() : 'N/A'}</span>
                                     </div>
                                   </div>
@@ -1804,7 +1804,7 @@ const AgentAnalytics = () => {
                                   <div className="space-y-4">
                                     {Object.entries(shiftCount).map(([shift, count]) => (
                                       <div key={shift} className="flex justify-between items-center">
-                                        <span className="text-sm text-gray-600 dark:text-gray-400">{shift}</span>
+                                        <span className="text-sm text-muted-foreground">{shift}</span>
                                         <span className="font-semibold">{count} tickets</span>
                                       </div>
                                     ))}
@@ -2048,7 +2048,7 @@ const AgentAnalytics = () => {
                                 <div className="flex items-center gap-3">
                                   <CalendarTodayIcon className="w-8 h-8 text-blue-600" />
                                   <div>
-                                    <p className="text-sm text-gray-600 dark:text-gray-400">Tenure</p>
+                                    <p className="text-sm text-muted-foreground">Tenure</p>
                                     <p className="text-xl font-bold text-blue-900 dark:text-blue-100">{tenure} days</p>
                                   </div>
                                 </div>
@@ -2060,7 +2060,7 @@ const AgentAnalytics = () => {
                                 <div className="flex items-center gap-3">
                                   <ListAltIcon className="w-8 h-8 text-green-600" />
                                   <div>
-                                    <p className="text-sm text-gray-600 dark:text-gray-400">Total Tickets</p>
+                                    <p className="text-sm text-muted-foreground">Total Tickets</p>
                                     <p className="text-xl font-bold text-green-900 dark:text-green-100">{totalTickets.toLocaleString()}</p>
                                   </div>
                                 </div>
@@ -2072,7 +2072,7 @@ const AgentAnalytics = () => {
                                 <div className="flex items-center gap-3">
                                   <AccessTimeIcon className="w-8 h-8 text-purple-600" />
                                   <div>
-                                    <p className="text-sm text-gray-600 dark:text-gray-400">Avg AHT</p>
+                                    <p className="text-sm text-muted-foreground">Avg AHT</p>
                                     <p className="text-xl font-bold text-purple-900 dark:text-purple-100">{formatDurationDHM(avgAHT)}</p>
                                   </div>
                                 </div>
@@ -2084,7 +2084,7 @@ const AgentAnalytics = () => {
                                 <div className="flex items-center gap-3">
                                   <TrackChangesIcon className="w-8 h-8 text-orange-600" />
                                   <div>
-                                    <p className="text-sm text-gray-600 dark:text-gray-400">SLA Rate</p>
+                                    <p className="text-sm text-muted-foreground">SLA Rate</p>
                                     <p className="text-xl font-bold text-orange-900 dark:text-orange-100">{slaRate.toFixed(1)}%</p>
                                   </div>
                                 </div>
@@ -2105,19 +2105,19 @@ const AgentAnalytics = () => {
                                 <div className="grid grid-cols-2 gap-4">
                                   <div className="text-center p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
                                     <p className="text-lg font-bold text-blue-600">{fcrRate.toFixed(1)}%</p>
-                                    <p className="text-sm text-gray-600 dark:text-gray-400">FCR Rate</p>
+                                    <p className="text-sm text-muted-foreground">FCR Rate</p>
                                   </div>
                                   <div className="text-center p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
                                     <p className="text-lg font-bold text-green-600">{escalationRate.toFixed(1)}%</p>
-                                    <p className="text-sm text-gray-600 dark:text-gray-400">Escalation Rate</p>
+                                    <p className="text-sm text-muted-foreground">Escalation Rate</p>
                                   </div>
                                   <div className="text-center p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
                                     <p className="text-lg font-bold text-purple-600">{formatDurationDHM(avgFRT)}</p>
-                                    <p className="text-sm text-gray-600 dark:text-gray-400">Avg FRT</p>
+                                    <p className="text-sm text-muted-foreground">Avg FRT</p>
                                   </div>
                                   <div className="text-center p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg">
                                     <p className="text-lg font-bold text-orange-600">{formatDurationDHM(avgART)}</p>
-                                    <p className="text-sm text-gray-600 dark:text-gray-400">Avg ART</p>
+                                    <p className="text-sm text-muted-foreground">Avg ART</p>
                                   </div>
                                 </div>
                               </CardContent>
@@ -2133,19 +2133,19 @@ const AgentAnalytics = () => {
                               <CardContent className="space-y-4">
                                 <div className="space-y-3">
                                   <div className="flex justify-between items-center">
-                                    <span className="text-sm text-gray-600 dark:text-gray-400">Active Days</span>
+                                    <span className="text-sm text-muted-foreground">Active Days</span>
                                     <span className="font-semibold">{activeDays} days</span>
                                   </div>
                                   <div className="flex justify-between items-center">
-                                    <span className="text-sm text-gray-600 dark:text-gray-400">Closed Tickets</span>
+                                    <span className="text-sm text-muted-foreground">Closed Tickets</span>
                                     <span className="font-semibold">{closedTickets.toLocaleString()}</span>
                                   </div>
                                   <div className="flex justify-between items-center">
-                                    <span className="text-sm text-gray-600 dark:text-gray-400">Current Backlog</span>
+                                    <span className="text-sm text-muted-foreground">Current Backlog</span>
                                     <span className="font-semibold">{backlog}</span>
                                   </div>
                                   <div className="flex justify-between items-center">
-                                    <span className="text-sm text-gray-600 dark:text-gray-400">Resolution Rate</span>
+                                    <span className="text-sm text-muted-foreground">Resolution Rate</span>
                                     <span className="font-semibold">{totalTickets > 0 ? ((closedTickets / totalTickets) * 100).toFixed(1) : 0}%</span>
                                   </div>
                                 </div>
@@ -2167,7 +2167,7 @@ const AgentAnalytics = () => {
                                   <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
                                   <div>
                                     <p className="font-semibold">Started Active</p>
-                                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                                    <p className="text-sm text-muted-foreground">
                                       {firstTicket ? new Date(firstTicket.openTime).toLocaleDateString('id-ID', {
                                         year: 'numeric',
                                         month: 'long',
@@ -2181,7 +2181,7 @@ const AgentAnalytics = () => {
                                   <div className="w-3 h-3 bg-green-500 rounded-full"></div>
                                   <div>
                                     <p className="font-semibold">Latest Activity</p>
-                                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                                    <p className="text-sm text-muted-foreground">
                                       {lastTicket ? new Date(lastTicket.openTime).toLocaleDateString('id-ID', {
                                         year: 'numeric',
                                         month: 'long',
@@ -2195,7 +2195,7 @@ const AgentAnalytics = () => {
                                   <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
                                   <div>
                                     <p className="font-semibold">Career Milestones</p>
-                                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                                    <p className="text-sm text-muted-foreground">
                                       {totalTickets >= 1000 ? '🏆 1000+ Tickets Handled' : 
                                        totalTickets >= 500 ? '🥉 500+ Tickets Handled' :
                                        totalTickets >= 100 ? '🥈 100+ Tickets Handled' : '🚀 Getting Started'}
@@ -2382,10 +2382,10 @@ const AgentAnalytics = () => {
                             <CardContent className="p-6">
                               <div className="flex items-center justify-between">
                                 <div>
-                                  <h3 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                                  <h3 className="text-2xl font-bold text-card-foreground">
                                     Career Performance Index
                                   </h3>
-                                  <p className="text-gray-600 dark:text-gray-400">
+                                  <p className="text-muted-foreground">
                                     Comprehensive performance score for {selectedAgent}
                                   </p>
                                 </div>
@@ -2406,7 +2406,7 @@ const AgentAnalytics = () => {
                             <Card>
                               <CardContent className="p-4 text-center">
                                 <div className="text-lg font-bold text-blue-600 mb-1">{efficiencyScore.toFixed(0)}</div>
-                                <div className="text-sm text-gray-600 dark:text-gray-400">Efficiency (25%)</div>
+                                <div className="text-sm text-muted-foreground">Efficiency (25%)</div>
                                 <div className="text-xs text-gray-500">AHT: {formatDurationDHM(avgAHT)}</div>
                               </CardContent>
                             </Card>
@@ -2414,7 +2414,7 @@ const AgentAnalytics = () => {
                             <Card>
                               <CardContent className="p-4 text-center">
                                 <div className="text-lg font-bold text-green-600 mb-1">{qualityScore.toFixed(0)}</div>
-                                <div className="text-sm text-gray-600 dark:text-gray-400">Quality (30%)</div>
+                                <div className="text-sm text-muted-foreground">Quality (30%)</div>
                                 <div className="text-xs text-gray-500">SLA: {slaRate.toFixed(1)}%</div>
                               </CardContent>
                             </Card>
@@ -2422,7 +2422,7 @@ const AgentAnalytics = () => {
                             <Card>
                               <CardContent className="p-4 text-center">
                                 <div className="text-lg font-bold text-purple-600 mb-1">{resolutionScore.toFixed(0)}</div>
-                                <div className="text-sm text-gray-600 dark:text-gray-400">Resolution (20%)</div>
+                                <div className="text-sm text-muted-foreground">Resolution (20%)</div>
                                 <div className="text-xs text-gray-500">FCR: {fcrRate.toFixed(1)}%</div>
                               </CardContent>
                             </Card>
@@ -2430,7 +2430,7 @@ const AgentAnalytics = () => {
                             <Card>
                               <CardContent className="p-4 text-center">
                                 <div className="text-lg font-bold text-orange-600 mb-1">{reliabilityScore.toFixed(0)}</div>
-                                <div className="text-sm text-gray-600 dark:text-gray-400">Reliability (15%)</div>
+                                <div className="text-sm text-muted-foreground">Reliability (15%)</div>
                                 <div className="text-xs text-gray-500">Esc: {escalationRate.toFixed(1)}%</div>
                               </CardContent>
                             </Card>
@@ -2438,7 +2438,7 @@ const AgentAnalytics = () => {
                             <Card>
                               <CardContent className="p-4 text-center">
                                 <div className="text-lg font-bold text-indigo-600 mb-1">{productivityScore.toFixed(0)}</div>
-                                <div className="text-sm text-gray-600 dark:text-gray-400">Productivity (10%)</div>
+                                <div className="text-sm text-muted-foreground">Productivity (10%)</div>
                                 <div className="text-xs text-gray-500">Vol: {totalTickets}</div>
                               </CardContent>
                             </Card>
@@ -2565,19 +2565,19 @@ const AgentAnalytics = () => {
                               <CardContent>
                                 <div className="space-y-4">
                                   <div className="flex justify-between items-center">
-                                    <span className="text-sm text-gray-600 dark:text-gray-400">Average Handle Time</span>
+                                    <span className="text-sm text-muted-foreground">Average Handle Time</span>
                                     <span className="font-semibold">{formatDurationDHM(avgAHT)}</span>
                                   </div>
                                   <div className="flex justify-between items-center">
-                                    <span className="text-sm text-gray-600 dark:text-gray-400">First Contact Resolution</span>
+                                    <span className="text-sm text-muted-foreground">First Contact Resolution</span>
                                     <span className="font-semibold">{fcrRate.toFixed(1)}%</span>
                                   </div>
                                   <div className="flex justify-between items-center">
-                                    <span className="text-sm text-gray-600 dark:text-gray-400">SLA Compliance</span>
+                                    <span className="text-sm text-muted-foreground">SLA Compliance</span>
                                     <span className="font-semibold">{slaRate.toFixed(1)}%</span>
                                   </div>
                                   <div className="flex justify-between items-center">
-                                    <span className="text-sm text-gray-600 dark:text-gray-400">Escalation Rate</span>
+                                    <span className="text-sm text-muted-foreground">Escalation Rate</span>
                                     <span className="font-semibold">{escalationRate.toFixed(1)}%</span>
                                   </div>
                                 </div>
@@ -2594,19 +2594,19 @@ const AgentAnalytics = () => {
                               <CardContent>
                                 <div className="space-y-4">
                                   <div className="flex justify-between items-center">
-                                    <span className="text-sm text-gray-600 dark:text-gray-400">AHT Target</span>
+                                    <span className="text-sm text-muted-foreground">AHT Target</span>
                                     <span className="font-semibold">≤ 24h</span>
                                   </div>
                                   <div className="flex justify-between items-center">
-                                    <span className="text-sm text-gray-600 dark:text-gray-400">FCR Target</span>
+                                    <span className="text-sm text-muted-foreground">FCR Target</span>
                                     <span className="font-semibold">≥ 75%</span>
                                   </div>
                                   <div className="flex justify-between items-center">
-                                    <span className="text-sm text-gray-600 dark:text-gray-400">SLA Target</span>
+                                    <span className="text-sm text-muted-foreground">SLA Target</span>
                                     <span className="font-semibold">≥ 85%</span>
                                   </div>
                                   <div className="flex justify-between items-center">
-                                    <span className="text-sm text-gray-600 dark:text-gray-400">Escalation Target</span>
+                                    <span className="text-sm text-muted-foreground">Escalation Target</span>
                                     <span className="font-semibold">≤ 10%</span>
                                   </div>
                                 </div>
@@ -2778,7 +2778,7 @@ const AgentAnalytics = () => {
                                         }`}></div>
                                         <div className="flex-1">
                                           <div className="flex items-center gap-2 mb-2">
-                                            <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                                            <span className="text-sm font-semibold text-card-foreground">
                                               {insight.title}
                                             </span>
                                             <span className={`px-2 py-1 rounded text-xs font-semibold ${
@@ -2792,11 +2792,11 @@ const AgentAnalytics = () => {
                                           <p className="text-sm text-gray-700 dark:text-gray-300 mb-2">
                                             {insight.description}
                                           </p>
-                                          <div className="bg-white dark:bg-gray-800 rounded p-3">
-                                            <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-1">
+                                          <div className="bg-card text-card-foreground border border-border rounded p-3">
+                                            <p className="text-sm font-semibold text-card-foreground mb-1">
                                               Recommendation:
                                             </p>
-                                            <p className="text-sm text-gray-600 dark:text-gray-400">
+                                            <p className="text-sm text-muted-foreground">
                                               {insight.recommendation}
                                             </p>
                                           </div>

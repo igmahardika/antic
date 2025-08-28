@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import MigrationService, { MigrationProgress } from '../lib/migrationService';
+import { Progress } from './ui/progress';
 
 interface MigrationStatus {
   indexedDbTickets: number;
@@ -65,8 +66,8 @@ const MigrationPanel: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="bg-white dark:bg-zinc-800 rounded-xl shadow-lg p-6">
-        <h2 className="text-lg font-bold mb-4 text-gray-900 dark:text-gray-100">
+      <div className="bg-background text-foreground rounded-xl shadow-lg p-6">
+        <h2 className="text-lg font-bold mb-4 text-card-foreground">
           Database Migration
         </h2>
         <div className="flex items-center justify-center py-8">
@@ -78,8 +79,8 @@ const MigrationPanel: React.FC = () => {
   }
 
   return (
-    <div className="bg-white dark:bg-zinc-800 rounded-xl shadow-lg p-6">
-              <h2 className="text-lg font-bold mb-4 text-gray-900 dark:text-gray-100">
+    <div className="bg-background text-foreground rounded-xl shadow-lg p-6">
+              <h2 className="text-lg font-bold mb-4 text-card-foreground">
         Database Migration
       </h2>
 
@@ -116,7 +117,7 @@ const MigrationPanel: React.FC = () => {
       {/* Migration Status */}
       {migrationStatus && (
         <div className="mb-6">
-          <h3 className="text-lg font-semibold mb-3 text-gray-800 dark:text-gray-200">
+          <h3 className="text-lg font-semibold mb-3 text-card-foreground">
             Current Status
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
@@ -189,16 +190,14 @@ const MigrationPanel: React.FC = () => {
       {/* Progress Display */}
       {progress && (
         <div className="mb-6">
-          <h3 className="text-lg font-semibold mb-3 text-gray-800 dark:text-gray-200">
+          <h3 className="text-lg font-semibold mb-3 text-card-foreground">
             Migration Progress
           </h3>
-          <div className="bg-gray-200 dark:bg-gray-700 rounded-full h-2 mb-2">
-            <div 
-              className="bg-blue-600 h-2 rounded-full transition-all duration-300" 
-              style={{ width: `${(progress.current / progress.total) * 100}%` }}
-            ></div>
-          </div>
-          <div className="flex justify-between text-sm text-gray-600 dark:text-gray-400">
+          <Progress 
+            value={(progress.current / progress.total) * 100} 
+            className="h-2 mb-2"
+          />
+          <div className="flex justify-between text-sm text-muted-foreground">
             <span>{progress.step}: {progress.message}</span>
             <span>{progress.current}/{progress.total}</span>
           </div>
@@ -230,8 +229,8 @@ const MigrationPanel: React.FC = () => {
 
       {/* Migration Instructions */}
       <div className="mt-6 p-4 bg-gray-50 dark:bg-gray-900/50 rounded-lg">
-        <h4 className="font-semibold text-gray-800 dark:text-gray-200 mb-2">Migration Process:</h4>
-        <ul className="text-sm text-gray-600 dark:text-gray-400 space-y-1">
+        <h4 className="font-semibold text-card-foreground mb-2">Migration Process:</h4>
+        <ul className="text-sm text-muted-foreground space-y-1">
           <li>1. Customers will be migrated first</li>
           <li>2. Tickets will be migrated next</li>
           <li>3. Data will be processed in batches to ensure reliability</li>
