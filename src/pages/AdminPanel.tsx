@@ -290,7 +290,7 @@ const AdminPanel: React.FC = () => {
               >
                 Add User
               </button>
-              {error && <div className="text-red-500 text-center font-semibold text-sm mt-2">❌ {error}</div>}
+              {error && <div className="text-red-500 text-center font-semibold text-sm mt-2">{error}</div>}
               {success && <div className="text-green-500 text-center font-semibold text-sm mt-2">✓ User added successfully!</div>}
             </form>
           </div>
@@ -354,7 +354,7 @@ const AdminPanel: React.FC = () => {
               {/* Dashboard & Overview */}
               <div>
                 <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 border-b border-gray-200 dark:border-gray-600 pb-1">
-                  📊 Dashboard & Overview
+                  Dashboard & Overview
                 </h4>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                   {allMenus.slice(0, 1).map(menu => (
@@ -414,7 +414,7 @@ const AdminPanel: React.FC = () => {
               {/* Incident Management */}
               <div>
                 <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 border-b border-gray-200 dark:border-gray-600 pb-1">
-                  ⚠️ Incident Management
+                  Incident Management
                 </h4>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                   {allMenus.slice(5, 9).map(menu => (
@@ -444,7 +444,7 @@ const AdminPanel: React.FC = () => {
               {/* Master Data */}
               <div>
                 <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 border-b border-gray-200 dark:border-gray-600 pb-1">
-                  👥 Master Data
+                  Master Data
                 </h4>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                   {allMenus.slice(9, 11).map(menu => (
@@ -474,7 +474,7 @@ const AdminPanel: React.FC = () => {
               {/* Documentation & Tools */}
               <div>
                 <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 border-b border-gray-200 dark:border-gray-600 pb-1">
-                  📚 Documentation & Tools
+                  Documentation & Tools
                 </h4>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                   {allMenus.slice(11, 13).map(menu => (
@@ -504,7 +504,7 @@ const AdminPanel: React.FC = () => {
               {/* Administration */}
               <div>
                 <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 border-b border-gray-200 dark:border-gray-600 pb-1">
-                  ⚙️ Administration
+                  Administration
                 </h4>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                   {allMenus.slice(13, 14).map(menu => (
