@@ -1,15 +1,15 @@
 import React, { useMemo, useState } from 'react';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend as RechartsLegend, ResponsiveContainer } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import SummaryCard from '@/components/ui/SummaryCard';
+import FlashOnIcon from '@mui/icons-material/FlashOn';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import GroupIcon from '@mui/icons-material/Group';
 import TimerIcon from '@mui/icons-material/Timer';
-import FlashOnIcon from '@mui/icons-material/FlashOn';
 import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 import { sanitizeTickets, calcAllMetrics, Ticket as AgentTicket, rank as rankBand } from '@/utils/agentKpi';
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Legend as RechartsLegend, Tooltip as RechartsTooltip } from 'recharts';
 
 const SummaryDashboard = ({ ticketAnalyticsData, filteredTickets }: any) => {
   // Prepare monthly data
@@ -304,7 +304,7 @@ const SummaryDashboard = ({ ticketAnalyticsData, filteredTickets }: any) => {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
       {/* Monthly Area Chart */}
-      <Card className="bg-white dark:bg-zinc-900 shadow-lg rounded-xl border p-2">
+      <Card className="bg-white dark:bg-zinc-900 shadow-lg rounded-xl border border-gray-200 dark:border-zinc-700 p-2">
         <CardHeader className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 pb-1">
           <div className="flex flex-col gap-1">
             <CardTitle className="font-extrabold text-lg text-zinc-900 dark:text-zinc-100">Tickets per Month</CardTitle>
@@ -314,7 +314,7 @@ const SummaryDashboard = ({ ticketAnalyticsData, filteredTickets }: any) => {
           </div>
           <div className="mt-2 md:mt-0">
             <select
-              className="border rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="border border-gray-200 dark:border-zinc-700 rounded px-2 py-1 text-sm bg-white dark:bg-zinc-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
               value={selectedYear as string}
               onChange={e => setSelectedYear(e.target.value)}
             >
@@ -338,22 +338,42 @@ const SummaryDashboard = ({ ticketAnalyticsData, filteredTickets }: any) => {
                     <stop offset="95%" stopColor="#22C55E" stopOpacity={0.1}/>
                   </linearGradient>
                 </defs>
-                <XAxis dataKey="label" tickLine={false} axisLine={false} tickMargin={8} minTickGap={24} />
-                <YAxis tickLine={false} axisLine={false} tickMargin={8} minTickGap={24} />
-                <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                <RechartsTooltip />
+                <XAxis 
+                  dataKey="label" 
+                  tickLine={false} 
+                  axisLine={false} 
+                  tickMargin={8} 
+                  minTickGap={24}
+                  tick={{ fill: '#6B7280', fontSize: 12 }}
+                />
+                <YAxis 
+                  tickLine={false} 
+                  axisLine={false} 
+                  tickMargin={8} 
+                  minTickGap={24}
+                  tick={{ fill: '#6B7280', fontSize: 12 }}
+                />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
+                <RechartsTooltip 
+                  contentStyle={{
+                    backgroundColor: '#FFFFFF',
+                    border: '1px solid #E5E7EB',
+                    borderRadius: '8px',
+                    color: '#374151'
+                  }}
+                />
                 <RechartsLegend />
                 <Area type="monotone" dataKey="incoming" stroke="#6366F1" fill="url(#colorIncoming)" name="Incoming Tickets" strokeWidth={3} />
                 <Area type="monotone" dataKey="closed" stroke="#22C55E" fill="url(#colorClosed)" name="Closed Tickets" strokeWidth={3} />
               </AreaChart>
             </ResponsiveContainer>
           ) : (
-            <div className="text-center text-gray-400 py-12">No data for this chart</div>
+            <div className="text-center text-gray-500 dark:text-gray-400 py-12">No data for this chart</div>
           )}
         </CardContent>
       </Card>
       {/* Yearly Area Chart */}
-      <Card className="bg-white dark:bg-zinc-900 shadow-lg rounded-xl border p-2">
+      <Card className="bg-white dark:bg-zinc-900 shadow-lg rounded-xl border border-gray-200 dark:border-zinc-700 p-2">
         <CardHeader className="flex flex-col gap-1 pb-1">
           <CardTitle className="font-extrabold text-lg text-zinc-900 dark:text-zinc-100">Tickets per Year</CardTitle>
           {latestYearlyValue !== null && (
@@ -374,29 +394,49 @@ const SummaryDashboard = ({ ticketAnalyticsData, filteredTickets }: any) => {
                     <stop offset="95%" stopColor="#22C55E" stopOpacity={0.1}/>
                   </linearGradient>
                 </defs>
-                <XAxis dataKey="label" tickLine={false} axisLine={false} tickMargin={8} minTickGap={24} />
-                <YAxis tickLine={false} axisLine={false} tickMargin={8} minTickGap={24} />
-                <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                <RechartsTooltip />
+                <XAxis 
+                  dataKey="label" 
+                  tickLine={false} 
+                  axisLine={false} 
+                  tickMargin={8} 
+                  minTickGap={24}
+                  tick={{ fill: '#6B7280', fontSize: 12 }}
+                />
+                <YAxis 
+                  tickLine={false} 
+                  axisLine={false} 
+                  tickMargin={8} 
+                  minTickGap={24}
+                  tick={{ fill: '#6B7280', fontSize: 12 }}
+                />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
+                <RechartsTooltip 
+                  contentStyle={{
+                    backgroundColor: '#FFFFFF',
+                    border: '1px solid #E5E7EB',
+                    borderRadius: '8px',
+                    color: '#374151'
+                  }}
+                />
                 <RechartsLegend />
                 <Area type="monotone" dataKey="incoming" stroke="#6366F1" fill="url(#colorIncomingY)" name="Incoming Tickets" strokeWidth={3} />
                 <Area type="monotone" dataKey="closed" stroke="#22C55E" fill="url(#colorClosedY)" name="Closed Tickets" strokeWidth={3} />
               </AreaChart>
             </ResponsiveContainer>
           ) : (
-            <div className="text-center text-gray-400 py-12">No data for this chart</div>
+            <div className="text-center text-gray-500 dark:text-gray-400 py-12">No data for this chart</div>
           )}
         </CardContent>
       </Card>
       </div>
 
       {/* Agent Leaderboard (per Year) */}
-      <Card className="bg-white dark:bg-zinc-900 shadow-lg rounded-xl border p-2">
+      <Card className="bg-white dark:bg-zinc-900 shadow-lg rounded-xl border border-gray-200 dark:border-zinc-700 p-2">
         <CardHeader className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 pb-1">
           <CardTitle className="font-extrabold text-lg text-zinc-900 dark:text-zinc-100">Agent Leaderboard</CardTitle>
           <div className="flex items-center gap-2">
             <select
-              className="border border-gray-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-zinc-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+              className="border border-gray-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-zinc-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
               value={agentYear}
               onChange={e=>setAgentYear(e.target.value)}
             >

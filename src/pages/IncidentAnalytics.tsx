@@ -88,8 +88,8 @@ const NCALTooltip = ({ active, payload, label, formatter }: any) => {
   const monthName = monthNames[parseInt(month) - 1];
   
   return (
-    <div className="bg-white dark:bg-zinc-900 rounded-xl shadow-lg border border-gray-200 dark:border-zinc-700 p-4 max-h-52 overflow-y-auto min-w-[200px] text-xs">
-      <div className="font-bold text-sm mb-3 text-gray-900 dark:text-gray-100">
+    <div className="bg-card text-card-foreground border border-border rounded-xl shadow-lg border border-gray-200 dark:border-zinc-700 p-4 max-h-52 overflow-y-auto min-w-[200px] text-xs">
+      <div className="font-bold text-sm mb-3 text-card-foreground">
         {monthName} {year}
       </div>
       <div className="space-y-2">
@@ -100,11 +100,11 @@ const NCALTooltip = ({ active, payload, label, formatter }: any) => {
                 className="w-3 h-3 rounded-full" 
                 style={{ backgroundColor: entry.color }}
               />
-              <span className="font-semibold text-gray-900 dark:text-gray-100">
+              <span className="font-semibold text-card-foreground">
                 {entry.name} NCAL
               </span>
             </div>
-            <span className="font-mono text-gray-800 dark:text-gray-200">
+            <span className="font-mono text-card-foreground">
               {formatter ? formatter(entry.value) : entry.value}
             </span>
           </div>
@@ -119,8 +119,8 @@ const SLABreachTooltip = ({ active, payload, label }: any) => {
   if (!active || !payload || !payload.length) return null;
   
   return (
-    <div className="bg-white dark:bg-zinc-900 rounded-xl shadow-lg border border-gray-200 dark:border-zinc-700 p-4 min-w-[180px] text-xs">
-      <div className="font-bold text-sm mb-2 text-gray-900 dark:text-gray-100">
+    <div className="bg-card text-card-foreground border border-border rounded-xl shadow-lg border border-gray-200 dark:border-zinc-700 p-4 min-w-[180px] text-xs">
+      <div className="font-bold text-sm mb-2 text-card-foreground">
         {label} NCAL
       </div>
       <div className="space-y-1">
@@ -131,7 +131,7 @@ const SLABreachTooltip = ({ active, payload, label }: any) => {
                 className="w-3 h-3 rounded-full" 
                 style={{ backgroundColor: entry.color }}
               />
-              <span className="font-semibold text-gray-900 dark:text-gray-100">
+              <span className="font-semibold text-card-foreground">
                 Breach Count
               </span>
             </div>
@@ -639,14 +639,14 @@ const IncidentAnalytics: React.FC = () => {
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
-            <h1 className="text-3xl md:text-4xl font-extrabold text-gray-900 dark:text-gray-100">Incident Analytics</h1>
-            <p className="text-gray-600 dark:text-gray-400 mt-2">
+            <h1 className="text-3xl md:text-4xl font-extrabold text-card-foreground">Incident Analytics</h1>
+            <p className="text-muted-foreground mt-2">
               Deep insights from incident data
             </p>
           </div>
           {/* Period Filter */}
           <div className="flex items-center gap-2">
-            <FilterListIcon className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+            <FilterListIcon className="w-4 h-4 text-muted-foreground" />
             <div className="flex bg-white/80 dark:bg-zinc-900/80 rounded-2xl shadow-lg border border-gray-200 dark:border-zinc-800 p-1">
               {[
                 { key: '3m', label: '3M' },
@@ -705,13 +705,13 @@ const IncidentAnalytics: React.FC = () => {
         </div>
 
         {/* Auto Insights - Key Findings */}
-        <Card className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg">
+        <Card className="bg-card text-card-foreground border border-border rounded-2xl shadow-lg">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <TrackChangesIcon className="w-5 h-5 text-green-600" />
               Key Insights
             </CardTitle>
-                          <CardDescription className="text-gray-600 dark:text-gray-400">Critical findings from the selected period</CardDescription>
+                          <CardDescription className="text-muted-foreground">Critical findings from the selected period</CardDescription>
           </CardHeader>
           <CardContent className="grid md:grid-cols-2 gap-3">
             {deep.insights.map((txt, idx) => (
@@ -720,7 +720,7 @@ const IncidentAnalytics: React.FC = () => {
                 className="flex items-start gap-2 p-3 rounded-xl border border-gray-200 dark:border-zinc-700 bg-gray-50 dark:bg-zinc-800"
               >
                 <div className="mt-1 w-2 h-2 rounded-full bg-emerald-500" />
-                <span className="text-sm text-gray-800 dark:text-gray-200">{txt}</span>
+                <span className="text-sm text-card-foreground">{txt}</span>
               </div>
             ))}
           </CardContent>
@@ -728,12 +728,12 @@ const IncidentAnalytics: React.FC = () => {
 
         {/* NCAL Overview - Performance & Distribution */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <Card className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg">
+          <Card className="bg-card text-card-foreground border border-border rounded-2xl shadow-lg">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <AssignmentIcon className="w-5 h-5 text-indigo-600" /> NCAL Performance vs Targets
               </CardTitle>
-              <CardDescription className="text-gray-600 dark:text-gray-400">How each NCAL level performs against SLA targets</CardDescription>
+              <CardDescription className="text-muted-foreground">How each NCAL level performs against SLA targets</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
@@ -746,10 +746,10 @@ const IncidentAnalytics: React.FC = () => {
                     <div key={ncal} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-zinc-800 rounded-lg border border-gray-200 dark:border-zinc-700">
                       <div className="flex items-center gap-2">
                         <div className="w-3 h-3 rounded-full" style={{ backgroundColor: NCAL_COLORS[ncal] }} />
-                        <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{ncal}</span>
+                        <span className="text-sm font-medium text-card-foreground">{ncal}</span>
                       </div>
                       <div className="text-right">
-                        <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                        <div className="text-sm font-medium text-card-foreground">
                           {formatDurationHMS(avgDur)} / {formatDurationHMS(target)}
                         </div>
                         <div className={`text-xs ${perf >= 0 ? 'text-green-600' : 'text-red-600'}`}>{perf >= 0 ? '+' : ''}{perf.toFixed(1)}%</div>
@@ -760,12 +760,12 @@ const IncidentAnalytics: React.FC = () => {
               </div>
             </CardContent>
           </Card>
-          <Card className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg">
+          <Card className="bg-card text-card-foreground border border-border rounded-2xl shadow-lg">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <PieChartIconMUI className="w-5 h-5 text-purple-600" /> NCAL Distribution
               </CardTitle>
-              <CardDescription className="text-gray-600 dark:text-gray-400">Volume distribution across NCAL levels</CardDescription>
+              <CardDescription className="text-muted-foreground">Volume distribution across NCAL levels</CardDescription>
             </CardHeader>
             <CardContent className="flex flex-col items-center">
               <ChartContainer config={{}}>
@@ -783,7 +783,7 @@ const IncidentAnalytics: React.FC = () => {
         </div>
         {/* Trend Analysis - Monthly Patterns */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <Card className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg">
+          <Card className="bg-card text-card-foreground border border-border rounded-2xl shadow-lg">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <ShowChartIcon className="w-5 h-5 text-blue-600" /> Monthly Incident Volume
@@ -816,7 +816,7 @@ const IncidentAnalytics: React.FC = () => {
               </ChartContainer>
             </CardContent>
           </Card>
-          <Card className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg">
+          <Card className="bg-card text-card-foreground border border-border rounded-2xl shadow-lg">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <ShowChartIcon className="w-5 h-5 text-green-600" /> Monthly Duration Trends
@@ -853,7 +853,7 @@ const IncidentAnalytics: React.FC = () => {
 
         {/* Priority & Classification Analysis */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <Card className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg">
+          <Card className="bg-card text-card-foreground border border-border rounded-2xl shadow-lg">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <TimelineIcon className="w-5 h-5 text-blue-600" /> Priority Distribution
@@ -876,7 +876,7 @@ const IncidentAnalytics: React.FC = () => {
               </ChartContainer>
             </CardContent>
           </Card>
-          <Card className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg">
+          <Card className="bg-card text-card-foreground border border-border rounded-2xl shadow-lg">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <TimelineIcon className="w-5 h-5 text-purple-600" /> Monthly Volume by NCAL
@@ -940,12 +940,12 @@ const IncidentAnalytics: React.FC = () => {
 
         {/* Detailed Duration Analysis */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <Card className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg">
+          <Card className="bg-card text-card-foreground border border-border rounded-2xl shadow-lg">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <AccessTimeIcon className="w-5 h-5 text-indigo-600" /> Real vs Net Duration
               </CardTitle>
-              <CardDescription className="text-gray-600 dark:text-gray-400">
+              <CardDescription className="text-muted-foreground">
                 Real duration (total time) vs Net duration (effective working time)
               </CardDescription>
             </CardHeader>
@@ -994,12 +994,12 @@ const IncidentAnalytics: React.FC = () => {
               </div>
             </CardContent>
           </Card>
-          <Card className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg">
+          <Card className="bg-card text-card-foreground border border-border rounded-2xl shadow-lg">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <AccessTimeIcon className="w-5 h-5 text-indigo-600" /> Effective Resolution Time
               </CardTitle>
-              <CardDescription className="text-gray-600 dark:text-gray-400">
+              <CardDescription className="text-muted-foreground">
                 Net duration after accounting for pauses, breaks, and non-productive time
               </CardDescription>
             </CardHeader>
@@ -1051,7 +1051,7 @@ const IncidentAnalytics: React.FC = () => {
         </div>
         {/* SLA Performance & Root Cause Analysis */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <Card className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg">
+          <Card className="bg-card text-card-foreground border border-border rounded-2xl shadow-lg">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <WarningAmberIcon className="w-5 h-5 text-amber-600" /> SLA Breach Analysis
@@ -1062,7 +1062,7 @@ const IncidentAnalytics: React.FC = () => {
               <div className="grid grid-cols-3 gap-3 mb-4">
                 <div className="text-center p-3 bg-rose-50 dark:bg-rose-900/20 rounded-lg">
                   <div className="text-lg font-bold text-rose-600">{deep.breachRate.toFixed(1)}%</div>
-                  <div className="text-xs text-gray-600 dark:text-gray-400">Breach Rate</div>
+                  <div className="text-xs text-muted-foreground">Breach Rate</div>
                 </div>
                 <div className="text-center p-3 bg-violet-50 dark:bg-violet-900/20 rounded-lg">
                   <div className="text-sm font-bold text-violet-600">Pause Impact</div>
@@ -1088,7 +1088,7 @@ const IncidentAnalytics: React.FC = () => {
               </ChartContainer>
             </CardContent>
           </Card>
-          <Card className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg">
+          <Card className="bg-card text-card-foreground border border-border rounded-2xl shadow-lg">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <HourglassEmptyIcon className="w-5 h-5 text-orange-600" /> Root Cause Analysis
@@ -1097,21 +1097,21 @@ const IncidentAnalytics: React.FC = () => {
             </CardHeader>
             <CardContent className="grid md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <div className="text-xs font-medium text-gray-600 dark:text-gray-400">Problem Sites</div>
+                <div className="text-xs font-medium text-muted-foreground">Problem Sites</div>
                 {deep.topSitesBreach.length === 0 && <div className="text-sm text-gray-500 dark:text-gray-400">No breach sites</div>}
                 {deep.topSitesBreach.map(([name, count]) => (
                   <div key={name} className="flex items-center justify-between p-2 rounded-lg border bg-gray-50 dark:bg-zinc-800">
-                    <span className="text-sm truncate max-w-[70%] text-gray-900 dark:text-gray-100">{name}</span>
+                    <span className="text-sm truncate max-w-[70%] text-card-foreground">{name}</span>
                     <Badge variant="danger" className="bg-red-600 text-white">{count}</Badge>
                   </div>
                 ))}
               </div>
               <div className="space-y-2">
-                <div className="text-xs font-medium text-gray-600 dark:text-gray-400">Main Causes</div>
+                <div className="text-xs font-medium text-muted-foreground">Main Causes</div>
                 {deep.topCausesBreach.length === 0 && <div className="text-sm text-gray-500 dark:text-gray-400">No breach causes</div>}
                 {deep.topCausesBreach.map(([name, count]) => (
                   <div key={name} className="flex items-center justify-between p-2 rounded-lg border bg-gray-50 dark:bg-zinc-800">
-                    <span className="text-sm truncate max-w-[70%] text-gray-900 dark:text-gray-100">{name}</span>
+                    <span className="text-sm truncate max-w-[70%] text-card-foreground">{name}</span>
                     <Badge variant="danger" className="bg-red-600 text-white">{count}</Badge>
                   </div>
                 ))}
@@ -1121,7 +1121,7 @@ const IncidentAnalytics: React.FC = () => {
         </div>
         {/* Current Backlog Status */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <Card className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg">
+          <Card className="bg-card text-card-foreground border border-border rounded-2xl shadow-lg">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <AccessTimeIcon className="w-5 h-5 text-blue-600" /> Backlog Age Distribution
@@ -1150,7 +1150,7 @@ const IncidentAnalytics: React.FC = () => {
               )}
             </CardContent>
           </Card>
-          <Card className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg">
+          <Card className="bg-card text-card-foreground border border-border rounded-2xl shadow-lg">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <ErrorOutlineIcon className="w-5 h-5 text-red-600" /> Critical Aging Incidents
@@ -1170,7 +1170,7 @@ const IncidentAnalytics: React.FC = () => {
                 deep.topAging.map((i, idx) => (
                   <div key={idx} className="flex items-center justify-between p-3 rounded-lg border bg-gray-50 dark:bg-zinc-800 hover:bg-gray-100 dark:hover:bg-zinc-700 transition-colors">
                     <div className="min-w-0 flex-1">
-                      <div className="text-sm font-medium truncate text-gray-900 dark:text-gray-100">{i.site}</div>
+                      <div className="text-sm font-medium truncate text-card-foreground">{i.site}</div>
                       <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                         {i.priority} • {i.ncal} • {i.start ? new Date(i.start).toLocaleDateString('id-ID') : 'No start date'}
                       </div>
@@ -1191,7 +1191,7 @@ const IncidentAnalytics: React.FC = () => {
         </div>
         {/* Operational Patterns & Efficiency */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <Card className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg">
+          <Card className="bg-card text-card-foreground border border-border rounded-2xl shadow-lg">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <TimelineIcon className="w-5 h-5 text-green-600" /> Weekly Incident Patterns
@@ -1210,7 +1210,7 @@ const IncidentAnalytics: React.FC = () => {
               </ChartContainer>
             </CardContent>
           </Card>
-          <Card className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg">
+          <Card className="bg-card text-card-foreground border border-border rounded-2xl shadow-lg">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <ShowChartIcon className="w-5 h-5 text-purple-600" /> Hourly Incident Patterns
@@ -1233,7 +1233,7 @@ const IncidentAnalytics: React.FC = () => {
 
         {/* Escalation & Performance Analysis */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <Card className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg">
+          <Card className="bg-card text-card-foreground border border-border rounded-2xl shadow-lg">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <PieChartIconMUI className="w-5 h-5 text-blue-600" /> Escalation Management
@@ -1271,7 +1271,7 @@ const IncidentAnalytics: React.FC = () => {
               )}
             </CardContent>
           </Card>
-          <Card className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg">
+          <Card className="bg-card text-card-foreground border border-border rounded-2xl shadow-lg">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <TrendingUpIcon className="w-5 h-5 text-red-600" /> Performance Outliers
@@ -1291,7 +1291,7 @@ const IncidentAnalytics: React.FC = () => {
                 deep.outliers.map((o, idx) => (
                   <div key={idx} className="flex items-center justify-between p-3 rounded-lg border bg-gray-50 dark:bg-zinc-800 hover:bg-gray-100 dark:hover:bg-zinc-700 transition-colors">
                     <div className="min-w-0 flex-1">
-                      <div className="text-sm font-medium truncate text-gray-900 dark:text-gray-100">{o.site}</div>
+                      <div className="text-sm font-medium truncate text-card-foreground">{o.site}</div>
                       <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                         {o.priority} • Level {o.level} • {o.ncal}
                       </div>

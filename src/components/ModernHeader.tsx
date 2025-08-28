@@ -8,7 +8,7 @@ import PersonIcon from '@mui/icons-material/Person';
 
 const ModernHeader = () => {
   return (
-    <header className="bg-white dark:bg-gray-900 border-b-0 sticky top-0 z-50 backdrop-blur-sm bg-white/95 dark:bg-gray-900/95 shadow-lg rounded-b-2xl p-4 md:p-6">
+    <header className="bg-card text-card-foreground border border-border border-b-0 sticky top-0 z-50 backdrop-blur-sm bg-white/95 dark:bg-gray-900/95 shadow-lg rounded-b-2xl p-4 md:p-6">
       <div className="absolute left-0 right-0 h-1 bg-primary opacity-60 rounded-b-2xl" style={{bottom:0}} />
       <div className="max-w-7xl mx-auto px-4 sm:px-8 lg:px-16">
         <div className="flex flex-col md:flex-row items-center justify-between h-auto md:h-20 gap-4 md:gap-6">

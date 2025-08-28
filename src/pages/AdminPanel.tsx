@@ -3,6 +3,7 @@ import VisibilityIcon from '@mui/icons-material/Visibility';
 import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
 import { userAPI, menuPermissionAPI, User, MenuPermission } from '../lib/api';
 import MigrationPanel from '../components/MigrationPanel';
+import PageWrapper from '../components/PageWrapper';
 
 const allRoles = ['super admin', 'admin', 'user'] as const;
 type Role = typeof allRoles[number];
@@ -198,8 +199,8 @@ const AdminPanel: React.FC = () => {
   };
 
   return (
-    <>
-              <h1 className="text-2xl md:text-3xl font-extrabold mb-4 text-gray-900 dark:text-gray-100">Admin Panel</h1>
+    <PageWrapper>
+      <h1 className="text-2xl md:text-3xl font-extrabold mb-4 text-card-foreground">Admin Panel</h1>
       
       {/* Error Display */}
       {error && (
@@ -232,8 +233,8 @@ const AdminPanel: React.FC = () => {
         {/* Left Column: User Management */}
         <div className="lg:col-span-1 flex flex-col gap-8">
           {/* Add User Form Card */}
-          <div className="bg-white dark:bg-zinc-800 rounded-xl shadow-lg p-6">
-            <h2 className="text-lg md:text-xl font-bold mb-2 text-gray-900 dark:text-gray-100">Add New User</h2>
+          <div className="bg-background text-foreground rounded-xl shadow-lg p-6">
+            <h2 className="text-lg md:text-xl font-bold mb-2 text-card-foreground">Add New User</h2>
             <form className="flex flex-col gap-4" onSubmit={handleAddUser}>
               <div>
                 <label htmlFor="username" className="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-1">Username</label>
@@ -297,8 +298,8 @@ const AdminPanel: React.FC = () => {
         {/* Right Column: Role and User List */}
         <div className="lg:col-span-2 flex flex-col gap-8">
           {/* Role Management Card */}
-          <div className="bg-white dark:bg-zinc-800 rounded-xl shadow-lg p-6">
-            <h2 className="text-lg md:text-xl font-bold mb-2 text-gray-900 dark:text-gray-100">Role Menu Permissions</h2>
+          <div className="bg-background text-foreground rounded-xl shadow-lg p-6">
+            <h2 className="text-lg md:text-xl font-bold mb-2 text-card-foreground">Role Menu Permissions</h2>
             <div className="mb-4">
               <label htmlFor="role-select" className="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-2">Edit permissions for role:</label>
               <select
@@ -344,7 +345,7 @@ const AdminPanel: React.FC = () => {
               </button>
             </div>
             <div className="mb-3 flex justify-between items-center">
-              <div className="text-sm text-gray-600 dark:text-gray-400">
+              <div className="text-sm text-muted-foreground">
                 Selected: <span className="font-semibold text-blue-600">{getMenusForRole(selectedRoleForEditing).length}</span> of <span className="font-semibold">{allMenus.length}</span> menus
               </div>
             </div>
@@ -532,8 +533,8 @@ const AdminPanel: React.FC = () => {
             </div>
           </div>
           {/* User List Card */}
-          <div className="bg-white dark:bg-zinc-800 rounded-xl shadow-lg p-6">
-            <h2 className="text-lg md:text-xl font-bold mb-2 text-gray-900 dark:text-gray-100">User List</h2>
+          <div className="bg-background text-foreground rounded-xl shadow-lg p-6">
+            <h2 className="text-lg md:text-xl font-bold mb-2 text-card-foreground">User List</h2>
             <div className="overflow-x-auto">
               <table className="w-full text-sm text-left">
                 <thead className="bg-gray-50 dark:bg-zinc-700 text-xs text-gray-600 dark:text-gray-300 uppercase">
@@ -550,8 +551,8 @@ const AdminPanel: React.FC = () => {
                   ) : (
                     users.map((user, idx) => (
                       <tr key={user.id} className="hover:bg-gray-50 dark:hover:bg-zinc-700/50">
-                        <td className="px-6 py-4 whitespace-nowrap text-gray-800 dark:text-gray-200">{user.username}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-gray-600 dark:text-gray-400">********</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-card-foreground">{user.username}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-muted-foreground">********</td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${user.role === 'super admin' ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/50 dark:text-purple-200' : user.role === 'admin' ? 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-200' : 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-200'}`}>{user.role}</span>
                         </td>
@@ -581,8 +582,8 @@ const AdminPanel: React.FC = () => {
       {/* Modal Edit User */}
       {editUserIdx !== null && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-          <div className="bg-white dark:bg-zinc-800 rounded-xl shadow-lg p-8 w-full max-w-md">
-            <h3 className="text-xl font-bold mb-4 text-gray-900 dark:text-gray-100">Edit User</h3>
+          <div className="bg-background text-foreground rounded-xl shadow-lg p-8 w-full max-w-md">
+            <h3 className="text-xl font-bold mb-4 text-card-foreground">Edit User</h3>
             <form className="flex flex-col gap-4" onSubmit={handleEditUser}>
               <div>
                 <label htmlFor="edit-username" className="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-1">Username</label>
@@ -631,7 +632,7 @@ const AdminPanel: React.FC = () => {
           </div>
         </div>
       )}
-    </>
+    </PageWrapper>
   );
 };
 

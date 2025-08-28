@@ -18,6 +18,7 @@ import TicketAnalytics from './TicketAnalytics';
 import AgentAnalytics from './AgentAnalytics';
 import SummaryDashboard from './SummaryDashboard';
 import AdminPanel from '../pages/AdminPanel';
+import PageWrapper from './PageWrapper';
 
 import BarChartIcon from '@mui/icons-material/BarChart';
 import GridViewIcon from '@mui/icons-material/GridView';
@@ -640,14 +641,12 @@ const Dashboard = () => {
   // };
 
   return (
-    <div className="relative min-h-screen">
+    <PageWrapper>
       {/* Gradient background layer */}
-      <div className="fixed inset-0 -z-10 bg-gradient-to-br from-blue-50 via-white to-pink-100 dark:from-zinc-900 dark:via-zinc-800 dark:to-blue-900" />
-      <main className="p-4 sm:p-6 lg:p-8">
-        {/* Tampilkan summary dashboard saja */}
-        <SummaryDashboard ticketAnalyticsData={ticketAnalyticsData} filteredTickets={gridData} />
-      </main>
-    </div>
+      <div className="fixed inset-0 -z-10 bg-gradient-to-br from-background via-background to-background" />
+      {/* Tampilkan summary dashboard saja */}
+      <SummaryDashboard ticketAnalyticsData={ticketAnalyticsData} filteredTickets={gridData} />
+    </PageWrapper>
   );
 };
 

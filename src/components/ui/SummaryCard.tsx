@@ -34,7 +34,7 @@ const SummaryCard: React.FC<SummaryCardProps> = ({
   active = false,
 }) => (
   <div
-    className={`bg-white dark:bg-zinc-900 rounded-2xl shadow-lg p-4 flex flex-col min-h-[140px] transition-all duration-300 min-w-0 overflow-hidden
+    className={`bg-card text-card-foreground rounded-2xl shadow-lg p-4 flex flex-col min-h-[140px] transition-all duration-300 min-w-0 overflow-hidden border border-border
       ${onClick ? 'cursor-pointer hover:shadow-xl hover:scale-[1.02]' : ''}
       ${active ? '' : ''}
       ${className}`}
@@ -76,12 +76,12 @@ const SummaryCard: React.FC<SummaryCardProps> = ({
         )}
       </span>
       {subvalue && (
-        <span className="text-sm md:text-base font-semibold text-gray-500 dark:text-gray-300 ml-1 mb-0.5 align-bottom">
+        <span className="text-sm md:text-base font-semibold text-muted-foreground ml-1 mb-0.5 align-bottom">
           {subvalue}
         </span>
       )}
     </div>
-    <div className="text-[10px] sm:text-xs text-gray-700 dark:text-gray-300 mt-1 break-words whitespace-normal">
+    <div className="text-[10px] sm:text-xs text-muted-foreground mt-1 break-words whitespace-normal">
       {description}
     </div>
   </div>

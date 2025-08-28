@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Progress } from '@/components/ui/progress';
 import { useTicketAnalytics } from './TicketAnalyticsContext';
 import SummaryCard from './ui/SummaryCard';
 import TimeFilter from './TimeFilter';
@@ -27,12 +28,7 @@ import { Badge } from './ui/badge';
 import { db } from '@/lib/db';
 import { useLiveQuery } from 'dexie-react-hooks';
 
-type ClassificationDetails = {
-  count: number;
-  sub: { [key: string]: number };
-  trendline?: { labels: string[]; data: number[] };
-  trendPercent?: number;
-};
+// ClassificationDetails type removed - not used
 
 
 
@@ -854,8 +850,8 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
   if (!gridData || gridData.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center h-full text-gray-500 p-8">
-        <h1 className="text-2xl md:text-3xl font-extrabold mb-4 text-gray-900 dark:text-gray-100">Ticket Analytics</h1>
-        <h3 className="text-lg md:text-xl font-semibold mb-2 text-gray-900 dark:text-gray-100">Data Analisis Tiket</h3>
+        <h1 className="text-2xl md:text-3xl font-extrabold mb-4 text-card-foreground">Ticket Analytics</h1>
+        <h3 className="text-lg md:text-xl font-semibold mb-2 text-card-foreground">Data Analisis Tiket</h3>
         <p>Tidak ada data yang cukup untuk ditampilkan. Unggah file untuk memulai.</p>
       </div>
     );
@@ -873,7 +869,7 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
     <PageWrapper>
       {/* Page Title & Description */}
       <div className="mb-6">
-        <h1 className="text-2xl md:text-3xl font-extrabold mb-4 text-gray-900 dark:text-gray-100">Ticket Analytics</h1>
+        <h1 className="text-2xl md:text-3xl font-extrabold mb-4 text-card-foreground">Ticket Analytics</h1>
         <p className="text-gray-500 dark:text-gray-400">Analysis of ticket statistics, trends, and complaint categories for the selected period.</p>
       </div>
       <div className="flex justify-center mb-6">
@@ -1053,22 +1049,22 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
       {/* Automated Insights - Professional & Informative Design */}
       {insights && (
         <div className="mb-6">
-          <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg p-3">
+          <div className="bg-card text-card-foreground rounded-2xl shadow-lg p-3 border border-border">
             <div className="flex items-center justify-between mb-2">
               <div>
-                <h2 className="text-base font-bold text-gray-900 dark:text-gray-100">Automated Insights</h2>
-                <p className="text-xs text-gray-600 dark:text-gray-400">Analisis otomatis berdasarkan data tiket dan performa</p>
+                <h2 className="text-base font-bold text-card-foreground">Automated Insights</h2>
+                <p className="text-xs text-muted-foreground">Analisis otomatis berdasarkan data tiket dan performa</p>
               </div>
               <div className="flex items-center gap-1">
                 <div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div>
-                <span className="text-xs text-gray-600 dark:text-gray-400">Real-time</span>
+                <span className="text-xs text-muted-foreground">Real-time</span>
               </div>
             </div>
             
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
               {/* Key Metrics */}
               <div className="space-y-2">
-                <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 border-b border-gray-200 dark:border-zinc-700 pb-1">Key Metrics</h3>
+                <h3 className="text-sm font-semibold text-card-foreground border-b border-gray-200 dark:border-zinc-700 pb-1">Key Metrics</h3>
                 
             {/* Bulan tersibuk */}
             {insights.busiestMonth && (
@@ -1076,14 +1072,14 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
                     <div className="flex items-center justify-between mb-1">
                       <div className="flex items-center gap-1">
                         <BarChartIcon className="text-blue-500 text-xs" />
-                        <span className="font-semibold text-xs text-gray-900 dark:text-gray-100">Bulan Tersibuk</span>
+                        <span className="font-semibold text-xs text-card-foreground">Bulan Tersibuk</span>
                       </div>
                       <Badge variant="info" className="text-blue-600 text-xs">Peak</Badge>
                     </div>
                     <div className="text-sm font-bold text-blue-600 dark:text-blue-400 mb-0.5">
                       {insights.busiestMonth.label}
                     </div>
-                    <div className="text-xs text-gray-600 dark:text-gray-400 mb-0.5">
+                    <div className="text-xs text-muted-foreground mb-0.5">
                       {insights.busiestMonth.count} tiket diproses
                     </div>
                     {insights.busiestMonth.trend && (
@@ -1104,14 +1100,14 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
                     <div className="flex items-center justify-between mb-1">
                       <div className="flex items-center gap-1">
                         <LabelIcon className="text-purple-500 text-xs" />
-                        <span className="font-semibold text-xs text-gray-900 dark:text-gray-100">Kategori Dominan</span>
+                        <span className="font-semibold text-xs text-card-foreground">Kategori Dominan</span>
                       </div>
                       <Badge variant="info" className="text-purple-600 text-xs">Top</Badge>
                     </div>
                     <div className="text-sm font-bold text-purple-600 dark:text-purple-400 mb-0.5">
                       {insights.topCategory.cat}
                     </div>
-                    <div className="text-xs text-gray-600 dark:text-gray-400 mb-0.5">
+                    <div className="text-xs text-muted-foreground mb-0.5">
                       {insights.topCategory.count} tiket ({((insights.topCategory.count / (Array.isArray(gridData) ? gridData.length : 1)) * 100).toFixed(1)}% dari total)
                     </div>
                     {typeof insights.topCategory.trend === 'number' && (
@@ -1132,14 +1128,14 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
                     <div className="flex items-center justify-between mb-1">
                       <div className="flex items-center gap-1">
                         <WarningIcon className="text-orange-500 text-xs" />
-                        <span className="font-semibold text-xs text-gray-900 dark:text-gray-100">Pelanggan Kronis/Ekstrem</span>
+                        <span className="font-semibold text-xs text-card-foreground">Pelanggan Kronis/Ekstrem</span>
                       </div>
                       <Badge variant="warning" className="text-orange-600 text-xs">Alert</Badge>
                     </div>
                     <div className="text-sm font-bold text-orange-600 dark:text-orange-400 mb-0.5">
                       {insights.chronicPercent}%
                     </div>
-                    <div className="text-xs text-gray-600 dark:text-gray-400">
+                    <div className="text-xs text-muted-foreground">
                       Pelanggan dengan &gt;10 tiket (kategori Kronis/Ekstrem)
                     </div>
                   </div>
@@ -1148,7 +1144,7 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
               
               {/* Performance Insights */}
               <div className="space-y-2">
-                <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 border-b border-gray-200 dark:border-zinc-700 pb-1">Performance Insights</h3>
+                <h3 className="text-sm font-semibold text-card-foreground border-b border-gray-200 dark:border-zinc-700 pb-1">Performance Insights</h3>
                 
                 {/* Complaint Penetration */}
             {typeof complaintPenetrationByType !== 'undefined' && (
@@ -1156,14 +1152,14 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
                     <div className="flex items-center justify-between mb-1">
                       <div className="flex items-center gap-1">
                         <ShowChartIcon className="text-red-500 text-xs" />
-                        <span className="font-semibold text-xs text-gray-900 dark:text-gray-100">Rasio Komplain Tertinggi</span>
+                        <span className="font-semibold text-xs text-card-foreground">Rasio Komplain Tertinggi</span>
                       </div>
                       <Badge variant="danger" className="text-red-600 text-xs">High</Badge>
                     </div>
                     <div className="text-sm font-bold text-red-600 dark:text-red-400 mb-0.5">
                       {complaintPenetrationByType.maxType}
                     </div>
-                    <div className="text-xs text-gray-600 dark:text-gray-400">
+                    <div className="text-xs text-muted-foreground">
                       {complaintPenetrationByType.maxValue}% penetrasi komplain
                     </div>
                   </div>
@@ -1175,7 +1171,7 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
                     <div className="p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800">
                       <div className="flex items-center gap-2 mb-1">
                         <AssignmentIcon className="text-amber-500 text-xs" />
-                        <span className="font-medium text-gray-900 dark:text-gray-100">Handling Time Shift</span>
+                        <span className="font-medium text-card-foreground">Handling Time Shift</span>
                       </div>
                       <div className="text-sm font-bold text-amber-600 dark:text-amber-400">
                         {safeMaxAvg.shift}: {safeMaxAvg.formattedAvg}
@@ -1187,7 +1183,7 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
                     <div className="p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800">
                       <div className="flex items-center gap-2 mb-1">
                         <AssignmentIcon className="text-amber-500 text-xs" />
-                        <span className="font-medium text-gray-900 dark:text-gray-100">Handling Time Kategori</span>
+                        <span className="font-medium text-card-foreground">Handling Time Kategori</span>
                       </div>
                       <div className="text-sm font-bold text-amber-600 dark:text-amber-400">
                         {safeMaxAvgCat.cat}: {safeMaxAvgCat.formattedAvg}
@@ -1202,14 +1198,14 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
                     <div className="flex items-center justify-between mb-1">
                       <div className="flex items-center gap-1">
                         <TrackChangesIcon className="text-indigo-500 text-xs" />
-                        <span className="font-semibold text-xs text-gray-900 dark:text-gray-100">Penetrasi Kategori</span>
+                        <span className="font-semibold text-xs text-card-foreground">Penetrasi Kategori</span>
                       </div>
                       <Badge variant="info" className="text-indigo-600 text-xs">Focus</Badge>
                     </div>
                     <div className="text-sm font-bold text-indigo-600 dark:text-indigo-400 mb-0.5">
                       {complaintPenetrationByCategory.maxCategory}
                     </div>
-                    <div className="text-xs text-gray-600 dark:text-gray-400">
+                    <div className="text-xs text-muted-foreground">
                       {complaintPenetrationByCategory.maxValue}% penetrasi komplain
                     </div>
                   </div>
@@ -1220,7 +1216,7 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
             {/* Automated Recommendations */}
             {insightCards && insightCards.length > 0 && (
               <div className="mt-3 pt-3 border-t border-gray-200 dark:border-zinc-700">
-                <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-2">Automated Recommendations</h3>
+                <h3 className="text-sm font-semibold text-card-foreground mb-2">Automated Recommendations</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                                     {insightCards.map((card, index) => (
                     <div 
@@ -1243,7 +1239,7 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
                         }`}>{card.icon}</span>
                         <div className="flex-1">
                           <div className="flex items-center gap-1 mb-0.5">
-                            <h4 className="font-semibold text-xs text-gray-900 dark:text-gray-100">{card.title}</h4>
+                            <h4 className="font-semibold text-xs text-card-foreground">{card.title}</h4>
                             {card.badge && (
                               <Badge 
                                 variant={card.type === 'warning' ? 'danger' : card.type === 'success' ? 'success' : 'info'}
@@ -1253,7 +1249,7 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
                               </Badge>
                             )}
                           </div>
-                          <p className="text-xs text-gray-600 dark:text-gray-400 leading-relaxed">
+                          <p className="text-xs text-muted-foreground leading-relaxed">
                             {card.description}
                           </p>
                         </div>
@@ -1427,7 +1423,7 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
       {/* --- ANALYTICS CARDS GRID --- */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10 w-full">
         {/* 1. Tickets per Month */}
-        <Card className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg">
+        <Card className="rounded-2xl shadow-lg border border-border">
           <CardHeader>
             <CardTitle>Tickets per Month</CardTitle>
           </CardHeader>
@@ -1445,10 +1441,15 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
                       <stop offset="95%" stopColor="#EC4899" stopOpacity={0.1}/>
                     </linearGradient>
                   </defs>
-                  <XAxis dataKey="label" tickLine={false} axisLine={false} tickMargin={8} minTickGap={24} />
-                  <YAxis tickLine={false} axisLine={false} tickMargin={8} minTickGap={24} />
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                  <RechartsTooltip />
+                  <XAxis dataKey="label" tickLine={false} axisLine={false} tickMargin={8} minTickGap={24} tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }} />
+                  <YAxis tickLine={false} axisLine={false} tickMargin={8} minTickGap={24} tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }} />
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
+                  <RechartsTooltip contentStyle={{
+                    backgroundColor: 'hsl(var(--background))',
+                    border: '1px solid hsl(var(--border))',
+                    borderRadius: '8px',
+                    color: 'hsl(var(--foreground))'
+                  }} />
                   <RechartsLegend />
                   {/* Area harus incoming dulu, lalu closed, dan dataKey case sensitive */}
                   <Area type="monotone" dataKey="incoming" stroke="#6366F1" fill="url(#colorIncoming)" name="Incoming" strokeWidth={3} />
@@ -1457,16 +1458,16 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
               </ResponsiveContainer>
             </div>
             <div className="overflow-x-auto w-full">
-              <table className="min-w-max w-full text-sm text-left mt-6 bg-white dark:bg-zinc-900 rounded-xl overflow-hidden">
-                <thead className="bg-white dark:bg-zinc-900">
+              <table className="min-w-max w-full text-sm text-left mt-6 bg-card text-card-foreground rounded-xl overflow-hidden border border-border">
+                <thead className="bg-card text-card-foreground">
                   <tr>
                     <th className="px-4 py-2">Tipe</th>
-                    {monthlyStatsData.labels.map((month, idx) => (
+                    {monthlyStatsData.labels.map((month) => (
                       <th key={month} className="px-4 py-2 font-bold font-mono text-center">{month}</th>
                     ))}
                   </tr>
                 </thead>
-                <tbody className="bg-white dark:bg-zinc-900">
+                <tbody className="bg-card text-card-foreground">
                   <tr>
                     <td className="px-4 py-2 font-bold text-pink-600">Closed</td>
                     {monthlyStatsData.labels.map((month, idx) => (
@@ -1485,7 +1486,7 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
           </CardContent>
         </Card>
         {/* 2. Agent Tickets per Shift */}
-        <Card className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg">
+        <Card className="rounded-2xl shadow-lg border border-border">
         <CardHeader>
           <CardTitle>Agent Tickets per Shift</CardTitle>
         </CardHeader>
@@ -1507,10 +1508,15 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
                   <stop offset="95%" stopColor="#3b82f6" stopOpacity={0.1}/>
                 </linearGradient>
               </defs>
-                      <XAxis dataKey="month" tickLine={false} axisLine={false} tickMargin={8} minTickGap={24} />
-                      <YAxis tickLine={false} axisLine={false} tickMargin={8} minTickGap={24} />
-              <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                      <RechartsTooltip />
+                      <XAxis dataKey="month" tickLine={false} axisLine={false} tickMargin={8} minTickGap={24} tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }} />
+                      <YAxis tickLine={false} axisLine={false} tickMargin={8} minTickGap={24} tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }} />
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
+                      <RechartsTooltip contentStyle={{
+                        backgroundColor: 'hsl(var(--background))',
+                        border: '1px solid hsl(var(--border))',
+                        borderRadius: '8px',
+                        color: 'hsl(var(--foreground))'
+                      }} />
                       <RechartsLegend />
               <Area type="monotone" dataKey="Malam" stroke="#ef4444" fill="url(#colorMalam)" name="Malam (01:00–07:59)" strokeWidth={3} />
               <Area type="monotone" dataKey="Pagi" stroke="#22c55e" fill="url(#colorPagi)" name="Pagi (08:00–16:59)" strokeWidth={3} />
@@ -1519,8 +1525,8 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
           </ResponsiveContainer>
                 </div>
                 <div className="overflow-x-auto w-full">
-                  <table className="min-w-max w-full text-sm text-left mt-6 bg-white dark:bg-zinc-900 rounded-xl overflow-hidden">
-                    <thead className="bg-white dark:bg-zinc-900">
+                  <table className="min-w-max w-full text-sm text-left mt-6 bg-card text-card-foreground rounded-xl overflow-hidden border border-border">
+                    <thead className="bg-card text-card-foreground">
                       <tr>
                         <th className="px-4 py-2">Shift</th>
                         {agentShiftAreaData.map((row, idx) => (
@@ -1528,22 +1534,22 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
                         ))}
                       </tr>
                     </thead>
-                    <tbody className="bg-white dark:bg-zinc-900">
+                    <tbody className="bg-card text-card-foreground border border-border">
                       <tr>
                         <td className="px-4 py-2 font-bold text-green-600">Pagi</td>
-                        {agentShiftAreaData.map((row, idx) => (
+                        {agentShiftAreaData.map((row) => (
                           <td key={row.month} className="px-4 py-2 text-center font-mono">{row.Pagi}</td>
                         ))}
                       </tr>
                       <tr>
                         <td className="px-4 py-2 font-bold text-blue-600">Sore</td>
-                        {agentShiftAreaData.map((row, idx) => (
+                        {agentShiftAreaData.map((row) => (
                           <td key={row.month} className="px-4 py-2 text-center font-mono">{row.Sore}</td>
                         ))}
                       </tr>
                       <tr>
                         <td className="px-4 py-2 font-bold text-red-600">Malam</td>
-                        {agentShiftAreaData.map((row, idx) => (
+                        {agentShiftAreaData.map((row) => (
                           <td key={row.month} className="px-4 py-2 text-center font-mono">{row.Malam}</td>
                         ))}
                       </tr>
@@ -1553,7 +1559,7 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
         </CardContent>
       </Card>
         {/* 3. Tickets by Client Type (2025) */}
-        <Card className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg">
+        <Card className="bg-card text-card-foreground border border-border rounded-2xl shadow-lg">
             <CardHeader>
             <CardTitle>Tickets by Client Type (2025)</CardTitle>
             </CardHeader>
@@ -1604,7 +1610,7 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
                 </ResponsiveContainer>
             {/* Table */}
             <div className="overflow-x-auto w-full">
-            <table className="min-w-max w-full text-xs md:text-sm text-left mt-4 table-fixed break-words bg-white dark:bg-zinc-900 rounded-xl overflow-hidden">
+            <table className="min-w-max w-full text-xs md:text-sm text-left mt-4 table-fixed break-words bg-card text-card-foreground border border-border rounded-xl overflow-hidden">
               <thead>
                 <tr>
                   <th className="px-4 py-2">Client Type</th>
@@ -1649,7 +1655,7 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
             </CardContent>
           </Card>
         {/* 4. Tickets by Client Category (2025) */}
-        <Card className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg">
+        <Card className="bg-card text-card-foreground border border-border rounded-2xl shadow-lg">
             <CardHeader>
             <CardTitle>Tickets by Client Category (2025)</CardTitle>
             </CardHeader>
@@ -1702,7 +1708,7 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
             </ResponsiveContainer>
             {/* Table */}
             <div className="overflow-x-auto w-full">
-            <table className="min-w-max w-full text-xs md:text-sm text-left mt-4 table-fixed break-words bg-white dark:bg-zinc-900 rounded-xl overflow-hidden">
+            <table className="min-w-max w-full text-xs md:text-sm text-left mt-4 table-fixed break-words bg-card text-card-foreground border border-border rounded-xl overflow-hidden">
               <thead>
                 <tr>
                   <th className="px-4 py-2">Client Category</th>
@@ -1747,7 +1753,7 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
           </CardContent>
         </Card>
         {/* 5. Unique Complaining Clients by Type (2025) */}
-        <Card className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg">
+        <Card className="bg-card text-card-foreground border border-border rounded-2xl shadow-lg">
             <CardHeader>
             <CardTitle>Unique Complaining Clients by Type (2025)</CardTitle>
             </CardHeader>
@@ -1800,7 +1806,7 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
             </ResponsiveContainer>
             {/* Table */}
             <div className="overflow-x-auto w-full">
-            <table className="min-w-max w-full text-xs md:text-sm text-left mt-4 table-fixed break-words bg-white dark:bg-zinc-900 rounded-xl overflow-hidden">
+            <table className="min-w-max w-full text-xs md:text-sm text-left mt-4 table-fixed break-words bg-card text-card-foreground border border-border rounded-xl overflow-hidden">
               <thead>
                 <tr>
                   <th className="px-4 py-2">Client Type</th>
@@ -1859,7 +1865,7 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
           </CardContent>
         </Card>
         {/* 6. Unique Complaining Clients by Category (2025) */}
-        <Card className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg">
+        <Card className="bg-card text-card-foreground border border-border rounded-2xl shadow-lg">
           <CardHeader>
             <CardTitle>Unique Complaining Clients by Category (2025)</CardTitle>
           </CardHeader>
@@ -1914,7 +1920,7 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
             </ResponsiveContainer>
             {/* Table */}
             <div className="overflow-x-auto w-full">
-            <table className="min-w-max w-full text-xs md:text-sm text-left mt-4 table-fixed break-words bg-white dark:bg-zinc-900 rounded-xl overflow-hidden">
+            <table className="min-w-max w-full text-xs md:text-sm text-left mt-4 table-fixed break-words bg-card text-card-foreground border border-border rounded-xl overflow-hidden">
               <thead>
                 <tr>
                   <th className="px-4 py-2">Client Category</th>
@@ -1970,7 +1976,7 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
           </CardContent>
         </Card>
         {/* 7. Complaint Penetration Ratio by Type (2025) */}
-        <Card className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg">
+        <Card className="bg-card text-card-foreground border border-border rounded-2xl shadow-lg">
           <CardHeader>
             <CardTitle>Complaint Penetration Ratio by Type (2025)</CardTitle>
           </CardHeader>
@@ -2024,7 +2030,7 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
             </ResponsiveContainer>
             {/* Table */}
             <div className="overflow-x-auto w-full">
-            <table className="min-w-max w-full text-xs md:text-sm text-left mt-4 table-fixed break-words bg-white dark:bg-zinc-900 rounded-xl overflow-hidden">
+            <table className="min-w-max w-full text-xs md:text-sm text-left mt-4 table-fixed break-words bg-card text-card-foreground border border-border rounded-xl overflow-hidden">
               <thead>
                 <tr>
                   <th className="px-4 py-2">Client Type</th>
@@ -2058,7 +2064,7 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
           </CardContent>
         </Card>
         {/* 8. Complaint Penetration Ratio by Category (2025) */}
-        <Card className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg">
+        <Card className="bg-card text-card-foreground border border-border rounded-2xl shadow-lg">
           <CardHeader>
             <CardTitle>Complaint Penetration Ratio by Category (2025)</CardTitle>
           </CardHeader>
@@ -2115,7 +2121,7 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
                   </ResponsiveContainer>
             {/* Table */}
             <div className="overflow-x-auto w-full">
-            <table className="min-w-max w-full text-sm text-left mt-4 table-fixed break-words bg-white dark:bg-zinc-900 rounded-xl overflow-hidden">
+            <table className="min-w-max w-full text-sm text-left mt-4 table-fixed break-words bg-card text-card-foreground border border-border rounded-xl overflow-hidden">
               <thead>
                 <tr>
                   <th className="px-4 py-2">Client Category</th>
@@ -2155,7 +2161,7 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
           </CardContent>
         </Card>
         {/* Active Clients per Month (2025) */}
-        <Card className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg">
+        <Card className="bg-card text-card-foreground border border-border rounded-2xl shadow-lg">
           <CardHeader>
             <CardTitle>Active Clients per Month (2025)</CardTitle>
           </CardHeader>
@@ -2261,7 +2267,7 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
         {/* Active Clients by Service Type (2025) - removed per request */}
 
         {/* 9. Total Complaint Penetration Ratio (2025) */}
-        <Card className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg">
+        <Card className="bg-card text-card-foreground border border-border rounded-2xl shadow-lg">
           <CardHeader>
             <CardTitle>Total Complaint Penetration Ratio (2025)</CardTitle>
           </CardHeader>
@@ -2318,7 +2324,7 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
                   </ResponsiveContainer>
             {/* Table */}
             <div className="overflow-x-auto w-full">
-            <table className="min-w-max w-full text-xs md:text-sm text-left mt-4 table-fixed break-words bg-white dark:bg-zinc-900 rounded-xl overflow-hidden">
+            <table className="min-w-max w-full text-xs md:text-sm text-left mt-4 table-fixed break-words bg-card text-card-foreground border border-border rounded-xl overflow-hidden">
               <thead>
                 <tr>
                   <th className="px-4 py-2">Month</th>
@@ -2370,13 +2376,13 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
       {/* Category Hotspot Analysis - Professional & Informative Design */}
       {topComplaintsTable && topComplaintsTable.length > 0 && (
         <div className="mb-12">
-          <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg p-6">
+          <div className="bg-card text-card-foreground border border-border rounded-2xl shadow-lg p-6">
             <div className="flex items-center justify-between mb-6">
               <div>
-                <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">Category Hotspot Analysis</h2>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Analisis kategori berdasarkan impact score dan volume tiket</p>
+                <h2 className="text-xl font-bold text-card-foreground">Category Hotspot Analysis</h2>
+                <p className="text-sm text-muted-foreground mt-1">Analisis kategori berdasarkan impact score dan volume tiket</p>
               </div>
-              <div className="flex items-center gap-4 text-xs text-gray-600 dark:text-gray-400">
+              <div className="flex items-center gap-4 text-xs text-muted-foreground">
                 <div className="flex items-center gap-1">
                   <div className="w-3 h-3 bg-gradient-to-r from-red-400 to-red-600 rounded"></div>
                   <span>High Impact</span>
@@ -2428,7 +2434,7 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
                     let trendValue: number | null = null;
                     if (monthlyStatsData && monthlyStatsData.labels && monthlyStatsData.labels.length > 1) {
                       const monthKeys = monthlyStatsData.labels;
-                      const catTicketsPerMonth: number[] = monthKeys.map((label, i) => {
+                      const catTicketsPerMonth: number[] = monthKeys.map((label) => {
                         const [monthName, year] = label.split(' ');
                         const monthIdx = ["Jan","Feb","Mar","Apr","Mei","Jun","Jul","Agu","Sep","Okt","Nov","Des"].indexOf(monthName);
                         const tickets = gridData.filter(t => {
@@ -2476,26 +2482,26 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
                             </div>
                         <div className="flex-1">
                           <div className="flex items-center gap-3 mb-2">
-                            <h3 className="font-semibold text-gray-900 dark:text-gray-100 text-lg">{item.category}</h3>
+                            <h3 className="font-semibold text-card-foreground text-lg">{item.category}</h3>
                             <span className="bg-blue-100 dark:bg-blue-900/50 text-blue-800 dark:text-blue-200 px-2 py-1 rounded-full text-xs font-medium">
                               {item.count} tiket
                             </span>
                           </div>
                           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-3">
                             <div>
-                              <div className="text-xs text-gray-600 dark:text-gray-400">Avg Duration</div>
-                              <div className="font-mono text-sm font-medium text-gray-900 dark:text-gray-100">{item.avgDurationFormatted}</div>
+                              <div className="text-xs text-muted-foreground">Avg Duration</div>
+                              <div className="font-mono text-sm font-medium text-card-foreground">{item.avgDurationFormatted}</div>
                             </div>
                             <div>
-                              <div className="text-xs text-gray-600 dark:text-gray-400">Contribution</div>
-                              <div className="text-sm font-medium text-gray-900 dark:text-gray-100">{contrib.toFixed(1)}%</div>
+                              <div className="text-xs text-muted-foreground">Contribution</div>
+                              <div className="text-sm font-medium text-card-foreground">{contrib.toFixed(1)}%</div>
                             </div>
                             <div>
-                              <div className="text-xs text-gray-600 dark:text-gray-400">Trend (MoM)</div>
+                              <div className="text-xs text-muted-foreground">Trend (MoM)</div>
                               <div className="flex items-center gap-1">
                                 {trendValue !== null ? (
                                   <>
-                                    <span className={`text-xs ${trendValue > 0 ? 'text-green-600 dark:text-green-400' : trendValue < 0 ? 'text-red-600 dark:text-red-400' : 'text-gray-600 dark:text-gray-400'}`}>
+                                    <span className={`text-xs ${trendValue > 0 ? 'text-green-600 dark:text-green-400' : trendValue < 0 ? 'text-red-600 dark:text-red-400' : 'text-muted-foreground'}`}>
                                       {trendValue > 0 ? <TrendingUpIcon className="w-3 h-3" /> : trendValue < 0 ? <TrendingDownIcon className="w-3 h-3" /> : <TrendingFlatIcon className="w-3 h-3" />}
                                     </span>
                                     <span className="text-sm font-medium">{trendValue > 0 ? '+' : ''}{trendValue.toFixed(1)}%</span>
@@ -2506,8 +2512,8 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
               </div>
           </div>
                             <div>
-                              <div className="text-xs text-gray-600 dark:text-gray-400">Top Sub</div>
-                              <div className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate" title={item.topSubCategory}>
+                              <div className="text-xs text-muted-foreground">Top Sub</div>
+                              <div className="text-sm font-medium text-card-foreground truncate" title={item.topSubCategory}>
                                 {item.topSubCategory}
         </div>
                           </div>
@@ -2515,16 +2521,14 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
                           
                           {/* Impact Score Bar */}
                   <div>
-                            <div className="flex items-center justify-between text-xs text-gray-600 dark:text-gray-400 mb-1">
+                            <div className="flex items-center justify-between text-xs text-muted-foreground mb-1">
                               <span>Impact Score</span>
-                              <span className="font-bold text-gray-900 dark:text-gray-100">{computedImpact.toFixed(2)}</span>
+                              <span className="font-bold text-card-foreground">{computedImpact.toFixed(2)}</span>
                         </div>
-                            <div className="w-full h-2 bg-gray-200 dark:bg-zinc-700 rounded-full overflow-hidden">
-                              <div 
-                                className={`bg-gradient-to-r ${impactColor} h-2 rounded-full transition-all duration-700`}
-                                style={{ width: `${(computedImpact / maxImpact) * 100}%` }}
-                              ></div>
-                              </div>
+                            <Progress 
+                              value={(computedImpact / maxImpact) * 100}
+                              className={`h-2 bg-gradient-to-r ${impactColor} transition-all duration-700`}
+                            />
                           </div>
                         </div>
                       </div>
@@ -2549,21 +2553,21 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
 
       {/* Classification Analytics - Modern & Professional Design */}
       <div className="mb-12">
-        <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg p-6">
+        <div className="bg-card text-card-foreground border border-border rounded-2xl shadow-lg p-6">
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">Classification Analytics</h2>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Analisis klasifikasi pelanggan berdasarkan frekuensi komplain</p>
+              <h2 className="text-xl font-bold text-card-foreground">Classification Analytics</h2>
+              <p className="text-sm text-muted-foreground mt-1">Analisis klasifikasi pelanggan berdasarkan frekuensi komplain</p>
             </div>
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-              <span className="text-xs text-gray-600 dark:text-gray-400">Normal</span>
+              <span className="text-xs text-muted-foreground">Normal</span>
               <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
-              <span className="text-xs text-gray-600 dark:text-gray-400">Persisten</span>
+              <span className="text-xs text-muted-foreground">Persisten</span>
               <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
-              <span className="text-xs text-gray-600 dark:text-gray-400">Kronis</span>
+              <span className="text-xs text-muted-foreground">Kronis</span>
               <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-              <span className="text-xs text-gray-600 dark:text-gray-400">Ekstrem</span>
+              <span className="text-xs text-muted-foreground">Ekstrem</span>
             </div>
           </div>
           
@@ -2597,7 +2601,7 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
                   case 'persisten': return 'text-yellow-600 dark:text-yellow-400';
                   case 'kronis': return 'text-orange-600 dark:text-orange-400';
                   case 'ekstrem': return 'text-red-600 dark:text-red-400';
-                  default: return 'text-gray-600 dark:text-gray-400';
+                  default: return 'text-muted-foreground';
                 }
               };
               
@@ -2606,39 +2610,39 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
                   {/* Header */}
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-3">
-                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${getClassificationIconColor(classification)} bg-white dark:bg-zinc-800 shadow-sm`}>
+                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${getClassificationIconColor(classification)} bg-background text-foreground shadow-sm`}>
                         <span className="text-sm font-bold">{classification.charAt(0)}</span>
                       </div>
                       <div>
-                        <h3 className="font-semibold text-gray-900 dark:text-gray-100">{classification}</h3>
-                        <p className="text-xs text-gray-600 dark:text-gray-400">{d.count} pelanggan</p>
+                        <h3 className="font-semibold text-card-foreground">{classification}</h3>
+                        <p className="text-xs text-muted-foreground">{d.count} pelanggan</p>
                       </div>
                     </div>
                     <div className="text-right">
-                      <div className="text-base font-bold text-gray-900 dark:text-gray-100">{d.count}</div>
-                      <div className="text-xs text-gray-600 dark:text-gray-400">total</div>
+                      <div className="text-base font-bold text-card-foreground">{d.count}</div>
+                      <div className="text-xs text-muted-foreground">total</div>
                     </div>
                   </div>
                   
                   {/* Trend Data */}
                   {d.trendline && d.trendline.labels.length > 0 && (
                     <div className="mb-3">
-                      <div className="flex items-center justify-between text-xs text-gray-600 dark:text-gray-400 mb-2">
+                      <div className="flex items-center justify-between text-xs text-muted-foreground mb-2">
                         <span>Tren bulanan</span>
                         <span>Perubahan</span>
                       </div>
                       <div className="space-y-2">
                       {d.trendline.labels.map((label, i) => (
-                          <div key={label} className="flex items-center justify-between bg-white dark:bg-zinc-800 rounded-lg px-3 py-2">
+                          <div key={label} className="flex items-center justify-between bg-background text-foreground rounded-lg px-3 py-2">
                             <div className="flex items-center gap-3">
                               <span className="text-xs font-medium text-gray-700 dark:text-gray-300 min-w-[40px]">{label}</span>
-                              <span className="font-mono text-sm font-bold text-gray-900 dark:text-gray-100">{d.trendline.data[i]}</span>
+                              <span className="font-mono text-sm font-bold text-card-foreground">{d.trendline.data[i]}</span>
                             </div>
                           {i > 0 && trend[i] !== null && (
                               <div className={`flex items-center gap-1 text-xs font-medium ${
                                 trend[i]! > 0 ? 'text-green-600 dark:text-green-400' : 
                                 trend[i]! < 0 ? 'text-red-600 dark:text-red-400' : 
-                                'text-gray-600 dark:text-gray-400'
+                                'text-muted-foreground'
                               }`}>
                                 <span>{trend[i]! > 0 ? <TrendingUpIcon className="w-3 h-3" /> : trend[i]! < 0 ? <TrendingDownIcon className="w-3 h-3" /> : <TrendingFlatIcon className="w-3 h-3" />}</span>
                                 <span>{trend[i]! > 0 ? '+' : ''}{trend[i]!.toFixed(1)}%</span>
@@ -2656,8 +2660,8 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
                       <div className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-2">Sub-klasifikasi</div>
                       <div className="flex flex-wrap gap-1.5">
                         {Object.entries(d.sub).sort((a, b) => b[1] - a[1]).map(([sub, count]) => (
-                          <span key={sub} className="bg-white dark:bg-zinc-800 rounded-full px-2 py-1 text-xs font-medium text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-zinc-700">
-                            {sub}: <span className="font-bold text-gray-900 dark:text-gray-100">{count}</span>
+                          <span key={sub} className="bg-background text-foreground rounded-full px-2 py-1 text-xs font-medium text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-zinc-700">
+                            {sub}: <span className="font-bold text-card-foreground">{count}</span>
                           </span>
                         ))}
                       </div>
@@ -2672,13 +2676,13 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
         
       {/* Handling Time Analytics - Professional & Informative Design */}
       <div className="mb-12">
-        <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-lg p-6">
+        <div className="bg-card text-card-foreground border border-border rounded-2xl shadow-lg p-6">
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">Handling Time Analytics</h2>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Analisis waktu penanganan berdasarkan shift dan kategori</p>
+              <h2 className="text-xl font-bold text-card-foreground">Handling Time Analytics</h2>
+              <p className="text-sm text-muted-foreground mt-1">Analisis waktu penanganan berdasarkan shift dan kategori</p>
               </div>
-            <div className="flex items-center gap-4 text-xs text-gray-600 dark:text-gray-400">
+            <div className="flex items-center gap-4 text-xs text-muted-foreground">
               <div className="flex items-center gap-1">
                 <div className="w-3 h-3 bg-blue-500 rounded"></div>
                 <span>Average</span>
@@ -2698,8 +2702,8 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
             {/* Shift Analysis */}
             <div>
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Per Shift</h3>
-                <div className="text-xs text-gray-600 dark:text-gray-400">
+                <h3 className="text-lg font-semibold text-card-foreground">Per Shift</h3>
+                <div className="text-xs text-muted-foreground">
                   Rata-rata global: <span className="font-medium">{formatDurationHMS(avgAllShift)}</span>
                 </div>
               </div>
@@ -2726,11 +2730,11 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
                       content={({ active, payload, label }) => {
                         if (active && payload && payload.length) {
                           return (
-                            <div className="bg-white dark:bg-zinc-800 rounded-lg shadow-lg border border-gray-200 dark:border-zinc-700 p-3">
-                              <p className="font-semibold text-gray-900 dark:text-gray-100 mb-2">{label}</p>
+                            <div className="bg-background text-foreground rounded-lg shadow-lg border border-gray-200 dark:border-zinc-700 p-3">
+                              <p className="font-semibold text-card-foreground mb-2">{label}</p>
                               {payload.map((entry, index) => (
-                                <p key={index} className="text-sm text-gray-600 dark:text-gray-400">
-                                  {entry.name}: <span className="font-medium text-gray-900 dark:text-gray-100">{entry.value}</span>
+                                <p key={index} className="text-sm text-muted-foreground">
+                                  {entry.name}: <span className="font-medium text-card-foreground">{entry.value}</span>
                                 </p>
                               ))}
                             </div>
@@ -2749,7 +2753,7 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
               <div className="space-y-3">
                 {shiftTrends.map((shift) => {
                   const isOutlier = shift.avg > 2 * avgAllShift;
-                  const trendColor = shift.trend > 0 ? 'text-red-600 dark:text-red-400' : shift.trend < 0 ? 'text-green-600 dark:text-green-400' : 'text-gray-600 dark:text-gray-400';
+                  const trendColor = shift.trend > 0 ? 'text-red-600 dark:text-red-400' : shift.trend < 0 ? 'text-green-600 dark:text-green-400' : 'text-muted-foreground';
                   const trendIcon = shift.trend > 0 ? <TrendingUpIcon className="w-4 h-4" /> : shift.trend < 0 ? <TrendingDownIcon className="w-4 h-4" /> : <TrendingFlatIcon className="w-4 h-4" />;
                   
                   return (
@@ -2769,27 +2773,27 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
                             {shift.shift.charAt(0)}
             </div>
                           <div>
-                            <h4 className="font-semibold text-gray-900 dark:text-gray-100">{shift.shift}</h4>
-                            <p className="text-xs text-gray-600 dark:text-gray-400">{shift.count} tiket</p>
+                            <h4 className="font-semibold text-card-foreground">{shift.shift}</h4>
+                            <p className="text-xs text-muted-foreground">{shift.count} tiket</p>
         </div>
                         </div>
                         <div className="text-right">
-                          <div className="text-base font-bold text-gray-900 dark:text-gray-100">{shift.formattedAvg}</div>
-                          <div className="text-xs text-gray-600 dark:text-gray-400">rata-rata</div>
+                          <div className="text-base font-bold text-card-foreground">{shift.formattedAvg}</div>
+                          <div className="text-xs text-muted-foreground">rata-rata</div>
                         </div>
                       </div>
                       
                       <div className="grid grid-cols-3 gap-4 text-center">
                         <div>
-                          <div className="text-xs text-gray-600 dark:text-gray-400">Median</div>
-                          <div className="font-mono text-sm font-medium text-gray-900 dark:text-gray-100">{shift.formattedMedian}</div>
+                          <div className="text-xs text-muted-foreground">Median</div>
+                          <div className="font-mono text-sm font-medium text-card-foreground">{shift.formattedMedian}</div>
                         </div>
                         <div>
-                          <div className="text-xs text-gray-600 dark:text-gray-400">P90</div>
-                          <div className="font-mono text-sm font-medium text-gray-900 dark:text-gray-100">{formatDurationHMS(shift.p90)}</div>
+                          <div className="text-xs text-muted-foreground">P90</div>
+                          <div className="font-mono text-sm font-medium text-card-foreground">{formatDurationHMS(shift.p90)}</div>
                         </div>
                         <div>
-                          <div className="text-xs text-gray-600 dark:text-gray-400">Trend</div>
+                          <div className="text-xs text-muted-foreground">Trend</div>
                           <div className={`text-sm font-medium ${trendColor}`}>
                             {trendIcon} {shift.trend > 0 ? '+' : ''}{shift.trend.toFixed(1)}%
                           </div>
@@ -2810,8 +2814,8 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
             {/* Category Analysis */}
             <div>
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Per Kategori</h3>
-                <div className="text-xs text-gray-600 dark:text-gray-400">
+                <h3 className="text-lg font-semibold text-card-foreground">Per Kategori</h3>
+                <div className="text-xs text-muted-foreground">
                   Rata-rata global: <span className="font-medium">{formatDurationHMS(avgAllCat)}</span>
                 </div>
               </div>
@@ -2838,11 +2842,11 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
                       content={({ active, payload, label }) => {
                         if (active && payload && payload.length) {
                           return (
-                            <div className="bg-white dark:bg-zinc-800 rounded-lg shadow-lg border border-gray-200 dark:border-zinc-700 p-3">
-                              <p className="font-semibold text-gray-900 dark:text-gray-100 mb-2">{label}</p>
+                            <div className="bg-background text-foreground rounded-lg shadow-lg border border-gray-200 dark:border-zinc-700 p-3">
+                              <p className="font-semibold text-card-foreground mb-2">{label}</p>
                               {payload.map((entry, index) => (
-                                <p key={index} className="text-sm text-gray-600 dark:text-gray-400">
-                                  {entry.name}: <span className="font-medium text-gray-900 dark:text-gray-100">{entry.value}</span>
+                                <p key={index} className="text-sm text-muted-foreground">
+                                  {entry.name}: <span className="font-medium text-card-foreground">{entry.value}</span>
                                 </p>
                               ))}
                             </div>
@@ -2861,7 +2865,7 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
               <div className="space-y-3">
                 {catTrends.map((cat) => {
                   const isOutlier = cat.avg > 2 * avgAllCat;
-                  const trendColor = cat.trend > 0 ? 'text-red-600 dark:text-red-400' : cat.trend < 0 ? 'text-green-600 dark:text-green-400' : 'text-gray-600 dark:text-gray-400';
+                  const trendColor = cat.trend > 0 ? 'text-red-600 dark:text-red-400' : cat.trend < 0 ? 'text-green-600 dark:text-green-400' : 'text-muted-foreground';
                   const trendIcon = cat.trend > 0 ? <TrendingUpIcon className="w-4 h-4" /> : cat.trend < 0 ? <TrendingDownIcon className="w-4 h-4" /> : <TrendingFlatIcon className="w-4 h-4" />;
                   
                   return (
@@ -2881,27 +2885,27 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
                             <AssignmentIcon className="text-white text-xs" />
     </div>
                           <div>
-                            <h4 className="font-semibold text-gray-900 dark:text-gray-100 truncate max-w-[120px]" title={cat.cat}>{cat.cat}</h4>
-                            <p className="text-xs text-gray-600 dark:text-gray-400">{cat.count} tiket</p>
+                            <h4 className="font-semibold text-card-foreground truncate max-w-[120px]" title={cat.cat}>{cat.cat}</h4>
+                            <p className="text-xs text-muted-foreground">{cat.count} tiket</p>
         </div>
       </div>
                         <div className="text-right">
-                          <div className="text-base font-bold text-gray-900 dark:text-gray-100">{cat.formattedAvg}</div>
-                          <div className="text-xs text-gray-600 dark:text-gray-400">rata-rata</div>
+                          <div className="text-base font-bold text-card-foreground">{cat.formattedAvg}</div>
+                          <div className="text-xs text-muted-foreground">rata-rata</div>
                         </div>
                       </div>
                       
                       <div className="grid grid-cols-3 gap-4 text-center">
                         <div>
-                          <div className="text-xs text-gray-600 dark:text-gray-400">Median</div>
-                          <div className="font-mono text-sm font-medium text-gray-900 dark:text-gray-100">{cat.formattedMedian}</div>
+                          <div className="text-xs text-muted-foreground">Median</div>
+                          <div className="font-mono text-sm font-medium text-card-foreground">{cat.formattedMedian}</div>
                         </div>
                         <div>
-                          <div className="text-xs text-gray-600 dark:text-gray-400">P90</div>
-                          <div className="font-mono text-sm font-medium text-gray-900 dark:text-gray-100">{formatDurationHMS(cat.p90)}</div>
+                          <div className="text-xs text-muted-foreground">P90</div>
+                          <div className="font-mono text-sm font-medium text-card-foreground">{formatDurationHMS(cat.p90)}</div>
                         </div>
                         <div>
-                          <div className="text-xs text-gray-600 dark:text-gray-400">Trend</div>
+                          <div className="text-xs text-muted-foreground">Trend</div>
                           <div className={`text-sm font-medium ${trendColor}`}>
                             {trendIcon} {cat.trend > 0 ? '+' : ''}{cat.trend.toFixed(1)}%
                           </div>
