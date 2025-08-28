@@ -414,42 +414,43 @@ export const IncidentData: React.FC = () => {
   return (
     <PageWrapper>
       <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl md:text-4xl font-extrabold text-card-foreground">Incident Data</h1>
-          <p className="text-muted-foreground mt-2">
-            Manage and view incident data with filtering and search capabilities
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <Button onClick={() => setShowUpload(!showUpload)} variant="outline">
-            <Upload className="w-4 h-4 mr-2" />
-            Upload Data
-          </Button>
-          <Button onClick={exportToCSV} variant="outline">
-            <Download className="w-4 h-4 mr-2" />
-            Export CSV
-          </Button>
-          {dbStats && dbStats.duplicateGroups > 0 && (
-            <Button 
-              onClick={() => setShowCleanupConfirm(true)} 
-              variant="outline"
-              className="bg-yellow-600 hover:bg-yellow-700 text-white"
-            >
-              <AlertTriangle className="w-4 h-4 mr-2" />
-              Clean Duplicates ({dbStats.duplicateGroups})
+        {/* Header */}
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-bold text-card-foreground">Incident Data</h1>
+            <p className="text-muted-foreground mt-2">
+              Manage and view incident data with filtering and search capabilities
+            </p>
+          </div>
+          <div className="flex gap-2">
+            <Button onClick={() => setShowUpload(!showUpload)} variant="outline">
+              <Upload className="w-4 h-4 mr-2" />
+              Upload Data
             </Button>
-          )}
-          <Button 
-            onClick={() => setShowResetConfirm(true)} 
-            variant="destructive"
-            className="bg-red-600 hover:bg-red-700 text-white"
-          >
-            <Trash2 className="w-4 h-4 mr-2" />
-            Reset Data
-          </Button>
+            <Button onClick={exportToCSV} variant="outline">
+              <Download className="w-4 h-4 mr-2" />
+              Export CSV
+            </Button>
+            {dbStats && dbStats.duplicateGroups > 0 && (
+              <Button 
+                onClick={() => setShowCleanupConfirm(true)} 
+                variant="outline"
+                className="bg-yellow-600 hover:bg-yellow-700 text-white"
+              >
+                <AlertTriangle className="w-4 h-4 mr-2" />
+                Clean Duplicates ({dbStats.duplicateGroups})
+              </Button>
+            )}
+            <Button 
+              onClick={() => setShowResetConfirm(true)} 
+              variant="destructive"
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              <Trash2 className="w-4 h-4 mr-2" />
+              Reset Data
+            </Button>
+          </div>
         </div>
-      </div>
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">

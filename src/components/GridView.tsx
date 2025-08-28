@@ -95,9 +95,10 @@ const GridView = ({ data: propsData }: { data?: ITicket[] }) => {
   return (
     <PageWrapper>
       <div className="space-y-6">
-        <div className="flex justify-between items-center">
+        {/* Header */}
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
-            <h1 className="text-3xl md:text-4xl font-extrabold text-card-foreground">Data Grid</h1>
+            <h1 className="text-3xl font-bold text-card-foreground">Data Grid</h1>
             <p className="text-muted-foreground mt-2">
               View, search, and manage all ticket data in an easy-to-use grid view.
             </p>
