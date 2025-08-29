@@ -76,9 +76,23 @@ export const toMinutes = (v: unknown): number => {
     return hhmmssResult;
   }
   
+  // Handle HH:MM format (prioritas tinggi setelah HH:MM:SS)
+  const hhmmRegex = /^(\d{1,2}):(\d{2})$/;
+  const hhmmMatch = s.match(hhmmRegex);
+  if (hhmmMatch) {
+    const [, hours, minutes] = hhmmMatch;
+    const h = parseInt(hours, 10);
+    const m = parseInt(minutes, 10);
+    
+    if (h >= 0 && h <= 23 && m >= 0 && m <= 59) {
+      const totalMinutes = h * 60 + m;
+      console.log(`Parsed HH:MM format: "${s}" -> ${h}h ${m}m -> ${totalMinutes} minutes`);
+      return totalMinutes;
+    }
+  }
+  
   // Handle various time formats
   const timeFormats = [
-    /^(\d{1,2}):(\d{2})$/, // HH:MM
     /^(\d+)h\s*(\d+)m$/, // Xh Ym
     /^(\d+)h$/, // Xh
     /^(\d+)m$/, // Xm
@@ -90,36 +104,42 @@ export const toMinutes = (v: unknown): number => {
   for (const format of timeFormats) {
     const match = s.match(format);
     if (match) {
-      if (format.source.includes('HH:MM') || format.source.includes('\\d{1,2}:\\d{2}')) {
-        // HH:MM format
-        const [, hours, minutes] = match;
-        const totalMinutes = (+hours) * 60 + (+minutes);
-        console.log(`Parsed HH:MM format: "${s}" -> ${hours}h ${minutes}m -> ${totalMinutes} minutes`);
-        return totalMinutes;
-      } else if (format.source.includes('h\\s*\\d+m') || format.source.includes('\\d+h\\s*\\d+m')) {
+      if (format.source.includes('h\\s*\\d+m') || format.source.includes('\\d+h\\s*\\d+m')) {
         // Xh Ym format
         const [, hours, minutes] = match;
-        return (+hours) * 60 + (+minutes);
+        const totalMinutes = (+hours) * 60 + (+minutes);
+        console.log(`Parsed Xh Ym format: "${s}" -> ${hours}h ${minutes}m -> ${totalMinutes} minutes`);
+        return totalMinutes;
       } else if (format.source.includes('\\d+h$')) {
         // Xh format
         const [, hours] = match;
-        return (+hours) * 60;
+        const totalMinutes = (+hours) * 60;
+        console.log(`Parsed Xh format: "${s}" -> ${hours}h -> ${totalMinutes} minutes`);
+        return totalMinutes;
       } else if (format.source.includes('\\d+m$')) {
         // Xm format
         const [, minutes] = match;
-        return +minutes;
+        const totalMinutes = +minutes;
+        console.log(`Parsed Xm format: "${s}" -> ${minutes}m -> ${totalMinutes} minutes`);
+        return totalMinutes;
       } else if (format.source.includes('hours.*minutes')) {
         // X hours Y minutes format
         const [, hours, minutes] = match;
-        return (+hours) * 60 + (+minutes);
+        const totalMinutes = (+hours) * 60 + (+minutes);
+        console.log(`Parsed "X hours Y minutes" format: "${s}" -> ${hours}h ${minutes}m -> ${totalMinutes} minutes`);
+        return totalMinutes;
       } else if (format.source.includes('hours')) {
         // X hours format
         const [, hours] = match;
-        return (+hours) * 60;
+        const totalMinutes = (+hours) * 60;
+        console.log(`Parsed "X hours" format: "${s}" -> ${hours}h -> ${totalMinutes} minutes`);
+        return totalMinutes;
       } else if (format.source.includes('minutes')) {
         // X minutes format
         const [, minutes] = match;
-        return +minutes;
+        const totalMinutes = +minutes;
+        console.log(`Parsed "X minutes" format: "${s}" -> ${minutes}m -> ${totalMinutes} minutes`);
+        return totalMinutes;
       }
     }
   }
