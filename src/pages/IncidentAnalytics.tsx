@@ -43,7 +43,6 @@ import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import HourglassEmptyIcon from '@mui/icons-material/HourglassEmpty';
 import TimelineIcon from '@mui/icons-material/Timeline';
 import FilterListIcon from '@mui/icons-material/FilterList';
-import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 
 // NCAL colors and targets
 const NCAL_COLORS: Record<string, string> = {

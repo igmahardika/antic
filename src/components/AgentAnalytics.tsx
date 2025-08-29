@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import 'ag-grid-community/styles/ag-theme-quartz.css';
 import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 import StarIcon from '@mui/icons-material/Star';
@@ -190,12 +190,7 @@ const AgentAnalytics = () => {
     }
   }, [dataSource]);
 
-  // Function to toggle backlog debugging
-  const toggleBacklogDebug = () => {
-    const newState = !backlogDebugEnabled;
-    setBacklogDebugEnabled(newState);
-    enableBacklogDebug(newState);
-  };
+
 
   // Function to export agent career report to PDF
   const exportToPDF = async () => {
