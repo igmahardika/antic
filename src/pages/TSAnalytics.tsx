@@ -1532,41 +1532,69 @@ const TSAnalytics: React.FC = () => {
                 </ChartContainer>
               </div>
                              {/* Donut chart total */}
-               <div className="space-y-2">
-                 <h4 className="text-sm font-semibold text-muted-foreground">Total Summary</h4>
-                 <ChartContainer
-                   config={{
-                     target: { label: "Target", color: "var(--chart-2)" },
-                     nonTarget: { label: "Non Target", color: "var(--chart-1)" },
-                   }}
-                   className="mx-auto aspect-square w-full max-w-[250px]"
-                 >
-                   <PieChart>
-                     <ChartTooltip
-                       cursor={false}
-                       content={<ChartTooltipContent indicator="dashed" />}
-                     />
-                     <Pie
-                       data={wanedaStats.donutData}
-                       dataKey="value"
-                       nameKey="name"
-                       cx="50%"
-                       cy="50%"
-                       innerRadius={60}
-                       outerRadius={80}
-                       fill="#8884d8"
-                       label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                     >
-                       {wanedaStats.donutData.map((_, index) => (
-                         <Cell
-                           key={`cell-${index}`}
-                           fill={index === 0 ? '#10b981' : '#ef4444'}
-                         />
-                       ))}
-                     </Pie>
-                   </PieChart>
-                 </ChartContainer>
-               </div>
+              <div className="space-y-4">
+                <h4 className="text-sm font-semibold text-muted-foreground text-center">Total Summary</h4>
+                <div className="relative">
+                  <ChartContainer
+                    config={{
+                      target: { label: "Target", color: "var(--chart-2)" },
+                      nonTarget: { label: "Non Target", color: "var(--chart-1)" },
+                    }}
+                    className="mx-auto aspect-square w-full max-w-[280px]"
+                  >
+                    <PieChart>
+                      <ChartTooltip
+                        cursor={false}
+                        content={<ChartTooltipContent indicator="dashed" />}
+                      />
+                      <Pie
+                        data={wanedaStats.donutData}
+                        dataKey="value"
+                        nameKey="name"
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={50}
+                        outerRadius={90}
+                        fill="#8884d8"
+                        paddingAngle={2}
+                      >
+                        {wanedaStats.donutData.map((_, index) => (
+                          <Cell
+                            key={`cell-${index}`}
+                            fill={index === 0 ? '#10b981' : '#ef4444'}
+                          />
+                        ))}
+                      </Pie>
+                    </PieChart>
+                  </ChartContainer>
+                  
+                  {/* Custom Legend */}
+                  <div className="mt-4 space-y-2">
+                    {wanedaStats.donutData.map((item, index) => (
+                      <div key={item.name} className="flex items-center justify-between text-sm">
+                        <div className="flex items-center gap-2">
+                          <div 
+                            className="w-3 h-3 rounded-full" 
+                            style={{ backgroundColor: index === 0 ? '#10b981' : '#ef4444' }}
+                          />
+                          <span className="font-medium text-card-foreground">{item.name}</span>
+                        </div>
+                        <span className="font-bold text-card-foreground">
+                          {Number(item.value).toLocaleString()}
+                        </span>
+                      </div>
+                    ))}
+                    <div className="pt-2 border-t border-border">
+                      <div className="flex items-center justify-between text-sm font-semibold">
+                        <span className="text-muted-foreground">Total</span>
+                        <span className="text-card-foreground">
+                          {wanedaStats.donutData.map(item => Number(item.value)).reduce((sum, value) => sum + value, 0).toLocaleString()}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
             {/* Excel-like Monthly Summary Table */}
             <div className="overflow-x-auto mt-6">
