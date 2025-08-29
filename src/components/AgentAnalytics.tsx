@@ -23,7 +23,7 @@ import TimeFilter from './TimeFilter';
 import { ListAlt as ListAltIcon, TrendingUp as TrendingUpIcon, Download as DownloadIcon } from '@mui/icons-material';
 import PageWrapper from './PageWrapper';
 import type { AgentMetric } from '@/utils/agentKpi';
-import { enableBacklogDebug } from '@/utils/agentKpi';
+
 import { formatDurationDHM } from '@/lib/utils';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
@@ -176,7 +176,7 @@ const AgentAnalytics = () => {
   const [debouncedDatasets, setDebouncedDatasets] = useState<{ label: string; data: number[]; color?: string }[]>([]);
   const [selectedAgent, setSelectedAgent] = useState<string | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
-  const [backlogDebugEnabled, setBacklogDebugEnabled] = useState(false);
+
   const [exportYear, setExportYear] = useState('all');
 
   useEffect(() => {
