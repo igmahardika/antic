@@ -239,30 +239,30 @@ const SummaryDashboard = ({ ticketAnalyticsData, filteredTickets }: any) => {
   return (
     <div className="grid grid-cols-1 gap-8">
       {/* KPI Row */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <SummaryCard
-          icon={<FlashOnIcon sx={{ fontSize: 20 }} />}
+          icon={<FlashOnIcon className="w-5 h-5 text-white" />}
           iconBg="bg-indigo-500"
           title="Total Tickets"
           value={stats[0]?.value || '-'}
           description={stats[0]?.description || ''}
         />
         <SummaryCard
-          icon={<CheckCircleIcon sx={{ fontSize: 20 }} />}
+          icon={<CheckCircleIcon className="w-5 h-5 text-white" />}
           iconBg="bg-emerald-500"
           title="Closed Tickets"
           value={stats[2]?.value || '-'}
           description={stats[2]?.description || '100% resolution rate'}
         />
         <SummaryCard
-          icon={<AccessTimeIcon sx={{ fontSize: 20 }} />}
+          icon={<AccessTimeIcon className="w-5 h-5 text-white" />}
           iconBg="bg-amber-500"
           title="Avg Duration"
           value={stats[1]?.value || '-'}
           description="average resolution time"
         />
         <SummaryCard
-          icon={<GroupIcon sx={{ fontSize: 20 }} />}
+          icon={<GroupIcon className="w-5 h-5 text-white" />}
           iconBg="bg-sky-500"
           title="Active Agents"
           value={stats[3]?.value || '-'}
@@ -271,30 +271,30 @@ const SummaryDashboard = ({ ticketAnalyticsData, filteredTickets }: any) => {
       </div>
 
       {/* KPI Row 2 */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <SummaryCard
-          icon={<CheckCircleIcon sx={{ fontSize: 20 }} />}
+          icon={<CheckCircleIcon className="w-5 h-5 text-white" />}
           iconBg="bg-emerald-500"
           title="Closed Rate"
           value={kpis.closedRate}
           description="closed / total"
         />
         <SummaryCard
-          icon={<TimerIcon sx={{ fontSize: 20 }} />}
+          icon={<TimerIcon className="w-5 h-5 text-white" />}
           iconBg="bg-cyan-500"
           title="SLA ≤ 24h"
           value={kpis.slaPct}
           description="percentage closed within 24h"
         />
         <SummaryCard
-          icon={<TimerIcon sx={{ fontSize: 20 }} />}
+          icon={<TimerIcon className="w-5 h-5 text-white" />}
           iconBg="bg-rose-500"
           title="Avg FRT (min)"
           value={kpis.frtAvg.toFixed(1)}
           description="first response time"
         />
         <SummaryCard
-          icon={<TimerIcon sx={{ fontSize: 20 }} />}
+          icon={<TimerIcon className="w-5 h-5 text-white" />}
           iconBg="bg-violet-500"
           title="Avg ART (min)"
           value={kpis.artAvg.toFixed(1)}

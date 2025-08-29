@@ -98,23 +98,23 @@ const GridView = ({ data: propsData }: { data?: ITicket[] }) => {
 
 
         {/* Summary Cards - Enhanced UI */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
           <SummaryCard
-            icon={<ConfirmationNumberIcon sx={{ fontSize: 28, color: '#fff', filter: 'drop-shadow(0 2px 8px rgba(0,0,0,0.10))' }} />}
+            icon={<ConfirmationNumberIcon className="w-5 h-5 text-white" />}
             title="TOTAL TICKETS"
             value={totalTicketsInDb ?? '-'}
             description="Total recorded tickets (no filter applied)"
             iconBg="bg-blue-700"
           />
           <SummaryCard
-            icon={<GroupIcon sx={{ fontSize: 28, color: '#fff', filter: 'drop-shadow(0 2px 8px rgba(0,0,0,0.10))' }} />}
+            icon={<GroupIcon className="w-5 h-5 text-white" />}
             title="UNIQUE CUSTOMERS"
             value={allTicketsInDb ? new Set(allTicketsInDb.map(t => t.customerId)).size : 0}
             description="Number of unique customers (no filter applied)"
             iconBg="bg-green-600"
           />
           <SummaryCard
-            icon={<HowToRegIcon sx={{ fontSize: 28, color: '#fff', filter: 'drop-shadow(0 2px 8px rgba(0,0,0,0.10))' }} />}
+            icon={<HowToRegIcon className="w-5 h-5 text-white" />}
             title="UNIQUE AGENTS"
             value={allTicketsInDb ? new Set(allTicketsInDb.map(t => t.openBy)).size : 0}
             description="Number of unique agents handling tickets (no filter applied)"

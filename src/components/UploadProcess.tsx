@@ -295,30 +295,30 @@ const UploadProcess = ({ onUploadComplete }: UploadProcessProps) => {
           </div>
         </div>
         {uploadSummary ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8 mb-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 mb-8">
             <SummaryCard
-              icon={<CloudUploadIcon sx={{ fontSize: 28, color: '#fff', filter: 'drop-shadow(0 2px 8px rgba(0,0,0,0.10))' }} />}
+              icon={<CloudUploadIcon className="w-5 h-5 text-white" />}
               title="Total Uploaded"
               value={uploadSummary.totalRows}
               description="Total rows in file"
               iconBg="bg-blue-700"
             />
             <SummaryCard
-              icon={<CheckCircleIcon sx={{ fontSize: 28, color: '#fff', filter: 'drop-shadow(0 2px 8px rgba(0,0,0,0.10))' }} />}
+              icon={<CheckCircleIcon className="w-5 h-5 text-white" />}
               title="Success"
               value={uploadSummary.successCount}
               description="Valid tickets uploaded"
               iconBg="bg-green-600"
             />
             <SummaryCard
-              icon={<CloseIcon sx={{ fontSize: 28, color: '#fff', filter: 'drop-shadow(0 2px 8px rgba(0,0,0,0.10))' }} />}
+              icon={<CloseIcon className="w-5 h-5 text-white" />}
               title="Failed"
               value={uploadSummary.errorCount}
               description="Failed rows"
               iconBg="bg-red-600"
             />
             <SummaryCard
-              icon={<TableChartIcon sx={{ fontSize: 28, color: '#fff', filter: 'drop-shadow(0 2px 8px rgba(0,0,0,0.10))' }} />}
+              icon={<TableChartIcon className="w-5 h-5 text-white" />}
               title="Tickets in GridView"
               value={ticketsInDb ?? '-'}
               description="Tickets currently in database (GridView)"

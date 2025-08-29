@@ -1069,7 +1069,7 @@ const AgentAnalytics = () => {
           return (
         <SummaryCard
               key={s.title}
-              icon={<s.icon className="w-7 h-7 text-white" />}
+              icon={<s.icon className="w-5 h-5 text-white" />}
               title={s.title}
               value={s.value}
               description={s.description}

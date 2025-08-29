@@ -900,7 +900,7 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 mb-6">
         {/* Total Tickets */}
         <SummaryCard
-          icon={<ConfirmationNumberIcon className="w-7 h-7 text-white" />}
+          icon={<ConfirmationNumberIcon className="w-5 h-5 text-white" />}
           title="Total Tickets"
           value={stats.find(s => s.title === 'Total Tickets')?.value || '0'}
           description={stats.find(s => s.title === 'Total Tickets')?.description || ''}
@@ -909,7 +909,7 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
         
         {/* Closed */}
         <SummaryCard
-          icon={<CheckCircleIcon className="w-7 h-7 text-white" />}
+          icon={<CheckCircleIcon className="w-5 h-5 text-white" />}
           title="Closed"
           value={stats.find(s => s.title === 'Closed')?.value || '0'}
           description={stats.find(s => s.title === 'Closed')?.description || ''}
@@ -918,7 +918,7 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
         
         {/* Open */}
         <SummaryCard
-          icon={<ErrorOutlineIcon className="w-7 h-7 text-white" />}
+          icon={<ErrorOutlineIcon className="w-5 h-5 text-white" />}
           title="Open"
           value={stats.find(s => s.title === 'Open')?.value || '0'}
           description={stats.find(s => s.title === 'Open')?.description || ''}
@@ -927,7 +927,7 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
         
         {/* SLA Attainment */}
         <SummaryCard
-          icon={<AccessTimeIcon className="w-7 h-7 text-white" />}
+          icon={<AccessTimeIcon className="w-5 h-5 text-white" />}
           title="SLA Attainment"
           value={`${advancedKpis.slaAttainment.toFixed(1)}%`}
           description="Closed ≤ SLA target (by severity) di periode terpilih"
@@ -939,7 +939,7 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 mb-6">
         {/* Overdue */}
         <SummaryCard
-          icon={<AccessTimeIcon className="w-7 h-7 text-white" />}
+          icon={<AccessTimeIcon className="w-5 h-5 text-white" />}
           title="Overdue"
           value={stats.find(s => s.title === 'Overdue')?.value || '0'}
           description={stats.find(s => s.title === 'Overdue')?.description || ''}
@@ -948,7 +948,7 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
         
         {/* Escalated */}
         <SummaryCard
-          icon={<WarningAmberIcon className="w-7 h-7 text-white" />}
+          icon={<WarningAmberIcon className="w-5 h-5 text-white" />}
           title="Escalated"
           value={stats.find(s => s.title === 'Escalated')?.value || '0'}
           description={stats.find(s => s.title === 'Escalated')?.description || ''}
@@ -957,7 +957,7 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
         
         {/* Close Rate (Periode) */}
         <SummaryCard
-          icon={<CheckCircleIcon className="w-7 h-7 text-white" />}
+          icon={<CheckCircleIcon className="w-5 h-5 text-white" />}
           title="Close Rate (Periode)"
           value={`${advancedKpis.closeRatePeriod.toFixed(1)}%`}
           description="Closed / total tiket yang DIBUKA di periode"
@@ -966,7 +966,7 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
         
         {/* Resolution Rate (Lifetime) */}
         <SummaryCard
-          icon={<HowToRegIcon className="w-7 h-7 text-white" />}
+          icon={<HowToRegIcon className="w-5 h-5 text-white" />}
           title="Resolution Rate (Lifetime)"
           value={`${advancedKpis.resolutionRateLifetime.toFixed(1)}%`}
           description="Closed / total semua tiket (histori)"
