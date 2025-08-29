@@ -928,7 +928,7 @@ export const IncidentAnalytics: React.FC = () => {
                 
                 return (
                   <div key={ncal} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-zinc-800 rounded-xl ">
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2">
                       <div 
                         className="w-4 h-4 rounded-full" 
                         style={{ backgroundColor: NCAL_COLORS[ncal as keyof typeof NCAL_COLORS] }}

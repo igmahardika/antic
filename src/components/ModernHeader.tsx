@@ -31,15 +31,15 @@ const ModernHeader = () => {
           {/* Actions */}
           <div className="flex items-center space-x-3 md:space-x-4">
             <ModeToggle />
-            <Button variant="ghost" size="icon" className="relative hover:bg-muted transition shadow-md">
+            <Button variant="ghost" size="icon" className="relative hover:bg-muted transition shadow-lg">
               <NotificationsIcon className="w-5 h-5" aria-label="Notifications" />
               <span className="absolute -top-1 -right-1 w-4 h-4 bg-destructive border-2 border-white rounded-full shadow-lg animate-pulse"></span>
             </Button>
-            <Button variant="ghost" size="icon" className="hover:bg-muted transition shadow-md">
+            <Button variant="ghost" size="icon" className="hover:bg-muted transition shadow-lg">
               <SettingsIcon className="w-5 h-5" aria-label="Settings" />
             </Button>
             <div className="h-7 w-px bg-gray-300 dark:bg-gray-600 mx-2"></div>
-            <Button variant="ghost" size="icon" className="hover:bg-muted transition shadow-md">
+            <Button variant="ghost" size="icon" className="hover:bg-muted transition shadow-lg">
               <PersonIcon className="w-5 h-5" aria-label="User" />
             </Button>
           </div>
