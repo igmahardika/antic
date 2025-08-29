@@ -207,7 +207,7 @@ const IncidentAnalytics: React.FC = () => {
       // Check for time-related fields
       const timeFields = ['start', 'end', 'startTime', 'endTime', 'startEscalationVendor', 
                          'startPause', 'endPause', 'startPause1', 'endPause1', 
-                         'startPause2', 'endPause2'];
+                         'startPause2', 'endPause2', 'closeTime', 'openTime'];
       
       timeFields.forEach(field => {
         const incidentsWithField = allIncidents.filter(inc => inc[field]);
@@ -216,6 +216,18 @@ const IncidentAnalytics: React.FC = () => {
           console.log(`🔍 DEBUG: Sample ${field} value:`, incidentsWithField[0][field]);
         }
       });
+      
+      // Show all available fields that contain 'time' or 'date'
+      const allFields = Object.keys(allIncidents[0]);
+      const timeRelatedFields = allFields.filter(field => 
+        field.toLowerCase().includes('time') || 
+        field.toLowerCase().includes('date') ||
+        field.toLowerCase().includes('start') ||
+        field.toLowerCase().includes('end') ||
+        field.toLowerCase().includes('close') ||
+        field.toLowerCase().includes('open')
+      );
+      console.log('🔍 DEBUG: All time-related fields:', timeRelatedFields);
     }
   }, [allIncidents]);
 
@@ -279,8 +291,8 @@ const IncidentAnalytics: React.FC = () => {
     // 3. Calculate pause periods and subtract from total
     
     // Calculate total duration from Start to End (try multiple field names)
-    const startField = incident.start || incident.startTime;
-    const endField = incident.end || incident.endTime;
+    const startField = incident.startTime || incident.start || incident.openTime;
+    const endField = incident.endTime || incident.end || incident.closeTime;
     
     if (startField && endField) {
       const startTime = parseDateSafe(startField);
