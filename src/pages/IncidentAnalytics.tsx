@@ -325,7 +325,23 @@ const IncidentAnalytics: React.FC = () => {
       }
     });
     
-    // Debug: Log calculated results
+    // compute averages - FIXED VERSION
+    Object.keys(map).forEach((month) => {
+      Object.keys(map[month]).forEach((ncal) => {
+        const obj = map[month][ncal];
+        // Ensure proper calculation
+        if (obj.count > 0 && obj.total > 0) {
+          obj.avg = obj.total / obj.count;
+        } else {
+          obj.avg = 0;
+        }
+        
+        // Debug: Log the calculation
+        console.log(`🔧 DEBUG: ${month} ${ncal} calculation: ${obj.total} / ${obj.count} = ${obj.avg}`);
+      });
+    });
+    
+    // Debug: Log calculated results AFTER calculation
     console.log('📊 DEBUG: Calculated duration results:');
     Object.keys(map).sort().forEach((month) => {
       console.log(`\nMonth: ${month}`);
@@ -341,22 +357,6 @@ const IncidentAnalytics: React.FC = () => {
         if (Math.abs(obj.avg - expectedAvg) > 0.01) {
           console.log(`  ⚠️  BUG: Expected avg=${expectedAvg}, but got avg=${obj.avg}`);
         }
-      });
-    });
-    
-    // compute averages - FIXED VERSION
-    Object.keys(map).forEach((month) => {
-      Object.keys(map[month]).forEach((ncal) => {
-        const obj = map[month][ncal];
-        // Ensure proper calculation
-        if (obj.count > 0 && obj.total > 0) {
-          obj.avg = obj.total / obj.count;
-        } else {
-          obj.avg = 0;
-        }
-        
-        // Debug: Log the calculation
-        console.log(`🔧 DEBUG: ${month} ${ncal} calculation: ${obj.total} / ${obj.count} = ${obj.avg}`);
       });
     });
     return map;
