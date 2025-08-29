@@ -449,23 +449,23 @@ export const IncidentData: React.FC = () => {
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
         <SummaryCard
-          title="Total Incidents"
+                          title="Total Tickets"
           value={allDataSummary.total}
           description="All uploaded data"
           icon={<AlertTriangle className="h-4 w-4" />}
           iconBg="bg-blue-500"
         />
         <SummaryCard
-          title="Open Incidents"
+                          title="Open Tickets"
           value={allDataSummary.open}
           description="Pending resolution"
           icon={<Clock className="h-4 w-4" />}
           iconBg="bg-yellow-500"
         />
         <SummaryCard
-          title="Closed Incidents"
+                          title="Closed Tickets"
           value={allDataSummary.closed}
-          description="Resolved incidents"
+                          description="Resolved tickets"
           icon={<CheckCircle className="h-4 w-4" />}
           iconBg="bg-green-500"
         />

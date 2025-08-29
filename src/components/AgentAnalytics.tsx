@@ -94,7 +94,7 @@ const CustomTooltip = ({ active = false, payload = [], label = '' } = {}) => {
   if (!active || !payload || !payload.length) return null;
   return (
     <div className="bg-card text-card-foreground  rounded-xl shadow-lg  p-4 max-h-52 overflow-y-auto min-w-[180px] text-xs" style={{ fontSize: '12px', lineHeight: '1.5' }}>
-      <div className="font-bold text-sm mb-2 text-card-foreground">{label}</div>
+                      <div className="font-semibold text-sm mb-2 text-card-foreground">{label}</div>
       <ul className="space-y-1">
         {payload.map((entry, idx) => (
           <li key={idx} className="flex items-center gap-2" style={{ color: entry.color }}>

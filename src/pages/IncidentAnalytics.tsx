@@ -89,7 +89,7 @@ const NCALTooltip = ({ active, payload, label, formatter }: any) => {
   
   return (
     <div className="bg-card text-card-foreground  rounded-xl shadow-lg  p-4 max-h-52 overflow-y-auto min-w-[200px] text-xs">
-      <div className="font-bold text-sm mb-3 text-card-foreground">
+                      <div className="font-semibold text-sm mb-3 text-card-foreground">
         {monthName} {year}
       </div>
       <div className="space-y-2">
@@ -120,7 +120,7 @@ const SLABreachTooltip = ({ active, payload, label }: any) => {
   
   return (
     <div className="bg-card text-card-foreground  rounded-xl shadow-lg  p-4 min-w-[180px] text-xs">
-      <div className="font-bold text-sm mb-2 text-card-foreground">
+                      <div className="font-semibold text-sm mb-2 text-card-foreground">
         {label} NCAL
       </div>
       <div className="space-y-1">
@@ -669,29 +669,29 @@ const IncidentAnalytics: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <SummaryCard
             icon={<ErrorOutlineIcon className="w-7 h-7 text-white" />}
-            title="Total Incidents"
+                            title="Total Tickets"
             value={stats.total}
             description={selectedPeriod === 'all' ? 'All time' : `Last ${selectedPeriod}`}
             iconBg="bg-blue-700"
           />
           <SummaryCard
             icon={<AccessTimeIcon className="w-7 h-7 text-white" />}
-            title="Open Incidents"
+                            title="Open Tickets"
             value={stats.open}
             subvalue={`${stats.total > 0 ? ((stats.open / stats.total) * 100).toFixed(1) : 0}%`}
-            description="of total incidents"
+                            description="of total tickets"
             iconBg="bg-orange-500"
           />
           <SummaryCard
             icon={<AssignmentIcon className="w-7 h-7 text-white" />}
-            title="MTTR"
+                            title="Avg Duration"
             value={formatDurationHMS(stats.mttr)}
             description="Mean Time To Resolution"
             iconBg="bg-indigo-600"
           />
           <SummaryCard
             icon={<TrackChangesIcon className="w-7 h-7 text-white" />}
-            title="Resolution Rate"
+                            title="Close Rate"
             value={`${stats.total > 0 ? ((stats.closed / stats.total) * 100).toFixed(1) : 0}%`}
             description={`${stats.closed} of ${stats.total} resolved`}
             iconBg="bg-green-600"

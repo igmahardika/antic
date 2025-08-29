@@ -878,7 +878,7 @@ export const IncidentAnalytics: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <SummaryCard
           icon={<ErrorOutlineIcon className="w-7 h-7 text-white" />}
-          title="Total Incidents"
+                          title="Total Tickets"
           value={stats.total}
           description={selectedPeriod === 'all' ? 'All time' : `Last ${selectedPeriod}`}
           iconBg="bg-blue-700"
@@ -886,16 +886,16 @@ export const IncidentAnalytics: React.FC = () => {
 
         <SummaryCard
           icon={<AccessTimeIcon className="w-7 h-7 text-white" />}
-          title="Open Incidents"
+                          title="Open Tickets"
           value={stats.open}
           subvalue={`${stats.total > 0 ? ((stats.open / stats.total) * 100).toFixed(1) : 0}%`}
-          description="of total incidents"
+                          description="of total tickets"
           iconBg="bg-orange-500"
         />
 
         <SummaryCard
           icon={<TrackChangesIcon className="w-7 h-7 text-white" />}
-          title="MTTR"
+                          title="Avg Duration"
           value={stats.mttrMin > 0 ? formatDurationHMS(stats.mttrMin) : '0:00:00'}
           description="Mean Time To Resolution"
           iconBg="bg-indigo-600"
@@ -903,7 +903,7 @@ export const IncidentAnalytics: React.FC = () => {
 
         <SummaryCard
           icon={<HowToRegIcon className="w-7 h-7 text-white" />}
-          title="Resolution Rate"
+                          title="Close Rate"
           value={`${stats.total > 0 ? ((stats.closed / stats.total) * 100).toFixed(1) : 0}%`}
           description={`${stats.closed} of ${stats.total} resolved`}
           iconBg="bg-green-600"

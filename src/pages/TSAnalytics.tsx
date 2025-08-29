@@ -1016,7 +1016,7 @@ const TSAnalytics: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <SummaryCard
             icon={<SupportIcon />}
-            title="Total Incidents"
+                            title="Total Tickets"
             value={analyticsData.total}
             description={`${analyticsData.vendor.unique + analyticsData.internal.unique} unique teams`}
             iconBg="bg-blue-500"
@@ -1037,7 +1037,7 @@ const TSAnalytics: React.FC = () => {
           />
           <SummaryCard
             icon={<AccessTimeIcon />}
-            title="Avg Response Time"
+                            title="Avg Duration"
             value={formatDurationHMS(analyticsData.vendor.avgDuration || analyticsData.internal.avgDuration)}
             description="Overall average"
                             iconBg="bg-yellow-500"
@@ -1047,7 +1047,7 @@ const TSAnalytics: React.FC = () => {
         {insights.length > 0 && (
           <Card>
             <CardHeader className="flex flex-col gap-1 pb-1">
-              <CardTitle className="font-extrabold text-xl flex items-center gap-2">
+              <CardTitle className="flex items-center gap-2">
                 <InsightsIcon className="w-6 h-6 text-indigo-600" />
                 Key Insights
               </CardTitle>
@@ -1078,7 +1078,7 @@ const TSAnalytics: React.FC = () => {
           {/* Vendor Performance */}
           <Card>
             <CardHeader className="flex flex-col gap-1 pb-1">
-              <CardTitle className="font-extrabold text-xl flex items-center gap-2">
+              <CardTitle className="flex items-center gap-2">
                 <BusinessIcon className="w-6 h-6 text-blue-600" />
                 Vendor Performance
                 <Badge className="bg-blue-600 text-white text-xs px-2 py-0.5 rounded-md w-fit font-semibold">
@@ -1095,7 +1095,7 @@ const TSAnalytics: React.FC = () => {
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-medium text-muted-foreground">SLA Compliance (≤4h)</span>
-                    <span className="text-base font-bold text-blue-600">
+                    <span className="text-lg font-bold text-blue-600">
                       {analyticsData.vendor.slaCompliance.toFixed(1)}%
                     </span>
                       </div>
@@ -1108,7 +1108,7 @@ const TSAnalytics: React.FC = () => {
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-medium text-muted-foreground">Power Compliance (≤+1dBm)</span>
-                    <span className="text-base font-bold text-purple-600">
+                    <span className="text-lg font-bold text-purple-600">
                       {analyticsData.vendor.powerCompliance.toFixed(1)}%
                         </span>
                         </div>
@@ -1143,7 +1143,7 @@ const TSAnalytics: React.FC = () => {
           {/* Internal TS Performance */}
           <Card>
             <CardHeader className="flex flex-col gap-1 pb-1">
-              <CardTitle className="font-extrabold text-xl flex items-center gap-2">
+              <CardTitle className="flex items-center gap-2">
                 <EngineeringIcon className="w-6 h-6 text-green-600" />
                 Internal TS Performance
                 <Badge className="bg-green-600 text-white text-xs px-2 py-0.5 rounded-md w-fit font-semibold">
@@ -1209,7 +1209,7 @@ const TSAnalytics: React.FC = () => {
           {/* Vendor NCAL Compliance */}
           <Card>
             <CardHeader className="flex flex-col gap-1 pb-1">
-              <CardTitle className="font-extrabold text-xl flex items-center gap-2">
+              <CardTitle className="flex items-center gap-2">
                 <AssessmentIcon className="w-6 h-6 text-blue-600" />
                 Vendor NCAL Compliance
                 <Badge className="bg-blue-600 text-white text-xs px-2 py-0.5 rounded-md w-fit font-semibold">
@@ -1260,7 +1260,7 @@ const TSAnalytics: React.FC = () => {
           {/* Internal NCAL Compliance */}
           <Card>
             <CardHeader className="flex flex-col gap-1 pb-1">
-              <CardTitle className="font-extrabold text-xl flex items-center gap-2">
+              <CardTitle className="flex items-center gap-2">
                 <AssessmentIcon className="w-6 h-6 text-green-600" />
                 Internal NCAL Compliance
                 <Badge className="bg-green-600 text-white text-xs px-2 py-0.5 rounded-md w-fit font-semibold">
@@ -1315,7 +1315,7 @@ const TSAnalytics: React.FC = () => {
           {/* Vendor Redaman Analysis */}
           <Card>
             <CardHeader className="flex flex-col gap-1 pb-1">
-              <CardTitle className="font-extrabold text-xl flex items-center gap-2">
+              <CardTitle className="flex items-center gap-2">
                 <TrendingDownIcon className="w-6 h-6 text-purple-600" />
                 Vendor Redaman Analysis
                 <Badge className="bg-purple-600 text-white text-xs px-2 py-0.5 rounded-md w-fit font-semibold">
@@ -1365,7 +1365,7 @@ const TSAnalytics: React.FC = () => {
           {/* Workload Distribution */}
           <Card>
             <CardHeader className="flex flex-col gap-1 pb-1">
-              <CardTitle className="font-extrabold text-xl flex items-center gap-2">
+              <CardTitle className="flex items-center gap-2">
                 <BarChartIcon className="w-6 h-6 text-zinc-600" />
                 Workload Distribution
                 <Badge className="bg-zinc-600 text-white text-xs px-2 py-0.5 rounded-md w-fit font-semibold">
@@ -1436,7 +1436,7 @@ const TSAnalytics: React.FC = () => {
         {/* Waneda Monthly Recap and Performance */}
         <Card>
           <CardHeader className="flex flex-col gap-1 pb-1">
-            <CardTitle className="font-extrabold text-xl flex items-center gap-2">
+            <CardTitle className="flex items-center gap-2">
               <BusinessIcon className="w-6 h-6 text-blue-700" />
               Waneda Monthly Recap
               <Badge className="bg-blue-700 text-white text-xs px-2 py-0.5 rounded-md w-fit font-semibold">

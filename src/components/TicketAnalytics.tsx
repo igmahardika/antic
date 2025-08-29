@@ -1049,7 +1049,7 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
           <div className="bg-card text-card-foreground rounded-2xl shadow-lg p-3 ">
             <div className="flex items-center justify-between mb-2">
               <div>
-                <h2 className="text-base font-bold text-card-foreground">Automated Insights</h2>
+                <h2 className="text-lg font-bold text-card-foreground">Automated Insights</h2>
                 <p className="text-xs text-muted-foreground">Analisis otomatis berdasarkan data tiket dan performa</p>
               </div>
               <div className="flex items-center gap-1">
