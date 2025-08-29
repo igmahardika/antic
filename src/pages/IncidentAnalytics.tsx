@@ -326,23 +326,34 @@ const IncidentAnalytics: React.FC = () => {
     });
     
     // compute averages - FIXED VERSION
+    console.log('🔧 DEBUG: Starting average calculation...');
+    console.log('🔧 DEBUG: Map keys:', Object.keys(map));
+    
     Object.keys(map).forEach((month) => {
+      console.log(`🔧 DEBUG: Processing month: ${month}`);
+      console.log(`🔧 DEBUG: Month keys:`, Object.keys(map[month]));
+      
       Object.keys(map[month]).forEach((ncal) => {
         const obj = map[month][ncal];
+        console.log(`🔧 DEBUG: Before calculation - ${month} ${ncal}:`, JSON.stringify(obj));
+        
         // Ensure proper calculation
         if (obj.count > 0 && obj.total > 0) {
           obj.avg = obj.total / obj.count;
+          console.log(`🔧 DEBUG: Calculated avg = ${obj.total} / ${obj.count} = ${obj.avg}`);
         } else {
           obj.avg = 0;
+          console.log(`🔧 DEBUG: Set avg = 0 (count=${obj.count}, total=${obj.total})`);
         }
         
-        // Debug: Log the calculation
-        console.log(`🔧 DEBUG: ${month} ${ncal} calculation: ${obj.total} / ${obj.count} = ${obj.avg}`);
+        console.log(`🔧 DEBUG: After calculation - ${month} ${ncal}:`, JSON.stringify(obj));
       });
     });
     
     // Debug: Log calculated results AFTER calculation
     console.log('📊 DEBUG: Calculated duration results:');
+    console.log('📊 DEBUG: Final map state:', JSON.stringify(map, null, 2));
+    
     Object.keys(map).sort().forEach((month) => {
       console.log(`\nMonth: ${month}`);
       Object.keys(map[month]).forEach((ncal) => {
@@ -356,6 +367,7 @@ const IncidentAnalytics: React.FC = () => {
         const expectedAvg = obj.count > 0 ? obj.total / obj.count : 0;
         if (Math.abs(obj.avg - expectedAvg) > 0.01) {
           console.log(`  ⚠️  BUG: Expected avg=${expectedAvg}, but got avg=${obj.avg}`);
+          console.log(`  🔍 DEBUG: Object reference check:`, obj === map[month][ncal]);
         }
       });
     });
