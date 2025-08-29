@@ -7,6 +7,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  CardFooter,
 } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -993,6 +994,57 @@ const IncidentAnalytics: React.FC = () => {
                 </div>
               )}
             </CardContent>
+            
+            {/* Duration Trends Table */}
+            {monthlyNCALDurationData.length > 0 && (
+              <CardFooter className="pt-0">
+                <div className="w-full">
+                  <h4 className="text-sm font-semibold text-card-foreground mb-3">Monthly Duration Values (HH:MM:SS)</h4>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-xs border-collapse">
+                      <thead>
+                        <tr className="border-b border-border">
+                          <th className="text-left p-2 font-medium text-muted-foreground">Month</th>
+                          {NCAL_ORDER.map((ncal) => (
+                            <th key={ncal} className="text-center p-2 font-medium text-muted-foreground" style={{ color: NCAL_COLORS[ncal] }}>
+                              {ncal}
+                            </th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {monthlyNCALDurationData.map((row) => (
+                          <tr key={row.month} className="border-b border-border hover:bg-muted/50">
+                            <td className="p-2 font-medium text-card-foreground">
+                              {(() => {
+                                const [year, month] = row.month.split('-');
+                                const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+                                return `${monthNames[parseInt(month) - 1]} ${year}`;
+                              })()}
+                            </td>
+                            {NCAL_ORDER.map((ncal) => {
+                              const value = row[ncal] || 0;
+                              const hours = Math.floor(value / 60);
+                              const minutes = Math.floor(value % 60);
+                              const seconds = Math.floor((value % 1) * 60);
+                              const formattedTime = value > 0 
+                                ? `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`
+                                : '0:00:00';
+                              
+                              return (
+                                <td key={ncal} className="text-center p-2 text-card-foreground">
+                                  {formattedTime}
+                                </td>
+                              );
+                            })}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </CardFooter>
+            )}
           </Card>
         </div>
 
