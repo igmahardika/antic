@@ -387,7 +387,7 @@ const IncidentAnalytics: React.FC = () => {
       });
   }, [byMonthNCAL]);
   const monthlyNCALDurationData = useMemo(() => {
-    return Object.keys(byMonthNCALDuration)
+    const chartData = Object.keys(byMonthNCALDuration)
       .sort()
       .map((month) => {
         const row: any = { month };
@@ -396,6 +396,20 @@ const IncidentAnalytics: React.FC = () => {
         });
         return row;
       });
+    
+    // Debug: Log chart data to ensure correct values
+    console.log('📊 DEBUG: Chart data for Monthly Duration Trends:');
+    chartData.forEach((row) => {
+      console.log(`  ${row.month}:`, {
+        Blue: row.Blue > 0 ? `${Math.floor(row.Blue / 60)}:${Math.floor(row.Blue % 60).toString().padStart(2, '0')}:${Math.floor((row.Blue % 1) * 60).toString().padStart(2, '0')}` : '0:00:00',
+        Yellow: row.Yellow > 0 ? `${Math.floor(row.Yellow / 60)}:${Math.floor(row.Yellow % 60).toString().padStart(2, '0')}:${Math.floor((row.Yellow % 1) * 60).toString().padStart(2, '0')}` : '0:00:00',
+        Orange: row.Orange > 0 ? `${Math.floor(row.Orange / 60)}:${Math.floor(row.Orange % 60).toString().padStart(2, '0')}:${Math.floor((row.Orange % 1) * 60).toString().padStart(2, '0')}` : '0:00:00',
+        Red: row.Red > 0 ? `${Math.floor(row.Red / 60)}:${Math.floor(row.Red % 60).toString().padStart(2, '0')}:${Math.floor((row.Red % 1) * 60).toString().padStart(2, '0')}` : '0:00:00',
+        Black: row.Black > 0 ? `${Math.floor(row.Black / 60)}:${Math.floor(row.Black % 60).toString().padStart(2, '0')}:${Math.floor((row.Black % 1) * 60).toString().padStart(2, '0')}` : '0:00:00'
+      });
+    });
+    
+    return chartData;
   }, [byMonthNCALDuration]);
 
   // Aggregate real and net durations per NCAL each month along with counts.
