@@ -312,7 +312,7 @@ const AdminPanel: React.FC = () => {
               </select>
             </div>
             
-            <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+            <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
               <div className="text-sm font-medium text-blue-800 dark:text-blue-200 mb-1">Menu Permissions Guide:</div>
               <div className="text-xs text-blue-700 dark:text-blue-300">
                 <strong>Super Admin:</strong> Full access to all features<br/>

@@ -722,7 +722,7 @@ const SiteAnalytics: React.FC = () => {
               </div>
 
               {/* Unique Sites */}
-              <div className="text-center p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-200 dark:border-blue-800 shadow-sm">
+              <div className="text-center p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl shadow-sm">
                 <LocationOnIcon className="w-6 h-6 text-blue-600 mx-auto mb-2" />
                 <div className="text-lg font-bold text-blue-600">
                   {siteStats.uniqueSites}
@@ -817,7 +817,7 @@ const SiteAnalytics: React.FC = () => {
                 <div className="text-xs text-muted-foreground">Exceeded Levels</div>
               </div>
               
-              <div className="text-center p-3 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-200 dark:border-blue-800 shadow-sm">
+              <div className="text-center p-3 bg-blue-50 dark:bg-blue-900/20 rounded-xl shadow-sm">
                 <div className="text-lg font-bold text-blue-600">
                   {ncalPerformanceData.reduce((sum, item) => sum + item.count, 0)}
                 </div>

@@ -1094,7 +1094,7 @@ const IncidentAnalytics: React.FC = () => {
                 <div className="text-xs font-medium text-muted-foreground">Problem Sites</div>
                 {deep.topSitesBreach.length === 0 && <div className="text-sm text-gray-500 dark:text-gray-400">No breach sites</div>}
                 {deep.topSitesBreach.map(([name, count]) => (
-                  <div key={name} className="flex items-center justify-between p-2 rounded-lg border bg-gray-50 dark:bg-zinc-800">
+                  <div key={name} className="flex items-center justify-between p-2 rounded-lg bg-gray-50 dark:bg-zinc-800">
                     <span className="text-sm truncate max-w-[70%] text-card-foreground">{name}</span>
                     <Badge variant="danger" className="bg-red-600 text-white">{count}</Badge>
                   </div>
@@ -1104,7 +1104,7 @@ const IncidentAnalytics: React.FC = () => {
                 <div className="text-xs font-medium text-muted-foreground">Main Causes</div>
                 {deep.topCausesBreach.length === 0 && <div className="text-sm text-gray-500 dark:text-gray-400">No breach causes</div>}
                 {deep.topCausesBreach.map(([name, count]) => (
-                  <div key={name} className="flex items-center justify-between p-2 rounded-lg border bg-gray-50 dark:bg-zinc-800">
+                  <div key={name} className="flex items-center justify-between p-2 rounded-lg bg-gray-50 dark:bg-zinc-800">
                     <span className="text-sm truncate max-w-[70%] text-card-foreground">{name}</span>
                     <Badge variant="danger" className="bg-red-600 text-white">{count}</Badge>
                   </div>
@@ -1162,7 +1162,7 @@ const IncidentAnalytics: React.FC = () => {
                 </div>
               ) : (
                 deep.topAging.map((i, idx) => (
-                  <div key={idx} className="flex items-center justify-between p-3 rounded-lg border bg-gray-50 dark:bg-zinc-800 hover:bg-gray-100 dark:hover:bg-zinc-700 transition-colors">
+                  <div key={idx} className="flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-zinc-800 hover:bg-gray-100 dark:hover:bg-zinc-700 transition-colors">
                     <div className="min-w-0 flex-1">
                       <div className="text-sm font-medium truncate text-card-foreground">{i.site}</div>
                       <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">

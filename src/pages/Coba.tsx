@@ -1432,7 +1432,7 @@ export const IncidentAnalytics: React.FC = () => {
                     .sort((a, b) => b[1] - a[1])
                     .slice(0, 5)
                     .map(([klasifikasi, count], index) => (
-                      <div key={klasifikasi} className="flex items-center justify-between p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                      <div key={klasifikasi} className="flex items-center justify-between p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
                         <div className="flex items-center gap-3">
                           <div className="w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-xs font-bold">
                             {index + 1}
@@ -1815,7 +1815,7 @@ export const IncidentAnalytics: React.FC = () => {
                   </span>
             </div>
 
-                <div className="flex items-center justify-between p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                <div className="flex items-center justify-between p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
                   <div className="flex items-center gap-2">
                     <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
                     <span className="text-sm font-medium text-gray-700 dark:text-gray-300">

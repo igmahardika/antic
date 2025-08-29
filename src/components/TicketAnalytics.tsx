@@ -1065,7 +1065,7 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
                 
             {/* Bulan tersibuk */}
             {insights.busiestMonth && (
-                  <div className="p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                  <div className="p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
                     <div className="flex items-center justify-between mb-1">
                       <div className="flex items-center gap-1">
                         <BarChartIcon className="text-blue-500 text-xs" />
@@ -1093,7 +1093,7 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
                 
             {/* Kategori dominan */}
             {insights.topCategory && (
-                  <div className="p-2 bg-purple-50 dark:bg-purple-900/20 rounded-lg  dark:border-purple-800">
+                  <div className="p-2 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
                     <div className="flex items-center justify-between mb-1">
                       <div className="flex items-center gap-1">
                         <LabelIcon className="text-purple-500 text-xs" />
@@ -1121,7 +1121,7 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
                 
             {/* Pelanggan kronis/ekstrem */}
             {insights.chronicPercent && (
-                  <div className="p-2 bg-orange-50 dark:bg-orange-900/20 rounded-lg  dark:border-orange-800">
+                  <div className="p-2 bg-orange-50 dark:bg-orange-900/20 rounded-lg">
                     <div className="flex items-center justify-between mb-1">
                       <div className="flex items-center gap-1">
                         <WarningIcon className="text-orange-500 text-xs" />
@@ -1165,7 +1165,7 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
                 {/* Handling Time Insights */}
                 <div className="space-y-3">
             {typeof safeMaxAvg !== 'undefined' && safeMaxAvg.shift && (
-                    <div className="p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg  dark:border-amber-800">
+                    <div className="p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg">
                       <div className="flex items-center gap-2 mb-1">
                         <AssignmentIcon className="text-amber-500 text-xs" />
                         <span className="font-medium text-card-foreground">Handling Time Shift</span>
@@ -1177,7 +1177,7 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
                   )}
                   
             {typeof safeMaxAvgCat !== 'undefined' && safeMaxAvgCat.cat && (
-                    <div className="p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg  dark:border-amber-800">
+                    <div className="p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg">
                       <div className="flex items-center gap-2 mb-1">
                         <AssignmentIcon className="text-amber-500 text-xs" />
                         <span className="font-medium text-card-foreground">Handling Time Kategori</span>
@@ -1191,7 +1191,7 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
                 
                 {/* Category Penetration */}
                 {typeof complaintPenetrationByCategory !== 'undefined' && (
-                  <div className="p-2 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg  dark:border-indigo-800">
+                  <div className="p-2 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg">
                     <div className="flex items-center justify-between mb-1">
                       <div className="flex items-center gap-1">
                         <TrackChangesIcon className="text-indigo-500 text-xs" />
