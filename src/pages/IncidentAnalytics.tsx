@@ -763,7 +763,7 @@ const IncidentAnalytics: React.FC = () => {
             </CardHeader>
             <CardContent className="flex flex-col items-center">
               <ChartContainer config={{}}>
-                <PieChart width={280} height={220}>
+                <PieChart width={260} height={260}>
                   <ChartTooltip content={<ChartTooltipContent hideLabel />} />
                   <Pie data={NCAL_ORDER.map((ncal) => ({ name: ncal, value: byNCAL[ncal] || 0, color: NCAL_COLORS[ncal] }))} dataKey="value" nameKey="name" innerRadius={60} strokeWidth={5}>
                     {NCAL_ORDER.map((ncal) => (
@@ -1245,7 +1245,7 @@ const IncidentAnalytics: React.FC = () => {
                 </div>
               ) : (
                 <ChartContainer config={{}}>
-                  <PieChart width={280} height={220}>
+                  <PieChart width={260} height={260}>
                     <ChartTooltip content={<ChartTooltipContent hideLabel />} />
                     <Pie
                       data={[

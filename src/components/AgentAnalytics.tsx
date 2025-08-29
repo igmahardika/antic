@@ -1228,7 +1228,7 @@ const AgentAnalytics = () => {
             <CardTitle>Agent Ticket Trends per Month</CardTitle>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={320}>
+                            <ResponsiveContainer width="100%" height={260}>
               <AreaChart data={debouncedTrendData} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
                 <defs>
                   {debouncedDatasets.map((ds, idx) => (
@@ -2815,7 +2815,7 @@ const AgentAnalytics = () => {
                           </CardTitle>
                         </CardHeader>
                         <CardContent>
-                          <ResponsiveContainer width="100%" height={300}>
+                          <ResponsiveContainer width="100%" height={260}>
                             <AreaChart data={(() => {
                               const scoreTrendArr = getAgentScoreTrend(selectedAgent);
                               return Array.isArray(scoreTrendArr)
