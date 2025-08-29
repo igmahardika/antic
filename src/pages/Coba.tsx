@@ -852,7 +852,7 @@ export const IncidentAnalytics: React.FC = () => {
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         {/* Period Filter */}
         <div className="flex items-center gap-2">
-          <Filter className="w-4 h-4 text-gray-500" />
+                          <Filter className="w-4 h-4 text-muted-foreground" />
           <div className="flex bg-white/80 dark:bg-zinc-900/80 rounded-2xl shadow-lg p-2">
             {[
               { key: '3m', label: '3M' },
@@ -877,7 +877,7 @@ export const IncidentAnalytics: React.FC = () => {
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <SummaryCard
-          icon={<ErrorOutlineIcon className="w-7 h-7 text-white" />}
+                      icon={<ErrorOutlineIcon className="w-5 h-5 text-white" />}
                           title="Total Tickets"
           value={stats.total}
           description={selectedPeriod === 'all' ? 'All time' : `Last ${selectedPeriod}`}
@@ -885,7 +885,7 @@ export const IncidentAnalytics: React.FC = () => {
         />
 
         <SummaryCard
-          icon={<AccessTimeIcon className="w-7 h-7 text-white" />}
+                      icon={<AccessTimeIcon className="w-5 h-5 text-white" />}
                           title="Open Tickets"
           value={stats.open}
           subvalue={`${stats.total > 0 ? ((stats.open / stats.total) * 100).toFixed(1) : 0}%`}
@@ -894,7 +894,7 @@ export const IncidentAnalytics: React.FC = () => {
         />
 
         <SummaryCard
-          icon={<TrackChangesIcon className="w-7 h-7 text-white" />}
+                      icon={<TrackChangesIcon className="w-5 h-5 text-white" />}
                           title="Avg Duration"
           value={stats.mttrMin > 0 ? formatDurationHMS(stats.mttrMin) : '0:00:00'}
           description="Mean Time To Resolution"
@@ -902,7 +902,7 @@ export const IncidentAnalytics: React.FC = () => {
         />
 
         <SummaryCard
-          icon={<HowToRegIcon className="w-7 h-7 text-white" />}
+                      icon={<HowToRegIcon className="w-5 h-5 text-white" />}
                           title="Close Rate"
           value={`${stats.total > 0 ? ((stats.closed / stats.total) * 100).toFixed(1) : 0}%`}
           description={`${stats.closed} of ${stats.total} resolved`}

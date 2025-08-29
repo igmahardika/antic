@@ -663,13 +663,13 @@ export const IncidentData: React.FC = () => {
         <CardContent className="p-4">
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
-              <Filter className="w-4 h-4 text-gray-500" />
+                              <Filter className="w-4 h-4 text-muted-foreground" />
               <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Filters:</span>
             </div>
             
             <div className="flex-1">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input
                   placeholder="Search No Case, Site, Problem..."
                   value={filter.search || ''}

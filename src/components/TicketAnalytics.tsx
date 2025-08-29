@@ -1018,21 +1018,21 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
           return (
             <>
             <SummaryCard
-                icon={<ErrorOutlineIcon className="w-7 h-7 text-white" />}
+                icon={<ErrorOutlineIcon className="w-5 h-5 text-white" />}
                 title="Backlog (Open)"
                 value={openTickets.length.toLocaleString()}
                 description="Tiket open: no closeTime, future closeTime, atau >30 hari"
                 iconBg="bg-yellow-600"
               />
               <SummaryCard
-                icon={<AccessTimeIcon className="w-7 h-7 text-white" />}
+                icon={<AccessTimeIcon className="w-5 h-5 text-white" />}
                 title="Backlog Age P50"
                 value={formatDurationHMS(p50)}
                 description="Median umur backlog (jam)"
                 iconBg="bg-sky-600"
               />
               <SummaryCard
-                icon={<AccessTimeIcon className="w-7 h-7 text-white" />}
+                icon={<AccessTimeIcon className="w-5 h-5 text-white" />}
                 title="Backlog Age P90"
                 value={formatDurationHMS(p90)}
                 description="90% backlog lebih muda dari ini"

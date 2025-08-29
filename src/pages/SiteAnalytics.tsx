@@ -456,7 +456,7 @@ const SiteAnalytics: React.FC = () => {
         {/* KPI Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <SummaryCard
-            icon={<LocationOnIcon className="w-7 h-7 text-white" />}
+                          icon={<LocationOnIcon className="w-5 h-5 text-white" />}
             title="Total Sites Affected"
             value={siteStats.totalSites}
             description={`${siteStats.uniqueSites} unique sites`}
@@ -464,7 +464,7 @@ const SiteAnalytics: React.FC = () => {
           />
 
           <SummaryCard
-            icon={<AccessTimeIcon className="w-7 h-7 text-white" />}
+                          icon={<AccessTimeIcon className="w-5 h-5 text-white" />}
             title="Avg Site Duration"
             value={siteStats.avgSiteDuration > 0 ? formatDurationHMS(siteStats.avgSiteDuration) : '0:00:00'}
             description="Average incident duration per site"
@@ -472,7 +472,7 @@ const SiteAnalytics: React.FC = () => {
           />
 
           <SummaryCard
-            icon={<CheckCircleIcon className="w-7 h-7 text-white" />}
+                          icon={<CheckCircleIcon className="w-5 h-5 text-white" />}
             title="Site Reliability"
             value={`${siteStats.siteReliability.toFixed(1)}%`}
             description="Resolution rate across sites"
@@ -480,7 +480,7 @@ const SiteAnalytics: React.FC = () => {
           />
 
           <SummaryCard
-            icon={<ErrorOutlineIcon className="w-7 h-7 text-white" />}
+                          icon={<ErrorOutlineIcon className="w-5 h-5 text-white" />}
             title="High Risk Sites"
             value={Object.values(siteStats.siteRiskScore).filter((site: any) => site.level === 'High').length}
             description="Sites with high risk score"

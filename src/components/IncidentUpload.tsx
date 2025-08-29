@@ -339,7 +339,7 @@ export const IncidentUpload: React.FC = () => {
       case 'error': return <CancelIcon className="w-4 h-4 text-red-500" />;
       case 'skipped': return <WarningAmberIcon className="w-4 h-4 text-yellow-500" />;
       case 'info': return <InfoIcon className="w-4 h-4 text-blue-500" />;
-      default: return <DescriptionIcon className="w-4 h-4 text-gray-500" />;
+              default: return <DescriptionIcon className="w-4 h-4 text-muted-foreground" />;
     }
   };
 
