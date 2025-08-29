@@ -335,14 +335,28 @@ const IncidentAnalytics: React.FC = () => {
         const avgMinutes = Math.floor(obj.avg % 60);
         const avgSeconds = Math.floor((obj.avg % 1) * 60);
         console.log(`  ${ncal}: Total=${obj.total}min, Count=${obj.count}, Avg=${obj.avg}min (${avgHours}:${avgMinutes.toString().padStart(2, '0')}:${avgSeconds.toString().padStart(2, '0')})`);
+        
+        // Additional debug: Check if calculation is correct
+        const expectedAvg = obj.count > 0 ? obj.total / obj.count : 0;
+        if (Math.abs(obj.avg - expectedAvg) > 0.01) {
+          console.log(`  ⚠️  BUG: Expected avg=${expectedAvg}, but got avg=${obj.avg}`);
+        }
       });
     });
     
-    // compute averages
+    // compute averages - FIXED VERSION
     Object.keys(map).forEach((month) => {
       Object.keys(map[month]).forEach((ncal) => {
         const obj = map[month][ncal];
-        obj.avg = obj.count > 0 ? obj.total / obj.count : 0;
+        // Ensure proper calculation
+        if (obj.count > 0 && obj.total > 0) {
+          obj.avg = obj.total / obj.count;
+        } else {
+          obj.avg = 0;
+        }
+        
+        // Debug: Log the calculation
+        console.log(`🔧 DEBUG: ${month} ${ncal} calculation: ${obj.total} / ${obj.count} = ${obj.avg}`);
       });
     });
     return map;
