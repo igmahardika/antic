@@ -298,6 +298,19 @@ const IncidentAnalytics: React.FC = () => {
 
   const byMonthNCALDuration = useMemo(() => {
     const map: Record<string, Record<string, { total: number; count: number; avg: number }>> = {};
+    
+    // Debug: Log all incidents for manual verification
+    console.log('🔍 DEBUG: All incidents for duration calculation:');
+    filteredIncidents.forEach((inc, index) => {
+      if (inc.startTime) {
+        const date = new Date(inc.startTime);
+        const month = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+        const ncal = normalizeNCAL(inc.ncal);
+        const dur = safeMinutes(inc.durationMin);
+        console.log(`Incident ${index + 1}: Month=${month}, NCAL=${ncal}, Duration=${dur}min (${formatDurationHMS(dur)})`);
+      }
+    });
+    
     filteredIncidents.forEach((inc) => {
       if (!inc.startTime) return;
       const date = new Date(inc.startTime);
@@ -311,6 +324,20 @@ const IncidentAnalytics: React.FC = () => {
         map[key][ncal].count += 1;
       }
     });
+    
+    // Debug: Log calculated results
+    console.log('📊 DEBUG: Calculated duration results:');
+    Object.keys(map).sort().forEach((month) => {
+      console.log(`\nMonth: ${month}`);
+      Object.keys(map[month]).forEach((ncal) => {
+        const obj = map[month][ncal];
+        const avgHours = Math.floor(obj.avg / 60);
+        const avgMinutes = Math.floor(obj.avg % 60);
+        const avgSeconds = Math.floor((obj.avg % 1) * 60);
+        console.log(`  ${ncal}: Total=${obj.total}min, Count=${obj.count}, Avg=${obj.avg}min (${avgHours}:${avgMinutes.toString().padStart(2, '0')}:${avgSeconds.toString().padStart(2, '0')})`);
+      });
+    });
+    
     // compute averages
     Object.keys(map).forEach((month) => {
       Object.keys(map[month]).forEach((ncal) => {
