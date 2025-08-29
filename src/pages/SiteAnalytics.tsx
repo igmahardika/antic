@@ -127,10 +127,17 @@ const SiteAnalytics: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [selectedPeriod, setSelectedPeriod] = useState<'3m' | '6m' | '1y' | 'all'>('6m');
 
-  // Get all incidents for live updates
-  const allIncidents = useLiveQuery(() => 
-    db.incidents.toArray()
-  );
+  // Get all incidents for live updates with error handling
+  const allIncidents = useLiveQuery(async () => {
+    try {
+      const incidents = await db.incidents.toArray();
+      console.log('✅ SiteAnalytics: Successfully loaded', incidents.length, 'incidents from database');
+      return incidents;
+    } catch (error) {
+      console.error('❌ SiteAnalytics: Failed to load incidents from database:', error);
+      return [];
+    }
+  });
 
   // Debug: Log when allIncidents changes
   useEffect(() => {

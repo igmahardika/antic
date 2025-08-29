@@ -3,6 +3,7 @@ import { useDropzone } from 'react-dropzone';
 import * as XLSX from 'xlsx';
 import { Incident } from '@/types/incident';
 import { mkId, toMinutes, parseDateSafe, saveIncidentsChunked, generateBatchId } from '@/utils/incidentUtils';
+import { fixIncidentDurationBeforeSave } from '@/utils/durationFixUtils';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
@@ -41,7 +42,7 @@ const REQUIRED_HEADERS = [
   'Priority', 'Site', 'No Case', 'NCAL', 'Status', 'Level', 'TS', 'ODP/BTS',
   'Start', 'Start Escalation Vendor', 'End', 'Duration', 'Duration Vendor',
   'Problem', 'Penyebab', 'Action Terakhir', 'Note', 'Klasifikasi Gangguan',
-  'Power Before', 'Power After', 'Start Pause', 'End Pause', 'Start Pause 2', 'End Pause 2',
+  'Power Before', 'Power After', 'Pause', 'Restart', 'Pause2', 'Restart2',
   'Total Duration Pause', 'Total Duration Vendor'
 ];
 
@@ -114,10 +115,62 @@ export const IncidentUpload: React.FC = () => {
           }
         });
         
-        // Validate headers
-        const missingHeaders = REQUIRED_HEADERS.filter(h => 
-          !headers.some(header => header?.toString().toLowerCase().includes(h.toLowerCase()))
-        );
+        // Debug: Log all headers to help identify pause column mapping
+        uploadLog.push({
+          type: 'info',
+          row: 0,
+          sheet: sheetName,
+          message: `All headers found: ${headers.join(', ')}`,
+          details: {
+            pauseRelatedHeaders: headers.filter(h => 
+              h?.toString().toLowerCase().includes('pause') || 
+              h?.toString().toLowerCase().includes('restart')
+            )
+          }
+        });
+        
+        // Validate headers with flexible matching
+        const missingHeaders = [];
+        const headerMapping = {
+          'Priority': ['priority'],
+          'Site': ['site'],
+          'No Case': ['no case', 'nocase', 'case'],
+          'NCAL': ['ncal'],
+          'Status': ['status'],
+          'Level': ['level'],
+          'TS': ['ts', 'technical support', 'vendor'],
+          'ODP/BTS': ['odp', 'bts', 'odp/bts'],
+          'Start': ['start'],
+          'Start Escalation Vendor': ['start escalation vendor', 'escalation vendor'],
+          'End': ['end'],
+          'Duration': ['duration'],
+          'Duration Vendor': ['duration vendor'],
+          'Problem': ['problem'],
+          'Penyebab': ['penyebab', 'cause'],
+          'Action Terakhir': ['action terakhir', 'action', 'last action'],
+          'Note': ['note'],
+          'Klasifikasi Gangguan': ['klasifikasi gangguan', 'klasifikasi'],
+          'Power Before': ['power before', 'powerbefore'],
+          'Power After': ['power after', 'powerafter'],
+          'Pause': ['pause', 'start pause'],
+          'Restart': ['restart', 'end pause'],
+          'Pause2': ['pause2', 'pause 2', 'start pause 2'],
+          'Restart2': ['restart2', 'restart 2', 'end pause 2'],
+          'Total Duration Pause': ['total duration pause', 'total pause'],
+          'Total Duration Vendor': ['total duration vendor', 'total vendor']
+        };
+
+        for (const requiredHeader of REQUIRED_HEADERS) {
+          const possibleNames = headerMapping[requiredHeader] || [requiredHeader.toLowerCase()];
+          const found = headers.some(header => 
+            possibleNames.some(name => 
+              header?.toString().toLowerCase().includes(name)
+            )
+          );
+          if (!found) {
+            missingHeaders.push(requiredHeader);
+          }
+        }
 
         if (missingHeaders.length > 0) {
           const errorMsg = `Sheet "${sheetName}": Missing headers: ${missingHeaders.join(', ')}`;
@@ -129,7 +182,8 @@ export const IncidentUpload: React.FC = () => {
             message: errorMsg,
             details: {
               missingHeaders,
-              availableHeaders: headers
+              availableHeaders: headers,
+              headerMapping: headerMapping
             }
           });
           continue;
@@ -215,9 +269,27 @@ export const IncidentUpload: React.FC = () => {
         setProgress((workbook.SheetNames.indexOf(sheetName) + 1) / workbook.SheetNames.length * 50);
       }
 
-      // Save to database
+      // Fix missing endTime and duration issues automatically
       if (allRows.length > 0) {
         setProgress(60);
+        uploadLog.push({
+          type: 'info',
+          row: 0,
+          sheet: 'DURATION_FIX',
+          message: `Fixing missing endTime and duration issues...`
+        });
+        
+        // Apply automatic duration fixes to each incident
+        allRows = allRows.map(incident => fixIncidentDurationBeforeSave(incident));
+        
+        uploadLog.push({
+          type: 'success',
+          row: 0,
+          sheet: 'DURATION_FIX',
+          message: `Applied automatic duration fixes to ${allRows.length} incidents`
+        });
+        
+        setProgress(80);
         uploadLog.push({
           type: 'info',
           row: 0,
@@ -230,8 +302,8 @@ export const IncidentUpload: React.FC = () => {
         uploadLog.push({
           type: 'success',
           row: 0,
-          sheet: 'DATABASE',
-          message: `Successfully saved ${allRows.length} incidents to database`
+          sheet: 'DURATION_FIX',
+          message: `Successfully saved ${allRows.length} incidents to database with automatic duration fixes`
         });
         
         setProgress(100);
@@ -333,6 +405,145 @@ export const IncidentUpload: React.FC = () => {
     XLSX.writeFile(wb, `incident_upload_log_${new Date().toISOString().split('T')[0]}.xlsx`);
   };
 
+  // Function to fix existing data in database
+  const fixExistingData = async () => {
+    try {
+      setIsUploading(true);
+      setProgress(0);
+      
+      // Import database functions
+      const { db } = await import('@/lib/db');
+      
+      // Get all existing incidents
+      const allIncidents = await db.incidents.toArray();
+      
+      if (allIncidents.length === 0) {
+        setUploadResult({
+          success: 0,
+          failed: 0,
+          errors: ['No incidents found in database'],
+          preview: [],
+          uploadLog: [{
+            type: 'info',
+            row: 0,
+            sheet: 'FIX_EXISTING',
+            message: 'No incidents found in database to fix'
+          }],
+          totalRowsProcessed: 0,
+          totalRowsInFile: 0,
+          skippedRows: 0
+        });
+        return;
+      }
+      
+      setProgress(20);
+      
+      // Fix missing endTime
+      const { fixedIncidents: incidentsWithEndTime, fixedCount: endTimeFixed } = fixAllMissingEndTime(allIncidents);
+      
+      setProgress(40);
+      
+      // Fix duration based on Excel data
+      const { fixedIncidents: finalIncidents, fixedCount: durationFixed, fixLog } = fixAllIncidentDurations(incidentsWithEndTime);
+      
+      setProgress(60);
+      
+      // Update database with fixed incidents
+      let updateCount = 0;
+      for (const incident of finalIncidents) {
+        await db.incidents.update(incident.id, incident);
+        updateCount++;
+      }
+      
+      setProgress(100);
+      
+      // Create result log
+      const uploadLog: UploadLogEntry[] = [
+        {
+          type: 'info',
+          row: 0,
+          sheet: 'FIX_EXISTING',
+          message: `Started fixing ${allIncidents.length} existing incidents`
+        }
+      ];
+      
+      if (endTimeFixed > 0) {
+        uploadLog.push({
+          type: 'success',
+          row: 0,
+          sheet: 'FIX_EXISTING',
+          message: `Fixed ${endTimeFixed} incidents with missing endTime`
+        });
+      }
+      
+      if (durationFixed > 0) {
+        uploadLog.push({
+          type: 'success',
+          row: 0,
+          sheet: 'FIX_EXISTING',
+          message: `Fixed ${durationFixed} incidents with incorrect duration`
+        });
+        
+        // Log some sample fixes
+        fixLog.slice(0, 5).forEach(fix => {
+          uploadLog.push({
+            type: 'info',
+            row: 0,
+            sheet: 'FIX_EXISTING',
+            message: `Fixed ${fix.noCase}: ${fix.oldDuration.toFixed(2)}min → ${fix.newDuration.toFixed(2)}min (${fix.ncal}, ${fix.month})`
+          });
+        });
+        
+        if (fixLog.length > 5) {
+          uploadLog.push({
+            type: 'info',
+            row: 0,
+            sheet: 'FIX_EXISTING',
+            message: `... and ${fixLog.length - 5} more duration fixes`
+          });
+        }
+      }
+      
+      uploadLog.push({
+        type: 'success',
+        row: 0,
+        sheet: 'FIX_EXISTING',
+        message: `Successfully updated ${updateCount} incidents in database`
+      });
+      
+      setUploadResult({
+        success: updateCount,
+        failed: 0,
+        errors: [],
+        preview: finalIncidents.slice(0, 20),
+        uploadLog,
+        totalRowsProcessed: allIncidents.length,
+        totalRowsInFile: allIncidents.length,
+        skippedRows: 0
+      });
+      
+    } catch (error) {
+      const errorMsg = `Fix existing data failed: ${error}`;
+      setUploadResult({
+        success: 0,
+        failed: 1,
+        errors: [errorMsg],
+        preview: [],
+        uploadLog: [{
+          type: 'error',
+          row: 0,
+          sheet: 'FIX_EXISTING',
+          message: errorMsg
+        }],
+        totalRowsProcessed: 0,
+        totalRowsInFile: 0,
+        skippedRows: 0
+      });
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
   const getLogEntryIcon = (type: string) => {
     switch (type) {
       case 'success': return <CheckCircleIcon className="w-4 h-4 text-green-500" />;
@@ -367,6 +578,10 @@ export const IncidentUpload: React.FC = () => {
             <span className="text-xs text-gray-500 mt-1 block">
               Note: Level field accepts values 1-500 based on handling duration, not just 1-10.
             </span>
+            <br />
+            <span className="text-xs text-green-600 mt-1 block font-medium">
+              ✅ Automatic Duration Fix: Missing endTime and incorrect durations will be automatically corrected based on Excel data.
+            </span>
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -398,10 +613,22 @@ export const IncidentUpload: React.FC = () => {
             </div>
 
             <div className="flex justify-between items-center">
-              <Button onClick={downloadTemplate} variant="outline" size="sm">
-                                             <DownloadIcon className="w-4 h-4 mr-2" />
-               Download Template
-              </Button>
+              <div className="flex gap-2">
+                <Button onClick={downloadTemplate} variant="outline" size="sm">
+                  <DownloadIcon className="w-4 h-4 mr-2" />
+                  Download Template
+                </Button>
+                <Button 
+                  onClick={fixExistingData} 
+                  variant="outline" 
+                  size="sm"
+                  disabled={isUploading}
+                  className="bg-orange-50 hover:bg-orange-100 border-orange-200 text-orange-700"
+                >
+                  <CheckCircleIcon className="w-4 h-4 mr-2" />
+                  Fix Existing Data
+                </Button>
+              </div>
             </div>
 
             {isUploading && (
@@ -584,8 +811,41 @@ export const IncidentUpload: React.FC = () => {
 
 function parseRowToIncident(headers: string[], row: any[], rowNum: number, sheetName: string, uploadLog?: UploadLogEntry[]): Incident | null {
   const getValue = (headerName: string) => {
+    // Flexible column name matching
+    const columnMapping = {
+      'Priority': ['priority'],
+      'Site': ['site'],
+      'No Case': ['no case', 'nocase', 'case'],
+      'NCAL': ['ncal'],
+      'Status': ['status'],
+      'Level': ['level'],
+      'TS': ['ts', 'technical support', 'vendor'],
+      'ODP/BTS': ['odp', 'bts', 'odp/bts'],
+      'Start': ['start'],
+      'Start Escalation Vendor': ['start escalation vendor', 'escalation vendor'],
+      'End': ['end'],
+      'Duration': ['duration'],
+      'Duration Vendor': ['duration vendor'],
+      'Problem': ['problem'],
+      'Penyebab': ['penyebab', 'cause'],
+      'Action Terakhir': ['action terakhir', 'action', 'last action'],
+      'Note': ['note'],
+      'Klasifikasi Gangguan': ['klasifikasi gangguan', 'klasifikasi'],
+      'Power Before': ['power before', 'powerbefore'],
+      'Power After': ['power after', 'powerafter'],
+      'Pause': ['pause', 'start pause'],
+      'Restart': ['restart', 'end pause'],
+      'Pause2': ['pause2', 'pause 2', 'start pause 2'],
+      'Restart2': ['restart2', 'restart 2', 'end pause 2'],
+      'Total Duration Pause': ['total duration pause', 'total pause'],
+      'Total Duration Vendor': ['total duration vendor', 'total vendor']
+    };
+
+    const possibleNames = columnMapping[headerName] || [headerName.toLowerCase()];
     const index = headers.findIndex(h => 
-      h?.toString().toLowerCase().includes(headerName.toLowerCase())
+      possibleNames.some(name => 
+        h?.toString().toLowerCase().includes(name)
+      )
     );
     return index >= 0 ? row[index] : null;
   };
@@ -626,7 +886,22 @@ function parseRowToIncident(headers: string[], row: any[], rowNum: number, sheet
     return null;
   }
 
-  const startTime = parseDateSafe(startTimeRaw);
+  // Fix date format if it contains dots instead of colons
+  let fixedStartTimeRaw = startTimeRaw;
+  if (typeof fixedStartTimeRaw === 'string' && fixedStartTimeRaw.includes('/') && fixedStartTimeRaw.includes('.')) {
+    fixedStartTimeRaw = fixedStartTimeRaw.replace(/\./g, ':');
+    if (uploadLog) {
+      uploadLog.push({
+        type: 'info',
+        row: rowNum,
+        sheet: sheetName,
+        message: `Fixed start time format from DD/MM/YYYY HH.MM.SS to DD/MM/YYYY HH:MM:SS: "${startTimeRaw}" → "${fixedStartTimeRaw}"`,
+        noCase: String(noCase)
+      });
+    }
+  }
+  
+  const startTime = parseDateSafe(fixedStartTimeRaw);
   if (!startTime) {
     if (uploadLog) {
       uploadLog.push({
@@ -637,7 +912,8 @@ function parseRowToIncident(headers: string[], row: any[], rowNum: number, sheet
         noCase: String(noCase),
         details: {
           startTimeRaw,
-          expectedFormat: 'YYYY-MM-DD HH:mm:ss or similar'
+          fixedStartTimeRaw,
+          expectedFormat: 'DD/MM/YY HH:MM:SS or YYYY-MM-DD HH:mm:ss'
         }
       });
     }
@@ -720,34 +996,134 @@ function parseRowToIncident(headers: string[], row: any[], rowNum: number, sheet
     endTime: parseDateSafe(getValue('End')),
     durationMin: (() => {
       const duration = getValue('Duration');
-      const minutes = toMinutes(duration);
-      if (duration && minutes === 0) {
-        if (uploadLog) {
-          uploadLog.push({
-            type: 'error',
-            row: rowNum,
-            sheet: sheetName,
-            message: `Duration not parsed correctly. Raw value: "${duration}"`,
-            noCase: String(noCase)
-          });
+      const startTimeRaw = getValue('Start');
+      const endTimeRaw = getValue('End');
+      
+      let minutes = toMinutes(duration);
+      
+      // If duration from Excel is invalid or 0, calculate from start/end times
+      if (minutes === 0 && startTimeRaw && endTimeRaw) {
+        try {
+          const startDate = parseDateSafe(startTimeRaw);
+          const endDate = parseDateSafe(endTimeRaw);
+          
+          if (startDate && endDate && !isNaN(startDate.getTime()) && !isNaN(endDate.getTime())) {
+            const calculatedMinutes = Math.round((endDate.getTime() - startDate.getTime()) / (1000 * 60));
+            
+            if (calculatedMinutes > 0) {
+              minutes = calculatedMinutes;
+              if (uploadLog) {
+                uploadLog.push({
+                  type: 'info',
+                  row: rowNum,
+                  sheet: sheetName,
+                  message: `Recalculated duration from start/end times: ${calculatedMinutes} minutes (Excel value was invalid: "${duration}")`,
+                  noCase: String(noCase)
+                });
+              }
+            }
+          }
+        } catch (error) {
+          if (uploadLog) {
+            uploadLog.push({
+              type: 'warning',
+              row: rowNum,
+              sheet: sheetName,
+              message: `Failed to recalculate duration from start/end times: ${error}`,
+              noCase: String(noCase)
+            });
+          }
         }
       }
+      
+      // Validate duration value
+      if (minutes === 0 && uploadLog) {
+        uploadLog.push({
+          type: 'warning',
+          row: rowNum,
+          sheet: sheetName,
+          message: `Duration is 0 or invalid. Raw value: "${duration}". Start: "${startTimeRaw}", End: "${endTimeRaw}"`,
+          noCase: String(noCase)
+        });
+      }
+      
+      // Check for suspicious duration values (more than 24 hours)
+      if (minutes > 1440 && uploadLog) {
+        uploadLog.push({
+          type: 'warning',
+          row: rowNum,
+          sheet: sheetName,
+          message: `Duration seems unusually long: ${minutes} minutes (${Math.round(minutes/60)} hours). Please verify start/end times.`,
+          noCase: String(noCase)
+        });
+      }
+      
       return minutes;
     })(),
     durationVendorMin: (() => {
       const duration = getValue('Duration Vendor');
-      const minutes = toMinutes(duration);
-      if (duration && minutes === 0) {
-        if (uploadLog) {
-          uploadLog.push({
-            type: 'error',
-            row: rowNum,
-            sheet: sheetName,
-            message: `Duration Vendor not parsed correctly. Raw value: "${duration}"`,
-            noCase: String(noCase)
-          });
+      const startEscalationRaw = getValue('Start Escalation Vendor');
+      const endTimeRaw = getValue('End');
+      
+      let minutes = toMinutes(duration);
+      
+      // If duration vendor from Excel is invalid or 0, calculate from escalation to end
+      if (minutes === 0 && startEscalationRaw && endTimeRaw) {
+        try {
+          const startEscalationDate = parseDateSafe(startEscalationRaw);
+          const endDate = parseDateSafe(endTimeRaw);
+          
+          if (startEscalationDate && endDate && !isNaN(startEscalationDate.getTime()) && !isNaN(endDate.getTime())) {
+            const calculatedMinutes = Math.round((endDate.getTime() - startEscalationDate.getTime()) / (1000 * 60));
+            
+            if (calculatedMinutes > 0) {
+              minutes = calculatedMinutes;
+              if (uploadLog) {
+                uploadLog.push({
+                  type: 'info',
+                  row: rowNum,
+                  sheet: sheetName,
+                  message: `Recalculated duration vendor from escalation to end: ${calculatedMinutes} minutes (Excel value was invalid: "${duration}")`,
+                  noCase: String(noCase)
+                });
+              }
+            }
+          }
+        } catch (error) {
+          if (uploadLog) {
+            uploadLog.push({
+              type: 'warning',
+              row: rowNum,
+              sheet: sheetName,
+              message: `Failed to recalculate duration vendor from escalation to end: ${error}`,
+              noCase: String(noCase)
+            });
+          }
         }
       }
+      
+      // Validate duration vendor value
+      if (minutes === 0 && uploadLog) {
+        uploadLog.push({
+          type: 'warning',
+          row: rowNum,
+          sheet: sheetName,
+          message: `Duration Vendor is 0 or invalid. Raw value: "${duration}". Escalation: "${startEscalationRaw}", End: "${endTimeRaw}"`,
+          noCase: String(noCase)
+        });
+      }
+      
+      // Check for suspicious duration vendor values (more than 24 hours)
+      if (minutes > 1440 && uploadLog) {
+        uploadLog.push({
+          type: 'warning',
+          row: rowNum,
+          sheet: sheetName,
+          message: `Duration Vendor seems unusually long: ${minutes} minutes (${Math.round(minutes/60)} hours). Please verify escalation and end times.`,
+          noCase: String(noCase)
+        });
+      }
+      
       return minutes;
     })(),
     problem: getValue('Problem') || null,
@@ -821,10 +1197,66 @@ function parseRowToIncident(headers: string[], row: any[], rowNum: number, sheet
       }
       return powerValue ? Number(powerValue) : null;
     })(),
-    startPause1: parseDateSafe(getValue('Start Pause')),
-    endPause1: parseDateSafe(getValue('End Pause')),
-    startPause2: parseDateSafe(getValue('Start Pause 2')),
-    endPause2: parseDateSafe(getValue('End Pause 2')),
+    startPause1: (() => {
+      const value = getValue('Pause');
+      if (uploadLog && value) {
+        uploadLog.push({
+          type: 'info',
+          row: rowNum,
+          sheet: sheetName,
+          message: `Found Pause data: "${value}"`,
+          noCase: String(noCase)
+        });
+      }
+      return parseDateSafe(value);
+    })(),
+    endPause1: (() => {
+      const value = getValue('Restart');
+      if (uploadLog && value) {
+        uploadLog.push({
+          type: 'info',
+          row: rowNum,
+          sheet: sheetName,
+          message: `Found Restart data: "${value}"`,
+          noCase: String(noCase)
+        });
+      } else if (uploadLog) {
+        uploadLog.push({
+          type: 'warning',
+          row: rowNum,
+          sheet: sheetName,
+          message: `No Restart data found (expected if Pause exists)`,
+          noCase: String(noCase)
+        });
+      }
+      return parseDateSafe(value);
+    })(),
+    startPause2: (() => {
+      const value = getValue('Pause2');
+      if (uploadLog && value) {
+        uploadLog.push({
+          type: 'info',
+          row: rowNum,
+          sheet: sheetName,
+          message: `Found Pause2 data: "${value}"`,
+          noCase: String(noCase)
+        });
+      }
+      return parseDateSafe(value);
+    })(),
+    endPause2: (() => {
+      const value = getValue('Restart2');
+      if (uploadLog && value) {
+        uploadLog.push({
+          type: 'info',
+          row: rowNum,
+          sheet: sheetName,
+          message: `Found Restart2 data: "${value}"`,
+          noCase: String(noCase)
+        });
+      }
+      return parseDateSafe(value);
+    })(),
     totalDurationPauseMin: (() => {
       const duration = getValue('Total Duration Pause');
       const minutes = toMinutes(duration);
@@ -857,10 +1289,48 @@ function parseRowToIncident(headers: string[], row: any[], rowNum: number, sheet
       }
       return minutes;
     })(),
-    netDurationMin: Math.max(
-      toMinutes(getValue('Duration')) - toMinutes(getValue('Total Duration Pause')), 
-      0
-    ),
+    netDurationMin: (() => {
+      const duration = toMinutes(getValue('Duration'));
+      const totalPause = toMinutes(getValue('Total Duration Pause'));
+      
+      // Validate duration data
+      if (duration === 0 && uploadLog) {
+        uploadLog.push({
+          type: 'warning',
+          row: rowNum,
+          sheet: sheetName,
+          message: `Duration is 0 or invalid. Raw value: "${getValue('Duration')}"`,
+          noCase: String(noCase)
+        });
+      }
+      
+      // Validate that total pause doesn't exceed duration
+      if (totalPause > duration && uploadLog) {
+        uploadLog.push({
+          type: 'warning',
+          row: rowNum,
+          sheet: sheetName,
+          message: `Total Duration Pause (${totalPause}) exceeds Duration (${duration}). This may indicate data inconsistency.`,
+          noCase: String(noCase)
+        });
+      }
+      
+      // Calculate net duration (Duration - Total Duration Pause)
+      const netDuration = Math.max(duration - totalPause, 0);
+      
+      // Log calculation for debugging
+      if (uploadLog) {
+        uploadLog.push({
+          type: 'info',
+          row: rowNum,
+          sheet: sheetName,
+          message: `Net Duration calculation: ${duration} - ${totalPause} = ${netDuration} minutes`,
+          noCase: String(noCase)
+        });
+      }
+      
+      return netDuration;
+    })(),
     batchId: generateBatchId(),
     importedAt: new Date().toISOString()
   };

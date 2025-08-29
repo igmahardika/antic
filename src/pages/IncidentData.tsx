@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { fixAllDurationIssues } from '../utils/durationFixUtils';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { Incident, IncidentFilter } from '@/types/incident';
 import { queryIncidents, cleanDuplicateIncidents, getDatabaseStats } from '@/utils/incidentUtils';
@@ -41,6 +42,17 @@ export const IncidentData: React.FC = () => {
   const [showCleanupConfirm, setShowCleanupConfirm] = useState(false);
   const [selectedMonth, setSelectedMonth] = useState<string>('');
   const [dbStats, setDbStats] = useState<any>(null);
+  const [isFixingDuration, setIsFixingDuration] = useState(false);
+  const [durationFixResult, setDurationFixResult] = useState<any>(null);
+
+  // NCAL targets in minutes
+  const NCAL_TARGETS: Record<string, number> = {
+    Blue: 360,    // 6:00:00
+    Yellow: 300,  // 5:00:00
+    Orange: 240,  // 4:00:00
+    Red: 180,     // 3:00:00
+    Black: 60     // 1:00:00
+  };
 
   // Helper function to normalize NCAL values
   const normalizeNCAL = (ncal: string | null | undefined): string => {
@@ -62,10 +74,51 @@ export const IncidentData: React.FC = () => {
     return ncalCounts[normalizedTarget] || 0;
   };
 
-  // Get unique values for filter options
-  const allIncidents = useLiveQuery(() => 
-    db.incidents.toArray()
-  );
+  // Function to fix duration issues automatically
+  const handleFixDurationIssues = async () => {
+    try {
+      setIsFixingDuration(true);
+      setDurationFixResult(null);
+      
+      console.log('🔧 Starting automatic duration fixes...');
+      const result = await fixAllDurationIssues();
+      
+      setDurationFixResult(result);
+      console.log('✅ Duration fixes completed:', result);
+      
+      // Refresh data
+      if (allIncidents) {
+        // Force refresh by triggering a re-render
+        setIncidents([...incidents]);
+      }
+      
+    } catch (error) {
+      console.error('❌ Error fixing duration issues:', error);
+      setDurationFixResult({
+        totalProcessed: 0,
+        totalFixed: 0,
+        durationFixed: 0,
+        durationVendorFixed: 0,
+        netDurationFixed: 0,
+        formatFixed: 0,
+        errors: [error?.toString() || 'Unknown error']
+      });
+    } finally {
+      setIsFixingDuration(false);
+    }
+  };
+
+  // Get unique values for filter options with error handling
+  const allIncidents = useLiveQuery(async () => {
+    try {
+      const incidents = await db.incidents.toArray();
+      console.log('✅ IncidentData: Successfully loaded', incidents.length, 'incidents from database');
+      return incidents;
+    } catch (error) {
+      console.error('❌ IncidentData: Failed to load incidents from database:', error);
+      return [];
+    }
+  });
 
   // Debug: Log when allIncidents changes
   React.useEffect(() => {
@@ -331,7 +384,7 @@ export const IncidentData: React.FC = () => {
   };
 
   const formatDuration = (minutes: number | null | undefined) => {
-    if (!minutes || minutes === 0) return '-';
+    if (!minutes || minutes === 0) return '';
     const totalSeconds = Math.floor(minutes * 60);
     const h = Math.floor(totalSeconds / 3600);
     const m = Math.floor((totalSeconds % 3600) / 60);
@@ -344,20 +397,33 @@ export const IncidentData: React.FC = () => {
   const columns: Array<{
     key: keyof Incident;
     label: string;
-    render?: (value: any) => React.ReactNode;
+    render?: (value: any, incident: Incident) => React.ReactNode;
   }> = [
     { key: 'noCase', label: 'No Case' },
-    { key: 'priority', label: 'Priority', render: (v: string) => v ? <Badge variant={getPriorityBadgeVariant(v)}>{v}</Badge> : '-' },
+    { key: 'priority', label: 'Priority', render: (v: string) => v ? <Badge variant={getPriorityBadgeVariant(v)}>{v}</Badge> : '' },
     { key: 'site', label: 'Site' },
-    { key: 'ncal', label: 'NCAL', render: (v: string) => v ? <Badge variant={getNCALBadgeVariant(v)}>{v}</Badge> : '-' },
-    { key: 'status', label: 'Status', render: (v: string) => v ? <Badge variant={getStatusBadgeVariant(v)}>{v}</Badge> : '-' },
-    { key: 'level', label: 'Level' },
+    { key: 'ncal', label: 'NCAL', render: (v: string) => v ? <Badge variant={getNCALBadgeVariant(v)}>{v}</Badge> : '' },
+    { key: 'status', label: 'Status', render: (v: string) => v ? <Badge variant={getStatusBadgeVariant(v)}>{v}</Badge> : '' },
+    { key: 'level', label: 'Level', render: (v: any, incident: Incident) => {
+      const level = v || '';
+      const ncal = incident.ncal;
+      const target = NCAL_TARGETS[normalizeNCAL(ncal) as keyof typeof NCAL_TARGETS] || 0;
+      const duration = incident.durationMin || 0;
+      const isOverTarget = duration > target;
+      return <span className={isOverTarget ? 'text-red-600 dark:text-red-400 font-semibold' : ''}>{level}</span>;
+    }},
     { key: 'ts', label: 'TS' },
     { key: 'odpBts', label: 'ODP/BTS' },
     { key: 'startTime', label: 'Start Time', render: (v: string) => formatDate(v) },
     { key: 'startEscalationVendor', label: 'Start Escalation Vendor', render: (v: string) => formatDate(v) },
     { key: 'endTime', label: 'End Time', render: (v: string) => formatDate(v) },
-    { key: 'durationMin', label: 'Duration', render: (v: number) => formatDuration(v) },
+    { key: 'durationMin', label: 'Duration', render: (v: number, incident: Incident) => {
+      const duration = v || 0;
+      const ncal = incident.ncal;
+      const target = NCAL_TARGETS[normalizeNCAL(ncal) as keyof typeof NCAL_TARGETS] || 0;
+      const isOverTarget = duration > target;
+      return <span className={isOverTarget ? 'text-red-600 dark:text-red-400 font-semibold' : ''}>{formatDuration(duration)}</span>;
+    }},
     { key: 'durationVendorMin', label: 'Duration Vendor', render: (v: number) => formatDuration(v) },
     { key: 'problem', label: 'Problem' },
     { key: 'penyebab', label: 'Penyebab' },
@@ -365,7 +431,14 @@ export const IncidentData: React.FC = () => {
     { key: 'note', label: 'Note' },
     { key: 'klasifikasiGangguan', label: 'Klasifikasi Gangguan' },
     { key: 'powerBefore', label: 'Power Before (dBm)' },
-    { key: 'powerAfter', label: 'Power After (dBm)' },
+    { key: 'powerAfter', label: 'Power After (dBm)', render: (v: number, incident: Incident) => {
+      const powerAfter = v;
+      const powerBefore = incident.powerBefore;
+      const isPowerWorse = (typeof powerBefore === 'number' && typeof powerAfter === 'number' && 
+                           !isNaN(powerBefore) && !isNaN(powerAfter)) ? 
+                           (powerAfter - powerBefore) > 1 : false;
+      return <span className={isPowerWorse ? 'text-red-600 dark:text-red-400 font-semibold' : ''}>{powerAfter || ''}</span>;
+    }},
     { key: 'startPause1', label: 'Start Pause 1', render: (v: string) => formatDate(v) },
     { key: 'endPause1', label: 'End Pause 1', render: (v: string) => formatDate(v) },
     { key: 'startPause2', label: 'Start Pause 2', render: (v: string) => formatDate(v) },
@@ -376,7 +449,7 @@ export const IncidentData: React.FC = () => {
   ];
 
   const formatDate = (dateString: string | null | undefined) => {
-    if (!dateString) return '-';
+    if (!dateString) return '';
     return new Date(dateString).toLocaleString('id-ID');
   };
 
@@ -420,6 +493,24 @@ export const IncidentData: React.FC = () => {
             <Button onClick={() => setShowUpload(!showUpload)} variant="outline">
               <Upload className="w-4 h-4 mr-2" />
               Upload Data
+            </Button>
+            <Button 
+              onClick={handleFixDurationIssues} 
+              disabled={isFixingDuration}
+              variant="outline"
+              className="bg-green-600 hover:bg-green-700 text-white"
+            >
+              {isFixingDuration ? (
+                <>
+                  <div className="w-4 h-4 mr-2 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  Fixing...
+                </>
+              ) : (
+                <>
+                  <div className="w-4 h-4 mr-2">🔧</div>
+                  Fix Duration Issues
+                </>
+              )}
             </Button>
             <Button onClick={exportToCSV} variant="outline">
               <Download className="w-4 h-4 mr-2" />
@@ -484,6 +575,60 @@ export const IncidentData: React.FC = () => {
           iconBg="bg-purple-500"
         />
       </div>
+
+      {/* Duration Fix Result */}
+      {durationFixResult && (
+        <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4 mb-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-lg font-semibold text-green-800 dark:text-green-200">
+                ✅ Duration Issues Fixed Successfully!
+              </h3>
+              <div className="text-sm text-green-700 dark:text-green-300 mt-1">
+                Processed {durationFixResult.totalProcessed} incidents, fixed {durationFixResult.totalFixed} issues
+              </div>
+            </div>
+            <Button 
+              onClick={() => setDurationFixResult(null)} 
+              variant="outline" 
+              size="sm"
+              className="text-green-700 border-green-300 hover:bg-green-100"
+            >
+              ✕
+            </Button>
+          </div>
+          
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-3">
+            <div className="text-center">
+              <div className="text-2xl font-bold text-green-600">{durationFixResult.durationFixed}</div>
+              <div className="text-xs text-green-600">Duration Fixed</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-green-600">{durationFixResult.durationVendorFixed}</div>
+              <div className="text-xs text-green-600">Duration Vendor Fixed</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-green-600">{durationFixResult.netDurationFixed}</div>
+              <div className="text-xs text-green-600">Net Duration Fixed</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-green-600">{durationFixResult.formatFixed}</div>
+              <div className="text-xs text-green-600">Format Fixed</div>
+            </div>
+          </div>
+          
+          {durationFixResult.errors.length > 0 && (
+            <div className="mt-3 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded">
+              <div className="text-sm font-semibold text-red-700 dark:text-red-300">Errors:</div>
+              <div className="text-xs text-red-600 dark:text-red-400">
+                {durationFixResult.errors.map((error, index) => (
+                  <div key={index}>• {error}</div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* NCAL Category Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-4">
@@ -872,7 +1017,7 @@ export const IncidentData: React.FC = () => {
                         }>
                           {columns.map(col => (
                             <td key={col.key} className="px-5 py-3 whitespace-pre-line text-sm text-card-foreground align-top">
-                              {col.render ? col.render(incident[col.key as keyof Incident]) : incident[col.key as keyof Incident] || '-'}
+                              {col.render ? col.render(incident[col.key as keyof Incident], incident) : incident[col.key as keyof Incident] || ''}
                             </td>
                           ))}
                         </tr>
