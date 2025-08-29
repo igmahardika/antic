@@ -905,19 +905,19 @@ const TSAnalytics: React.FC = () => {
         if (item.avgExtra > longestExtraItem.avgExtra) longestExtraItem = item;
       });
       items.push({
-        icon: <TrendingUpIcon className="w-5 h-5 text-emerald-600" />, 
+                        icon: <TrendingUpIcon className="w-5 h-5 text-green-600" />, 
         title: 'Best SLA Month',
         description: `${bestSlaItem.month}: ${(bestSlaItem.actualSLA * 100).toFixed(1)}% SLA`
       });
       items.push({
-        icon: <TrendingDownIcon className="w-5 h-5 text-rose-600" />, 
+                        icon: <TrendingDownIcon className="w-5 h-5 text-red-600" />, 
         title: 'Worst SLA Month',
         description: `${worstSlaItem.month}: ${(worstSlaItem.actualSLA * 100).toFixed(1)}% SLA`
       });
       // convert average extra time (minutes) to hours for readability
       const longestExtraHours = longestExtraItem.avgExtra / 60;
       items.push({
-        icon: <AccessTimeIcon className="w-5 h-5 text-amber-600" />, 
+                        icon: <AccessTimeIcon className="w-5 h-5 text-yellow-600" />, 
         title: 'Longest Extra Time',
         description: `${longestExtraItem.month}: ${formatDurationDHM(longestExtraHours)}`
       });
@@ -936,7 +936,7 @@ const TSAnalytics: React.FC = () => {
           }
         });
         items.push({
-          icon: <CheckCircleIcon className="w-5 h-5 text-emerald-600" />, 
+                          icon: <CheckCircleIcon className="w-5 h-5 text-green-600" />, 
           title: 'Top NCAL Category',
           description: `${bestCatName}: ${bestCatRate.toFixed(1)}% compliance`
         });
@@ -1033,14 +1033,14 @@ const TSAnalytics: React.FC = () => {
             title="Internal TS"
             value={analyticsData.internal.total}
             description={`${analyticsData.internal.unique} teams`}
-            iconBg="bg-emerald-600"
+                            iconBg="bg-green-600"
           />
           <SummaryCard
             icon={<AccessTimeIcon />}
             title="Avg Response Time"
             value={formatDurationHMS(analyticsData.vendor.avgDuration || analyticsData.internal.avgDuration)}
             description="Overall average"
-            iconBg="bg-amber-500"
+                            iconBg="bg-yellow-500"
           />
         </div>
         {/* Auto Insights Section */}
@@ -1144,9 +1144,9 @@ const TSAnalytics: React.FC = () => {
           <Card>
             <CardHeader className="flex flex-col gap-1 pb-1">
               <CardTitle className="font-extrabold text-xl flex items-center gap-2">
-                <EngineeringIcon className="w-6 h-6 text-emerald-600" />
+                <EngineeringIcon className="w-6 h-6 text-green-600" />
                 Internal TS Performance
-                <Badge className="bg-emerald-600 text-white text-xs px-2 py-0.5 rounded-md w-fit font-semibold">
+                <Badge className="bg-green-600 text-white text-xs px-2 py-0.5 rounded-md w-fit font-semibold">
                   NCAL Targets
                 </Badge>
               </CardTitle>
@@ -1177,7 +1177,7 @@ const TSAnalytics: React.FC = () => {
                       </div>
                         </div>
                         <div className="text-right">
-                          <div className="text-sm font-bold text-emerald-600">
+                          <div className="text-sm font-bold text-green-600">
                             {data.complianceRate.toFixed(1)}%
                         </div>
                           <div className="text-xs text-muted-foreground">Target: {formatDurationHMS(NCAL_TARGETS[ncal as keyof typeof NCAL_TARGETS])}</div>
@@ -1423,7 +1423,7 @@ const TSAnalytics: React.FC = () => {
                   <span>Vendor</span>
                   </div>
                 <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 bg-emerald-600 rounded"></div>
+                  <div className="w-3 h-3 bg-green-600 rounded"></div>
                   <span>Internal TS</span>
                     </div>
                   </div>
@@ -1527,7 +1527,7 @@ const TSAnalytics: React.FC = () => {
                       content={<ChartTooltipContent indicator="dashed" />}
                     />
                     <Bar dataKey="mttr" fill="#3b82f6" radius={4} />
-                    <Bar dataKey="extra" fill="#f59e0b" radius={4} />
+                    <Bar dataKey="extra" fill="#eab308" radius={4} />
                   </BarChart>
                 </ChartContainer>
               </div>

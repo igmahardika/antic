@@ -249,14 +249,14 @@ const SummaryDashboard = ({ ticketAnalyticsData, filteredTickets }: any) => {
         />
         <SummaryCard
           icon={<CheckCircleIcon className="w-5 h-5 text-white" />}
-          iconBg="bg-emerald-500"
+          iconBg="bg-green-500"
           title="Closed Tickets"
           value={stats[2]?.value || '-'}
           description={stats[2]?.description || '100% resolution rate'}
         />
         <SummaryCard
           icon={<AccessTimeIcon className="w-5 h-5 text-white" />}
-          iconBg="bg-amber-500"
+                          iconBg="bg-yellow-500"
           title="Avg Duration"
           value={stats[1]?.value || '-'}
           description="average resolution time"
@@ -274,7 +274,7 @@ const SummaryDashboard = ({ ticketAnalyticsData, filteredTickets }: any) => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <SummaryCard
           icon={<CheckCircleIcon className="w-5 h-5 text-white" />}
-          iconBg="bg-emerald-500"
+          iconBg="bg-green-500"
           title="Closed Rate"
           value={kpis.closedRate}
           description="closed / total"
@@ -288,7 +288,7 @@ const SummaryDashboard = ({ ticketAnalyticsData, filteredTickets }: any) => {
         />
         <SummaryCard
           icon={<TimerIcon className="w-5 h-5 text-white" />}
-          iconBg="bg-rose-500"
+                          iconBg="bg-red-500"
           title="Avg FRT (min)"
           value={kpis.frtAvg.toFixed(1)}
           description="first response time"
@@ -494,12 +494,12 @@ const SummaryDashboard = ({ ticketAnalyticsData, filteredTickets }: any) => {
                     <td className="px-4 py-3 text-right">
                       <span className={`inline-flex items-center justify-center px-2.5 py-1 rounded-lg text-xs font-bold min-w-[32px] ${
                         row.grade === 'A' 
-                          ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300' 
+                          ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300' 
                           : row.grade === 'B' 
                           ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' 
                           : row.grade === 'C' 
-                          ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300'
-                          : 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-300'
+                          ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300'
+                          : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300'
                       }`}>
                         {row.grade}
                       </span>

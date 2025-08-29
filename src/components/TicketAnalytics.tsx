@@ -961,7 +961,7 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
           title="Close Rate (Periode)"
           value={`${advancedKpis.closeRatePeriod.toFixed(1)}%`}
           description="Closed / total tiket yang DIBUKA di periode"
-          iconBg="bg-emerald-600"
+                          iconBg="bg-green-600"
         />
         
         {/* Resolution Rate (Lifetime) */}
@@ -1022,7 +1022,7 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
                 title="Backlog (Open)"
                 value={openTickets.length.toLocaleString()}
                 description="Tiket open: no closeTime, future closeTime, atau >30 hari"
-                iconBg="bg-amber-600"
+                iconBg="bg-yellow-600"
               />
               <SummaryCard
                 icon={<AccessTimeIcon className="w-7 h-7 text-white" />}
@@ -1165,24 +1165,24 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
                 {/* Handling Time Insights */}
                 <div className="space-y-3">
             {typeof safeMaxAvg !== 'undefined' && safeMaxAvg.shift && (
-                    <div className="p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg">
+                    <div className="p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
                       <div className="flex items-center gap-2 mb-1">
-                        <AssignmentIcon className="text-amber-500 text-xs" />
+                        <AssignmentIcon className="text-yellow-500 text-xs" />
                         <span className="font-medium text-card-foreground">Handling Time Shift</span>
                       </div>
-                      <div className="text-sm font-bold text-amber-600 dark:text-amber-400">
+                      <div className="text-sm font-bold text-yellow-600 dark:text-yellow-400">
                         {safeMaxAvg.shift}: {safeMaxAvg.formattedAvg}
                       </div>
                     </div>
                   )}
                   
             {typeof safeMaxAvgCat !== 'undefined' && safeMaxAvgCat.cat && (
-                    <div className="p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg">
+                    <div className="p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
                       <div className="flex items-center gap-2 mb-1">
-                        <AssignmentIcon className="text-amber-500 text-xs" />
+                        <AssignmentIcon className="text-yellow-500 text-xs" />
                         <span className="font-medium text-card-foreground">Handling Time Kategori</span>
                       </div>
-                      <div className="text-sm font-bold text-amber-600 dark:text-amber-400">
+                      <div className="text-sm font-bold text-yellow-600 dark:text-yellow-400">
                         {safeMaxAvgCat.cat}: {safeMaxAvgCat.formattedAvg}
                       </div>
                     </div>
@@ -2229,7 +2229,7 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
                   })}
                 </tr>
                 <tr>
-                  <td className="px-4 py-2 font-bold text-rose-700 dark:text-rose-300">Complaint Clients</td>
+                  <td className="px-4 py-2 font-bold text-red-700 dark:text-red-300">Complaint Clients</td>
                   {Object.keys(tiketPerJenisKlienPerBulan).sort().map(month => {
                     // Complaining clients that are also active this month (union)
                     const activeNames = new Set(
@@ -2715,7 +2715,7 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
                       <stop offset="100%" stopColor="#60a5fa" stopOpacity={1} />
                     </linearGradient>
                       <linearGradient id="shiftMedianGradient" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#f59e0b" stopOpacity={1} />
+                        <stop offset="0%" stopColor="#eab308" stopOpacity={1} />
                         <stop offset="100%" stopColor="#fbbf24" stopOpacity={1} />
                     </linearGradient>
                   </defs>

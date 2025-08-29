@@ -675,7 +675,7 @@ export default function AdminRumus() {
               {/* Ticket Analytics Metrics */}
             <div className="space-y-4">
                 <h5 className="font-semibold text-card-foreground text-lg">Ticket Analytics Page - Advanced Metrics</h5>
-                <div className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 ring-1 ring-green-200 dark:ring-green-800 rounded-lg p-6">
+                <div className="bg-gradient-to-r from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-900/30 ring-1 ring-green-200 dark:ring-green-800 rounded-lg p-6">
                   <div className="space-y-4 text-sm">
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                       <div>
@@ -1024,7 +1024,7 @@ export default function AdminRumus() {
                         {/* 2. Ticket Data Page - Advanced Search & Analytics */}
               <div className="space-y-4">
               <h5 className="font-semibold text-card-foreground text-lg">Ticket Data Page - Advanced Processing</h5>
-              <div className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 ring-1 ring-green-200 dark:ring-green-800 rounded-lg p-6">
+                              <div className="bg-gradient-to-r from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-900/30 ring-1 ring-green-200 dark:ring-green-800 rounded-lg p-6">
                 <div className="space-y-4 text-sm">
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <div>

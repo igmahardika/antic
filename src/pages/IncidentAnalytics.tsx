@@ -474,7 +474,7 @@ const IncidentAnalytics: React.FC = () => {
       .map(([name, value]) => {
         let color = '#6b7280';
         if (name === 'High') color = '#ef4444';
-        else if (name === 'Medium') color = '#f59e0b';
+                        else if (name === 'Medium') color = '#eab308';
         else if (name === 'Low') color = '#10b981';
         return { name, value, fill: color };
       });
@@ -713,7 +713,7 @@ const IncidentAnalytics: React.FC = () => {
                 key={idx}
                 className="flex items-start gap-2 p-3 rounded-xl  bg-gray-50 dark:bg-zinc-800"
               >
-                <div className="mt-1 w-2 h-2 rounded-full bg-emerald-500" />
+                <div className="mt-1 w-2 h-2 rounded-full bg-green-500" />
                 <span className="text-sm text-card-foreground">{txt}</span>
               </div>
             ))}
@@ -1048,22 +1048,22 @@ const IncidentAnalytics: React.FC = () => {
           <Card className="bg-card text-card-foreground  rounded-2xl shadow-lg">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <WarningAmberIcon className="w-5 h-5 text-amber-600" /> SLA Breach Analysis
+                <WarningAmberIcon className="w-5 h-5 text-yellow-600" /> SLA Breach Analysis
               </CardTitle>
               <CardDescription>Performance against SLA targets and breach patterns</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-3 gap-3 mb-4">
-                <div className="text-center p-3 bg-rose-50 dark:bg-rose-900/20 rounded-lg">
-                  <div className="text-lg font-bold text-rose-600">{deep.breachRate.toFixed(1)}%</div>
+                                <div className="text-center p-3 bg-red-50 dark:bg-red-900/20 rounded-lg">
+                <div className="text-lg font-bold text-red-600">{deep.breachRate.toFixed(1)}%</div>
                   <div className="text-xs text-muted-foreground">Breach Rate</div>
                 </div>
                 <div className="text-center p-3 bg-violet-50 dark:bg-violet-900/20 rounded-lg">
                   <div className="text-sm font-bold text-violet-600">Pause Impact</div>
                   <div className="text-xs font-mono text-gray-700 dark:text-gray-300">{formatDurationHMS(deep.avgPauseBreach)}</div>
                 </div>
-                <div className="text-center p-3 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg">
-                  <div className="text-sm font-bold text-emerald-600">Compliant Time</div>
+                                <div className="text-center p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                <div className="text-sm font-bold text-green-600">Compliant Time</div>
                   <div className="text-xs font-mono text-gray-700 dark:text-gray-300">{formatDurationHMS(deep.avgPauseCompliant)}</div>
                 </div>
               </div>

@@ -420,7 +420,7 @@ const ErrorLogTable = ({ errors }: { errors: IErrorLog[] }) => {
               <AccordionTrigger className="text-left hover:no-underline">
                 <div className="flex justify-between w-full pr-4 items-center">
                   <span className="font-semibold text-sm break-words whitespace-normal text-left">{reason}</span>
-                  <span><Badge variant="danger" className="flex-shrink-0 text-xs px-2 py-1 bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-200  dark:border-rose-800">{errs.length} rows</Badge></span>
+                  <span><Badge variant="danger" className="flex-shrink-0 text-xs px-2 py-1 bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-200  dark:border-red-800">{errs.length} rows</Badge></span>
                 </div>
               </AccordionTrigger>
               <AccordionContent>

@@ -594,17 +594,17 @@ const SiteAnalytics: React.FC = () => {
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center gap-2 text-lg font-extrabold">
-                <WarningAmberIcon className="w-5 h-5 text-amber-600" />
+                <WarningAmberIcon className="w-5 h-5 text-yellow-600" />
                 Site Risk Assessment
               </CardTitle>
                           <CardDescription className="text-muted-foreground">
               Risk score calculated from incident frequency, duration, and resolution patterns
             </CardDescription>
-                            <div className="mt-2 p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg">
-              <div className="text-xs font-medium text-amber-800 dark:text-amber-200 mb-1">Risk Score Formula:</div>
-              <div className="text-xs text-amber-700 dark:text-amber-300">
+                            <div className="mt-2 p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
+              <div className="text-xs font-medium text-yellow-800 dark:text-yellow-200 mb-1">Risk Score Formula:</div>
+              <div className="text-xs text-yellow-700 dark:text-yellow-300">
                 <strong>Risk Score = (Incident Count × 10) + (Avg Duration in hours × 2) + (100 - Resolution Rate)</strong><br/>
-                <span className="text-amber-600 dark:text-amber-400">
+                <span className="text-yellow-600 dark:text-yellow-400">
                   • High Risk: Score ≥ 100 • Medium Risk: Score 50-99 • Low Risk: Score &lt; 50
                 </span>
               </div>
