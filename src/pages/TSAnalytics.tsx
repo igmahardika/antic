@@ -1081,7 +1081,7 @@ const TSAnalytics: React.FC = () => {
               <CardTitle className="font-extrabold text-xl flex items-center gap-2">
                 <BusinessIcon className="w-6 h-6 text-blue-600" />
                 Vendor Performance
-                <Badge className="bg-blue-600 text-white text-xs px-3 py-1 rounded-full w-fit font-semibold shadow-lg">
+                <Badge className="bg-blue-600 text-white text-xs px-3 py-1 rounded-xl w-fit font-semibold shadow-lg">
                   SLA 4H
                 </Badge>
               </CardTitle>
@@ -1146,7 +1146,7 @@ const TSAnalytics: React.FC = () => {
               <CardTitle className="font-extrabold text-xl flex items-center gap-2">
                 <EngineeringIcon className="w-6 h-6 text-emerald-600" />
                 Internal TS Performance
-                <Badge className="bg-emerald-600 text-white text-xs px-3 py-1 rounded-full w-fit font-semibold shadow-lg">
+                <Badge className="bg-emerald-600 text-white text-xs px-3 py-1 rounded-xl w-fit font-semibold shadow-lg">
                   NCAL Targets
                 </Badge>
               </CardTitle>
@@ -1263,7 +1263,7 @@ const TSAnalytics: React.FC = () => {
               <CardTitle className="font-extrabold text-xl flex items-center gap-2">
                 <AssessmentIcon className="w-6 h-6 text-green-600" />
                 Internal NCAL Compliance
-                <Badge className="bg-green-600 text-white text-xs px-3 py-1 rounded-full w-fit font-semibold shadow-lg">
+                <Badge className="bg-green-600 text-white text-xs px-3 py-1 rounded-xl w-fit font-semibold shadow-lg">
                   Target Focus
                 </Badge>
               </CardTitle>
@@ -1318,7 +1318,7 @@ const TSAnalytics: React.FC = () => {
               <CardTitle className="font-extrabold text-xl flex items-center gap-2">
                 <TrendingDownIcon className="w-6 h-6 text-purple-600" />
                 Vendor Redaman Analysis
-                <Badge className="bg-purple-600 text-white text-xs px-3 py-1 rounded-full w-fit font-semibold shadow-lg">
+                <Badge className="bg-purple-600 text-white text-xs px-3 py-1 rounded-xl w-fit font-semibold shadow-lg">
                   Δ ≥ +1 dBm
                 </Badge>
               </CardTitle>
@@ -1368,7 +1368,7 @@ const TSAnalytics: React.FC = () => {
               <CardTitle className="font-extrabold text-xl flex items-center gap-2">
                 <BarChartIcon className="w-6 h-6 text-zinc-600" />
                 Workload Distribution
-                <Badge className="bg-zinc-600 text-white text-xs px-3 py-1 rounded-full w-fit font-semibold shadow-lg">
+                <Badge className="bg-zinc-600 text-white text-xs px-3 py-1 rounded-xl w-fit font-semibold shadow-lg">
                   By Month
                 </Badge>
               </CardTitle>
@@ -1439,7 +1439,7 @@ const TSAnalytics: React.FC = () => {
             <CardTitle className="font-extrabold text-xl flex items-center gap-2">
               <BusinessIcon className="w-6 h-6 text-blue-700" />
               Waneda Monthly Recap
-              <Badge className="bg-blue-700 text-white text-xs px-3 py-1 rounded-full w-fit font-semibold shadow-lg">
+                              <Badge className="bg-blue-700 text-white text-xs px-3 py-1 rounded-xl w-fit font-semibold shadow-lg">
                 Vendor Focus
               </Badge>
             </CardTitle>
