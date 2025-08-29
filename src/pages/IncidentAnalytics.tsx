@@ -43,6 +43,7 @@ import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import HourglassEmptyIcon from '@mui/icons-material/HourglassEmpty';
 import TimelineIcon from '@mui/icons-material/Timeline';
 import FilterListIcon from '@mui/icons-material/FilterList';
+import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 
 // NCAL colors and targets
 const NCAL_COLORS: Record<string, string> = {
@@ -169,14 +170,19 @@ const IncidentAnalytics: React.FC = () => {
     const value = ncal.toString().trim().toLowerCase();
     switch (value) {
       case 'blue':
+      case 'biru':
         return 'Blue';
       case 'yellow':
+      case 'kuning':
         return 'Yellow';
       case 'orange':
+      case 'jingga':
         return 'Orange';
       case 'red':
+      case 'merah':
         return 'Red';
       case 'black':
+      case 'hitam':
         return 'Black';
       default:
         return ncal.trim();
@@ -195,6 +201,14 @@ const IncidentAnalytics: React.FC = () => {
   // Filter incidents by period
   const filteredIncidents = useMemo(() => {
     if (!allIncidents) return [] as any[];
+    
+    // Debug: Log filtering process
+    console.log('🔍 Filtering incidents:', {
+      totalIncidents: allIncidents.length,
+      selectedPeriod,
+      incidentsWithStartTime: allIncidents.filter(inc => inc.startTime).length
+    });
+    
     const now = new Date();
     let cutoff: Date;
     switch (selectedPeriod) {
@@ -208,13 +222,23 @@ const IncidentAnalytics: React.FC = () => {
         cutoff = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate());
         break;
       default:
+        console.log('📊 Using all incidents (no period filter)');
         return allIncidents;
     }
-    return allIncidents.filter((inc) => {
+    
+    const filtered = allIncidents.filter((inc) => {
       if (!inc.startTime) return false;
       const date = new Date(inc.startTime);
       return date >= cutoff;
     });
+    
+    console.log('📊 Filtered incidents:', {
+      filteredCount: filtered.length,
+      cutoffDate: cutoff.toISOString(),
+      sampleDates: filtered.slice(0, 3).map(inc => inc.startTime)
+    });
+    
+    return filtered;
   }, [allIncidents, selectedPeriod]);
 
   // Stats aggregator (simple summary for KPI cards)
@@ -628,7 +652,32 @@ const IncidentAnalytics: React.FC = () => {
   if (!allIncidents || allIncidents.length === 0) {
     return (
       <PageWrapper>
-        <div className="p-6 text-center">No incident data available.</div>
+        <div className="space-y-6">
+          {/* Header */}
+          <div className="flex flex-col gap-4">
+            <div>
+              <h1 className="text-3xl font-bold text-card-foreground">Incident Analytics</h1>
+              <p className="text-muted-foreground">Comprehensive analysis of incident data and performance metrics</p>
+            </div>
+            
+            {/* Data Status Alert */}
+            <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
+              <div className="flex items-center gap-3">
+                <WarningAmberIcon className="w-5 h-5 text-yellow-600" />
+                <div>
+                  <h3 className="font-semibold text-yellow-800 dark:text-yellow-200">No Incident Data Found</h3>
+                  <p className="text-sm text-yellow-700 dark:text-yellow-300">
+                    Please upload incident data first via the{' '}
+                    <a href="/incident/data" className="underline font-medium hover:text-yellow-800 dark:hover:text-yellow-100">
+                      Incident Data page
+                    </a>
+                    {' '}to view analytics and calculations.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </PageWrapper>
     );
   }
@@ -762,16 +811,28 @@ const IncidentAnalytics: React.FC = () => {
               <CardDescription className="text-muted-foreground">Volume distribution across NCAL levels</CardDescription>
             </CardHeader>
             <CardContent className="flex flex-col items-center">
-              <ChartContainer config={{}}>
-                <PieChart width={260} height={260}>
-                  <ChartTooltip content={<ChartTooltipContent hideLabel />} />
-                  <Pie data={NCAL_ORDER.map((ncal) => ({ name: ncal, value: byNCAL[ncal] || 0, color: NCAL_COLORS[ncal] }))} dataKey="value" nameKey="name" innerRadius={60} strokeWidth={5}>
-                    {NCAL_ORDER.map((ncal) => (
-                      <Cell key={ncal} fill={NCAL_COLORS[ncal]} />
-                    ))}
-                  </Pie>
-                </PieChart>
-              </ChartContainer>
+              {Object.values(byNCAL).some(count => count > 0) ? (
+                <ChartContainer config={{}}>
+                  <PieChart width={260} height={260}>
+                    <ChartTooltip content={<ChartTooltipContent hideLabel />} />
+                    <Pie data={NCAL_ORDER.map((ncal) => ({ name: ncal, value: byNCAL[ncal] || 0, color: NCAL_COLORS[ncal] }))} dataKey="value" nameKey="name" innerRadius={60} strokeWidth={5}>
+                      {NCAL_ORDER.map((ncal) => (
+                        <Cell key={ncal} fill={NCAL_COLORS[ncal]} />
+                      ))}
+                    </Pie>
+                  </PieChart>
+                </ChartContainer>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-8 text-center">
+                  <div className="w-16 h-16 bg-gray-100 dark:bg-zinc-800 rounded-full flex items-center justify-center mb-4">
+                    <PieChartIconMUI className="w-8 h-8 text-gray-400" />
+                  </div>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">No NCAL data</p>
+                  <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                    {filteredIncidents.length === 0 ? 'No incidents found' : 'No NCAL values in incidents'}
+                  </p>
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
@@ -785,29 +846,41 @@ const IncidentAnalytics: React.FC = () => {
               <CardDescription>Trend of incident count by NCAL level over time</CardDescription>
             </CardHeader>
             <CardContent>
-              <ChartContainer config={{}}>
-                <LineChart data={monthlyNCALData} margin={{ top: 0, right: 12, left: 12, bottom: 0 }}>
-                  <CartesianGrid vertical={false} stroke="#e5e7eb" />
-                  <XAxis dataKey="month" tickLine={false} axisLine={false} tickMargin={8} tick={{ fill: '#6b7280', fontSize: 12 }} tickFormatter={(value: string) => {
-                    const [year, month] = value.split('-');
-                    const names = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-                    return `${names[parseInt(month) - 1]} ${year}`;
-                  }} />
-                  <YAxis tickLine={false} axisLine={false} tickMargin={8} tick={{ fill: '#6b7280', fontSize: 12 }} tickFormatter={(v: number) => v.toLocaleString()} />
-                  <ChartTooltip content={<ChartTooltipContent />} />
-                  {NCAL_ORDER.map((ncal) => (
-                    <Line
-                      key={ncal}
-                      dataKey={ncal}
-                      type="natural"
-                      stroke={NCAL_COLORS[ncal]}
-                      strokeWidth={2}
-                      dot={{ fill: NCAL_COLORS[ncal] }}
-                      activeDot={{ r: 5 }}
-                    />
-                  ))}
-                </LineChart>
-              </ChartContainer>
+              {monthlyNCALData.length > 0 ? (
+                <ChartContainer config={{}}>
+                  <LineChart data={monthlyNCALData} margin={{ top: 0, right: 12, left: 12, bottom: 0 }}>
+                    <CartesianGrid vertical={false} stroke="#e5e7eb" />
+                    <XAxis dataKey="month" tickLine={false} axisLine={false} tickMargin={8} tick={{ fill: '#6b7280', fontSize: 12 }} tickFormatter={(value: string) => {
+                      const [year, month] = value.split('-');
+                      const names = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+                      return `${names[parseInt(month) - 1]} ${year}`;
+                    }} />
+                    <YAxis tickLine={false} axisLine={false} tickMargin={8} tick={{ fill: '#6b7280', fontSize: 12 }} tickFormatter={(v: number) => v.toLocaleString()} />
+                    <ChartTooltip content={<ChartTooltipContent />} />
+                    {NCAL_ORDER.map((ncal) => (
+                      <Line
+                        key={ncal}
+                        dataKey={ncal}
+                        type="natural"
+                        stroke={NCAL_COLORS[ncal]}
+                        strokeWidth={2}
+                        dot={{ fill: NCAL_COLORS[ncal] }}
+                        activeDot={{ r: 5 }}
+                      />
+                    ))}
+                  </LineChart>
+                </ChartContainer>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-8 text-center">
+                  <div className="w-16 h-16 bg-gray-100 dark:bg-zinc-800 rounded-full flex items-center justify-center mb-4">
+                    <ShowChartIcon className="w-8 h-8 text-gray-400" />
+                  </div>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">No monthly data</p>
+                  <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                    {filteredIncidents.length === 0 ? 'No incidents found' : 'No monthly incident data'}
+                  </p>
+                </div>
+              )}
             </CardContent>
           </Card>
           <Card className="bg-card text-card-foreground  rounded-2xl shadow-lg">
@@ -818,29 +891,41 @@ const IncidentAnalytics: React.FC = () => {
               <CardDescription>Average resolution time trends by NCAL level</CardDescription>
             </CardHeader>
             <CardContent>
-              <ChartContainer config={{}}>
-                <LineChart data={monthlyNCALDurationData} margin={{ top: 0, right: 12, left: 12, bottom: 0 }}>
-                  <CartesianGrid vertical={false} stroke="#e5e7eb" />
-                  <XAxis dataKey="month" tickLine={false} axisLine={false} tickMargin={8} tick={{ fill: '#6b7280', fontSize: 12 }} tickFormatter={(value: string) => {
-                    const [year, month] = value.split('-');
-                    const names = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-                    return `${names[parseInt(month) - 1]} ${year}`;
-                  }} />
-                  <YAxis tickLine={false} axisLine={false} tickMargin={8} tick={{ fill: '#6b7280', fontSize: 12 }} tickFormatter={(v: number) => formatDurationHMS(v)} />
-                  <ChartTooltip content={<ChartTooltipContent formatter={(value: number) => formatDurationHMS(value)} />} />
-                  {NCAL_ORDER.map((ncal) => (
-                    <Line
-                      key={ncal}
-                      dataKey={ncal}
-                      type="natural"
-                      stroke={NCAL_COLORS[ncal]}
-                      strokeWidth={2}
-                      dot={{ fill: NCAL_COLORS[ncal] }}
-                      activeDot={{ r: 5 }}
-                    />
-                  ))}
-                </LineChart>
-              </ChartContainer>
+              {monthlyNCALDurationData.length > 0 ? (
+                <ChartContainer config={{}}>
+                  <LineChart data={monthlyNCALDurationData} margin={{ top: 0, right: 12, left: 12, bottom: 0 }}>
+                    <CartesianGrid vertical={false} stroke="#e5e7eb" />
+                    <XAxis dataKey="month" tickLine={false} axisLine={false} tickMargin={8} tick={{ fill: '#6b7280', fontSize: 12 }} tickFormatter={(value: string) => {
+                      const [year, month] = value.split('-');
+                      const names = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+                      return `${names[parseInt(month) - 1]} ${year}`;
+                    }} />
+                    <YAxis tickLine={false} axisLine={false} tickMargin={8} tick={{ fill: '#6b7280', fontSize: 12 }} tickFormatter={(v: number) => formatDurationHMS(v)} />
+                    <ChartTooltip content={<ChartTooltipContent formatter={(value: number) => formatDurationHMS(value)} />} />
+                    {NCAL_ORDER.map((ncal) => (
+                      <Line
+                        key={ncal}
+                        dataKey={ncal}
+                        type="natural"
+                        stroke={NCAL_COLORS[ncal]}
+                        strokeWidth={2}
+                        dot={{ fill: NCAL_COLORS[ncal] }}
+                        activeDot={{ r: 5 }}
+                      />
+                    ))}
+                  </LineChart>
+                </ChartContainer>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-8 text-center">
+                  <div className="w-16 h-16 bg-gray-100 dark:bg-zinc-800 rounded-full flex items-center justify-center mb-4">
+                    <ShowChartIcon className="w-8 h-8 text-gray-400" />
+                  </div>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">No duration data</p>
+                  <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                    {filteredIncidents.length === 0 ? 'No incidents found' : 'No duration data available'}
+                  </p>
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
