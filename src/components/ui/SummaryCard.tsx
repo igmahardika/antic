@@ -34,7 +34,7 @@ const SummaryCard: React.FC<SummaryCardProps> = ({
   active = false,
 }) => (
   <div
-    className={`bg-card text-card-foreground rounded-2xl shadow-lg p-4 flex flex-col min-h-[140px] transition-all duration-300 min-w-0 overflow-hidden border border-border
+    className={`bg-card text-card-foreground rounded-2xl shadow-lg p-4 flex flex-col min-h-[140px] transition-all duration-300 min-w-0 overflow-hidden 
       ${onClick ? 'cursor-pointer hover:shadow-xl hover:scale-[1.02]' : ''}
       ${active ? '' : ''}
       ${className}`}

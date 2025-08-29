@@ -92,12 +92,6 @@ function AppLayout() {
             <div className="flex items-center justify-between p-4 border-b bg-white/80 dark:bg-zinc-900/80 backdrop-blur-sm shadow-sm">
               <div className="flex items-center gap-3">
                 <SidebarTrigger />
-                <div className="flex items-center gap-2">
-                  <div className="w-6 h-6 bg-blue-100 dark:bg-blue-900 rounded flex items-center justify-center">
-                    <span className="text-blue-600 dark:text-blue-300 text-sm font-bold">A</span>
-                  </div>
-                  <h1 className="text-lg font-semibold text-card-foreground">Helpdesk Management System</h1>
-                </div>
               </div>
               
               {/* Header Right Section - Avatar and Mode Toggle */}

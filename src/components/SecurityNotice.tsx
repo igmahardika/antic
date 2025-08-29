@@ -7,7 +7,7 @@ interface SecurityNoticeProps {
 
 const SecurityNotice: React.FC<SecurityNoticeProps> = ({ feature, alternative }) => {
   return (
-    <div className="mb-4 p-4 border border-yellow-200 bg-yellow-50 dark:border-yellow-800 dark:bg-yellow-900/20 rounded-lg">
+    <div className="mb-4 p-4  bg-yellow-50 dark:border-yellow-800 dark:bg-yellow-900/20 rounded-lg">
       <div className="flex items-start">
         <div className="flex-shrink-0">
           <svg className="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">

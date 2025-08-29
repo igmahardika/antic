@@ -300,7 +300,7 @@ export function SidebarNav({ onCollapseChange }: {
   };
 
   // Modern sidebar style
-  const sidebarClass = `h-full bg-card text-card-foreground border border-border shadow-xl border-r border-gray-200 dark:border-zinc-800 flex flex-col top-0 left-0 transition-all duration-300 fixed z-40 md:static md:z-auto md:block`;
+  const sidebarClass = `h-full bg-card text-card-foreground  shadow-xl  flex flex-col top-0 left-0 transition-all duration-300 fixed z-40 md:static md:z-auto md:block`;
 
   // Fungsi render menu dan submenu
   const renderMenu = (menu: any, parent = false) => {

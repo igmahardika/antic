@@ -461,7 +461,7 @@ const KanbanBoard = () => {
         <Tooltip>
           <TooltipTrigger asChild>
       <div
-        className="bg-card text-card-foreground border border-border rounded-2xl shadow-lg p-6 flex flex-col min-h-[200px] transition-all duration-300 min-w-0 overflow-hidden cursor-pointer hover:shadow-xl hover:scale-[1.02]"
+        className="bg-card text-card-foreground  rounded-2xl shadow-lg p-6 flex flex-col min-h-[200px] transition-all duration-300 min-w-0 overflow-hidden cursor-pointer hover:shadow-xl hover:scale-[1.02]"
         onClick={() => setOpenDialogId(customer.id)}
       >
         <div className="flex items-center gap-4 mb-2">
@@ -1126,24 +1126,21 @@ const KanbanBoard = () => {
 
   return (
     <PageWrapper>
-      <div className="mb-6">
-        <h1 className="text-2xl md:text-3xl font-extrabold mb-2 text-card-foreground">Customer Analytics</h1>
-        <p className="text-gray-500 dark:text-gray-400">
-          Analyze customer ticket patterns and performance metrics.
-        </p>
-      </div>
+
       
-      <div className="flex justify-center mb-6">
-        <TimeFilter
-          startMonth={startMonth}
-          setStartMonth={setStartMonth}
-          endMonth={endMonth}
-          setEndMonth={setEndMonth}
-          selectedYear={selectedYear}
-          setSelectedYear={setSelectedYear}
-          monthOptions={monthOptions}
-          allYearsInData={allYearsInData}
-        />
+      <div className="flex justify-end mb-6">
+        <div className="scale-75 transform origin-right">
+          <TimeFilter
+            startMonth={startMonth}
+            setStartMonth={setStartMonth}
+            endMonth={endMonth}
+            setEndMonth={setEndMonth}
+            selectedYear={selectedYear}
+            setSelectedYear={setSelectedYear}
+            monthOptions={monthOptions}
+            allYearsInData={allYearsInData}
+          />
+        </div>
       </div>
       {/* Redesigned Summary Cards */}
       <div className="w-full mb-6">
@@ -1183,7 +1180,7 @@ const KanbanBoard = () => {
           );
         })}
           {/* Donut Chart Card */}
-          <div className="rounded-2xl shadow-lg bg-card text-card-foreground border border-border flex flex-col items-center justify-center p-4 min-h-[170px]">
+          <div className="rounded-2xl shadow-lg bg-card text-card-foreground  flex flex-col items-center justify-center p-4 min-h-[170px]">
             <DonutChartSummary data={finalSummary} />
           </div>
         </div>
@@ -1206,7 +1203,7 @@ const KanbanBoard = () => {
           return (
             <button
               key={key}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-sm shadow-sm border border-gray-200 dark:border-zinc-700 transition-all duration-200
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-sm shadow-sm  transition-all duration-200
                 ${color.badge} text-white
                 ${isActive ? 'ring-2 ring-blue-500 scale-105' : 'hover:brightness-110'}
               `}
@@ -1264,7 +1261,7 @@ const KanbanBoard = () => {
       <RadixDialog.Root open={!!openDialogId} onOpenChange={open => setOpenDialogId(open ? openDialogId : null)}>
         <RadixDialog.Portal>
           <RadixDialog.Overlay className="fixed inset-0 bg-black/50 z-50" />
-          <RadixDialog.Content className="fixed right-0 top-0 h-full w-[99vw] md:w-[90vw] max-w-6xl bg-card text-card-foreground border border-border border-l border-blue-100 dark:border-zinc-800 shadow-2xl z-50 overflow-y-auto transition-all duration-300">
+          <RadixDialog.Content className="fixed right-0 top-0 h-full w-[99vw] md:w-[90vw] max-w-6xl bg-card text-card-foreground   shadow-2xl z-50 overflow-y-auto transition-all duration-300">
             {selectedCustomer && (
               <>
                 {/* Accessibility: Hidden Title and Description */}
@@ -1293,7 +1290,7 @@ const KanbanBoard = () => {
                     </div>
                   </div>
                 {/* Automated Insight Box */}
-                <div className="bg-card text-card-foreground border border-border rounded-xl p-6 mb-6 shadow border border-blue-100 dark:border-zinc-800">
+                <div className="bg-card text-card-foreground  rounded-xl p-6 mb-6 shadow ">
                   <div className="text-lg font-bold mb-2 text-card-foreground">Automated Insight</div>
                   <div className="space-y-1">
                     <div><Badge variant="info" className="mr-2">Problem</Badge> <span className="text-gray-700 dark:text-gray-200">{generateInsight(selectedCustomer.allTickets).masalah}</span></div>
@@ -1305,7 +1302,7 @@ const KanbanBoard = () => {
                 </div>
                 {/* Mini Trend Chart (historis jumlah tiket bulanan) */}
                 <div className="px-10 pb-2">
-                  <div className="bg-card text-card-foreground border border-border border border-blue-100 dark:border-zinc-800 rounded-xl p-5 mb-6 shadow-sm">
+                  <div className="bg-card text-card-foreground   rounded-xl p-5 mb-6 shadow-sm">
                     <div className="text-base font-bold text-blue-900 dark:text-blue-300 mb-3">Ticket History</div>
                     {(() => {
                       // Ambil data historis bulanan untuk customer sesuai filter waktu
@@ -1336,7 +1333,7 @@ const KanbanBoard = () => {
                 </div>
                 {/* Historical Count */}
                 <div className="px-10 pb-2">
-                  <div className="bg-card text-card-foreground border border-border border border-blue-100 dark:border-zinc-800 rounded-xl p-5 mb-6">
+                  <div className="bg-card text-card-foreground   rounded-xl p-5 mb-6">
                     <div className="text-base font-bold text-blue-900 dark:text-blue-300 mb-3">Ticket History</div>
                       <HistoricalTicketCount customer={selectedCustomer} />
                     </div>
@@ -1344,7 +1341,7 @@ const KanbanBoard = () => {
                 {/* Ticket History */}
                 <div className="px-10 pb-2">
                   <div className="text-lg font-bold text-blue-800 dark:text-blue-300 mb-2">Ticket History</div>
-                  <div className="bg-card text-card-foreground border border-border rounded-xl p-5 shadow border border-blue-100 dark:border-zinc-800 text-base text-blue-900 dark:text-blue-300 min-w-[600px] w-full overflow-x-auto overflow-y-visible">
+                  <div className="bg-card text-card-foreground  rounded-xl p-5 shadow  text-base text-blue-900 dark:text-blue-300 min-w-[600px] w-full overflow-x-auto overflow-y-visible">
                       <TicketHistoryTable tickets={selectedCustomer.allTickets} />
                     </div>
                   </div>

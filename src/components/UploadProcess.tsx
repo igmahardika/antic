@@ -326,7 +326,7 @@ const UploadProcess = ({ onUploadComplete }: UploadProcessProps) => {
             />
           </div>
         ) : (
-          <Card className="w-full max-w-6xl mx-auto shadow-md border border-gray-200 dark:border-zinc-700 bg-card text-card-foreground border border-border p-10 mb-8 backdrop-blur-sm flex items-center justify-center min-h-[180px]">
+          <Card className="w-full max-w-6xl mx-auto shadow-md  bg-card text-card-foreground  p-10 mb-8 backdrop-blur-sm flex items-center justify-center min-h-[180px]">
             <CardHeader>
               <CardTitle className="text-gray-700 dark:text-gray-300 text-base font-bold">No Data Uploaded</CardTitle>
             </CardHeader>
@@ -339,7 +339,7 @@ const UploadProcess = ({ onUploadComplete }: UploadProcessProps) => {
         )}
         {/* Jika jumlah successCount dan ticketsInDb berbeda, tampilkan warning */}
         {uploadSummary && ticketsInDb !== undefined && uploadSummary.successCount !== ticketsInDb && (
-          <div className="p-4 mb-4 rounded bg-yellow-100 text-yellow-800 border border-yellow-300">
+          <div className="p-4 mb-4 rounded bg-yellow-100 text-yellow-800 ">
             <b>Warning:</b> Jumlah tiket yang berhasil di-upload ({uploadSummary.successCount}) berbeda dengan jumlah tiket di GridView ({ticketsInDb}).
             <br />Pastikan database sudah di-reset sebelum upload baru, atau cek apakah ada filter aktif di GridView.
           </div>
@@ -408,7 +408,7 @@ const ErrorLogTable = ({ errors }: { errors: IErrorLog[] }) => {
   }, {} as Record<string, IErrorLog[]>);
 
   return (
-    <Card className="w-full max-w-6xl mx-auto shadow-md border border-gray-200 dark:border-zinc-700 bg-card text-card-foreground border border-border p-10 mb-8 min-h-[180px] backdrop-blur-sm">
+    <Card className="w-full max-w-6xl mx-auto shadow-md  bg-card text-card-foreground  p-10 mb-8 min-h-[180px] backdrop-blur-sm">
       <CardHeader className="pb-2">
         <CardTitle className="text-lg font-bold text-card-foreground text-left">Failure Log Details</CardTitle>
         <CardDescription className="text-base text-zinc-500 dark:text-zinc-400 text-left">Grouped by error type.</CardDescription>
@@ -420,7 +420,7 @@ const ErrorLogTable = ({ errors }: { errors: IErrorLog[] }) => {
               <AccordionTrigger className="text-left hover:no-underline">
                 <div className="flex justify-between w-full pr-4 items-center">
                   <span className="font-semibold text-sm break-words whitespace-normal text-left">{reason}</span>
-                  <span><Badge variant="danger" className="flex-shrink-0 text-xs px-2 py-1 bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-200 border border-rose-200 dark:border-rose-800">{errs.length} rows</Badge></span>
+                  <span><Badge variant="danger" className="flex-shrink-0 text-xs px-2 py-1 bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-200  dark:border-rose-800">{errs.length} rows</Badge></span>
                 </div>
               </AccordionTrigger>
               <AccordionContent>

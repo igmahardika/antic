@@ -416,12 +416,6 @@ export const IncidentData: React.FC = () => {
       <div className="space-y-6">
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-bold text-card-foreground">Incident Data</h1>
-            <p className="text-muted-foreground mt-2">
-              Manage and view incident data with filtering and search capabilities
-            </p>
-          </div>
           <div className="flex gap-2">
             <Button onClick={() => setShowUpload(!showUpload)} variant="outline">
               <Upload className="w-4 h-4 mr-2" />
@@ -583,7 +577,7 @@ export const IncidentData: React.FC = () => {
       {/* Reset Confirmation Modal */}
       {showResetConfirm && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-card text-card-foreground border border-border rounded-lg p-6 max-w-md w-full mx-4">
+          <div className="bg-card text-card-foreground  rounded-lg p-6 max-w-md w-full mx-4">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-10 h-10 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center">
                 <Trash2 className="w-5 h-5 text-red-600 dark:text-red-400" />
@@ -625,7 +619,7 @@ export const IncidentData: React.FC = () => {
       {/* Cleanup Duplicates Confirmation Modal */}
       {showCleanupConfirm && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-card text-card-foreground border border-border rounded-lg p-6 max-w-md w-full mx-4">
+          <div className="bg-card text-card-foreground  rounded-lg p-6 max-w-md w-full mx-4">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-10 h-10 bg-yellow-100 dark:bg-yellow-900/30 rounded-full flex items-center justify-center">
                 <AlertTriangle className="w-5 h-5 text-yellow-600 dark:text-yellow-400" />
@@ -688,7 +682,7 @@ export const IncidentData: React.FC = () => {
             <select 
               value={selectedMonth} 
               onChange={(e) => handleMonthChange(e.target.value)}
-              className="px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm h-9"
+              className="px-3 py-1.5  rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm h-9"
             >
               <option value="">All Months</option>
               {availableMonths.map(monthKey => (
@@ -701,7 +695,7 @@ export const IncidentData: React.FC = () => {
             <select 
               value={filter.ncal || ''} 
               onChange={(e) => handleFilterChange('ncal', e.target.value || undefined)}
-              className="px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm h-9"
+              className="px-3 py-1.5  rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm h-9"
             >
               <option value="">All NCAL</option>
               <option value="Blue">Blue</option>
@@ -714,7 +708,7 @@ export const IncidentData: React.FC = () => {
             <select 
               value={filter.priority || ''} 
               onChange={(e) => handleFilterChange('priority', e.target.value || undefined)}
-              className="px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm h-9"
+              className="px-3 py-1.5  rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm h-9"
             >
               <option value="">All Priority</option>
               {uniquePriorities.map(priority => (
@@ -735,7 +729,7 @@ export const IncidentData: React.FC = () => {
           
           {/* Active Filters Display */}
           {(filter.search || selectedMonth || filter.ncal || filter.priority) && (
-            <div className="mt-3 pt-3 border-t border-border">
+            <div className="mt-3 pt-3 border-t ">
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="text-xs text-gray-500 dark:text-gray-400">Active filters:</span>
                 {filter.search && (
@@ -803,7 +797,7 @@ export const IncidentData: React.FC = () => {
       {/* Reset Confirmation Modal */}
       {showResetConfirm && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-card text-card-foreground border border-border rounded-lg p-6 max-w-md w-full mx-4">
+          <div className="bg-card text-card-foreground  rounded-lg p-6 max-w-md w-full mx-4">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-10 h-10 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center">
                 <Trash2 className="w-5 h-5 text-red-600 dark:text-red-400" />

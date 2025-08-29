@@ -10,6 +10,11 @@ import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 import StorageIcon from '@mui/icons-material/Storage';
 import LightbulbIcon from '@mui/icons-material/Lightbulb';
 import DashboardIcon from '@mui/icons-material/Dashboard';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import FileDownloadIcon from '@mui/icons-material/FileDownload';
+import TrendingUpIcon from '@mui/icons-material/TrendingUp';
+import BalanceIcon from '@mui/icons-material/Balance';
+import SecurityIcon from '@mui/icons-material/Security';
 
 
 export default function AdminRumus() {
@@ -35,7 +40,7 @@ export default function AdminRumus() {
       >
           <div className="space-y-8">
             {/* Latest Major Update */}
-            <div className="bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-900/20 dark:to-blue-900/20 rounded-xl p-6 border border-green-200 dark:border-green-800">
+            <div className="bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-900/20 dark:to-blue-900/20 rounded-xl p-6 ring-1 ring-green-200 dark:ring-green-800">
               <div className="flex items-center gap-3 mb-4">
                 <Badge className="bg-green-600 text-white px-3 py-1">Latest</Badge>
                 <span className="text-sm font-medium text-green-700 dark:text-green-300">v2.1.0 - Major Improvements</span>
@@ -51,12 +56,12 @@ export default function AdminRumus() {
                     UI/UX Enhancements
                   </h5>
                   <ul className="space-y-2 text-sm text-muted-foreground">
-                    <li>✅ <strong>Sidebar Navigation:</strong> Added shadcn-ui sidebar with collapsible menus</li>
-                    <li>✅ <strong>Dark Mode:</strong> Comprehensive dark mode with smooth transitions</li>
-                    <li>✅ <strong>Layout Consistency:</strong> PageWrapper component for uniform layout</li>
-                    <li>✅ <strong>Header Enhancement:</strong> Moved avatar & mode toggle to header</li>
-                    <li>✅ <strong>Progress Bars:</strong> Standardized all progress bars to shadcn Progress</li>
-                    <li>✅ <strong>Responsive Design:</strong> Improved mobile and tablet experience</li>
+                    <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Sidebar Navigation:</strong> Added shadcn-ui sidebar with collapsible menus</li>
+                    <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Dark Mode:</strong> Comprehensive dark mode with smooth transitions</li>
+                    <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Layout Consistency:</strong> PageWrapper component for uniform layout</li>
+                    <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Header Enhancement:</strong> Moved avatar & mode toggle to header</li>
+                    <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Progress Bars:</strong> Standardized all progress bars to shadcn Progress</li>
+                    <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Responsive Design:</strong> Improved mobile and tablet experience</li>
                 </ul>
               </div>
           
@@ -67,12 +72,12 @@ export default function AdminRumus() {
                     Performance & Optimization
                   </h5>
                   <ul className="space-y-2 text-sm text-muted-foreground">
-                    <li>✅ <strong>Bundle Size:</strong> Removed 20+ unused dependencies</li>
-                    <li>✅ <strong>Build Time:</strong> Faster compilation and build process</li>
-                    <li>✅ <strong>Memory Usage:</strong> Optimized component re-rendering</li>
-                    <li>✅ <strong>Charts Performance:</strong> Enhanced Recharts animations</li>
-                    <li>✅ <strong>Tree Shaking:</strong> Better dependency optimization</li>
-                    <li>✅ <strong>Loading Speed:</strong> Improved initial page load time</li>
+                    <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Bundle Size:</strong> Removed 20+ unused dependencies</li>
+                    <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Build Time:</strong> Faster compilation and build process</li>
+                    <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Memory Usage:</strong> Optimized component re-rendering</li>
+                    <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Charts Performance:</strong> Enhanced Recharts animations</li>
+                    <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Tree Shaking:</strong> Better dependency optimization</li>
+                    <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Loading Speed:</strong> Improved initial page load time</li>
                 </ul>
                 </div>
               </div>
@@ -124,12 +129,12 @@ export default function AdminRumus() {
                     UI/UX Enhancements
                   </h5>
                   <ul className="space-y-2 text-sm text-muted-foreground">
-                    <li>✅ <strong>Sidebar Navigation:</strong> Added shadcn-ui sidebar with collapsible menus</li>
-                    <li>✅ <strong>Dark Mode:</strong> Comprehensive dark mode with smooth transitions</li>
-                    <li>✅ <strong>Layout Consistency:</strong> PageWrapper component for uniform layout</li>
-                    <li>✅ <strong>Header Enhancement:</strong> Moved avatar & mode toggle to header</li>
-                    <li>✅ <strong>Progress Bars:</strong> Standardized all progress bars to shadcn Progress</li>
-                    <li>✅ <strong>Responsive Design:</strong> Improved mobile and tablet experience</li>
+                    <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Sidebar Navigation:</strong> Added shadcn-ui sidebar with collapsible menus</li>
+                    <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Dark Mode:</strong> Comprehensive dark mode with smooth transitions</li>
+                    <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Layout Consistency:</strong> PageWrapper component for uniform layout</li>
+                    <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Header Enhancement:</strong> Moved avatar & mode toggle to header</li>
+                    <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Progress Bars:</strong> Standardized all progress bars to shadcn Progress</li>
+                    <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Responsive Design:</strong> Improved mobile and tablet experience</li>
                   </ul>
           </div>
 
@@ -140,12 +145,12 @@ export default function AdminRumus() {
                     Performance & Optimization
                   </h5>
                   <ul className="space-y-2 text-sm text-muted-foreground">
-                    <li>✅ <strong>Bundle Size:</strong> Removed 20+ unused dependencies</li>
-                    <li>✅ <strong>Build Time:</strong> Faster compilation and build process</li>
-                    <li>✅ <strong>Memory Usage:</strong> Optimized component re-rendering</li>
-                    <li>✅ <strong>Charts Performance:</strong> Enhanced Recharts animations</li>
-                    <li>✅ <strong>Tree Shaking:</strong> Better dependency optimization</li>
-                    <li>✅ <strong>Loading Speed:</strong> Improved initial page load time</li>
+                    <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Bundle Size:</strong> Removed 20+ unused dependencies</li>
+                    <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Build Time:</strong> Faster compilation and build process</li>
+                    <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Memory Usage:</strong> Optimized component re-rendering</li>
+                    <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Charts Performance:</strong> Enhanced Recharts animations</li>
+                    <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Tree Shaking:</strong> Better dependency optimization</li>
+                    <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Loading Speed:</strong> Improved initial page load time</li>
                   </ul>
                 </div>
               </div>
@@ -161,12 +166,12 @@ export default function AdminRumus() {
                     Code Quality & Maintenance
                   </h5>
                   <ul className="space-y-2 text-sm text-muted-foreground">
-                    <li>✅ <strong>TypeScript:</strong> Fixed all TypeScript errors and unused imports</li>
-                    <li>✅ <strong>ESLint:</strong> Clean linting with no warnings</li>
-                    <li>✅ <strong>Code Organization:</strong> Better file structure and imports</li>
-                    <li>✅ <strong>Component Reusability:</strong> Standardized component patterns</li>
-                    <li>✅ <strong>Documentation:</strong> Enhanced code comments and documentation</li>
-                    <li>✅ <strong>Git History:</strong> Clean commit history with descriptive messages</li>
+                    <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>TypeScript:</strong> Fixed all TypeScript errors and unused imports</li>
+                    <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>ESLint:</strong> Clean linting with no warnings</li>
+                    <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Code Organization:</strong> Better file structure and imports</li>
+                    <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Component Reusability:</strong> Standardized component patterns</li>
+                    <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Documentation:</strong> Enhanced code comments and documentation</li>
+                    <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Git History:</strong> Clean commit history with descriptive messages</li>
                   </ul>
                 </div>
 
@@ -177,12 +182,12 @@ export default function AdminRumus() {
                     Bug Fixes & Improvements
                   </h5>
                   <ul className="space-y-2 text-sm text-muted-foreground">
-                    <li>✅ <strong>Dark Mode:</strong> Fixed color inconsistencies across all pages</li>
-                    <li>✅ <strong>Layout Issues:</strong> Resolved table overflow and boundary problems</li>
-                    <li>✅ <strong>Theme Transitions:</strong> Smooth theme switching without flickering</li>
-                    <li>✅ <strong>Component Errors:</strong> Fixed unused imports and variables</li>
-                    <li>✅ <strong>Accessibility:</strong> Improved screen reader and keyboard navigation</li>
-                    <li>✅ <strong>Mobile Responsiveness:</strong> Fixed layout issues on mobile devices</li>
+                    <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Dark Mode:</strong> Fixed color inconsistencies across all pages</li>
+                    <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Layout Issues:</strong> Resolved table overflow and boundary problems</li>
+                    <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Theme Transitions:</strong> Smooth theme switching without flickering</li>
+                    <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Component Errors:</strong> Fixed unused imports and variables</li>
+                    <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Accessibility:</strong> Improved screen reader and keyboard navigation</li>
+                    <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Mobile Responsiveness:</strong> Fixed layout issues on mobile devices</li>
                   </ul>
                   </div>
                 </div>
@@ -391,7 +396,7 @@ export default function AdminRumus() {
           <div className="space-y-6">
                     <div>
                   <h6 className="font-semibold text-card-foreground mb-3">Flow Pemrosesan Upload Data</h6>
-                <div className="bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg p-4">
+                <div className="bg-orange-50 dark:bg-orange-900/20 ring-1 ring-orange-200 dark:ring-orange-800 rounded-lg p-4">
                 <div className="space-y-3 text-sm">
                   <div className="flex items-start gap-2">
                       <span className="font-semibold text-orange-800 dark:text-orange-200">1.</span>
@@ -435,7 +440,7 @@ export default function AdminRumus() {
 
           <div>
                   <h6 className="font-semibold text-card-foreground mb-3">Error Handling & Recovery</h6>
-                  <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
+                  <div className="bg-red-50 dark:bg-red-900/20 ring-1 ring-red-200 dark:ring-red-800 rounded-lg p-4">
                 <div className="space-y-3 text-sm">
                   <div className="flex items-start gap-2">
                         <span className="font-semibold text-red-800 dark:text-red-200">•</span>
@@ -576,7 +581,7 @@ export default function AdminRumus() {
               {/* Dashboard Metrics */}
               <div className="space-y-4">
                 <h5 className="font-semibold text-card-foreground text-lg">Dashboard Page - Key Performance Indicators</h5>
-                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-6">
+                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 ring-1 ring-blue-200 dark:ring-blue-800 rounded-lg p-6">
                   <div className="space-y-4 text-sm">
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div>
@@ -670,7 +675,7 @@ export default function AdminRumus() {
               {/* Ticket Analytics Metrics */}
             <div className="space-y-4">
                 <h5 className="font-semibold text-card-foreground text-lg">Ticket Analytics Page - Advanced Metrics</h5>
-                <div className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border border-green-200 dark:border-green-800 rounded-lg p-6">
+                <div className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 ring-1 ring-green-200 dark:ring-green-800 rounded-lg p-6">
                   <div className="space-y-4 text-sm">
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                       <div>
@@ -741,7 +746,7 @@ export default function AdminRumus() {
               {/* Customer Analytics Metrics */}
               <div className="space-y-4">
                 <h5 className="font-semibold text-card-foreground text-lg">Customer Analytics Page - Customer Metrics</h5>
-                <div className="bg-gradient-to-r from-purple-50 to-violet-50 dark:from-purple-900/20 dark:to-violet-900/20 border border-purple-200 dark:border-purple-800 rounded-lg p-6">
+                <div className="bg-gradient-to-r from-purple-50 to-violet-50 dark:from-purple-900/20 dark:to-violet-900/20 ring-1 ring-purple-200 dark:ring-purple-800 rounded-lg p-6">
                   <div className="space-y-4 text-sm">
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <div>
@@ -820,7 +825,7 @@ export default function AdminRumus() {
               {/* Agent Analytics Metrics */}
             <div className="space-y-4">
                 <h5 className="font-semibold text-card-foreground text-lg">Agent Analytics Page - Performance Metrics</h5>
-                <div className="bg-gradient-to-r from-teal-50 to-cyan-50 dark:from-teal-900/20 dark:to-cyan-900/20 border border-teal-200 dark:border-teal-800 rounded-lg p-6">
+                <div className="bg-gradient-to-r from-teal-50 to-cyan-50 dark:from-teal-900/20 dark:to-cyan-900/20 ring-1 ring-teal-200 dark:ring-teal-800 rounded-lg p-6">
                   <div className="space-y-4 text-sm">
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                       <div>
@@ -899,7 +904,7 @@ export default function AdminRumus() {
               {/* Incident Analytics Metrics */}
             <div className="space-y-4">
                 <h5 className="font-semibold text-card-foreground text-lg">Incident Analytics Page - Incident Metrics</h5>
-                <div className="bg-gradient-to-r from-red-50 to-pink-50 dark:from-red-900/20 dark:to-pink-900/20 border border-red-200 dark:border-red-800 rounded-lg p-6">
+                <div className="bg-gradient-to-r from-red-50 to-pink-50 dark:from-red-900/20 dark:to-pink-900/20 ring-1 ring-red-200 dark:ring-red-800 rounded-lg p-6">
                   <div className="space-y-4 text-sm">
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div>
@@ -973,7 +978,7 @@ export default function AdminRumus() {
             {/* 1. Dashboard Page - Advanced Analysis */}
             <div className="space-y-4">
                               <h5 className="font-semibold text-card-foreground text-lg">Dashboard Page - Advanced Analysis</h5>
-              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-6">
+              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 ring-1 ring-blue-200 dark:ring-blue-800 rounded-lg p-6">
                 <div className="space-y-4 text-sm">
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <div>
@@ -1019,7 +1024,7 @@ export default function AdminRumus() {
                         {/* 2. Ticket Data Page - Advanced Search & Analytics */}
               <div className="space-y-4">
               <h5 className="font-semibold text-card-foreground text-lg">Ticket Data Page - Advanced Processing</h5>
-              <div className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border border-green-200 dark:border-green-800 rounded-lg p-6">
+              <div className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 ring-1 ring-green-200 dark:ring-green-800 rounded-lg p-6">
                 <div className="space-y-4 text-sm">
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <div>
@@ -1056,7 +1061,7 @@ export default function AdminRumus() {
                     </div>
                   
                   <div>
-                    <h6 className="font-semibold text-green-800 dark:text-green-200 mb-3">📤 Export Processing Pipeline</h6>
+                    <h6 className="font-semibold text-green-800 dark:text-green-200 mb-3"><FileDownloadIcon className="w-5 h-5 inline mr-2" /> Export Processing Pipeline</h6>
                     <div className="bg-gray-50 dark:bg-gray-800 rounded p-3 text-xs">
                       <div><strong>Excel Export Flow:</strong></div>
                       <div className="ml-2">
@@ -1078,7 +1083,7 @@ export default function AdminRumus() {
                         {/* 3. Customer Analytics Page - Advanced ML & Segmentation */}
             <div className="space-y-4">
                               <h5 className="font-semibold text-card-foreground text-lg">Customer Analytics Page - Advanced ML</h5>
-              <div className="bg-gradient-to-r from-purple-50 to-violet-50 dark:from-purple-900/20 dark:to-violet-900/20 border border-purple-200 dark:border-purple-800 rounded-lg p-6">
+              <div className="bg-gradient-to-r from-purple-50 to-violet-50 dark:from-purple-900/20 dark:to-violet-900/20 ring-1 ring-purple-200 dark:ring-purple-800 rounded-lg p-6">
                 <div className="space-y-4 text-sm">
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <div>
@@ -1150,11 +1155,11 @@ export default function AdminRumus() {
                         {/* 4. Ticket Analytics Page - Advanced Forecasting & Prediction */}
               <div className="space-y-4">
                               <h5 className="font-semibold text-card-foreground text-lg">Ticket Analytics Page - Advanced Forecasting</h5>
-              <div className="bg-gradient-to-r from-orange-50 to-amber-50 dark:from-orange-900/20 dark:to-amber-900/20 border border-orange-200 dark:border-orange-800 rounded-lg p-6">
+              <div className="bg-gradient-to-r from-orange-50 to-amber-50 dark:from-orange-900/20 dark:to-amber-900/20 ring-1 ring-orange-200 dark:ring-orange-800 rounded-lg p-6">
                 <div className="space-y-4 text-sm">
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <div>
-                      <h6 className="font-semibold text-orange-800 dark:text-orange-200 mb-3">🔮 ARIMA Forecasting Model</h6>
+                      <h6 className="font-semibold text-orange-800 dark:text-orange-200 mb-3"><TrendingUpIcon className="w-5 h-5 inline mr-2" /> ARIMA Forecasting Model</h6>
                       <div className="bg-white dark:bg-gray-800 rounded p-3 text-xs">
                         <div><strong>ARIMA(p,d,q) Parameters:</strong></div>
                         <div className="ml-2">
@@ -1223,7 +1228,7 @@ export default function AdminRumus() {
                         {/* 5. Agent Analytics Page - Advanced Performance Analysis */}
             <div className="space-y-4">
                               <h5 className="font-semibold text-card-foreground text-lg">Agent Analytics Page - Advanced Performance</h5>
-              <div className="bg-gradient-to-r from-teal-50 to-cyan-50 dark:from-teal-900/20 dark:to-cyan-900/20 border border-teal-200 dark:border-teal-800 rounded-lg p-6">
+              <div className="bg-gradient-to-r from-teal-50 to-cyan-50 dark:from-teal-900/20 dark:to-cyan-900/20 ring-1 ring-teal-200 dark:ring-teal-800 rounded-lg p-6">
                 <div className="space-y-4 text-sm">
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <div>
@@ -1268,7 +1273,7 @@ export default function AdminRumus() {
         </div>
                   
           <div>
-                    <h6 className="font-semibold text-teal-800 dark:text-teal-200 mb-3">⚖️ Workload Balancing Algorithm</h6>
+                    <h6 className="font-semibold text-teal-800 dark:text-teal-200 mb-3"><BalanceIcon className="w-5 h-5 inline mr-2" /> Workload Balancing Algorithm</h6>
                     <div className="bg-gray-50 dark:bg-gray-800 rounded p-3 text-xs">
                       <div><strong>Round-Robin with Priority:</strong></div>
                       <div className="ml-2">
@@ -1297,7 +1302,7 @@ export default function AdminRumus() {
                         {/* 6. Incident Data Page - Advanced Management & Root Cause Analysis */}
                     <div className="space-y-4">
                               <h5 className="font-semibold text-card-foreground text-lg">Incident Data Page - Advanced Management</h5>
-              <div className="bg-gradient-to-r from-red-50 to-pink-50 dark:from-red-900/20 dark:to-pink-900/20 border border-red-200 dark:border-red-800 rounded-lg p-6">
+              <div className="bg-gradient-to-r from-red-50 to-pink-50 dark:from-red-900/20 dark:to-pink-900/20 ring-1 ring-red-200 dark:ring-red-800 rounded-lg p-6">
                 <div className="space-y-4 text-sm">
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <div>
@@ -1361,7 +1366,7 @@ export default function AdminRumus() {
             {/* 7. Incident Analytics Page - Advanced Pattern Recognition */}
               <div className="space-y-4">
                               <h5 className="font-semibold text-card-foreground text-lg">Incident Analytics Page - Advanced Patterns</h5>
-              <div className="bg-gradient-to-r from-pink-50 to-rose-50 dark:from-pink-900/20 dark:to-rose-900/20 border border-pink-200 dark:border-pink-800 rounded-lg p-6">
+              <div className="bg-gradient-to-r from-pink-50 to-rose-50 dark:from-pink-900/20 dark:to-rose-900/20 ring-1 ring-pink-200 dark:ring-pink-800 rounded-lg p-6">
                 <div className="space-y-4 text-sm">
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <div>
@@ -1430,7 +1435,7 @@ export default function AdminRumus() {
                         {/* 8. Technical Support Analytics Page - Advanced ML & Knowledge Management */}
                     <div className="space-y-4">
                               <h5 className="font-semibold text-card-foreground text-lg">Technical Support Analytics Page - Advanced ML</h5>
-              <div className="bg-gradient-to-r from-indigo-50 to-blue-50 dark:from-indigo-900/20 dark:to-blue-900/20 border border-indigo-200 dark:border-indigo-800 rounded-lg p-6">
+              <div className="bg-gradient-to-r from-indigo-50 to-blue-50 dark:from-indigo-900/20 dark:to-blue-900/20 ring-1 ring-indigo-200 dark:ring-indigo-800 rounded-lg p-6">
                 <div className="space-y-4 text-sm">
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <div>
@@ -1499,7 +1504,7 @@ export default function AdminRumus() {
                         {/* 9. Site Analytics Page - Advanced Web Performance & User Behavior */}
             <div className="space-y-4">
               <h5 className="font-semibold text-card-foreground text-lg">Site Analytics Page - Advanced Monitoring</h5>
-              <div className="bg-gradient-to-r from-cyan-50 to-sky-50 dark:from-cyan-900/20 dark:to-sky-900/20 border border-cyan-200 dark:border-cyan-800 rounded-lg p-6">
+              <div className="bg-gradient-to-r from-cyan-50 to-sky-50 dark:from-cyan-900/20 dark:to-sky-900/20 ring-1 ring-cyan-200 dark:ring-cyan-800 rounded-lg p-6">
                 <div className="space-y-4 text-sm">
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <div>
@@ -1573,8 +1578,8 @@ export default function AdminRumus() {
             
             {/* 10. Master Data Pages - Advanced Data Governance & Quality Management */}
           <div className="space-y-4">
-              <h5 className="font-semibold text-card-foreground text-lg">🗄️ Master Data Pages - Advanced Management</h5>
-              <div className="bg-gradient-to-r from-gray-50 to-slate-50 dark:from-gray-800 dark:to-slate-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6">
+                              <h5 className="font-semibold text-card-foreground text-lg"><StorageIcon className="w-6 h-6 inline mr-2" /> Master Data Pages - Advanced Management</h5>
+              <div className="bg-gradient-to-r from-gray-50 to-slate-50 dark:from-gray-800 dark:to-slate-800 ring-1 ring-gray-200 dark:ring-gray-700 rounded-lg p-6">
                 <div className="space-y-4 text-sm">
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <div>
@@ -1613,7 +1618,7 @@ export default function AdminRumus() {
               </div>
 
                   <div>
-                    <h6 className="font-semibold text-gray-800 dark:text-gray-200 mb-3">🛡️ Data Governance Framework</h6>
+                    <h6 className="font-semibold text-gray-800 dark:text-gray-200 mb-3"><SecurityIcon className="w-5 h-5 inline mr-2" /> Data Governance Framework</h6>
                     <div className="bg-gray-50 dark:bg-gray-800 rounded p-3 text-xs">
                       <div><strong>Access Control Matrix:</strong></div>
                       <div className="ml-2">

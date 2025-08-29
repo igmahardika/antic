@@ -1,6 +1,7 @@
 import React, { useRef } from 'react';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import { userAPI, menuPermissionAPI, User, MenuPermission } from '../lib/api';
 import MigrationPanel from '../components/MigrationPanel';
 import PageWrapper from '../components/PageWrapper';
@@ -200,11 +201,10 @@ const AdminPanel: React.FC = () => {
 
   return (
     <PageWrapper>
-      <h1 className="text-2xl md:text-3xl font-extrabold mb-4 text-card-foreground">Admin Panel</h1>
       
       {/* Error Display */}
       {error && (
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+        <div className="bg-red-100  text-red-700 px-4 py-3 rounded mb-4">
           <div className="flex justify-between items-center">
             <span>{error}</span>
             <button 
@@ -244,7 +244,7 @@ const AdminPanel: React.FC = () => {
                   placeholder="Enter username"
                   value={username}
                   onChange={e => setUsername(e.target.value)}
-                  className="w-full rounded-lg bg-gray-50 dark:bg-zinc-700 border border-gray-300 dark:border-zinc-600 px-4 py-2 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+                  className="w-full rounded-lg bg-gray-50 dark:bg-zinc-700  px-4 py-2 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
                   required
                 />
                 <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
@@ -260,7 +260,7 @@ const AdminPanel: React.FC = () => {
                     placeholder="Enter password"
                     value={password}
                     onChange={e => setPassword(e.target.value)}
-                    className="w-full rounded-lg bg-gray-50 dark:bg-zinc-700 border border-gray-300 dark:border-zinc-600 px-4 py-2 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition pr-10"
+                    className="w-full rounded-lg bg-gray-50 dark:bg-zinc-700  px-4 py-2 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition pr-10"
                     required
                   />
                   <button type="button" onClick={() => setShowPassword(v => !v)} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-300 focus:outline-none">
@@ -277,7 +277,7 @@ const AdminPanel: React.FC = () => {
                   id="role"
                   value={role}
                   onChange={e => setRole(e.target.value as Role)}
-                  className="w-full rounded-lg bg-gray-50 dark:bg-zinc-700 border border-gray-300 dark:border-zinc-600 px-4 py-2 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+                  className="w-full rounded-lg bg-gray-50 dark:bg-zinc-700  px-4 py-2 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
                   required
                 >
                   {allRoles.map(r => <option key={r} value={r}>{r}</option>)}
@@ -291,7 +291,7 @@ const AdminPanel: React.FC = () => {
                 Add User
               </button>
               {error && <div className="text-red-500 text-center font-semibold text-sm mt-2">{error}</div>}
-              {success && <div className="text-green-500 text-center font-semibold text-sm mt-2">✓ User added successfully!</div>}
+              {success && <div className="text-green-500 text-center font-semibold text-sm mt-2"><CheckCircleIcon className="w-4 h-4 inline mr-1" /> User added successfully!</div>}
             </form>
           </div>
         </div>
@@ -306,7 +306,7 @@ const AdminPanel: React.FC = () => {
                 id="role-select"
                 value={selectedRoleForEditing}
                 onChange={e => setSelectedRoleForEditing(e.target.value as Role)}
-                className="w-full sm:w-auto rounded-lg bg-gray-50 dark:bg-zinc-700 border border-gray-300 dark:border-zinc-600 px-4 py-2 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+                className="w-full sm:w-auto rounded-lg bg-gray-50 dark:bg-zinc-700  px-4 py-2 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
               >
                 {allRoles.map(r => <option key={r} value={r}>{r}</option>)}
               </select>
@@ -384,7 +384,7 @@ const AdminPanel: React.FC = () => {
               {/* Ticket Management */}
               <div>
                 <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 border-b border-gray-200 dark:border-gray-600 pb-1">
-                  🎫 Ticket Management
+                  Ticket Management
                 </h4>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                   {allMenus.slice(1, 5).map(menu => (
@@ -592,7 +592,7 @@ const AdminPanel: React.FC = () => {
                   type="text"
                   value={editUsername}
                   onChange={e => setEditUsername(e.target.value)}
-                  className="w-full rounded-lg bg-gray-50 dark:bg-zinc-700 border border-gray-300 dark:border-zinc-600 px-4 py-2 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+                  className="w-full rounded-lg bg-gray-50 dark:bg-zinc-700  px-4 py-2 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
                   required
                 />
               </div>
@@ -605,7 +605,7 @@ const AdminPanel: React.FC = () => {
                     value={editPassword}
                     onChange={e => setEditPassword(e.target.value)}
                     placeholder="Leave blank to keep current password"
-                    className="w-full rounded-lg bg-gray-50 dark:bg-zinc-700 border border-gray-300 dark:border-zinc-600 px-4 py-2 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition pr-10"
+                    className="w-full rounded-lg bg-gray-50 dark:bg-zinc-700  px-4 py-2 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition pr-10"
                   />
                   <button type="button" onClick={() => setShowEditPassword(v => !v)} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-300 focus:outline-none">
                     {showEditPassword ? <VisibilityOffIcon /> : <VisibilityIcon />}
@@ -618,7 +618,7 @@ const AdminPanel: React.FC = () => {
                   id="edit-role"
                   value={editRole}
                   onChange={e => setEditRole(e.target.value as Role)}
-                  className="w-full rounded-lg bg-gray-50 dark:bg-zinc-700 border border-gray-300 dark:border-zinc-600 px-4 py-2 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+                  className="w-full rounded-lg bg-gray-50 dark:bg-zinc-700  px-4 py-2 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
                   required
                 >
                   {allRoles.map(r => <option key={r} value={r}>{r}</option>)}

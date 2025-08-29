@@ -186,7 +186,8 @@ export default function AppSidebar() {
   };
 
   return (
-    <Sidebar>
+    // Menambahkan properti collapsible="icon" agar sidebar menyusut menjadi ikon
+    <Sidebar collapsible="icon">
       <SidebarHeader>
         <div className="flex flex-col items-center justify-center pt-5 pb-3 gap-2">
           <img

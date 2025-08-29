@@ -91,7 +91,7 @@ const monthNamesIndo = [
 //   allYearsInData: string[];
 //   onRefresh: () => void;
 // }> = ({ startMonth, setStartMonth, endMonth, setEndMonth, selectedYear, setSelectedYear, monthOptions, allYearsInData, onRefresh }) => (
-//   <div className="flex flex-wrap items-center gap-3 p-4 bg-white/80 dark:bg-zinc-900/80 rounded-2xl shadow-lg border border-gray-200 dark:border-zinc-800 mb-6">
+//   <div className="flex flex-wrap items-center gap-3 p-4 bg-white/80 dark:bg-zinc-900/80 rounded-2xl shadow-lg ring-1 ring-gray-200 dark:ring-zinc-800 mb-6">
 //     <Calendar className="h-5 w-5 text-blue-500 mr-2" />
 //     <span className="text-sm font-semibold text-gray-700 dark:text-gray-200 mr-2">Time Filter:</span>
 //     <Button size="sm" className="ml-3 h-9 px-5 rounded-lg bg-blue-500 hover:bg-blue-600 text-white font-bold shadow transition-all" onClick={onRefresh} variant="secondary">Refresh</Button>

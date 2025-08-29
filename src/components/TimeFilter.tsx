@@ -46,14 +46,14 @@ function useDebouncedCallback(callback, delay = 300) {
 function RadixSelect({ value, onValueChange, options, placeholder }: { value: string | null, onValueChange: (v: string) => void, options: { value: string, label: string }[], placeholder: string }) {
   return (
     <Select.Root value={value ?? ''} onValueChange={onValueChange}>
-      <Select.Trigger className="text-xs h-8 px-4 border border-border rounded-lg bg-background text-foreground shadow-sm focus:ring-2 focus:ring-blue-400 min-w-[100px] transition-all flex items-center justify-between">
+      <Select.Trigger className="text-xs h-8 px-4  rounded-lg bg-background text-foreground shadow-sm focus:ring-2 focus:ring-blue-400 min-w-[100px] transition-all flex items-center justify-between">
         <Select.Value placeholder={placeholder} />
         <Select.Icon className="ml-2">
           <svg width="16" height="16" fill="none" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
         </Select.Icon>
       </Select.Trigger>
       <Select.Portal>
-        <Select.Content className="z-50 mt-1 w-32 bg-background border border-border rounded-lg shadow-lg max-h-60 overflow-auto text-xs">
+        <Select.Content className="z-50 mt-1 w-32 bg-background rounded-lg shadow-xl max-h-60 overflow-auto text-xs">
           <Select.Viewport>
             {options.map(opt => (
               <Select.Item key={opt.value} value={opt.value} className="px-3 py-2 cursor-pointer hover:bg-accent rounded flex items-center text-foreground">
@@ -75,7 +75,7 @@ const TimeFilter: React.FC<TimeFilterProps> = ({
   const debouncedSetEndMonth = useDebouncedCallback(setEndMonth, 300);
   const debouncedSetSelectedYear = useDebouncedCallback(setSelectedYear, 300);
   return (
-  <div className="flex items-center gap-3 p-2 bg-background/70 rounded-xl shadow border border-border mb-4">
+  <div className="flex items-center gap-3 p-2 bg-background/70 rounded-xl shadow  mb-4">
     <CalendarTodayIcon className="h-4 w-4 text-blue-400 mr-1" />
     <span className="text-xs font-semibold text-muted-foreground mr-1">Time:</span>
     <RadixSelect

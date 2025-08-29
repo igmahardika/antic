@@ -850,7 +850,6 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
   if (!gridData || gridData.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center h-full text-gray-500 p-8">
-        <h1 className="text-2xl md:text-3xl font-extrabold mb-4 text-card-foreground">Ticket Analytics</h1>
         <h3 className="text-lg md:text-xl font-semibold mb-2 text-card-foreground">Data Analisis Tiket</h3>
         <p>Tidak ada data yang cukup untuk ditampilkan. Unggah file untuk memulai.</p>
       </div>
@@ -867,23 +866,21 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
 
   return (
     <PageWrapper>
-      {/* Page Title & Description */}
-      <div className="mb-6">
-        <h1 className="text-2xl md:text-3xl font-extrabold mb-4 text-card-foreground">Ticket Analytics</h1>
-        <p className="text-gray-500 dark:text-gray-400">Analysis of ticket statistics, trends, and complaint categories for the selected period.</p>
-      </div>
-      <div className="flex justify-center mb-6">
-        <TimeFilter
-          startMonth={startMonth}
-          setStartMonth={setStartMonth}
-          endMonth={endMonth}
-          setEndMonth={setEndMonth}
-          selectedYear={selectedYear}
-          setSelectedYear={setSelectedYear}
-          monthOptions={monthOptions}
-          allYearsInData={allYearsInData}
-          onRefresh={refresh}
-        />
+
+      <div className="flex justify-end mb-6">
+        <div className="scale-75 transform origin-right">
+          <TimeFilter
+            startMonth={startMonth}
+            setStartMonth={setStartMonth}
+            endMonth={endMonth}
+            setEndMonth={setEndMonth}
+            selectedYear={selectedYear}
+            setSelectedYear={setSelectedYear}
+            monthOptions={monthOptions}
+            allYearsInData={allYearsInData}
+            onRefresh={refresh}
+          />
+        </div>
       </div>
       
       {/* ====================== NORMALIZE TOGGLE (NEW) ====================== */}
@@ -1049,7 +1046,7 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
       {/* Automated Insights - Professional & Informative Design */}
       {insights && (
         <div className="mb-6">
-          <div className="bg-card text-card-foreground rounded-2xl shadow-lg p-3 border border-border">
+          <div className="bg-card text-card-foreground rounded-2xl shadow-lg p-3 ">
             <div className="flex items-center justify-between mb-2">
               <div>
                 <h2 className="text-base font-bold text-card-foreground">Automated Insights</h2>
@@ -1096,7 +1093,7 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
                 
             {/* Kategori dominan */}
             {insights.topCategory && (
-                  <div className="p-2 bg-purple-50 dark:bg-purple-900/20 rounded-lg border border-purple-200 dark:border-purple-800">
+                  <div className="p-2 bg-purple-50 dark:bg-purple-900/20 rounded-lg  dark:border-purple-800">
                     <div className="flex items-center justify-between mb-1">
                       <div className="flex items-center gap-1">
                         <LabelIcon className="text-purple-500 text-xs" />
@@ -1124,7 +1121,7 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
                 
             {/* Pelanggan kronis/ekstrem */}
             {insights.chronicPercent && (
-                  <div className="p-2 bg-orange-50 dark:bg-orange-900/20 rounded-lg border border-orange-200 dark:border-orange-800">
+                  <div className="p-2 bg-orange-50 dark:bg-orange-900/20 rounded-lg  dark:border-orange-800">
                     <div className="flex items-center justify-between mb-1">
                       <div className="flex items-center gap-1">
                         <WarningIcon className="text-orange-500 text-xs" />
@@ -1148,7 +1145,7 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
                 
                 {/* Complaint Penetration */}
             {typeof complaintPenetrationByType !== 'undefined' && (
-                  <div className="p-2 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800">
+                  <div className="p-2 bg-red-50 dark:bg-red-900/20 rounded-lg ">
                     <div className="flex items-center justify-between mb-1">
                       <div className="flex items-center gap-1">
                         <ShowChartIcon className="text-red-500 text-xs" />
@@ -1168,7 +1165,7 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
                 {/* Handling Time Insights */}
                 <div className="space-y-3">
             {typeof safeMaxAvg !== 'undefined' && safeMaxAvg.shift && (
-                    <div className="p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800">
+                    <div className="p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg  dark:border-amber-800">
                       <div className="flex items-center gap-2 mb-1">
                         <AssignmentIcon className="text-amber-500 text-xs" />
                         <span className="font-medium text-card-foreground">Handling Time Shift</span>
@@ -1180,7 +1177,7 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
                   )}
                   
             {typeof safeMaxAvgCat !== 'undefined' && safeMaxAvgCat.cat && (
-                    <div className="p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800">
+                    <div className="p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg  dark:border-amber-800">
                       <div className="flex items-center gap-2 mb-1">
                         <AssignmentIcon className="text-amber-500 text-xs" />
                         <span className="font-medium text-card-foreground">Handling Time Kategori</span>
@@ -1194,7 +1191,7 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
                 
                 {/* Category Penetration */}
                 {typeof complaintPenetrationByCategory !== 'undefined' && (
-                  <div className="p-2 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg border border-indigo-200 dark:border-indigo-800">
+                  <div className="p-2 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg  dark:border-indigo-800">
                     <div className="flex items-center justify-between mb-1">
                       <div className="flex items-center gap-1">
                         <TrackChangesIcon className="text-indigo-500 text-xs" />
@@ -1423,7 +1420,7 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
       {/* --- ANALYTICS CARDS GRID --- */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10 w-full">
         {/* 1. Tickets per Month */}
-        <Card className="rounded-2xl shadow-lg border border-border">
+        <Card className="rounded-2xl shadow-lg ">
           <CardHeader>
             <CardTitle>Tickets per Month</CardTitle>
           </CardHeader>
@@ -1433,12 +1430,12 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
                 <AreaChart data={toRechartsData(monthlyStatsData.labels, monthlyStatsData.datasets)} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
                   <defs>
                     <linearGradient id="colorIncoming" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#6366F1" stopOpacity={0.8}/>
-                      <stop offset="95%" stopColor="#6366F1" stopOpacity={0.1}/>
+                      <stop offset="5%" stopColor="#6366F1" stopOpacity={0.6}/>
+                      <stop offset="95%" stopColor="#6366F1" stopOpacity={0.05}/>
                     </linearGradient>
                     <linearGradient id="colorClosed" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#EC4899" stopOpacity={0.8}/>
-                      <stop offset="95%" stopColor="#EC4899" stopOpacity={0.1}/>
+                      <stop offset="5%" stopColor="#EC4899" stopOpacity={0.6}/>
+                      <stop offset="95%" stopColor="#EC4899" stopOpacity={0.05}/>
                     </linearGradient>
                   </defs>
                   <XAxis dataKey="label" tickLine={false} axisLine={false} tickMargin={8} minTickGap={24} tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }} />
@@ -1452,13 +1449,13 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
                   }} />
                   <RechartsLegend />
                   {/* Area harus incoming dulu, lalu closed, dan dataKey case sensitive */}
-                  <Area type="monotone" dataKey="incoming" stroke="#6366F1" fill="url(#colorIncoming)" name="Incoming" strokeWidth={3} />
-                  <Area type="monotone" dataKey="closed" stroke="#EC4899" fill="url(#colorClosed)" name="Closed" strokeWidth={3} />
+                  <Area type="monotone" dataKey="incoming" stroke="#6366F1" fill="url(#colorIncoming)" name="Incoming" strokeWidth={1.5} />
+                  <Area type="monotone" dataKey="closed" stroke="#EC4899" fill="url(#colorClosed)" name="Closed" strokeWidth={1.5} />
                 </AreaChart>
               </ResponsiveContainer>
             </div>
             <div className="overflow-x-auto w-full">
-              <table className="min-w-max w-full text-sm text-left mt-6 bg-card text-card-foreground rounded-xl overflow-hidden border border-border">
+              <table className="min-w-max w-full text-sm text-left mt-6 bg-card text-card-foreground rounded-xl overflow-hidden ">
                 <thead className="bg-card text-card-foreground">
                   <tr>
                     <th className="px-4 py-2">Tipe</th>
@@ -1486,7 +1483,7 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
           </CardContent>
         </Card>
         {/* 2. Agent Tickets per Shift */}
-        <Card className="rounded-2xl shadow-lg border border-border">
+        <Card className="rounded-2xl shadow-lg ">
         <CardHeader>
           <CardTitle>Agent Tickets per Shift</CardTitle>
         </CardHeader>
@@ -1496,16 +1493,16 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
             <AreaChart data={agentShiftAreaData} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
               <defs>
                         <linearGradient id="colorMalam" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#ef4444" stopOpacity={0.8}/>
-                          <stop offset="95%" stopColor="#ef4444" stopOpacity={0.1}/>
+                          <stop offset="5%" stopColor="#ef4444" stopOpacity={0.6}/>
+                          <stop offset="95%" stopColor="#ef4444" stopOpacity={0.05}/>
                         </linearGradient>
                 <linearGradient id="colorPagi" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#22c55e" stopOpacity={0.8}/>
-                  <stop offset="95%" stopColor="#22c55e" stopOpacity={0.1}/>
+                  <stop offset="5%" stopColor="#22c55e" stopOpacity={0.6}/>
+                  <stop offset="95%" stopColor="#22c55e" stopOpacity={0.05}/>
                 </linearGradient>
                 <linearGradient id="colorSore" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.8}/>
-                  <stop offset="95%" stopColor="#3b82f6" stopOpacity={0.1}/>
+                  <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.6}/>
+                  <stop offset="95%" stopColor="#3b82f6" stopOpacity={0.05}/>
                 </linearGradient>
               </defs>
                       <XAxis dataKey="month" tickLine={false} axisLine={false} tickMargin={8} minTickGap={24} tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }} />
@@ -1518,23 +1515,23 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
                         color: 'hsl(var(--foreground))'
                       }} />
                       <RechartsLegend />
-              <Area type="monotone" dataKey="Malam" stroke="#ef4444" fill="url(#colorMalam)" name="Malam (01:00–07:59)" strokeWidth={3} />
-              <Area type="monotone" dataKey="Pagi" stroke="#22c55e" fill="url(#colorPagi)" name="Pagi (08:00–16:59)" strokeWidth={3} />
-              <Area type="monotone" dataKey="Sore" stroke="#3b82f6" fill="url(#colorSore)" name="Sore (00:00–00:59 & 17:00–23:59)" strokeWidth={3} />
+              <Area type="monotone" dataKey="Malam" stroke="#ef4444" fill="url(#colorMalam)" name="Malam (01:00–07:59)" strokeWidth={1.5} />
+              <Area type="monotone" dataKey="Pagi" stroke="#22c55e" fill="url(#colorPagi)" name="Pagi (08:00–16:59)" strokeWidth={1.5} />
+                              <Area type="monotone" dataKey="Sore" stroke="#3b82f6" fill="url(#colorSore)" name="Sore (00:00–00:59 & 17:00–23:59)" strokeWidth={1.5} />
             </AreaChart>
           </ResponsiveContainer>
                 </div>
                 <div className="overflow-x-auto w-full">
-                  <table className="min-w-max w-full text-sm text-left mt-6 bg-card text-card-foreground rounded-xl overflow-hidden border border-border">
+                  <table className="min-w-max w-full text-sm text-left mt-6 bg-card text-card-foreground rounded-xl overflow-hidden ">
                     <thead className="bg-card text-card-foreground">
                       <tr>
                         <th className="px-4 py-2">Shift</th>
-                        {agentShiftAreaData.map((row, idx) => (
+                        {agentShiftAreaData.map((row) => (
                           <th key={row.month} className="px-4 py-2 font-bold font-mono text-center">{row.month}</th>
                         ))}
                       </tr>
                     </thead>
-                    <tbody className="bg-card text-card-foreground border border-border">
+                    <tbody className="bg-card text-card-foreground ">
                       <tr>
                         <td className="px-4 py-2 font-bold text-green-600">Pagi</td>
                         {agentShiftAreaData.map((row) => (
@@ -1559,7 +1556,7 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
         </CardContent>
       </Card>
         {/* 3. Tickets by Client Type (2025) */}
-        <Card className="bg-card text-card-foreground border border-border rounded-2xl shadow-lg">
+        <Card className="bg-card text-card-foreground  rounded-2xl shadow-lg">
             <CardHeader>
             <CardTitle>Tickets by Client Type (2025)</CardTitle>
             </CardHeader>
@@ -1586,16 +1583,16 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
               >
                     <defs>
                   <linearGradient id="colorBroadband" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.8}/>
-                    <stop offset="95%" stopColor="#3b82f6" stopOpacity={0.1}/>
+                    <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.6}/>
+                    <stop offset="95%" stopColor="#3b82f6" stopOpacity={0.05}/>
                       </linearGradient>
                   <linearGradient id="colorBroadbandBusiness" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#22c55e" stopOpacity={0.8}/>
-                    <stop offset="95%" stopColor="#22c55e" stopOpacity={0.1}/>
+                    <stop offset="5%" stopColor="#22c55e" stopOpacity={0.6}/>
+                    <stop offset="95%" stopColor="#22c55e" stopOpacity={0.05}/>
                   </linearGradient>
                   <linearGradient id="colorDedicated" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#f59e42" stopOpacity={0.8}/>
-                    <stop offset="95%" stopColor="#f59e42" stopOpacity={0.1}/>
+                    <stop offset="5%" stopColor="#f59e42" stopOpacity={0.6}/>
+                    <stop offset="95%" stopColor="#f59e42" stopOpacity={0.05}/>
                       </linearGradient>
                     </defs>
                 <XAxis dataKey="month" tickLine={false} axisLine={false} tickMargin={8} minTickGap={24} />
@@ -1603,14 +1600,14 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
                     <CartesianGrid strokeDasharray="3 3" vertical={false} />
                     <RechartsTooltip />
                     <RechartsLegend />
-                <Area type="monotone" dataKey="Broadband" stroke="#3b82f6" fill="url(#colorBroadband)" name="Broadband" strokeWidth={3} />
-                <Area type="monotone" dataKey="Broadband Business" stroke="#22c55e" fill="url(#colorBroadbandBusiness)" name="Broadband Business" strokeWidth={3} />
-                <Area type="monotone" dataKey="Dedicated" stroke="#f59e42" fill="url(#colorDedicated)" name="Dedicated" strokeWidth={3} />
+                <Area type="monotone" dataKey="Broadband" stroke="#3b82f6" fill="url(#colorBroadband)" name="Broadband" strokeWidth={1.5} />
+                <Area type="monotone" dataKey="Broadband Business" stroke="#22c55e" fill="url(#colorBroadbandBusiness)" name="Broadband Business" strokeWidth={1.5} />
+                <Area type="monotone" dataKey="Dedicated" stroke="#f59e42" fill="url(#colorDedicated)" name="Dedicated" strokeWidth={1.5} />
                   </AreaChart>
                 </ResponsiveContainer>
             {/* Table */}
             <div className="overflow-x-auto w-full">
-            <table className="min-w-max w-full text-xs md:text-sm text-left mt-4 table-fixed break-words bg-card text-card-foreground border border-border rounded-xl overflow-hidden">
+            <table className="min-w-max w-full text-xs md:text-sm text-left mt-4 table-fixed break-words bg-card text-card-foreground  rounded-xl overflow-hidden">
               <thead>
                 <tr>
                   <th className="px-4 py-2">Client Type</th>
@@ -1655,7 +1652,7 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
             </CardContent>
           </Card>
         {/* 4. Tickets by Client Category (2025) */}
-        <Card className="bg-card text-card-foreground border border-border rounded-2xl shadow-lg">
+        <Card className="bg-card text-card-foreground  rounded-2xl shadow-lg">
             <CardHeader>
             <CardTitle>Tickets by Client Category (2025)</CardTitle>
             </CardHeader>
@@ -1683,8 +1680,8 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
                 <defs>
                   {kategoriList.map((kat, idx) => (
                     <linearGradient key={kat} id={`colorKategori${kat.replace(/\s/g, '')}`} x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor={AREA_COLORS[idx%AREA_COLORS.length]} stopOpacity={0.8}/>
-                      <stop offset="95%" stopColor={AREA_COLORS[idx%AREA_COLORS.length]} stopOpacity={0.1}/>
+                      <stop offset="5%" stopColor={AREA_COLORS[idx%AREA_COLORS.length]} stopOpacity={0.6}/>
+                      <stop offset="95%" stopColor={AREA_COLORS[idx%AREA_COLORS.length]} stopOpacity={0.05}/>
                     </linearGradient>
                   ))}
                 </defs>
@@ -1701,14 +1698,14 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
                     stroke={AREA_COLORS[idx%AREA_COLORS.length]}
                     fill={`url(#colorKategori${kat.replace(/\s/g, '')})`}
                     name={kat}
-                    strokeWidth={3}
+                    strokeWidth={1.5}
                   />
                 ))}
               </AreaChart>
             </ResponsiveContainer>
             {/* Table */}
             <div className="overflow-x-auto w-full">
-            <table className="min-w-max w-full text-xs md:text-sm text-left mt-4 table-fixed break-words bg-card text-card-foreground border border-border rounded-xl overflow-hidden">
+            <table className="min-w-max w-full text-xs md:text-sm text-left mt-4 table-fixed break-words bg-card text-card-foreground  rounded-xl overflow-hidden">
               <thead>
                 <tr>
                   <th className="px-4 py-2">Client Category</th>
@@ -1753,7 +1750,7 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
           </CardContent>
         </Card>
         {/* 5. Unique Complaining Clients by Type (2025) */}
-        <Card className="bg-card text-card-foreground border border-border rounded-2xl shadow-lg">
+        <Card className="bg-card text-card-foreground  rounded-2xl shadow-lg">
             <CardHeader>
             <CardTitle>Unique Complaining Clients by Type (2025)</CardTitle>
             </CardHeader>
@@ -1782,16 +1779,16 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
               >
                 <defs>
                   <linearGradient id="colorBroadbandU" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.8}/>
-                    <stop offset="95%" stopColor="#3b82f6" stopOpacity={0.1}/>
+                    <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.6}/>
+                    <stop offset="95%" stopColor="#3b82f6" stopOpacity={0.05}/>
                   </linearGradient>
                   <linearGradient id="colorBroadbandBusinessU" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#22c55e" stopOpacity={0.8}/>
-                    <stop offset="95%" stopColor="#22c55e" stopOpacity={0.1}/>
+                    <stop offset="5%" stopColor="#22c55e" stopOpacity={0.6}/>
+                    <stop offset="95%" stopColor="#22c55e" stopOpacity={0.05}/>
                   </linearGradient>
                   <linearGradient id="colorDedicatedU" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#f59e42" stopOpacity={0.8}/>
-                    <stop offset="95%" stopColor="#f59e42" stopOpacity={0.1}/>
+                    <stop offset="5%" stopColor="#f59e42" stopOpacity={0.6}/>
+                    <stop offset="95%" stopColor="#f59e42" stopOpacity={0.05}/>
                   </linearGradient>
                 </defs>
                 <XAxis dataKey="month" tickLine={false} axisLine={false} tickMargin={8} minTickGap={24} />
@@ -1799,14 +1796,14 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
                 <CartesianGrid strokeDasharray="3 3" vertical={false} />
                 <RechartsTooltip />
                 <RechartsLegend />
-                <Area type="monotone" dataKey="Broadband" stroke="#3b82f6" fill="url(#colorBroadbandU)" name="Broadband" strokeWidth={3} />
-                <Area type="monotone" dataKey="Broadband Business" stroke="#22c55e" fill="url(#colorBroadbandBusinessU)" name="Broadband Business" strokeWidth={3} />
-                <Area type="monotone" dataKey="Dedicated" stroke="#f59e42" fill="url(#colorDedicatedU)" name="Dedicated" strokeWidth={3} />
+                <Area type="monotone" dataKey="Broadband" stroke="#3b82f6" fill="url(#colorBroadbandU)" name="Broadband" strokeWidth={1.5} />
+                <Area type="monotone" dataKey="Broadband Business" stroke="#22c55e" fill="url(#colorBroadbandBusinessU)" name="Broadband Business" strokeWidth={1.5} />
+                <Area type="monotone" dataKey="Dedicated" stroke="#f59e42" fill="url(#colorDedicatedU)" name="Dedicated" strokeWidth={1.5} />
               </AreaChart>
             </ResponsiveContainer>
             {/* Table */}
             <div className="overflow-x-auto w-full">
-            <table className="min-w-max w-full text-xs md:text-sm text-left mt-4 table-fixed break-words bg-card text-card-foreground border border-border rounded-xl overflow-hidden">
+            <table className="min-w-max w-full text-xs md:text-sm text-left mt-4 table-fixed break-words bg-card text-card-foreground  rounded-xl overflow-hidden">
               <thead>
                 <tr>
                   <th className="px-4 py-2">Client Type</th>
@@ -1865,7 +1862,7 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
           </CardContent>
         </Card>
         {/* 6. Unique Complaining Clients by Category (2025) */}
-        <Card className="bg-card text-card-foreground border border-border rounded-2xl shadow-lg">
+        <Card className="bg-card text-card-foreground  rounded-2xl shadow-lg">
           <CardHeader>
             <CardTitle>Unique Complaining Clients by Category (2025)</CardTitle>
           </CardHeader>
@@ -1895,8 +1892,8 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
                 <defs>
                   {kategoriList.map((kat, idx) => (
                     <linearGradient key={kat} id={`colorUKategori${kat.replace(/\s/g, '')}`} x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor={AREA_COLORS[idx%AREA_COLORS.length]} stopOpacity={0.8}/>
-                      <stop offset="95%" stopColor={AREA_COLORS[idx%AREA_COLORS.length]} stopOpacity={0.1}/>
+                      <stop offset="5%" stopColor={AREA_COLORS[idx%AREA_COLORS.length]} stopOpacity={0.6}/>
+                      <stop offset="95%" stopColor={AREA_COLORS[idx%AREA_COLORS.length]} stopOpacity={0.05}/>
                     </linearGradient>
                   ))}
                 </defs>
@@ -1913,14 +1910,14 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
                     stroke={AREA_COLORS[idx%AREA_COLORS.length]}
                     fill={`url(#colorUKategori${kat.replace(/\s/g, '')})`}
                     name={kat}
-                    strokeWidth={3}
+                    strokeWidth={1.5}
                   />
                 ))}
               </AreaChart>
             </ResponsiveContainer>
             {/* Table */}
             <div className="overflow-x-auto w-full">
-            <table className="min-w-max w-full text-xs md:text-sm text-left mt-4 table-fixed break-words bg-card text-card-foreground border border-border rounded-xl overflow-hidden">
+            <table className="min-w-max w-full text-xs md:text-sm text-left mt-4 table-fixed break-words bg-card text-card-foreground  rounded-xl overflow-hidden">
               <thead>
                 <tr>
                   <th className="px-4 py-2">Client Category</th>
@@ -1976,7 +1973,7 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
           </CardContent>
         </Card>
         {/* 7. Complaint Penetration Ratio by Type (2025) */}
-        <Card className="bg-card text-card-foreground border border-border rounded-2xl shadow-lg">
+        <Card className="bg-card text-card-foreground  rounded-2xl shadow-lg">
           <CardHeader>
             <CardTitle>Complaint Penetration Ratio by Type (2025)</CardTitle>
           </CardHeader>
@@ -2006,16 +2003,16 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
               >
                 <defs>
                   <linearGradient id="colorBroadbandP" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.8}/>
-                    <stop offset="95%" stopColor="#3b82f6" stopOpacity={0.1}/>
+                    <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.6}/>
+                    <stop offset="95%" stopColor="#3b82f6" stopOpacity={0.05}/>
                   </linearGradient>
                   <linearGradient id="colorBroadbandBusinessP" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#22c55e" stopOpacity={0.8}/>
-                    <stop offset="95%" stopColor="#22c55e" stopOpacity={0.1}/>
+                    <stop offset="5%" stopColor="#22c55e" stopOpacity={0.6}/>
+                    <stop offset="95%" stopColor="#22c55e" stopOpacity={0.05}/>
                   </linearGradient>
                   <linearGradient id="colorDedicatedP" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#f59e42" stopOpacity={0.8}/>
-                    <stop offset="95%" stopColor="#f59e42" stopOpacity={0.1}/>
+                    <stop offset="5%" stopColor="#f59e42" stopOpacity={0.6}/>
+                    <stop offset="95%" stopColor="#f59e42" stopOpacity={0.05}/>
                   </linearGradient>
                 </defs>
                 <XAxis dataKey="month" tickLine={false} axisLine={false} tickMargin={8} minTickGap={24} />
@@ -2023,14 +2020,14 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
                 <CartesianGrid strokeDasharray="3 3" vertical={false} />
                 <RechartsTooltip formatter={v => (typeof v === 'number' ? `${v.toFixed(2)}%` : v)} />
                 <RechartsLegend />
-                <Area type="monotone" dataKey="Broadband" stroke="#3b82f6" fill="url(#colorBroadbandP)" name="Broadband" strokeWidth={3} />
-                <Area type="monotone" dataKey="Broadband Business" stroke="#22c55e" fill="url(#colorBroadbandBusinessP)" name="Broadband Business" strokeWidth={3} />
-                <Area type="monotone" dataKey="Dedicated" stroke="#f59e42" fill="url(#colorDedicatedP)" name="Dedicated" strokeWidth={3} />
+                <Area type="monotone" dataKey="Broadband" stroke="#3b82f6" fill="url(#colorBroadbandP)" name="Broadband" strokeWidth={1.5} />
+                <Area type="monotone" dataKey="Broadband Business" stroke="#22c55e" fill="url(#colorBroadbandBusinessP)" name="Broadband Business" strokeWidth={1.5} />
+                <Area type="monotone" dataKey="Dedicated" stroke="#f59e42" fill="url(#colorDedicatedP)" name="Dedicated" strokeWidth={1.5} />
               </AreaChart>
             </ResponsiveContainer>
             {/* Table */}
             <div className="overflow-x-auto w-full">
-            <table className="min-w-max w-full text-xs md:text-sm text-left mt-4 table-fixed break-words bg-card text-card-foreground border border-border rounded-xl overflow-hidden">
+            <table className="min-w-max w-full text-xs md:text-sm text-left mt-4 table-fixed break-words bg-card text-card-foreground  rounded-xl overflow-hidden">
               <thead>
                 <tr>
                   <th className="px-4 py-2">Client Type</th>
@@ -2064,7 +2061,7 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
           </CardContent>
         </Card>
         {/* 8. Complaint Penetration Ratio by Category (2025) */}
-        <Card className="bg-card text-card-foreground border border-border rounded-2xl shadow-lg">
+        <Card className="bg-card text-card-foreground  rounded-2xl shadow-lg">
           <CardHeader>
             <CardTitle>Complaint Penetration Ratio by Category (2025)</CardTitle>
           </CardHeader>
@@ -2096,8 +2093,8 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
                 <defs>
                   {kategoriList.map((kat, idx) => (
                     <linearGradient key={kat} id={`colorPKategori${kat.replace(/\s/g, '')}`} x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor={AREA_COLORS[idx%AREA_COLORS.length]} stopOpacity={0.8}/>
-                      <stop offset="95%" stopColor={AREA_COLORS[idx%AREA_COLORS.length]} stopOpacity={0.1}/>
+                      <stop offset="5%" stopColor={AREA_COLORS[idx%AREA_COLORS.length]} stopOpacity={0.6}/>
+                      <stop offset="95%" stopColor={AREA_COLORS[idx%AREA_COLORS.length]} stopOpacity={0.05}/>
                     </linearGradient>
                   ))}
                 </defs>
@@ -2114,14 +2111,14 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
                     stroke={AREA_COLORS[idx%AREA_COLORS.length]}
                     fill={`url(#colorPKategori${kat.replace(/\s/g, '')})`}
                     name={kat}
-                    strokeWidth={3}
+                    strokeWidth={1.5}
                   />
                 ))}
               </AreaChart>
                   </ResponsiveContainer>
             {/* Table */}
             <div className="overflow-x-auto w-full">
-            <table className="min-w-max w-full text-sm text-left mt-4 table-fixed break-words bg-card text-card-foreground border border-border rounded-xl overflow-hidden">
+            <table className="min-w-max w-full text-sm text-left mt-4 table-fixed break-words bg-card text-card-foreground  rounded-xl overflow-hidden">
               <thead>
                 <tr>
                   <th className="px-4 py-2">Client Category</th>
@@ -2161,7 +2158,7 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
           </CardContent>
         </Card>
         {/* Active Clients per Month (2025) */}
-        <Card className="bg-card text-card-foreground border border-border rounded-2xl shadow-lg">
+        <Card className="bg-card text-card-foreground  rounded-2xl shadow-lg">
           <CardHeader>
             <CardTitle>Active Clients per Month (2025)</CardTitle>
           </CardHeader>
@@ -2194,12 +2191,12 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
               >
                 <defs>
                   <linearGradient id="colorActiveClients2025" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#6366F1" stopOpacity={0.8}/>
-                    <stop offset="95%" stopColor="#6366F1" stopOpacity={0.1}/>
+                    <stop offset="5%" stopColor="#6366F1" stopOpacity={0.6}/>
+                    <stop offset="95%" stopColor="#6366F1" stopOpacity={0.05}/>
                   </linearGradient>
                   <linearGradient id="colorComplaintClients2025" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#F43F5E" stopOpacity={0.8}/>
-                    <stop offset="95%" stopColor="#F43F5E" stopOpacity={0.1}/>
+                    <stop offset="5%" stopColor="#F43F5E" stopOpacity={0.6}/>
+                    <stop offset="95%" stopColor="#F43F5E" stopOpacity={0.05}/>
                   </linearGradient>
                 </defs>
                 <XAxis dataKey="month" tickLine={false} axisLine={false} tickMargin={8} minTickGap={24} />
@@ -2207,8 +2204,8 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
                 <CartesianGrid strokeDasharray="3 3" vertical={false} />
                 <RechartsTooltip formatter={v => (typeof v === 'number' ? v.toLocaleString() : v)} />
                 <RechartsLegend />
-                <Area type="monotone" dataKey="Active Clients" stroke="#6366F1" fill="url(#colorActiveClients2025)" name="Active Clients" strokeWidth={3} />
-                <Area type="monotone" dataKey="Complaint Clients" stroke="#F43F5E" fill="url(#colorComplaintClients2025)" name="Complaint Clients" strokeWidth={3} />
+                <Area type="monotone" dataKey="Active Clients" stroke="#6366F1" fill="url(#colorActiveClients2025)" name="Active Clients" strokeWidth={1.5} />
+                <Area type="monotone" dataKey="Complaint Clients" stroke="#F43F5E" fill="url(#colorComplaintClients2025)" name="Complaint Clients" strokeWidth={1.5} />
               </AreaChart>
             </ResponsiveContainer>
             <div className="max-w-full overflow-x-auto">
@@ -2267,7 +2264,7 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
         {/* Active Clients by Service Type (2025) - removed per request */}
 
         {/* 9. Total Complaint Penetration Ratio (2025) */}
-        <Card className="bg-card text-card-foreground border border-border rounded-2xl shadow-lg">
+        <Card className="bg-card text-card-foreground  rounded-2xl shadow-lg">
           <CardHeader>
             <CardTitle>Total Complaint Penetration Ratio (2025)</CardTitle>
           </CardHeader>
@@ -2310,8 +2307,8 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
               >
                 <defs>
                   <linearGradient id="colorTotalRatio" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#6366F1" stopOpacity={0.8}/>
-                    <stop offset="95%" stopColor="#6366F1" stopOpacity={0.1}/>
+                    <stop offset="5%" stopColor="#6366F1" stopOpacity={0.6}/>
+                    <stop offset="95%" stopColor="#6366F1" stopOpacity={0.05}/>
                   </linearGradient>
                 </defs>
                 <XAxis dataKey="month" tickLine={false} axisLine={false} tickMargin={8} minTickGap={24} />
@@ -2319,12 +2316,12 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
                 <CartesianGrid strokeDasharray="3 3" vertical={false} />
                 <RechartsTooltip formatter={v => (typeof v === 'number' ? `${v.toFixed(2)}%` : v)} />
                 <RechartsLegend />
-                <Area type="monotone" dataKey="Total Ratio" stroke="#6366F1" fill="url(#colorTotalRatio)" name="Total Ratio" strokeWidth={3} />
+                <Area type="monotone" dataKey="Total Ratio" stroke="#6366F1" fill="url(#colorTotalRatio)" name="Total Ratio" strokeWidth={1.5} />
               </AreaChart>
                   </ResponsiveContainer>
             {/* Table */}
             <div className="overflow-x-auto w-full">
-            <table className="min-w-max w-full text-xs md:text-sm text-left mt-4 table-fixed break-words bg-card text-card-foreground border border-border rounded-xl overflow-hidden">
+            <table className="min-w-max w-full text-xs md:text-sm text-left mt-4 table-fixed break-words bg-card text-card-foreground  rounded-xl overflow-hidden">
               <thead>
                 <tr>
                   <th className="px-4 py-2">Month</th>
@@ -2376,7 +2373,7 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
       {/* Category Hotspot Analysis - Professional & Informative Design */}
       {topComplaintsTable && topComplaintsTable.length > 0 && (
         <div className="mb-12">
-          <div className="bg-card text-card-foreground border border-border rounded-2xl shadow-lg p-6">
+          <div className="bg-card text-card-foreground  rounded-2xl shadow-lg p-6">
             <div className="flex items-center justify-between mb-6">
               <div>
                 <h2 className="text-xl font-bold text-card-foreground">Category Hotspot Analysis</h2>
@@ -2472,7 +2469,7 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
                     return (
                   <div
                         key={index}
-                    className="bg-gray-50 dark:bg-zinc-800/50 rounded-lg p-4 border border-gray-200 dark:border-zinc-700 hover:shadow-md transition-all duration-200"
+                    className="bg-gray-50 dark:bg-zinc-800/50 rounded-lg p-4  hover:shadow-md transition-all duration-200"
                   >
                     <div className="flex items-start justify-between">
                       {/* Left: Rank & Category Info */}
@@ -2553,7 +2550,7 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
 
       {/* Classification Analytics - Modern & Professional Design */}
       <div className="mb-12">
-        <div className="bg-card text-card-foreground border border-border rounded-2xl shadow-lg p-6">
+        <div className="bg-card text-card-foreground  rounded-2xl shadow-lg p-6">
           <div className="flex items-center justify-between mb-6">
             <div>
               <h2 className="text-xl font-bold text-card-foreground">Classification Analytics</h2>
@@ -2660,7 +2657,7 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
                       <div className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-2">Sub-klasifikasi</div>
                       <div className="flex flex-wrap gap-1.5">
                         {Object.entries(d.sub).sort((a, b) => b[1] - a[1]).map(([sub, count]) => (
-                          <span key={sub} className="bg-background text-foreground rounded-full px-2 py-1 text-xs font-medium text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-zinc-700">
+                          <span key={sub} className="bg-background text-foreground rounded-full px-2 py-1 text-xs font-medium text-gray-700 dark:text-gray-300 ">
                             {sub}: <span className="font-bold text-card-foreground">{count}</span>
                           </span>
                         ))}
@@ -2676,7 +2673,7 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
         
       {/* Handling Time Analytics - Professional & Informative Design */}
       <div className="mb-12">
-        <div className="bg-card text-card-foreground border border-border rounded-2xl shadow-lg p-6">
+        <div className="bg-card text-card-foreground  rounded-2xl shadow-lg p-6">
           <div className="flex items-center justify-between mb-6">
             <div>
               <h2 className="text-xl font-bold text-card-foreground">Handling Time Analytics</h2>
@@ -2730,7 +2727,7 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
                       content={({ active, payload, label }) => {
                         if (active && payload && payload.length) {
                           return (
-                            <div className="bg-background text-foreground rounded-lg shadow-lg border border-gray-200 dark:border-zinc-700 p-3">
+                            <div className="bg-background text-foreground rounded-lg shadow-lg  p-3">
                               <p className="font-semibold text-card-foreground mb-2">{label}</p>
                               {payload.map((entry, index) => (
                                 <p key={index} className="text-sm text-muted-foreground">
@@ -2842,7 +2839,7 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
                       content={({ active, payload, label }) => {
                         if (active && payload && payload.length) {
                           return (
-                            <div className="bg-background text-foreground rounded-lg shadow-lg border border-gray-200 dark:border-zinc-700 p-3">
+                            <div className="bg-background text-foreground rounded-lg shadow-lg  p-3">
                               <p className="font-semibold text-card-foreground mb-2">{label}</p>
                               {payload.map((entry, index) => (
                                 <p key={index} className="text-sm text-muted-foreground">

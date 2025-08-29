@@ -57,7 +57,7 @@ export function LoginForm({
             onChange={e => setUsername(e.target.value)}
             required
             autoFocus
-            className="rounded-xl border border-gray-300 px-4 py-3 text-base text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-400 transition shadow-sm bg-white/80 dark:bg-zinc-800/80"
+            className="rounded-xl ring-1 ring-gray-300 px-4 py-3 text-base text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-400 transition shadow-sm bg-white/80 dark:bg-zinc-800/80"
           />
         </div>
         <div className="grid gap-2">
@@ -69,7 +69,7 @@ export function LoginForm({
             value={password}
             onChange={e => setPassword(e.target.value)}
             required
-            className="rounded-xl border border-gray-300 px-4 py-3 text-base text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-400 transition shadow-sm bg-white/80 dark:bg-zinc-800/80"
+            className="rounded-xl ring-1 ring-gray-300 px-4 py-3 text-base text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-400 transition shadow-sm bg-white/80 dark:bg-zinc-800/80"
           />
         </div>
         

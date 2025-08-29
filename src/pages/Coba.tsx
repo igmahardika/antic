@@ -172,7 +172,7 @@ export const IncidentAnalytics: React.FC = () => {
     if (!active || !payload || !payload.length) return null;
 
     return (
-      <div className="bg-card text-card-foreground border border-border rounded-lg shadow-lg border border-gray-200 dark:border-zinc-700 p-3">
+      <div className="bg-card text-card-foreground  rounded-lg shadow-lg  p-3">
         <div className="text-sm font-medium text-card-foreground mb-2">
           {(() => {
             const [year, month] = label.split('-');
@@ -485,7 +485,7 @@ export const IncidentAnalytics: React.FC = () => {
       incidentsWithVendor: incidentsWithVendor.length,
       totalIncidents: total
     });
-    console.log('⏸️ Pause Ratio:', {
+    console.log('Pause Ratio:', {
       pauseRatio: pauseRatio * 100,
       totalPauseTime,
       totalDuration,
@@ -507,7 +507,7 @@ export const IncidentAnalytics: React.FC = () => {
         };
         
         // Debug target performance calculation
-        console.log(`🎯 ${ncal} Target Performance:`, {
+        console.log(`${ncal} Target Performance:`, {
           target: target,
           targetFormatted: `${Math.floor(target / 60)}:${String(Math.floor(target % 60)).padStart(2, '0')}:00`,
           actual: actual,
@@ -850,17 +850,10 @@ export const IncidentAnalytics: React.FC = () => {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-card-foreground">Incident Analytics</h1>
-          <p className="text-muted-foreground mt-2">
-            Comprehensive analytics and insights from incident data
-          </p>
-        </div>
-        
         {/* Period Filter */}
         <div className="flex items-center gap-2">
           <Filter className="w-4 h-4 text-gray-500" />
-          <div className="flex bg-white/80 dark:bg-zinc-900/80 rounded-2xl shadow-lg border border-gray-200 dark:border-zinc-800 p-1">
+          <div className="flex bg-white/80 dark:bg-zinc-900/80 rounded-2xl shadow-lg  p-1">
             {[
               { key: '3m', label: '3M' },
               { key: '6m', label: '6M' },
@@ -919,7 +912,7 @@ export const IncidentAnalytics: React.FC = () => {
 
       {/* NCAL Target Performance */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card className="bg-card text-card-foreground border border-border rounded-2xl shadow-lg">
+        <Card className="bg-card text-card-foreground  rounded-2xl shadow-lg">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <AssignmentIcon className="w-5 h-5" />
@@ -934,7 +927,7 @@ export const IncidentAnalytics: React.FC = () => {
                 if (!performance) return null;
                 
                 return (
-                  <div key={ncal} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-zinc-800 rounded-xl border border-gray-200 dark:border-zinc-700">
+                  <div key={ncal} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-zinc-800 rounded-xl ">
                     <div className="flex items-center gap-3">
                       <div 
                         className="w-4 h-4 rounded-full" 
@@ -957,7 +950,7 @@ export const IncidentAnalytics: React.FC = () => {
           </CardContent>
         </Card>
 
-        <Card className="bg-card text-card-foreground border border-border rounded-2xl shadow-lg">
+        <Card className="bg-card text-card-foreground  rounded-2xl shadow-lg">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <PieChartIconMUI className="w-5 h-5" />
@@ -1043,7 +1036,7 @@ export const IncidentAnalytics: React.FC = () => {
 
       {/* NCAL Area Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card className="bg-card text-card-foreground border border-border rounded-2xl shadow-lg">
+        <Card className="bg-card text-card-foreground  rounded-2xl shadow-lg">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <ShowChartIcon className="w-5 h-5" />
@@ -1105,7 +1098,7 @@ export const IncidentAnalytics: React.FC = () => {
           </CardContent>
         </Card>
 
-        <Card className="bg-card text-card-foreground border border-border rounded-2xl shadow-lg">
+        <Card className="bg-card text-card-foreground  rounded-2xl shadow-lg">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <ShowChartIcon className="w-5 h-5" />
@@ -1170,7 +1163,7 @@ export const IncidentAnalytics: React.FC = () => {
 
       {/* Additional Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card className="bg-card text-card-foreground border border-border rounded-2xl shadow-lg">
+        <Card className="bg-card text-card-foreground  rounded-2xl shadow-lg">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <LabelIcon className="w-5 h-5" />
@@ -1218,7 +1211,7 @@ export const IncidentAnalytics: React.FC = () => {
           </CardContent>
         </Card>
 
-        <Card className="bg-card text-card-foreground border border-border rounded-2xl shadow-lg">
+        <Card className="bg-card text-card-foreground  rounded-2xl shadow-lg">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <ConfirmationNumberIcon className="w-5 h-5" />
@@ -1234,7 +1227,7 @@ export const IncidentAnalytics: React.FC = () => {
                 <select 
                   value={selectedLevelMonth} 
                   onChange={(e) => setSelectedLevelMonth(e.target.value)}
-                  className="px-3 py-1 text-sm border border-border rounded-lg bg-background text-foreground text-card-foreground"
+                  className="px-3 py-1 text-sm  rounded-lg bg-background text-foreground text-card-foreground"
                 >
                   <option value="all">All Months</option>
                   {Object.keys(stats.byMonth).sort().map(month => {
@@ -1303,7 +1296,7 @@ export const IncidentAnalytics: React.FC = () => {
       {/* Advanced Analytics Dashboard */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Trend Analysis */}
-        <Card className="bg-card text-card-foreground border border-border rounded-2xl shadow-lg">
+        <Card className="bg-card text-card-foreground  rounded-2xl shadow-lg">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <TrendingUpIcon className="w-5 h-5" />
@@ -1412,7 +1405,7 @@ export const IncidentAnalytics: React.FC = () => {
         </Card>
 
                 {/* Root Cause Analysis */}
-        <Card className="bg-card text-card-foreground border border-border rounded-2xl shadow-lg">
+        <Card className="bg-card text-card-foreground  rounded-2xl shadow-lg">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <BugReportIcon className="w-5 h-5" />
@@ -1478,7 +1471,7 @@ export const IncidentAnalytics: React.FC = () => {
                     .sort((a, b) => b[1] - a[1])
                     .slice(0, 5)
                     .map(([penyebab, count], index) => (
-                      <div key={penyebab} className="flex items-center justify-between p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg border border-orange-200 dark:border-orange-800">
+                      <div key={penyebab} className="flex items-center justify-between p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg  dark:border-orange-800">
                         <div className="flex items-center gap-3">
                           <div className="w-6 h-6 bg-orange-500 text-white rounded-full flex items-center justify-center text-xs font-bold">
                             {index + 1}
@@ -1517,7 +1510,7 @@ export const IncidentAnalytics: React.FC = () => {
                     .sort((a, b) => b[1] - a[1])
                     .slice(0, 5)
                     .map(([action, count], index) => (
-                      <div key={action} className="flex items-center justify-between p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
+                      <div key={action} className="flex items-center justify-between p-3 bg-green-50 dark:bg-green-900/20 rounded-lg  dark:border-green-800">
                         <div className="flex items-center gap-3">
                           <div className="w-6 h-6 bg-green-500 text-white rounded-full flex items-center justify-center text-xs font-bold">
                             {index + 1}
@@ -1556,7 +1549,7 @@ export const IncidentAnalytics: React.FC = () => {
                     .sort((a, b) => b[1] - a[1])
                     .slice(0, 5)
                     .map(([problem, count], index) => (
-                      <div key={problem} className="flex items-center justify-between p-3 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800">
+                      <div key={problem} className="flex items-center justify-between p-3 bg-red-50 dark:bg-red-900/20 rounded-lg ">
                         <div className="flex items-center gap-3">
                           <div className="w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center text-xs font-bold">
                             {index + 1}
@@ -1579,7 +1572,7 @@ export const IncidentAnalytics: React.FC = () => {
               </div>
               
               {/* Summary Statistics */}
-              <div className="grid grid-cols-2 gap-4 pt-4 border-t border-border">
+              <div className="grid grid-cols-2 gap-4 pt-4 border-t ">
                 <div className="text-center p-3 bg-gray-50 dark:bg-zinc-800 rounded-lg">
                   <div className="text-lg font-bold text-card-foreground">
                     {(() => {
@@ -1607,7 +1600,7 @@ export const IncidentAnalytics: React.FC = () => {
       {/* Performance & Efficiency Metrics */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* SLA Compliance */}
-        <Card className="bg-card text-card-foreground border border-border rounded-2xl shadow-lg">
+        <Card className="bg-card text-card-foreground  rounded-2xl shadow-lg">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <CheckSquare className="w-5 h-5" />
@@ -1664,7 +1657,7 @@ export const IncidentAnalytics: React.FC = () => {
         </Card>
 
         {/* Efficiency Metrics */}
-        <Card className="bg-card text-card-foreground border border-border rounded-2xl shadow-lg">
+        <Card className="bg-card text-card-foreground  rounded-2xl shadow-lg">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Gauge className="w-5 h-5" />
@@ -1715,7 +1708,7 @@ export const IncidentAnalytics: React.FC = () => {
         </Card>
 
         {/* Real-time Monitoring */}
-        <Card className="bg-card text-card-foreground border border-border rounded-2xl shadow-lg">
+        <Card className="bg-card text-card-foreground  rounded-2xl shadow-lg">
         <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <MonitorIcon className="w-5 h-5" />
@@ -1767,7 +1760,7 @@ export const IncidentAnalytics: React.FC = () => {
 
       {/* Performance Metrics */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card className="bg-card text-card-foreground border border-border rounded-2xl shadow-lg">
+        <Card className="bg-card text-card-foreground  rounded-2xl shadow-lg">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <AccessTimeIcon className="w-5 h-5" />
@@ -1785,7 +1778,7 @@ export const IncidentAnalytics: React.FC = () => {
           </CardContent>
         </Card>
 
-        <Card className="bg-card text-card-foreground border border-border rounded-2xl shadow-lg">
+        <Card className="bg-card text-card-foreground  rounded-2xl shadow-lg">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <WarningAmberIcon className="w-5 h-5" />
@@ -1807,7 +1800,7 @@ export const IncidentAnalytics: React.FC = () => {
 
               {/* Breakdown */}
               <div className="space-y-3">
-                <div className="flex items-center justify-between p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg border border-orange-200 dark:border-orange-800">
+                <div className="flex items-center justify-between p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg  dark:border-orange-800">
                   <div className="flex items-center gap-2">
                     <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
                     <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -1837,7 +1830,7 @@ export const IncidentAnalytics: React.FC = () => {
                   </span>
       </div>
 
-                <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg border border-border">
+                <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg ">
                   <div className="flex items-center gap-2">
                     <div className="w-2 h-2 bg-gray-500 rounded-full"></div>
                     <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -1851,7 +1844,7 @@ export const IncidentAnalytics: React.FC = () => {
               </div>
 
               {/* Performance Indicator */}
-              <div className="mt-4 p-3 bg-gradient-to-r from-orange-50 to-red-50 dark:from-orange-900/20 dark:to-red-900/20 rounded-lg border border-orange-200 dark:border-orange-800">
+              <div className="mt-4 p-3 bg-gradient-to-r from-orange-50 to-red-50 dark:from-orange-900/20 dark:to-red-900/20 rounded-lg  dark:border-orange-800">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <WarningAmberIcon className="w-4 h-4 text-orange-600" />
@@ -1877,7 +1870,7 @@ export const IncidentAnalytics: React.FC = () => {
         </CardContent>
       </Card>
 
-        <Card className="bg-card text-card-foreground border border-border rounded-2xl shadow-lg">
+        <Card className="bg-card text-card-foreground  rounded-2xl shadow-lg">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <BarChartIcon className="w-5 h-5" />

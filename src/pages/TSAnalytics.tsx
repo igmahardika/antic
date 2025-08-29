@@ -984,17 +984,11 @@ const TSAnalytics: React.FC = () => {
     <PageWrapper>
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <div>
-            <h1 className="text-3xl md:text-4xl font-extrabold text-card-foreground">Technical Support Analytics</h1>
-            <p className="text-muted-foreground mt-2">
-              Comprehensive analytics with Vendor vs Internal TS separation
-            </p>
-          </div>
+        <div className="flex flex-col md:flex-row md:items-center md:justify-end gap-4">
           {/* Period Filter */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 scale-75 transform origin-right">
             <FilterListIcon className="w-4 h-4 text-muted-foreground" />
-            <div className="flex bg-white/80 dark:bg-zinc-900/80 rounded-2xl shadow-lg border border-gray-200 dark:border-zinc-800 p-1">
+            <div className="flex bg-white/80 dark:bg-zinc-900/80 rounded-2xl shadow-lg  p-1">
               {[
                 { key: '3m', label: '3M' },
                 { key: '6m', label: '6M' },

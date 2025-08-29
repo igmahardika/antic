@@ -10,6 +10,9 @@ import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import FlashOnIcon from '@mui/icons-material/FlashOn';
 import MenuBookIcon from '@mui/icons-material/MenuBook';
 import LightbulbIcon from '@mui/icons-material/Lightbulb';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import WarningAmberIcon from '@mui/icons-material/WarningAmber';
+import InfoIcon from '@mui/icons-material/Info';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useAgentStore } from '@/store/agentStore';
@@ -90,7 +93,7 @@ function toRechartsAgentTrend(labels: string[], datasets: { label: string, data:
 const CustomTooltip = ({ active = false, payload = [], label = '' } = {}) => {
   if (!active || !payload || !payload.length) return null;
   return (
-    <div className="bg-card text-card-foreground border border-border rounded-xl shadow-lg border border-gray-200 dark:border-zinc-700 p-4 max-h-52 overflow-y-auto min-w-[180px] text-xs" style={{ fontSize: '12px', lineHeight: '1.5' }}>
+    <div className="bg-card text-card-foreground  rounded-xl shadow-lg  p-4 max-h-52 overflow-y-auto min-w-[180px] text-xs" style={{ fontSize: '12px', lineHeight: '1.5' }}>
       <div className="font-bold text-sm mb-2 text-card-foreground">{label}</div>
       <ul className="space-y-1">
         {payload.map((entry, idx) => (
@@ -126,7 +129,7 @@ const CustomTooltip = ({ active = false, payload = [], label = '' } = {}) => {
 //     displayLabel = 'SLA';
 //   }
 //   return (
-//     <div className="bg-card text-card-foreground border border-border rounded shadow px-3 py-2 text-xs">
+//     <div className="bg-card text-card-foreground  rounded shadow px-3 py-2 text-xs">
 //       <div className="font-bold mb-1">{label}</div>
 //       <div><span className="font-semibold mr-2">{displayLabel}:</span><span className="font-mono">{value}</span></div>
 //     </div>
@@ -775,8 +778,6 @@ const AgentAnalytics = () => {
   if (!isDataReady) {
     return (
         <div className="flex flex-col items-center justify-center h-full text-gray-500 p-8">
-          <h1 className="text-3xl md:text-4xl font-extrabold mb-4 text-card-foreground">Agent Analytics</h1>
-        <p className="text-gray-500 dark:text-gray-400 mb-6">Analisis performa dan aktivitas agent dalam menangani tiket pada periode terpilih.</p>
           <MenuBookIcon className="w-16 h-16 mb-4" />
           <h3 className="text-xl md:text-2xl font-semibold mb-2 text-card-foreground">No agent data available</h3>
         <p>Please upload a file to see agent analytics.</p>
@@ -1035,36 +1036,22 @@ const AgentAnalytics = () => {
 
   return (
     <PageWrapper>
-      {/* Page Title & Description */}
-      <div className="mb-6">
-        <h1 className="text-3xl md:text-4xl font-extrabold mb-4 text-card-foreground">Agent Analytics</h1>
-        <p className="text-gray-500 dark:text-gray-400">Analysis of agent performance and activity in handling tickets during the selected period.</p>
-      </div>
-      <div className="flex justify-center mb-6">
-        <TimeFilter
-          startMonth={startMonth}
-          setStartMonth={setStartMonth}
-          endMonth={endMonth}
-          setEndMonth={setEndMonth}
-          selectedYear={selectedYear}
-          setSelectedYear={setSelectedYear}
-          monthOptions={monthOptions}
-          allYearsInData={allYearsInData}
-        />
-      </div>
-      
-      {/* Debug Controls */}
-      <div className="flex justify-center mb-4">
-        <button
-          onClick={toggleBacklogDebug}
-          className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-            backlogDebugEnabled 
-              ? 'bg-red-500 text-white hover:bg-red-600' 
-              : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-          }`}
-        >
-          {backlogDebugEnabled ? 'Disable' : 'Enable'} Backlog Debug
-        </button>
+
+      <div className="flex justify-end items-center gap-4 mb-6">
+        <div className="scale-75 transform origin-right">
+          <TimeFilter
+            startMonth={startMonth}
+            setStartMonth={setStartMonth}
+            endMonth={endMonth}
+            setEndMonth={setEndMonth}
+            selectedYear={selectedYear}
+            setSelectedYear={setSelectedYear}
+            monthOptions={monthOptions}
+            allYearsInData={allYearsInData}
+          />
+        </div>
+        
+
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 mb-6">
         {summaryCards.map(s => {
@@ -1129,7 +1116,7 @@ const AgentAnalytics = () => {
             };
           }
           return (
-            <div key={agent.agent} className="relative bg-card text-card-foreground border border-border rounded-2xl shadow-lg hover:shadow-2xl transition-all border border-zinc-200 dark:border-zinc-800 overflow-hidden h-80" onClick={() => { setSelectedAgent(agent.agent); setModalOpen(true); }} style={{ cursor: 'pointer' }}>
+            <div key={agent.agent} className="relative bg-card text-card-foreground  rounded-2xl shadow-lg hover:shadow-2xl transition-all  overflow-hidden h-80" onClick={() => { setSelectedAgent(agent.agent); setModalOpen(true); }} style={{ cursor: 'pointer' }}>
               <div className="flex h-full">
                 {/* Left Section - Agent Photo */}
                 <div className="w-1/3 bg-gradient-to-br from-white via-blue-100 to-purple-100 flex items-center justify-center relative overflow-hidden">
@@ -1236,7 +1223,7 @@ const AgentAnalytics = () => {
       </div>
       {/* Trendline Chart for All Agents */}
       {debouncedTrendData.length > 0 && (
-        <Card className="bg-card text-card-foreground border border-border rounded-2xl shadow-lg p-6 mt-6">
+        <Card className="bg-card text-card-foreground  rounded-2xl shadow-lg p-6 mt-6">
           <CardHeader>
             <CardTitle>Agent Ticket Trends per Month</CardTitle>
           </CardHeader>
@@ -1246,8 +1233,8 @@ const AgentAnalytics = () => {
                 <defs>
                   {debouncedDatasets.map((ds, idx) => (
                     <linearGradient key={ds.label} id={`colorAgent${idx}`} x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor={ds.color || TREND_COLORS[idx % TREND_COLORS.length]} stopOpacity={0.3}/>
-                      <stop offset="95%" stopColor={ds.color || TREND_COLORS[idx % TREND_COLORS.length]} stopOpacity={0.08}/>
+                      <stop offset="5%" stopColor={ds.color || TREND_COLORS[idx % TREND_COLORS.length]} stopOpacity={0.6}/>
+                      <stop offset="95%" stopColor={ds.color || TREND_COLORS[idx % TREND_COLORS.length]} stopOpacity={0.05}/>
                     </linearGradient>
                   ))}
                 </defs>
@@ -1264,7 +1251,7 @@ const AgentAnalytics = () => {
                     stroke={ds.color || TREND_COLORS[idx % TREND_COLORS.length]}
                     fill={`url(#colorAgent${idx})`}
                     name={ds.label}
-                    strokeWidth={3}
+                    strokeWidth={1.5}
                   />
                 ))}
               </AreaChart>
@@ -1276,10 +1263,10 @@ const AgentAnalytics = () => {
       <RadixDialog.Root open={modalOpen} onOpenChange={open => { setModalOpen(open); if (!open) setSelectedAgent(open ? selectedAgent : null); }}>
         <RadixDialog.Portal>
           <RadixDialog.Overlay className="fixed inset-0 bg-black/50 z-50" />
-          <RadixDialog.Content className="fixed right-0 top-0 h-full w-full md:w-[900px] max-w-full bg-card text-card-foreground border border-border shadow-2xl z-50 overflow-y-auto">
+          <RadixDialog.Content className="fixed right-0 top-0 h-full w-full md:w-[900px] max-w-full bg-card text-card-foreground  shadow-2xl z-50 overflow-y-auto">
             <RadixDialog.Title className="sr-only">Agent Detail</RadixDialog.Title>
             {/* Professional Header */}
-            <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 border-b border-border p-6">
+            <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 border-b  p-6">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-6">
                   {/* Agent Photo */}
@@ -1309,7 +1296,7 @@ const AgentAnalytics = () => {
                 </div>
                 <div className="flex items-center gap-3">
                   <select 
-                    className="px-4 py-2 border border-border rounded-lg text-sm bg-background text-foreground focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="px-4 py-2  rounded-lg text-sm bg-background text-foreground focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     onChange={(e) => setExportYear(e.target.value)}
                     value={exportYear}
                   >
@@ -1342,7 +1329,7 @@ const AgentAnalytics = () => {
                       
                       return (
                         <>
-                          <div className="bg-card text-card-foreground rounded-xl p-4 shadow-sm border border-border">
+                          <div className="bg-card text-card-foreground rounded-xl p-4 shadow-sm ">
                             <div className="flex items-center gap-3">
                               <div className="w-10 h-10 rounded-lg bg-blue-500 flex items-center justify-center">
                                 <span className="text-white text-lg font-bold">#{agentData.rankNum}</span>
@@ -1354,7 +1341,7 @@ const AgentAnalytics = () => {
                             </div>
                           </div>
                           
-                          <div className="bg-card text-card-foreground border border-border rounded-xl p-4 shadow-sm border border-border">
+                          <div className="bg-card text-card-foreground  rounded-xl p-4 shadow-sm ">
                             <div className="flex items-center gap-3">
                               <div className={`w-10 h-10 rounded-lg ${agentData.score >= 75 ? 'bg-green-500' : agentData.score >= 60 ? 'bg-blue-500' : agentData.score >= 45 ? 'bg-orange-500' : 'bg-red-500'} flex items-center justify-center`}>
                                 <span className="text-white text-lg font-bold">{agentData.score}</span>
@@ -1366,7 +1353,7 @@ const AgentAnalytics = () => {
                             </div>
                           </div>
                           
-                          <div className="bg-card text-card-foreground border border-border rounded-xl p-4 shadow-sm border border-border">
+                          <div className="bg-card text-card-foreground  rounded-xl p-4 shadow-sm ">
                             <div className="flex items-center gap-3">
                               <div className="w-10 h-10 rounded-lg bg-green-500 flex items-center justify-center">
                                 <ListAltIcon className="text-white" />
@@ -1378,7 +1365,7 @@ const AgentAnalytics = () => {
                             </div>
                           </div>
                           
-                          <div className="bg-card text-card-foreground border border-border rounded-xl p-4 shadow-sm border border-border">
+                          <div className="bg-card text-card-foreground  rounded-xl p-4 shadow-sm ">
                             <div className="flex items-center gap-3">
                               <div className="w-10 h-10 rounded-lg bg-purple-500 flex items-center justify-center">
                                 <TrendingUpIcon className="text-white" />
@@ -1401,7 +1388,7 @@ const AgentAnalytics = () => {
                     ? scoreTrendArr.map((score, i) => ({ month: data.agentMonthlyChart.labels?.[i] || `Month ${i+1}`, score }))
                     : [];
                   return (
-                    <div className="bg-card text-card-foreground border border-border rounded-xl p-6 shadow-sm border border-border mb-6">
+                    <div className="bg-card text-card-foreground  rounded-xl p-6 shadow-sm  mb-6">
                       <div className="flex items-center justify-between mb-4">
                         <div>
                           <div className="text-xl font-bold text-card-foreground">Performance Score Trend</div>
@@ -1417,7 +1404,6 @@ const AgentAnalytics = () => {
                           <defs>
                             <linearGradient id="colorScore" x1="0" y1="0" x2="0" y2="1">
                               <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.6}/>
-                              <stop offset="50%" stopColor="#3b82f6" stopOpacity={0.3}/>
                               <stop offset="95%" stopColor="#3b82f6" stopOpacity={0.05}/>
                             </linearGradient>
                           </defs>
@@ -1431,7 +1417,7 @@ const AgentAnalytics = () => {
                               boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
                             }}
                           />
-                          <Area type="monotone" dataKey="score" stroke="#3b82f6" strokeWidth={2} fillOpacity={1} fill="url(#colorScore)" />
+                          <Area type="monotone" dataKey="score" stroke="#3b82f6" strokeWidth={1.5} fillOpacity={1} fill="url(#colorScore)" />
                         </AreaChart>
                       </ResponsiveContainer>
                     </div>
@@ -1501,7 +1487,7 @@ const AgentAnalytics = () => {
                     backlog: 'Backlog',
                   };
                   return (
-                    <div className="bg-card text-card-foreground border border-border rounded-xl p-6 shadow-sm border border-border mb-6">
+                    <div className="bg-card text-card-foreground  rounded-xl p-6 shadow-sm  mb-6">
                       <div className="flex items-center gap-2 mb-4">
                         <LightbulbIcon className="w-5 h-5 text-yellow-500" />
                         <div className="text-xl font-bold text-card-foreground">Performance Insights</div>
@@ -2196,9 +2182,9 @@ const AgentAnalytics = () => {
                                   <div>
                                     <p className="font-semibold">Career Milestones</p>
                                     <p className="text-sm text-muted-foreground">
-                                      {totalTickets >= 1000 ? '🏆 1000+ Tickets Handled' : 
-                                       totalTickets >= 500 ? '🥉 500+ Tickets Handled' :
-                                       totalTickets >= 100 ? '🥈 100+ Tickets Handled' : '🚀 Getting Started'}
+                                      {totalTickets >= 1000 ? <><EmojiEventsIcon className="w-4 h-4 inline mr-1" /> 1000+ Tickets Handled</> : 
+                                       totalTickets >= 500 ? <><StarIcon className="w-4 h-4 inline mr-1" /> 500+ Tickets Handled</> :
+                                       totalTickets >= 100 ? <><StarIcon className="w-4 h-4 inline mr-1" /> 100+ Tickets Handled</> : <><FlashOnIcon className="w-4 h-4 inline mr-1" /> Getting Started</>}
                                     </p>
                                   </div>
                                 </div>
@@ -2792,7 +2778,7 @@ const AgentAnalytics = () => {
                                           <p className="text-sm text-gray-700 dark:text-gray-300 mb-2">
                                             {insight.description}
                                           </p>
-                                          <div className="bg-card text-card-foreground border border-border rounded p-3">
+                                          <div className="bg-card text-card-foreground  rounded p-3">
                                             <p className="text-sm font-semibold text-card-foreground mb-1">
                                               Recommendation:
                                             </p>
@@ -2843,7 +2829,6 @@ const AgentAnalytics = () => {
                               <defs>
                                 <linearGradient id="colorScoreTrend" x1="0" y1="0" x2="0" y2="1">
                                   <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.6}/>
-                                  <stop offset="50%" stopColor="#3b82f6" stopOpacity={0.3}/>
                                   <stop offset="95%" stopColor="#3b82f6" stopOpacity={0.05}/>
                                 </linearGradient>
                               </defs>
@@ -2851,7 +2836,7 @@ const AgentAnalytics = () => {
                               <YAxis domain={[0, 100]} />
                               <CartesianGrid strokeDasharray="3 3" />
                               <RechartsTooltip />
-                              <Area type="monotone" dataKey="score" stroke="#3b82f6" fill="url(#colorScoreTrend)" />
+                              <Area type="monotone" dataKey="score" stroke="#3b82f6" fill="url(#colorScoreTrend)" strokeWidth={1.5} />
                             </AreaChart>
                           </ResponsiveContainer>
                         </CardContent>
@@ -2933,8 +2918,8 @@ const AgentAnalytics = () => {
                                           metric.status === 'warning' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300' :
                                           'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300'
                                         }`}>
-                                          {metric.status === 'success' ? '✓ Good' : 
-                                           metric.status === 'warning' ? '⚠ Needs Attention' : 'ℹ Info'}
+                                          {metric.status === 'success' ? <><CheckCircleIcon className="w-3 h-3 inline mr-1" /> Good</> : 
+                                           metric.status === 'warning' ? <><WarningAmberIcon className="w-3 h-3 inline mr-1" /> Needs Attention</> : <><InfoIcon className="w-3 h-3 inline mr-1" /> Info</>}
                                         </span>
                                       </td>
                             </tr>

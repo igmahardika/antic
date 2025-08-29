@@ -11,6 +11,7 @@ import {
   SpeedIcon,
   BugReportIcon
 } from '@mui/icons-material';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 
 export default function AdminRumus() {
   return (
@@ -35,7 +36,7 @@ export default function AdminRumus() {
         >
           <div className="space-y-8">
             {/* Latest Major Update */}
-            <div className="bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-900/20 dark:to-blue-900/20 rounded-xl p-6 border border-green-200 dark:border-green-800">
+            <div className="bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-900/20 dark:to-blue-900/20 rounded-xl p-6 ring-1 ring-green-200 dark:ring-green-800">
               <div className="flex items-center gap-3 mb-4">
                 <Badge className="bg-green-600 text-white px-3 py-1">Latest</Badge>
                 <span className="text-sm font-medium text-green-700 dark:text-green-300">v2.1.0 - Major Improvements</span>
@@ -51,12 +52,12 @@ export default function AdminRumus() {
                     UI/UX Enhancements
                   </h5>
                   <ul className="space-y-2 text-sm text-muted-foreground">
-                    <li>✅ <strong>Sidebar Navigation:</strong> Added shadcn-ui sidebar with collapsible menus</li>
-                    <li>✅ <strong>Dark Mode:</strong> Comprehensive dark mode with smooth transitions</li>
-                    <li>✅ <strong>Layout Consistency:</strong> PageWrapper component for uniform layout</li>
-                    <li>✅ <strong>Header Enhancement:</strong> Moved avatar & mode toggle to header</li>
-                    <li>✅ <strong>Progress Bars:</strong> Standardized all progress bars to shadcn Progress</li>
-                    <li>✅ <strong>Responsive Design:</strong> Improved mobile and tablet experience</li>
+                    <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Sidebar Navigation:</strong> Added shadcn-ui sidebar with collapsible menus</li>
+                    <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Dark Mode:</strong> Comprehensive dark mode with smooth transitions</li>
+                    <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Layout Consistency:</strong> PageWrapper component for uniform layout</li>
+                    <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Header Enhancement:</strong> Moved avatar & mode toggle to header</li>
+                    <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Progress Bars:</strong> Standardized all progress bars to shadcn Progress</li>
+                    <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Responsive Design:</strong> Improved mobile and tablet experience</li>
                   </ul>
                 </div>
 
@@ -67,12 +68,12 @@ export default function AdminRumus() {
                     Performance & Optimization
                   </h5>
                   <ul className="space-y-2 text-sm text-muted-foreground">
-                    <li>✅ <strong>Bundle Size:</strong> Removed 20+ unused dependencies</li>
-                    <li>✅ <strong>Build Time:</strong> Faster compilation and build process</li>
-                    <li>✅ <strong>Memory Usage:</strong> Optimized component re-rendering</li>
-                    <li>✅ <strong>Charts Performance:</strong> Enhanced Recharts animations</li>
-                    <li>✅ <strong>Tree Shaking:</strong> Better dependency optimization</li>
-                    <li>✅ <strong>Loading Speed:</strong> Improved initial page load time</li>
+                    <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Bundle Size:</strong> Removed 20+ unused dependencies</li>
+                    <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Build Time:</strong> Faster compilation and build process</li>
+                    <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Memory Usage:</strong> Optimized component re-rendering</li>
+                    <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Charts Performance:</strong> Enhanced Recharts animations</li>
+                    <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Tree Shaking:</strong> Better dependency optimization</li>
+                    <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Loading Speed:</strong> Improved initial page load time</li>
                   </ul>
                 </div>
               </div>

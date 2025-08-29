@@ -236,10 +236,7 @@ const CustomerData: React.FC = () => {
 
   return (
     <PageWrapper>
-      <div className="mb-8">
-        <h1 className="text-2xl md:text-3xl font-extrabold mb-2 text-card-foreground">Data Customer</h1>
-        <p className="text-gray-500 dark:text-gray-400 mb-6 max-w-2xl">Upload file Excel berisi data customer per bulan (setiap sheet = 1 bulan, header: Nama, Jenis Klien, Layanan, Kategori). Pilih bulan untuk melihat daftar customer.</p>
-      </div>
+
       {/* Summary Cards - Full Width, Modern Layout */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8 w-full">
         <SummaryCard
@@ -262,7 +259,7 @@ const CustomerData: React.FC = () => {
         )}
       </div>
       {/* Filter & Upload Card - Full Width, Modern Layout */}
-      <Card className="w-full mb-8 shadow-lg border border-gray-200 dark:border-zinc-800 bg-card text-card-foreground border border-border min-h-[80px] rounded-2xl">
+      <Card className="w-full mb-8 shadow-lg  bg-card text-card-foreground  min-h-[80px] rounded-2xl">
         <CardContent className="p-6">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-center w-full">
             {/* File Upload */}
@@ -276,7 +273,7 @@ const CustomerData: React.FC = () => {
                   onChange={handleFileUpload}
                   className="absolute inset-0 opacity-0 w-full h-full cursor-pointer z-10"
                 />
-                <label htmlFor="customer-upload" className="flex items-center border border-gray-200 rounded-lg bg-gray-50 px-3 py-2 h-10 cursor-pointer text-xs font-normal w-full transition focus-within:ring-2 focus-within:ring-blue-200 focus-within:border-blue-400">
+                <label htmlFor="customer-upload" className="flex items-center  rounded-lg bg-gray-50 px-3 py-2 h-10 cursor-pointer text-xs font-normal w-full transition focus-within:ring-2 focus-within:ring-blue-200 focus-within:border-blue-400">
                   <span className="text-blue-600 font-semibold mr-2">Choose File</span>
                   <span className="truncate text-gray-500">{fileName || 'No file chosen'}</span>
                 </label>
@@ -327,7 +324,7 @@ const CustomerData: React.FC = () => {
           </div>
         </CardContent>
       </Card>
-      <div className="overflow-x-auto rounded-xl shadow-lg border border-gray-200 dark:border-zinc-800 bg-card text-card-foreground border border-border">
+      <div className="overflow-x-auto rounded-xl shadow-lg  bg-card text-card-foreground ">
         <Table>
           <TableHeader>
             <TableRow>

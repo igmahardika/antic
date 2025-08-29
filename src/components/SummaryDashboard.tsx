@@ -304,7 +304,7 @@ const SummaryDashboard = ({ ticketAnalyticsData, filteredTickets }: any) => {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
       {/* Monthly Area Chart */}
-      <Card className="bg-white dark:bg-zinc-900 shadow-lg rounded-xl border border-gray-200 dark:border-zinc-700 p-2">
+      <Card className="bg-white dark:bg-zinc-900 shadow-lg rounded-xl  p-2">
         <CardHeader className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 pb-1">
           <div className="flex flex-col gap-1">
             <CardTitle className="font-extrabold text-lg text-zinc-900 dark:text-zinc-100">Tickets per Month</CardTitle>
@@ -314,7 +314,7 @@ const SummaryDashboard = ({ ticketAnalyticsData, filteredTickets }: any) => {
           </div>
           <div className="mt-2 md:mt-0">
             <select
-              className="border border-gray-200 dark:border-zinc-700 rounded px-2 py-1 text-sm bg-white dark:bg-zinc-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className=" rounded px-2 py-1 text-sm bg-white dark:bg-zinc-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
               value={selectedYear as string}
               onChange={e => setSelectedYear(e.target.value)}
             >
@@ -330,12 +330,12 @@ const SummaryDashboard = ({ ticketAnalyticsData, filteredTickets }: any) => {
               <AreaChart data={toRechartsData(filteredMonthlyStatsData.labels, filteredMonthlyStatsData.datasets)} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
                 <defs>
                   <linearGradient id="colorIncoming" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#6366F1" stopOpacity={0.8}/>
-                    <stop offset="95%" stopColor="#6366F1" stopOpacity={0.1}/>
+                    <stop offset="5%" stopColor="#6366F1" stopOpacity={0.6}/>
+                    <stop offset="95%" stopColor="#6366F1" stopOpacity={0.05}/>
                   </linearGradient>
                   <linearGradient id="colorClosed" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#22C55E" stopOpacity={0.8}/>
-                    <stop offset="95%" stopColor="#22C55E" stopOpacity={0.1}/>
+                    <stop offset="5%" stopColor="#22C55E" stopOpacity={0.6}/>
+                    <stop offset="95%" stopColor="#22C55E" stopOpacity={0.05}/>
                   </linearGradient>
                 </defs>
                 <XAxis 
@@ -363,8 +363,8 @@ const SummaryDashboard = ({ ticketAnalyticsData, filteredTickets }: any) => {
                   }}
                 />
                 <RechartsLegend />
-                <Area type="monotone" dataKey="incoming" stroke="#6366F1" fill="url(#colorIncoming)" name="Incoming Tickets" strokeWidth={3} />
-                <Area type="monotone" dataKey="closed" stroke="#22C55E" fill="url(#colorClosed)" name="Closed Tickets" strokeWidth={3} />
+                <Area type="monotone" dataKey="incoming" stroke="#6366F1" fill="url(#colorIncoming)" name="Incoming Tickets" strokeWidth={1.5} />
+                <Area type="monotone" dataKey="closed" stroke="#22C55E" fill="url(#colorClosed)" name="Closed Tickets" strokeWidth={1.5} />
               </AreaChart>
             </ResponsiveContainer>
           ) : (
@@ -373,7 +373,7 @@ const SummaryDashboard = ({ ticketAnalyticsData, filteredTickets }: any) => {
         </CardContent>
       </Card>
       {/* Yearly Area Chart */}
-      <Card className="bg-white dark:bg-zinc-900 shadow-lg rounded-xl border border-gray-200 dark:border-zinc-700 p-2">
+      <Card className="bg-white dark:bg-zinc-900 shadow-lg rounded-xl  p-2">
         <CardHeader className="flex flex-col gap-1 pb-1">
           <CardTitle className="font-extrabold text-lg text-zinc-900 dark:text-zinc-100">Tickets per Year</CardTitle>
           {latestYearlyValue !== null && (
@@ -386,12 +386,12 @@ const SummaryDashboard = ({ ticketAnalyticsData, filteredTickets }: any) => {
               <AreaChart data={toRechartsData(yearlyStatsData.labels, yearlyStatsData.datasets)} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
                 <defs>
                   <linearGradient id="colorIncomingY" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#6366F1" stopOpacity={0.8}/>
-                    <stop offset="95%" stopColor="#6366F1" stopOpacity={0.1}/>
+                    <stop offset="5%" stopColor="#6366F1" stopOpacity={0.6}/>
+                    <stop offset="95%" stopColor="#6366F1" stopOpacity={0.05}/>
                   </linearGradient>
                   <linearGradient id="colorClosedY" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#22C55E" stopOpacity={0.8}/>
-                    <stop offset="95%" stopColor="#22C55E" stopOpacity={0.1}/>
+                    <stop offset="5%" stopColor="#22C55E" stopOpacity={0.6}/>
+                    <stop offset="95%" stopColor="#22C55E" stopOpacity={0.05}/>
                   </linearGradient>
                 </defs>
                 <XAxis 
@@ -419,8 +419,8 @@ const SummaryDashboard = ({ ticketAnalyticsData, filteredTickets }: any) => {
                   }}
                 />
                 <RechartsLegend />
-                <Area type="monotone" dataKey="incoming" stroke="#6366F1" fill="url(#colorIncomingY)" name="Incoming Tickets" strokeWidth={3} />
-                <Area type="monotone" dataKey="closed" stroke="#22C55E" fill="url(#colorClosedY)" name="Closed Tickets" strokeWidth={3} />
+                <Area type="monotone" dataKey="incoming" stroke="#6366F1" fill="url(#colorIncomingY)" name="Incoming Tickets" strokeWidth={1.5} />
+                <Area type="monotone" dataKey="closed" stroke="#22C55E" fill="url(#colorClosedY)" name="Closed Tickets" strokeWidth={1.5} />
               </AreaChart>
             </ResponsiveContainer>
           ) : (
@@ -431,12 +431,12 @@ const SummaryDashboard = ({ ticketAnalyticsData, filteredTickets }: any) => {
       </div>
 
       {/* Agent Leaderboard (per Year) */}
-      <Card className="bg-white dark:bg-zinc-900 shadow-lg rounded-xl border border-gray-200 dark:border-zinc-700 p-2">
+      <Card className="bg-white dark:bg-zinc-900 shadow-lg rounded-xl  p-2">
         <CardHeader className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 pb-1">
           <CardTitle className="font-extrabold text-lg text-zinc-900 dark:text-zinc-100">Agent Leaderboard</CardTitle>
           <div className="flex items-center gap-2">
             <select
-              className="border border-gray-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-zinc-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+              className=" rounded-lg px-3 py-2 text-sm bg-white dark:bg-zinc-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
               value={agentYear}
               onChange={e=>setAgentYear(e.target.value)}
             >
@@ -449,7 +449,7 @@ const SummaryDashboard = ({ ticketAnalyticsData, filteredTickets }: any) => {
         <CardContent className="p-0">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="sticky top-0 bg-white/95 dark:bg-zinc-900/95 backdrop-blur border-b border-gray-100 dark:border-zinc-800">
+              <thead className="sticky top-0 bg-white/95 dark:bg-zinc-900/95 backdrop-blur ring-b-1 ring-gray-100 dark:ring-zinc-800">
                 <tr>
                   <th className="px-4 py-3 text-left font-semibold text-gray-700 dark:text-gray-300 w-16">Rank</th>
                   <th className="px-4 py-3 text-left font-semibold text-gray-700 dark:text-gray-300 min-w-[180px]">Agent</th>

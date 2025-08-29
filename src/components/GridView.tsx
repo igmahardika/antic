@@ -95,15 +95,7 @@ const GridView = ({ data: propsData }: { data?: ITicket[] }) => {
   return (
     <PageWrapper>
       <div className="space-y-6">
-        {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-bold text-card-foreground">Data Grid</h1>
-            <p className="text-muted-foreground mt-2">
-              View, search, and manage all ticket data in an easy-to-use grid view.
-            </p>
-          </div>
-        </div>
+
 
         {/* Summary Cards - Enhanced UI */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
@@ -137,7 +129,7 @@ const GridView = ({ data: propsData }: { data?: ITicket[] }) => {
               <div className="relative max-w-xs w-full">
                 <input
                   type="text"
-                  className="form-input ps-10 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white w-full text-sm"
+                  className="form-input ps-10 px-3 py-2  rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white w-full text-sm"
                   placeholder="Quick search..."
                   value={search}
                   onChange={e => { setSearch(e.target.value); setPage(1); }}
@@ -189,7 +181,7 @@ const GridView = ({ data: propsData }: { data?: ITicket[] }) => {
                         const isValid = customerNames.has((row.name || '').trim().toLowerCase());
                         return (
                           <tr key={i} className={
-                            (i % 2 === 0 ? 'bg-card text-card-foreground border border-border' : 'bg-gray-50 dark:bg-gray-800') +
+                            (i % 2 === 0 ? 'bg-card text-card-foreground ' : 'bg-gray-50 dark:bg-gray-800') +
                             (is2025 && !isValid ? ' bg-red-50 dark:bg-red-900/30' : '')
                           }>
                             {columns.map(col => (

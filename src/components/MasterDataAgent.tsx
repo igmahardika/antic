@@ -120,7 +120,7 @@ const MasterDataAgent: React.FC = () => {
   const renderTable = (agents: any[], title: string) => (
     <div className="mb-12">
               <h2 className="text-lg md:text-xl font-bold mb-4 text-card-foreground">{title}</h2>
-      <div className="overflow-x-auto rounded-xl shadow-lg border border-gray-200 dark:border-zinc-800 bg-card text-card-foreground border border-border">
+      <div className="overflow-x-auto rounded-xl shadow-lg ring-1 ring-gray-200 dark:ring-zinc-800 bg-card text-card-foreground ">
         <table className="min-w-full table-fixed text-sm rounded-xl overflow-hidden">
           <colgroup>
             <col className="w-14" />
@@ -166,8 +166,8 @@ const MasterDataAgent: React.FC = () => {
                   key={agent.name}
                   className={
                     `transition-colors duration-200 cursor-pointer ` +
-                    (i % 2 === 0 ? 'bg-card text-card-foreground border border-border' : 'bg-gray-50 dark:bg-gray-800') +
-                    ' hover:bg-blue-50/60 dark:hover:bg-blue-900/40 border-b border-gray-100 dark:border-zinc-800'
+                    (i % 2 === 0 ? 'bg-card text-card-foreground ' : 'bg-gray-50 dark:bg-gray-800') +
+                    ' hover:bg-blue-50/60 dark:hover:bg-blue-900/40 ring-b-1 ring-gray-100 dark:ring-zinc-800'
                   }
                 >
                   <td className="w-14 px-4 py-3 text-card-foreground font-semibold text-center align-top">{i + 1}</td>

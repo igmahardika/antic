@@ -7,16 +7,15 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import SummaryCard from '@/components/ui/SummaryCard';
 import { 
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-} from "@/components/ui/chart";
+  Tooltip as RechartsTooltip,
+} from "recharts";
 import { 
   XAxis, 
   YAxis, 
   CartesianGrid, 
-  LineChart,
-  Line
+  AreaChart,
+  Area,
+  ResponsiveContainer
 } from 'recharts';
 import PageWrapper from '@/components/PageWrapper';
 
@@ -58,6 +57,46 @@ const formatDurationHMS = (minutes: number): string => {
   const mins = Math.floor(minutes % 60);
   const secs = Math.floor((minutes % 1) * 60);
   return `${hrs}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+};
+
+// Helper function to validate and calculate risk score
+const calculateRiskScore = (incidentCount: number, avgDurationMinutes: number, resolutionRate: number): {
+  riskScore: number;
+  level: string;
+  breakdown: {
+    frequencyScore: number;
+    durationScore: number;
+    resolutionPenalty: number;
+  };
+} => {
+  // Validate inputs
+  const count = Math.max(0, incidentCount || 0);
+  const duration = Math.max(0, avgDurationMinutes || 0);
+  const resolution = Math.max(0, Math.min(100, resolutionRate || 0));
+  
+  // Calculate components
+  const frequencyScore = count * 10;
+  const durationInHours = duration / 60;
+  const durationScore = durationInHours * 2;
+  const resolutionPenalty = 100 - resolution;
+  
+  // Calculate total risk score
+  const riskScore = frequencyScore + durationScore + resolutionPenalty;
+  
+  // Determine risk level
+  let level = 'Low';
+  if (riskScore >= 100) level = 'High';
+  else if (riskScore >= 50) level = 'Medium';
+  
+  return {
+    riskScore: Math.round(riskScore * 10) / 10, // Round to 1 decimal place
+    level,
+    breakdown: {
+      frequencyScore,
+      durationScore,
+      resolutionPenalty
+    }
+  };
 };
 
   const normalizeNCAL = (ncal: string | null | undefined): string => {
@@ -157,22 +196,17 @@ const SiteAnalytics: React.FC = () => {
         ? (resolvedIncidents / totalIncidents) * 100 
         : 0;
 
-      // Calculate risk score based on frequency and duration
-      const frequencyScore = totalIncidents * 10;
-      const durationScore = avgDuration > 240 ? 50 : avgDuration > 120 ? 30 : 10;
-      const riskScore = frequencyScore + durationScore;
+      // Calculate risk score using the validated helper function
+      const riskCalculation = calculateRiskScore(totalIncidents, avgDuration, resolutionRate);
       
-      let riskLevel = 'Low';
-      if (riskScore > 100) riskLevel = 'High';
-      else if (riskScore > 50) riskLevel = 'Medium';
-
       bySite[site] = {
         count: totalIncidents,
         resolved: resolvedIncidents,
         avgDuration,
         resolutionRate,
-        riskScore,
-        level: riskLevel
+        riskScore: riskCalculation.riskScore,
+        level: riskCalculation.level,
+        riskBreakdown: riskCalculation.breakdown
       };
     });
 
@@ -187,10 +221,13 @@ const SiteAnalytics: React.FC = () => {
       .sort((a, b) => b.count - a.count)
       .slice(0, 10);
 
-    // Site risk assessment
+    // Site risk assessment - include all data for UI display
     const siteRiskScore = Object.entries(bySite)
       .map(([site, data]) => ({
         site,
+        count: data.count,
+        avgDuration: data.avgDuration,
+        resolutionRate: data.resolutionRate,
         riskScore: data.riskScore,
         level: data.level
       }))
@@ -357,6 +394,15 @@ const SiteAnalytics: React.FC = () => {
       resolutionRate: item.resolutionRate,
       isPercentage: item.resolutionRate >= 0 && item.resolutionRate <= 100,
       avgDuration: item.avgDuration
+    })),
+    riskScoreValidation: Object.entries(siteStats.siteRiskScore || {}).map(([site, data]: [string, any]) => ({
+      site,
+      count: data.count,
+      avgDuration: data.avgDuration,
+      resolutionRate: data.resolutionRate,
+      riskScore: data.riskScore,
+      level: data.level,
+      calculatedScore: (data.count * 10) + ((data.avgDuration / 60) * 2) + (100 - data.resolutionRate)
     }))
   });
 
@@ -378,18 +424,11 @@ const SiteAnalytics: React.FC = () => {
     <PageWrapper>
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <div>
-            <h1 className="text-3xl md:text-4xl font-extrabold text-card-foreground">Site Analytics</h1>
-            <p className="text-muted-foreground mt-2">
-              Comprehensive analytics and performance metrics for affected sites
-            </p>
-          </div>
-          
+        <div className="flex flex-col md:flex-row md:items-center md:justify-end gap-4">
           {/* Period Filter */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 scale-75 transform origin-right">
             <FilterListIcon className="w-4 h-4 text-muted-foreground" />
-            <div className="flex bg-white/80 dark:bg-zinc-900/80 rounded-2xl shadow-lg border border-gray-200 dark:border-zinc-800 p-1">
+            <div className="flex bg-white/80 dark:bg-zinc-900/80 rounded-2xl shadow-lg  p-1">
               {[
                 { key: '3m', label: '3M' },
                 { key: '6m', label: '6M' },
@@ -452,7 +491,7 @@ const SiteAnalytics: React.FC = () => {
         {/* Top Affected Sites & Site Risk Assessment */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Top Affected Sites */}
-          <Card className="bg-card text-card-foreground border border-border rounded-2xl shadow-lg border border-gray-200 dark:border-zinc-800">
+          <Card className="bg-card text-card-foreground  rounded-2xl shadow-lg ">
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center gap-2 text-lg font-extrabold text-card-foreground">
                 <ErrorOutlineIcon className="w-5 h-5 text-red-600" />
@@ -461,12 +500,12 @@ const SiteAnalytics: React.FC = () => {
                           <CardDescription className="text-muted-foreground">
               Sites ranked by incident frequency, resolution time, and impact severity
             </CardDescription>
-            <div className="mt-2 p-3 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800">
+            <div className="mt-2 p-3 bg-red-50 dark:bg-red-900/20 rounded-lg ">
               <div className="text-xs font-medium text-red-800 dark:text-red-200 mb-1">Ranking Criteria:</div>
               <div className="text-xs text-red-700 dark:text-red-300">
                 <strong>Primary: Incident Count</strong> • <strong>Secondary: Resolution Time</strong> • <strong>Tertiary: Resolution Rate</strong><br/>
                 <span className="text-red-600 dark:text-red-400">
-                  • 🔴 Top 3: Critical sites • 🟡 Rank 4-5: High priority • 🟢 Rank 6-8: Monitor
+                  • <ErrorOutlineIcon className="w-4 h-4 inline" /> Top 3: Critical sites • <WarningAmberIcon className="w-4 h-4 inline" /> Rank 4-5: High priority • <CheckCircleIcon className="w-4 h-4 inline" /> Rank 6-8: Monitor
                 </span>
               </div>
             </div>
@@ -474,7 +513,7 @@ const SiteAnalytics: React.FC = () => {
             <CardContent>
               <div className="space-y-3">
                 {topAffectedSitesData.length > 0 ? topAffectedSitesData.slice(0, 8).map((site, index) => (
-                  <div key={site.name} className="p-4 bg-gray-50 dark:bg-zinc-800 rounded-xl border border-gray-200 dark:border-zinc-700 shadow-sm">
+                  <div key={site.name} className="p-4 bg-gray-50 dark:bg-zinc-800 rounded-xl  shadow-sm">
                     <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center gap-3 min-w-0 flex-1">
                         <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold text-white ${
@@ -536,7 +575,7 @@ const SiteAnalytics: React.FC = () => {
                     <div className="mt-3 p-2 bg-gray-100 dark:bg-gray-700 rounded-lg">
                       <div className="text-xs text-muted-foreground mb-1">Impact Assessment:</div>
                       <div className="text-xs text-gray-700 dark:text-gray-300">
-                        {site.count >= 6 ? '🔴 High Impact' : site.count >= 4 ? '🟡 Medium Impact' : '🟢 Low Impact'} • 
+                        {site.count >= 6 ? '<ErrorOutlineIcon className="w-3 h-3 inline" /> High Impact' : site.count >= 4 ? '<WarningAmberIcon className="w-3 h-3 inline" /> Medium Impact' : '<CheckCircleIcon className="w-3 h-3 inline" /> Low Impact'} • 
                         {site.avgDuration > 1440 ? ' Long resolution time' : site.avgDuration > 720 ? ' Moderate resolution time' : ' Quick resolution'} • 
                         {site.resolutionRate === 100 ? ' Fully resolved' : ' Has pending cases'}
                       </div>
@@ -552,7 +591,7 @@ const SiteAnalytics: React.FC = () => {
           </Card>
 
         {/* Site Risk Assessment */}
-          <Card className="bg-card text-card-foreground border border-border rounded-2xl shadow-lg border border-gray-200 dark:border-zinc-800">
+          <Card className="bg-card text-card-foreground  rounded-2xl shadow-lg ">
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center gap-2 text-lg font-extrabold text-card-foreground">
                 <WarningAmberIcon className="w-5 h-5 text-amber-600" />
@@ -561,7 +600,7 @@ const SiteAnalytics: React.FC = () => {
                           <CardDescription className="text-muted-foreground">
               Risk score calculated from incident frequency, duration, and resolution patterns
             </CardDescription>
-            <div className="mt-2 p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800">
+            <div className="mt-2 p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg  dark:border-amber-800">
               <div className="text-xs font-medium text-amber-800 dark:text-amber-200 mb-1">Risk Score Formula:</div>
               <div className="text-xs text-amber-700 dark:text-amber-300">
                 <strong>Risk Score = (Incident Count × 10) + (Avg Duration in hours × 2) + (100 - Resolution Rate)</strong><br/>
@@ -579,7 +618,7 @@ const SiteAnalytics: React.FC = () => {
                   .map(([site, data], index) => {
                     const siteData = data as any;
                     return (
-                      <div key={site} className="p-4 bg-gray-50 dark:bg-zinc-800 rounded-xl border border-gray-200 dark:border-zinc-700 shadow-sm">
+                      <div key={site} className="p-4 bg-gray-50 dark:bg-zinc-800 rounded-xl  shadow-sm">
                         <div className="flex items-center justify-between mb-3">
                           <div className="flex items-center gap-3 min-w-0 flex-1">
                             <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold text-white ${
@@ -611,22 +650,22 @@ const SiteAnalytics: React.FC = () => {
                           <div className="text-center">
                             <div className="text-lg font-bold text-purple-600">
                               {siteData.count || 0}
-                    </div>
+                            </div>
                             <div className="text-xs text-muted-foreground">Incident Count</div>
                             <div className="text-xs text-purple-600 font-medium">
-                              Frequency Factor
-                    </div>
-              </div>
+                              (×10 = {(siteData.count || 0) * 10})
+                            </div>
+                          </div>
                           
                           <div className="text-center">
                             <div className="text-lg font-bold text-orange-600">
                               {formatDurationHMS(siteData.avgDuration || 0)}
-                    </div>
+                            </div>
                             <div className="text-xs text-muted-foreground">Avg Duration</div>
                             <div className="text-xs text-orange-600 font-medium">
-                              Duration Factor
-                  </div>
-                    </div>
+                              (×2 = {((siteData.avgDuration || 0) / 60 * 2).toFixed(1)})
+                            </div>
+                          </div>
                           
                           <div className="text-center">
                             <div className="text-lg font-bold text-blue-600">
@@ -634,16 +673,16 @@ const SiteAnalytics: React.FC = () => {
                             </div>
                             <div className="text-xs text-muted-foreground">Resolution Rate</div>
                             <div className="text-xs text-blue-600 font-medium">
-                              Resolution Factor
+                              (Penalty: {100 - (siteData.resolutionRate || 0)})
                             </div>
-                  </div>
-                </div>
+                          </div>
+                        </div>
                 
                         {/* Risk Calculation Explanation */}
                         <div className="mt-3 p-2 bg-gray-100 dark:bg-gray-700 rounded-lg">
                           <div className="text-xs text-muted-foreground mb-1">Risk Calculation:</div>
                           <div className="text-xs text-gray-700 dark:text-gray-300">
-                            {siteData.level === 'High' ? '🔴 High Risk' : siteData.level === 'Medium' ? '🟡 Medium Risk' : '🟢 Low Risk'} • 
+                            {siteData.level === 'High' ? <><ErrorOutlineIcon className="w-3 h-3 inline mr-1" /> High Risk</> : siteData.level === 'Medium' ? <><WarningAmberIcon className="w-3 h-3 inline mr-1" /> Medium Risk</> : <><CheckCircleIcon className="w-3 h-3 inline mr-1" /> Low Risk</>} • 
                             Score: {siteData.riskScore.toFixed(1)} • 
                             {siteData.level === 'High' ? ' Requires immediate attention' : siteData.level === 'Medium' ? ' Monitor closely' : ' Low priority'} • 
                             {siteData.count >= 5 ? ' High frequency' : siteData.count >= 3 ? ' Moderate frequency' : ' Low frequency'} incidents
@@ -662,7 +701,7 @@ const SiteAnalytics: React.FC = () => {
         </div>
 
         {/* Site Performance Overview */}
-        <Card className="bg-card text-card-foreground border border-border rounded-2xl shadow-lg border border-gray-200 dark:border-zinc-800">
+        <Card className="bg-card text-card-foreground  rounded-2xl shadow-lg ">
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-lg font-extrabold text-card-foreground">
               <AssessmentIcon className="w-5 h-5 text-indigo-600" />
@@ -673,7 +712,7 @@ const SiteAnalytics: React.FC = () => {
             <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               {/* Reliability Rate */}
-              <div className="text-center p-4 bg-green-50 dark:bg-green-900/20 rounded-xl border border-green-200 dark:border-green-800 shadow-sm">
+              <div className="text-center p-4 bg-green-50 dark:bg-green-900/20 rounded-xl  dark:border-green-800 shadow-sm">
                 <CheckCircleIcon className="w-6 h-6 text-green-600 mx-auto mb-2" />
                 <div className="text-lg font-bold text-green-600">
                   {siteStats.siteReliability.toFixed(1)}%
@@ -693,7 +732,7 @@ const SiteAnalytics: React.FC = () => {
               </div>
 
               {/* Recovery Time */}
-              <div className="text-center p-4 bg-orange-50 dark:bg-orange-900/20 rounded-xl border border-orange-200 dark:border-orange-800 shadow-sm">
+              <div className="text-center p-4 bg-orange-50 dark:bg-orange-900/20 rounded-xl  dark:border-orange-800 shadow-sm">
                 <AccessTimeIcon className="w-6 h-6 text-orange-600 mx-auto mb-2" />
                 <div className="text-lg font-bold text-orange-600">
                   {formatDurationHMS(siteStats.avgSiteRecovery)}
@@ -703,7 +742,7 @@ const SiteAnalytics: React.FC = () => {
                       </div>
                       
               {/* Risk Assessment */}
-              <div className="text-center p-4 bg-red-50 dark:bg-red-900/20 rounded-xl border border-red-200 dark:border-red-800 shadow-sm">
+              <div className="text-center p-4 bg-red-50 dark:bg-red-900/20 rounded-xl  shadow-sm">
                 <WarningAmberIcon className="w-6 h-6 text-red-600 mx-auto mb-2" />
                 <div className="text-lg font-bold text-red-600">
                   {Object.values(siteStats.siteRiskScore).filter((site: any) => site.level === 'High').length}
@@ -714,8 +753,8 @@ const SiteAnalytics: React.FC = () => {
                         </div>
 
             {/* Additional Metrics */}
-            <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 border-t border-border">
-              <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg border border-border">
+            <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 border-t ">
+              <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg ">
                 <div className="flex items-center gap-2">
                   <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
                   <span className="text-sm text-muted-foreground">Total Incidents:</span>
@@ -723,7 +762,7 @@ const SiteAnalytics: React.FC = () => {
                 <span className="font-semibold text-card-foreground">{siteStats.totalSites}</span>
                       </div>
                       
-              <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg border border-border">
+              <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg ">
                 <div className="flex items-center gap-2">
                   <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
                   <span className="text-sm text-muted-foreground">Medium Risk:</span>
@@ -733,7 +772,7 @@ const SiteAnalytics: React.FC = () => {
                 </span>
                         </div>
               
-              <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg border border-border">
+              <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg ">
                 <div className="flex items-center gap-2">
                   <div className="w-3 h-3 bg-green-500 rounded-full"></div>
                   <span className="text-sm text-muted-foreground">Low Risk:</span>
@@ -747,7 +786,7 @@ const SiteAnalytics: React.FC = () => {
           </Card>
 
         {/* NCAL Performance & Compliance Analysis */}
-        <Card className="bg-card text-card-foreground border border-border rounded-2xl shadow-lg border border-gray-200 dark:border-zinc-800">
+        <Card className="bg-card text-card-foreground  rounded-2xl shadow-lg ">
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-lg font-extrabold text-card-foreground">
               <TrackChangesIcon className="w-5 h-5 text-purple-600" />
@@ -758,7 +797,7 @@ const SiteAnalytics: React.FC = () => {
             <CardContent>
             {/* Summary Stats */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-              <div className="text-center p-3 bg-green-50 dark:bg-green-900/20 rounded-xl border border-green-200 dark:border-green-800 shadow-sm">
+              <div className="text-center p-3 bg-green-50 dark:bg-green-900/20 rounded-xl  dark:border-green-800 shadow-sm">
                 <div className="text-lg font-bold text-green-600">
                   {ncalPerformanceData.filter(item => {
                     const target = NCAL_TARGETS[item.name as keyof typeof NCAL_TARGETS] || 0;
@@ -768,7 +807,7 @@ const SiteAnalytics: React.FC = () => {
                 <div className="text-xs text-muted-foreground">Compliant Levels</div>
               </div>
               
-              <div className="text-center p-3 bg-red-50 dark:bg-red-900/20 rounded-xl border border-red-200 dark:border-red-800 shadow-sm">
+              <div className="text-center p-3 bg-red-50 dark:bg-red-900/20 rounded-xl  shadow-sm">
                 <div className="text-lg font-bold text-red-600">
                   {ncalPerformanceData.filter(item => {
                     const target = NCAL_TARGETS[item.name as keyof typeof NCAL_TARGETS] || 0;
@@ -785,7 +824,7 @@ const SiteAnalytics: React.FC = () => {
                 <div className="text-xs text-muted-foreground">Total Incidents</div>
               </div>
               
-              <div className="text-center p-3 bg-orange-50 dark:bg-orange-900/20 rounded-xl border border-orange-200 dark:border-orange-800 shadow-sm">
+              <div className="text-center p-3 bg-orange-50 dark:bg-orange-900/20 rounded-xl  dark:border-orange-800 shadow-sm">
                 <div className="text-lg font-bold text-orange-600">
                   {formatDurationHMS(ncalPerformanceData.reduce((sum, item) => sum + item.avgDuration, 0) / ncalPerformanceData.length)}
                 </div>
@@ -802,7 +841,7 @@ const SiteAnalytics: React.FC = () => {
                 const efficiency = target > 0 ? Math.max(0, ((target - avgDuration) / target) * 100) : 0;
                   
                   return (
-                  <div key={item.name} className="p-4 bg-gray-50 dark:bg-zinc-800 rounded-xl border border-gray-200 dark:border-zinc-700 shadow-sm">
+                  <div key={item.name} className="p-4 bg-gray-50 dark:bg-zinc-800 rounded-xl  shadow-sm">
                       <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center gap-2">
                           <div 
@@ -862,7 +901,7 @@ const SiteAnalytics: React.FC = () => {
         {/* Site Incident Trend Analysis */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Site Incident Volume Trend */}
-          <Card className="bg-card text-card-foreground border border-border rounded-2xl shadow-lg border border-gray-200 dark:border-zinc-800">
+          <Card className="bg-card text-card-foreground  rounded-2xl shadow-lg ">
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center gap-2 text-lg font-extrabold text-card-foreground">
                 <TimelineIcon className="w-5 h-5 text-blue-600" />
@@ -872,60 +911,76 @@ const SiteAnalytics: React.FC = () => {
                 Monthly incident volume trends by top sites
               </CardDescription>
             </CardHeader>
-            <CardContent>
-              <ChartContainer config={{
-                incidents: { label: "Total Incidents", color: "#3b82f6" },
-                uniqueSites: { label: "Unique Sites", color: "#10b981" }
-              }}>
-                <LineChart data={siteTrendData} height={300} width={undefined} margin={{ top: 5, right: 10, left: 5, bottom: 5 }}>
-                  <CartesianGrid stroke="#e5e7eb" />
-                  <XAxis 
-                    dataKey="month" 
-                    tickLine={false}
-                    axisLine={false}
-                    tickMargin={8}
-                    tick={{ fill: '#6b7280', fontSize: 12 }}
-                  />
-                  <YAxis 
-                    tickLine={false}
-                    axisLine={false}
-                    tickMargin={8}
-                    tick={{ fill: '#6b7280', fontSize: 12 }}
-                  />
-                  <ChartTooltip content={<ChartTooltipContent />} />
-                  <Line 
-                    type="monotone" 
-                    dataKey="incidents" 
-                    stroke="#3b82f6" 
-                    strokeWidth={2}
-                    dot={{ fill: '#3b82f6', strokeWidth: 2, r: 4 }}
-                    activeDot={{ r: 6, stroke: '#3b82f6', strokeWidth: 2 }}
-                  />
-                  <Line 
-                    type="monotone" 
-                    dataKey="uniqueSites" 
-                    stroke="#10b981" 
-                    strokeWidth={2}
-                    dot={{ fill: '#10b981', strokeWidth: 2, r: 4 }}
-                    activeDot={{ r: 6, stroke: '#10b981', strokeWidth: 2 }}
-                  />
-                </LineChart>
-              </ChartContainer>
-              <div className="mt-4 flex justify-center gap-6">
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-                  <span className="text-sm text-muted-foreground">Total Incidents</span>
+                          <CardContent>
+                <div className="w-full h-[300px]">
+                  <ResponsiveContainer width="100%" height={300}>
+                    <AreaChart data={siteTrendData} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
+                      <defs>
+                        <linearGradient id="colorIncidents" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.6}/>
+                          <stop offset="95%" stopColor="#3b82f6" stopOpacity={0.05}/>
+                        </linearGradient>
+                        <linearGradient id="colorUniqueSites" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#10b981" stopOpacity={0.6}/>
+                          <stop offset="95%" stopColor="#10b981" stopOpacity={0.05}/>
+                        </linearGradient>
+                      </defs>
+                      <XAxis 
+                        dataKey="month" 
+                        tickLine={false}
+                        axisLine={false}
+                        tickMargin={8}
+                        tick={{ fill: '#6b7280', fontSize: 12 }}
+                      />
+                      <YAxis 
+                        tickLine={false}
+                        axisLine={false}
+                        tickMargin={8}
+                        tick={{ fill: '#6b7280', fontSize: 12 }}
+                      />
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
+                      <RechartsTooltip 
+                        contentStyle={{
+                          backgroundColor: 'hsl(var(--background))',
+                          border: '1px solid hsl(var(--border))',
+                          borderRadius: '8px',
+                          color: 'hsl(var(--foreground))'
+                        }}
+                      />
+                      <Area 
+                        type="monotone" 
+                        dataKey="incidents" 
+                        stroke="#3b82f6" 
+                        fill="url(#colorIncidents)" 
+                        name="Total Incidents"
+                        strokeWidth={1.5} 
+                      />
+                      <Area 
+                        type="monotone" 
+                        dataKey="uniqueSites" 
+                        stroke="#10b981" 
+                        fill="url(#colorUniqueSites)" 
+                        name="Unique Sites"
+                        strokeWidth={1.5} 
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
                 </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                  <span className="text-sm text-muted-foreground">Unique Sites</span>
+                <div className="mt-4 flex justify-center gap-6">
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                    <span className="text-sm text-muted-foreground">Total Incidents</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                    <span className="text-sm text-muted-foreground">Unique Sites</span>
+                  </div>
                 </div>
-              </div>
-            </CardContent>
+              </CardContent>
           </Card>
 
           {/* Site Performance Trend */}
-          <Card className="bg-card text-card-foreground border border-border rounded-2xl shadow-lg border border-gray-200 dark:border-zinc-800">
+          <Card className="bg-card text-card-foreground  rounded-2xl shadow-lg ">
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center gap-2 text-lg font-extrabold text-card-foreground">
                 <TrackChangesIcon className="w-5 h-5 text-green-600" />
@@ -935,77 +990,97 @@ const SiteAnalytics: React.FC = () => {
                 Average resolution time trends by top sites
               </CardDescription>
             </CardHeader>
-            <CardContent>
-              <ChartContainer config={{
-                avgDuration: { label: "Average Duration", color: "#f59e0b" },
-                resolutionRate: { label: "Resolution Rate (%)", color: "#ef4444" }
-              }}>
-                <LineChart data={sitePerformanceData} height={300} width={undefined} margin={{ top: 5, right: 10, left: 5, bottom: 5 }}>
-                  <CartesianGrid stroke="#e5e7eb" />
-                  <XAxis 
-                    dataKey="month" 
-                    tickLine={false}
-                    axisLine={false}
-                    tickMargin={8}
-                    tick={{ fill: '#6b7280', fontSize: 12 }}
-                  />
-                  {/* Left Y-axis for Average Duration */}
-                  <YAxis 
-                    yAxisId="left"
-                    tickLine={false}
-                    axisLine={false}
-                    tickMargin={8}
-                    tick={{ fill: '#6b7280', fontSize: 12 }}
-                    tickFormatter={(v: number) => formatDurationHMS(v)}
-                  />
-                  {/* Right Y-axis for Resolution Rate */}
-                  <YAxis 
-                    yAxisId="right"
-                    orientation="right"
-                    tickLine={false}
-                    axisLine={false}
-                    tickMargin={8}
-                    tick={{ fill: '#6b7280', fontSize: 12 }}
-                    tickFormatter={(v: number) => `${v.toFixed(0)}%`}
-                    domain={[0, 100]}
-                  />
-                  <ChartTooltip content={<ChartTooltipContent formatter={(value: number, name: string) => {
-                    if (name === 'resolutionRate') {
-                      return `${value.toFixed(1)}%`;
-                    }
-                    return formatDurationHMS(value);
-                  }} />} />
-                  <Line 
-                    yAxisId="left"
-                    type="monotone" 
-                    dataKey="avgDuration" 
-                    stroke="#f59e0b" 
-                    strokeWidth={2}
-                    dot={{ fill: '#f59e0b', strokeWidth: 2, r: 4 }}
-                    activeDot={{ r: 6, stroke: '#f59e0b', strokeWidth: 2 }}
-                  />
-                  <Line 
-                    yAxisId="right"
-                    type="monotone" 
-                    dataKey="resolutionRate" 
-                    stroke="#ef4444" 
-                    strokeWidth={2}
-                    dot={{ fill: '#ef4444', strokeWidth: 2, r: 4 }}
-                    activeDot={{ r: 6, stroke: '#ef4444', strokeWidth: 2 }}
-                  />
-                </LineChart>
-              </ChartContainer>
-              <div className="mt-4 flex justify-center gap-6">
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
-                  <span className="text-sm text-muted-foreground">Avg Duration (Left)</span>
+                          <CardContent>
+                <div className="w-full h-[300px]">
+                  <ResponsiveContainer width="100%" height={300}>
+                    <AreaChart data={sitePerformanceData} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
+                      <defs>
+                        <linearGradient id="colorAvgDuration" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.6}/>
+                          <stop offset="95%" stopColor="#3b82f6" stopOpacity={0.05}/>
+                        </linearGradient>
+                        <linearGradient id="colorResolutionRate" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#10b981" stopOpacity={0.6}/>
+                          <stop offset="95%" stopColor="#10b981" stopOpacity={0.05}/>
+                        </linearGradient>
+                      </defs>
+                      <XAxis 
+                        dataKey="month" 
+                        tickLine={false}
+                        axisLine={false}
+                        tickMargin={8}
+                        tick={{ fill: '#6b7280', fontSize: 12 }}
+                      />
+                      {/* Left Y-axis for Average Duration */}
+                      <YAxis 
+                        yAxisId="left"
+                        tickLine={false}
+                        axisLine={false}
+                        tickMargin={8}
+                        tick={{ fill: '#6b7280', fontSize: 12 }}
+                        tickFormatter={(v: number) => formatDurationHMS(v)}
+                      />
+                      {/* Right Y-axis for Resolution Rate */}
+                      <YAxis 
+                        yAxisId="right"
+                        orientation="right"
+                        tickLine={false}
+                        axisLine={false}
+                        tickMargin={8}
+                        tick={{ fill: '#6b7280', fontSize: 12 }}
+                        tickFormatter={(v: number) => `${v.toFixed(0)}%`}
+                        domain={[0, 100]}
+                      />
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
+                      <RechartsTooltip 
+                        contentStyle={{
+                          backgroundColor: 'hsl(var(--background))',
+                          border: '1px solid hsl(var(--border))',
+                          borderRadius: '8px',
+                          color: 'hsl(var(--foreground))'
+                        }}
+                        formatter={(value: number, name: string) => {
+                          if (name === 'Average Duration') {
+                            return [formatDurationHMS(value), name];
+                          }
+                          if (name === 'Resolution Rate (%)') {
+                            return [`${value.toFixed(1)}%`, name];
+                          }
+                          return [value, name];
+                        }}
+                      />
+                      <Area 
+                        yAxisId="left"
+                        type="monotone" 
+                        dataKey="avgDuration" 
+                        stroke="#3b82f6" 
+                        fill="url(#colorAvgDuration)" 
+                        name="Average Duration"
+                        strokeWidth={1.5} 
+                      />
+                      <Area 
+                        yAxisId="right"
+                        type="monotone" 
+                        dataKey="resolutionRate" 
+                        stroke="#10b981" 
+                        fill="url(#colorResolutionRate)" 
+                        name="Resolution Rate (%)"
+                        strokeWidth={1.5} 
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
                 </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-                  <span className="text-sm text-muted-foreground">Resolution Rate % (Right)</span>
+                <div className="mt-4 flex justify-center gap-6">
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                    <span className="text-sm text-muted-foreground">Avg Duration (Left)</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                    <span className="text-sm text-muted-foreground">Resolution Rate % (Right)</span>
+                  </div>
                 </div>
-              </div>
-            </CardContent>
+              </CardContent>
           </Card>
         </div>
       </div>

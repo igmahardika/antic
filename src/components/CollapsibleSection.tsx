@@ -20,7 +20,7 @@ export default function CollapsibleSection({
   return (
     <Collapsible open={isOpen} onOpenChange={setIsOpen} className="w-full">
       <CollapsibleTrigger asChild>
-        <button className="flex w-full items-center justify-between rounded-lg border border-border bg-card px-4 py-3 text-left text-sm font-medium text-card-foreground hover:bg-accent hover:text-accent-foreground [&[data-state=open]>svg]:rotate-180">
+        <button className="flex w-full items-center justify-between rounded-lg  bg-card px-4 py-3 text-left text-sm font-medium text-card-foreground hover:bg-accent hover:text-accent-foreground [&[data-state=open]>svg]:rotate-180">
           <div className="flex items-center gap-2">
             {icon && <span className="text-lg">{icon}</span>}
             <span>{title}</span>
