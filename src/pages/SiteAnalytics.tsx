@@ -101,14 +101,25 @@ const calculateRiskScore = (incidentCount: number, avgDurationMinutes: number, r
 
   const normalizeNCAL = (ncal: string | null | undefined): string => {
     if (!ncal) return 'Unknown';
-  const value = ncal.toString().trim().toLowerCase();
-  switch (value) {
-      case 'blue': return 'Blue';
-      case 'yellow': return 'Yellow';
-      case 'orange': return 'Orange';
-      case 'red': return 'Red';
-      case 'black': return 'Black';
-      default: return ncal.trim();
+    const value = ncal.toString().trim().toLowerCase();
+    switch (value) {
+      case 'blue':
+      case 'biru':
+        return 'Blue';
+      case 'yellow':
+      case 'kuning':
+        return 'Yellow';
+      case 'orange':
+      case 'jingga':
+        return 'Orange';
+      case 'red':
+      case 'merah':
+        return 'Red';
+      case 'black':
+      case 'hitam':
+        return 'Black';
+      default:
+        return ncal.trim();
     }
   };
 
@@ -120,6 +131,21 @@ const SiteAnalytics: React.FC = () => {
   const allIncidents = useLiveQuery(() => 
     db.incidents.toArray()
   );
+
+  // Debug: Log when allIncidents changes
+  useEffect(() => {
+    console.log('🔍 SiteAnalytics Debug:');
+    console.log('Total incidents in database:', allIncidents?.length || 0);
+    if (allIncidents && allIncidents.length > 0) {
+      console.log('Sample incident:', allIncidents[0]);
+      console.log('NCAL values found:', [...new Set(allIncidents.map(i => i.ncal))]);
+      console.log('Sites found:', [...new Set(allIncidents.map(i => i.site))]);
+      console.log('Status values found:', [...new Set(allIncidents.map(i => i.status))]);
+    } else {
+      console.log('⚠️ No incidents found in database');
+      console.log('💡 Please upload incident data first via Incident Data page');
+    }
+  }, [allIncidents]);
 
   // Filter incidents by period
   const filteredIncidents = useMemo(() => {
@@ -417,6 +443,40 @@ const SiteAnalytics: React.FC = () => {
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
         </div>
       </div>
+    );
+  }
+
+  // Show message if no data
+  if (!allIncidents || allIncidents.length === 0) {
+    return (
+      <PageWrapper>
+        <div className="space-y-6">
+          {/* Header */}
+          <div className="flex flex-col gap-4">
+            <div>
+              <h1 className="text-3xl font-bold text-card-foreground">Site Analytics</h1>
+              <p className="text-muted-foreground">Comprehensive analysis of site performance and risk assessment</p>
+            </div>
+            
+            {/* Data Status Alert */}
+            <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
+              <div className="flex items-center gap-3">
+                <WarningAmberIcon className="w-5 h-5 text-yellow-600" />
+                <div>
+                  <h3 className="font-semibold text-yellow-800 dark:text-yellow-200">No Incident Data Found</h3>
+                  <p className="text-sm text-yellow-700 dark:text-yellow-300">
+                    Please upload incident data first via the{' '}
+                    <a href="/incident/data" className="underline font-medium hover:text-yellow-800 dark:hover:text-yellow-100">
+                      Incident Data page
+                    </a>
+                    {' '}to view analytics and calculations.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </PageWrapper>
     );
   }
 

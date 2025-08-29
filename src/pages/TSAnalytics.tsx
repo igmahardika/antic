@@ -43,6 +43,7 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import BusinessIcon from '@mui/icons-material/Business';
 import EngineeringIcon from '@mui/icons-material/Engineering';
 import FilterListIcon from '@mui/icons-material/FilterList';
+import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 
 // Constants sesuai requirements
 const VENDOR_SLA_MINUTES = 240; // 4 jam
@@ -110,6 +111,21 @@ const TSAnalytics: React.FC = () => {
     db.incidents.toArray()
   );
 
+  // Debug: Log when allIncidents changes
+  useEffect(() => {
+    console.log('🔍 TSAnalytics Debug:');
+    console.log('Total incidents in database:', allIncidents?.length || 0);
+    if (allIncidents && allIncidents.length > 0) {
+      console.log('Sample incident:', allIncidents[0]);
+      console.log('NCAL values found:', [...new Set(allIncidents.map(i => i.ncal))]);
+      console.log('TS values found:', [...new Set(allIncidents.map(i => i.ts))]);
+      console.log('Sites found:', [...new Set(allIncidents.map(i => i.site))]);
+    } else {
+      console.log('⚠️ No incidents found in database');
+      console.log('💡 Please upload incident data first via Incident Data page');
+    }
+  }, [allIncidents]);
+
   // Helper function to categorize TS
   const categorizeTS = (ts: string | null | undefined): 'vendor' | 'internal' => {
     if (!ts) return 'internal';
@@ -125,12 +141,23 @@ const TSAnalytics: React.FC = () => {
     if (!ncal) return 'Unknown';
     const normalized = ncal.trim().toLowerCase();
     switch (normalized) {
-      case 'blue': return 'Blue';
-      case 'yellow': return 'Yellow';
-      case 'orange': return 'Orange';
-      case 'red': return 'Red';
-      case 'black': return 'Black';
-      default: return ncal.trim();
+      case 'blue':
+      case 'biru':
+        return 'Blue';
+      case 'yellow':
+      case 'kuning':
+        return 'Yellow';
+      case 'orange':
+      case 'jingga':
+        return 'Orange';
+      case 'red':
+      case 'merah':
+        return 'Red';
+      case 'black':
+      case 'hitam':
+        return 'Black';
+      default:
+        return ncal.trim();
     }
   };
 
@@ -977,6 +1004,40 @@ const TSAnalytics: React.FC = () => {
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
         </div>
       </div>
+    );
+  }
+
+  // Show message if no data
+  if (!allIncidents || allIncidents.length === 0) {
+    return (
+      <PageWrapper>
+        <div className="space-y-6">
+          {/* Header */}
+          <div className="flex flex-col gap-4">
+            <div>
+              <h1 className="text-3xl font-bold text-card-foreground">Technical Support Analytics</h1>
+              <p className="text-muted-foreground">Comprehensive analysis of technical support performance and vendor management</p>
+            </div>
+            
+            {/* Data Status Alert */}
+            <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
+              <div className="flex items-center gap-3">
+                <WarningAmberIcon className="w-5 h-5 text-yellow-600" />
+                <div>
+                  <h3 className="font-semibold text-yellow-800 dark:text-yellow-200">No Incident Data Found</h3>
+                  <p className="text-sm text-yellow-700 dark:text-yellow-300">
+                    Please upload incident data first via the{' '}
+                    <a href="/incident/data" className="underline font-medium hover:text-yellow-800 dark:hover:text-yellow-100">
+                      Incident Data page
+                    </a>
+                    {' '}to view analytics and calculations.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </PageWrapper>
     );
   }
 
