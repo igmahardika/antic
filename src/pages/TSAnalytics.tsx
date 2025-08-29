@@ -1076,9 +1076,9 @@ const TSAnalytics: React.FC = () => {
         {/* Vendor vs Internal Performance */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Vendor Performance */}
-          <Card className="rounded-xl border bg-card text-card-foreground shadow">
+          <Card>
             <CardHeader className="flex flex-col gap-1 pb-1">
-              <CardTitle className="font-extrabold text-xl text-card-foreground flex items-center gap-2">
+              <CardTitle className="font-extrabold text-xl flex items-center gap-2">
                 <BusinessIcon className="w-6 h-6 text-blue-600" />
                 Vendor Performance
                 <Badge className="bg-blue-600 text-white text-xs px-3 py-1 rounded-full w-fit font-semibold shadow-lg">
@@ -1141,9 +1141,9 @@ const TSAnalytics: React.FC = () => {
             </CardContent>
           </Card>
           {/* Internal TS Performance */}
-          <Card className="rounded-xl border bg-card text-card-foreground shadow">
+          <Card>
             <CardHeader className="flex flex-col gap-1 pb-1">
-              <CardTitle className="font-extrabold text-xl text-card-foreground flex items-center gap-2">
+              <CardTitle className="font-extrabold text-xl flex items-center gap-2">
                 <EngineeringIcon className="w-6 h-6 text-emerald-600" />
                 Internal TS Performance
                 <Badge className="bg-emerald-600 text-white text-xs px-3 py-1 rounded-full w-fit font-semibold shadow-lg">
@@ -1207,9 +1207,9 @@ const TSAnalytics: React.FC = () => {
         {/* NCAL Compliance Analysis */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Vendor NCAL Compliance */}
-          <Card className="rounded-xl border bg-card text-card-foreground shadow">
+          <Card>
             <CardHeader className="flex flex-col gap-1 pb-1">
-              <CardTitle className="font-extrabold text-xl text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
+              <CardTitle className="font-extrabold text-xl flex items-center gap-2">
                 <AssessmentIcon className="w-6 h-6 text-blue-600" />
                 Vendor NCAL Compliance
                 <Badge className="bg-blue-600 text-white text-xs px-3 py-1 rounded-full w-fit font-semibold shadow-lg">
@@ -1220,7 +1220,7 @@ const TSAnalytics: React.FC = () => {
                 Vendor performance against NCAL levels
               </CardDescription>
             </CardHeader>
-            <CardContent className="p-4">
+            <CardContent className="p-6">
               <div className="space-y-4">
                 <ChartContainer config={{
                   slaCompliant: { label: "SLA Compliant", color: "#10b981" },
@@ -1258,9 +1258,9 @@ const TSAnalytics: React.FC = () => {
             </CardContent>
           </Card>
           {/* Internal NCAL Compliance */}
-          <Card className="rounded-xl border bg-card text-card-foreground shadow">
+          <Card>
             <CardHeader className="flex flex-col gap-1 pb-1">
-              <CardTitle className="font-extrabold text-xl text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
+              <CardTitle className="font-extrabold text-xl flex items-center gap-2">
                 <AssessmentIcon className="w-6 h-6 text-green-600" />
                 Internal NCAL Compliance
                 <Badge className="bg-green-600 text-white text-xs px-3 py-1 rounded-full w-fit font-semibold shadow-lg">
@@ -1271,7 +1271,7 @@ const TSAnalytics: React.FC = () => {
                 Internal TS performance against NCAL targets
               </CardDescription>
             </CardHeader>
-            <CardContent className="p-4">
+            <CardContent className="p-6">
               <div className="space-y-4">
                 <ChartContainer config={{
                   compliant: { label: "Compliant", color: "#10b981" },
@@ -1313,9 +1313,9 @@ const TSAnalytics: React.FC = () => {
         {/* Vendor Redaman Analysis & Workload Distribution */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Vendor Redaman Analysis */}
-          <Card className="rounded-xl border bg-card text-card-foreground shadow">
+          <Card>
             <CardHeader className="flex flex-col gap-1 pb-1">
-              <CardTitle className="font-extrabold text-xl text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
+              <CardTitle className="font-extrabold text-xl flex items-center gap-2">
                 <TrendingDownIcon className="w-6 h-6 text-purple-600" />
                 Vendor Redaman Analysis
                 <Badge className="bg-purple-600 text-white text-xs px-3 py-1 rounded-full w-fit font-semibold shadow-lg">
@@ -1326,7 +1326,7 @@ const TSAnalytics: React.FC = () => {
                 Signal attenuation analysis for vendor incidents
               </CardDescription>
             </CardHeader>
-            <CardContent className="p-4">
+            <CardContent className="p-6">
               <div className="space-y-4">
                                 <ChartContainer config={{
                   powerCompliant: { label: "≤ +1 dBm", color: "var(--chart-2)" },
@@ -1363,9 +1363,9 @@ const TSAnalytics: React.FC = () => {
           </Card>
 
           {/* Workload Distribution */}
-          <Card className="rounded-xl border bg-card text-card-foreground shadow">
+          <Card>
             <CardHeader className="flex flex-col gap-1 pb-1">
-              <CardTitle className="font-extrabold text-xl text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
+              <CardTitle className="font-extrabold text-xl flex items-center gap-2">
                 <BarChartIcon className="w-6 h-6 text-zinc-600" />
                 Workload Distribution
                 <Badge className="bg-zinc-600 text-white text-xs px-3 py-1 rounded-full w-fit font-semibold shadow-lg">
@@ -1376,7 +1376,7 @@ const TSAnalytics: React.FC = () => {
                 Incident distribution across vendor and internal teams
               </CardDescription>
             </CardHeader>
-            <CardContent className="p-4">
+            <CardContent className="p-6">
               <div className="space-y-4">
                 <ChartContainer config={{
                   vendor: { label: "Vendor", color: "var(--chart-1)" },
@@ -1434,9 +1434,9 @@ const TSAnalytics: React.FC = () => {
           </Card>
         </div>
         {/* Waneda Monthly Recap and Performance */}
-        <Card className="rounded-xl border bg-card text-card-foreground shadow">
+        <Card>
           <CardHeader className="flex flex-col gap-1 pb-1">
-            <CardTitle className="font-extrabold text-xl text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
+            <CardTitle className="font-extrabold text-xl flex items-center gap-2">
               <BusinessIcon className="w-6 h-6 text-blue-700" />
               Waneda Monthly Recap
               <Badge className="bg-blue-700 text-white text-xs px-3 py-1 rounded-full w-fit font-semibold shadow-lg">
@@ -1447,7 +1447,7 @@ const TSAnalytics: React.FC = () => {
               Detailed monthly metrics and payment analysis for Waneda
             </CardDescription>
           </CardHeader>
-          <CardContent className="p-4">
+          <CardContent className="p-6">
             {/* Charts section */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Bar chart for Target vs Non-Target */}

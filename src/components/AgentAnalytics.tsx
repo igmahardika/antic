@@ -1223,7 +1223,7 @@ const AgentAnalytics = () => {
       </div>
       {/* Trendline Chart for All Agents */}
       {debouncedTrendData.length > 0 && (
-        <Card className="bg-card text-card-foreground  rounded-2xl shadow-lg p-6 mt-6">
+        <Card className="p-6 mt-6">
           <CardHeader>
             <CardTitle>Agent Ticket Trends per Month</CardTitle>
           </CardHeader>

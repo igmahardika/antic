@@ -304,10 +304,10 @@ const SummaryDashboard = ({ ticketAnalyticsData, filteredTickets }: any) => {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
       {/* Monthly Area Chart */}
-      <Card className="bg-white dark:bg-zinc-900 shadow-lg rounded-xl  p-2">
+      <Card className="p-2">
         <CardHeader className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 pb-1">
           <div className="flex flex-col gap-1">
-                          <CardTitle className="font-extrabold text-lg text-card-foreground">Tickets per Month</CardTitle>
+                          <CardTitle className="font-extrabold text-lg">Tickets per Month</CardTitle>
             {latestMonthlyValue !== null && (
               <Badge className="bg-blue-600 text-white text-xs px-3 py-1 rounded-full w-fit font-semibold shadow-lg">Latest: {latestMonthlyValue}</Badge>
             )}
@@ -373,9 +373,9 @@ const SummaryDashboard = ({ ticketAnalyticsData, filteredTickets }: any) => {
         </CardContent>
       </Card>
       {/* Yearly Area Chart */}
-      <Card className="bg-white dark:bg-zinc-900 shadow-lg rounded-xl  p-2">
+      <Card className="p-2">
         <CardHeader className="flex flex-col gap-1 pb-1">
-                      <CardTitle className="font-extrabold text-lg text-card-foreground">Tickets per Year</CardTitle>
+                      <CardTitle className="font-extrabold text-lg">Tickets per Year</CardTitle>
           {latestYearlyValue !== null && (
             <Badge className="bg-blue-600 text-white text-xs px-3 py-1 rounded-full w-fit font-semibold shadow-lg">Latest: {latestYearlyValue}</Badge>
           )}
@@ -431,9 +431,9 @@ const SummaryDashboard = ({ ticketAnalyticsData, filteredTickets }: any) => {
       </div>
 
       {/* Agent Leaderboard (per Year) */}
-      <Card className="bg-white dark:bg-zinc-900 shadow-lg rounded-xl  p-2">
+      <Card className="p-2">
         <CardHeader className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 pb-1">
-                      <CardTitle className="font-extrabold text-lg text-card-foreground">Agent Leaderboard</CardTitle>
+                      <CardTitle className="font-extrabold text-lg">Agent Leaderboard</CardTitle>
           <div className="flex items-center gap-2">
             <select
               className=" rounded-lg px-3 py-2 text-sm bg-white dark:bg-zinc-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"

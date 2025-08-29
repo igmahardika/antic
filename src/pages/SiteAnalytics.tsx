@@ -491,9 +491,9 @@ const SiteAnalytics: React.FC = () => {
         {/* Top Affected Sites & Site Risk Assessment */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Top Affected Sites */}
-          <Card className="bg-card text-card-foreground  rounded-2xl shadow-lg ">
+          <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="flex items-center gap-2 text-lg font-extrabold text-card-foreground">
+              <CardTitle className="flex items-center gap-2 text-lg font-extrabold">
                 <ErrorOutlineIcon className="w-5 h-5 text-red-600" />
                 Top Affected Sites
               </CardTitle>
@@ -591,9 +591,9 @@ const SiteAnalytics: React.FC = () => {
           </Card>
 
         {/* Site Risk Assessment */}
-          <Card className="bg-card text-card-foreground  rounded-2xl shadow-lg ">
+          <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="flex items-center gap-2 text-lg font-extrabold text-card-foreground">
+              <CardTitle className="flex items-center gap-2 text-lg font-extrabold">
                 <WarningAmberIcon className="w-5 h-5 text-amber-600" />
                 Site Risk Assessment
               </CardTitle>
@@ -701,9 +701,9 @@ const SiteAnalytics: React.FC = () => {
         </div>
 
         {/* Site Performance Overview */}
-        <Card className="bg-card text-card-foreground  rounded-2xl shadow-lg ">
+        <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-lg font-extrabold text-card-foreground">
+            <CardTitle className="flex items-center gap-2 text-lg font-extrabold">
               <AssessmentIcon className="w-5 h-5 text-indigo-600" />
               Site Performance Overview
               </CardTitle>
@@ -786,9 +786,9 @@ const SiteAnalytics: React.FC = () => {
           </Card>
 
         {/* NCAL Performance & Compliance Analysis */}
-        <Card className="bg-card text-card-foreground  rounded-2xl shadow-lg ">
+        <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-lg font-extrabold text-card-foreground">
+            <CardTitle className="flex items-center gap-2 text-lg font-extrabold">
               <TrackChangesIcon className="w-5 h-5 text-purple-600" />
               NCAL Performance & Compliance Analysis
               </CardTitle>
@@ -901,9 +901,9 @@ const SiteAnalytics: React.FC = () => {
         {/* Site Incident Trend Analysis */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Site Incident Volume Trend */}
-          <Card className="bg-card text-card-foreground  rounded-2xl shadow-lg ">
+          <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="flex items-center gap-2 text-lg font-extrabold text-card-foreground">
+              <CardTitle className="flex items-center gap-2 text-lg font-extrabold">
                 <TimelineIcon className="w-5 h-5 text-blue-600" />
                 Site Incident Volume Trend
               </CardTitle>
@@ -980,9 +980,9 @@ const SiteAnalytics: React.FC = () => {
           </Card>
 
           {/* Site Performance Trend */}
-          <Card className="bg-card text-card-foreground  rounded-2xl shadow-lg ">
+          <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="flex items-center gap-2 text-lg font-extrabold text-card-foreground">
+              <CardTitle className="flex items-center gap-2 text-lg font-extrabold">
                 <TrackChangesIcon className="w-5 h-5 text-green-600" />
                 Site Performance Trend
               </CardTitle>

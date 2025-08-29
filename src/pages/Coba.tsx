@@ -912,7 +912,7 @@ export const IncidentAnalytics: React.FC = () => {
 
       {/* NCAL Target Performance */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card className="bg-card text-card-foreground  rounded-2xl shadow-lg">
+        <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <AssignmentIcon className="w-5 h-5" />
@@ -950,7 +950,7 @@ export const IncidentAnalytics: React.FC = () => {
           </CardContent>
         </Card>
 
-        <Card className="bg-card text-card-foreground  rounded-2xl shadow-lg">
+        <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <PieChartIconMUI className="w-5 h-5" />
@@ -1036,7 +1036,7 @@ export const IncidentAnalytics: React.FC = () => {
 
       {/* NCAL Area Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card className="bg-card text-card-foreground  rounded-2xl shadow-lg">
+        <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <ShowChartIcon className="w-5 h-5" />
@@ -1098,7 +1098,7 @@ export const IncidentAnalytics: React.FC = () => {
           </CardContent>
         </Card>
 
-        <Card className="bg-card text-card-foreground  rounded-2xl shadow-lg">
+        <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <ShowChartIcon className="w-5 h-5" />
@@ -1163,7 +1163,7 @@ export const IncidentAnalytics: React.FC = () => {
 
       {/* Additional Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card className="bg-card text-card-foreground  rounded-2xl shadow-lg">
+        <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <LabelIcon className="w-5 h-5" />
@@ -1870,7 +1870,7 @@ export const IncidentAnalytics: React.FC = () => {
         </CardContent>
       </Card>
 
-        <Card className="bg-card text-card-foreground  rounded-2xl shadow-lg">
+        <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <BarChartIcon className="w-5 h-5" />
