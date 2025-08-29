@@ -80,6 +80,39 @@ const takeTop = <T extends string>(map: Record<T, number>, n = 5) => {
     .slice(0, n);
 };
 
+// Safe date parsing function
+const parseDateSafe = (dt?: string | Date | null): Date | null => {
+  if (!dt) return null;
+  if (dt instanceof Date) return dt;
+  
+  try {
+    // Handle DD/MM/YY HH:MM:SS format
+    if (typeof dt === 'string' && dt.includes('/')) {
+      const parts = dt.split(' ');
+      if (parts.length === 2) {
+        const datePart = parts[0]; // DD/MM/YY
+        const timePart = parts[1]; // HH:MM:SS
+        
+        const [day, month, year] = datePart.split('/');
+        const [hour, minute, second] = timePart.split(':');
+        
+        // Convert 2-digit year to 4-digit
+        const fullYear = parseInt(year) < 50 ? 2000 + parseInt(year) : 1900 + parseInt(year);
+        
+        return new Date(fullYear, parseInt(month) - 1, parseInt(day), 
+                       parseInt(hour), parseInt(minute), parseInt(second));
+      }
+    }
+    
+    // Handle ISO format or other formats
+    const parsed = new Date(dt);
+    return isNaN(parsed.getTime()) ? null : parsed;
+  } catch (error) {
+    console.warn('Failed to parse date:', dt, error);
+    return null;
+  }
+};
+
 // Custom tooltip component for NCAL charts
 const NCALTooltip = ({ active, payload, label, formatter }: any) => {
   if (!active || !payload || !payload.length) return null;
@@ -198,6 +231,92 @@ const IncidentAnalytics: React.FC = () => {
     return `${hrs}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
+  // Custom duration calculation function - menghitung sendiri dari kolom waktu
+  const calculateCustomDuration = (incident: any): number => {
+    let totalDuration = 0;
+    
+    console.log(`🔧 Calculating duration for incident ${incident.id || incident.noCase || 'unknown'}`);
+    
+    // Priority order for duration calculation:
+    // 1. Calculate from Start and End times (most accurate)
+    // 2. Calculate from Start Escalation Vendor and End (vendor duration)
+    // 3. Calculate pause periods and subtract from total
+    
+    // Calculate total duration from Start to End
+    if (incident.start && incident.end) {
+      const startTime = parseDateSafe(incident.start);
+      const endTime = parseDateSafe(incident.end);
+      
+      if (startTime && endTime && endTime > startTime) {
+        totalDuration = (endTime.getTime() - startTime.getTime()) / (1000 * 60); // Convert to minutes
+        console.log(`📅 Total Duration (Start to End): ${totalDuration.toFixed(2)}min`);
+      } else {
+        console.log(`⚠️ Invalid Start/End times: Start=${incident.start}, End=${incident.end}`);
+      }
+    }
+    
+    // Calculate vendor duration from Start Escalation Vendor to End
+    let vendorDuration = 0;
+    if (incident.startEscalationVendor && incident.end) {
+      const vendorStartTime = parseDateSafe(incident.startEscalationVendor);
+      const endTime = parseDateSafe(incident.end);
+      
+      if (vendorStartTime && endTime && endTime > vendorStartTime) {
+        vendorDuration = (endTime.getTime() - vendorStartTime.getTime()) / (1000 * 60);
+        console.log(`👨‍💼 Vendor Duration (Escalation to End): ${vendorDuration.toFixed(2)}min`);
+      } else {
+        console.log(`⚠️ Invalid Vendor Start/End times: VendorStart=${incident.startEscalationVendor}, End=${incident.end}`);
+      }
+    }
+    
+    // Calculate pause durations
+    let totalPauseDuration = 0;
+    
+    // Pause 1: Start Pause to End Pause
+    if (incident.startPause && incident.endPause) {
+      const pause1Start = parseDateSafe(incident.startPause);
+      const pause1End = parseDateSafe(incident.endPause);
+      
+      if (pause1Start && pause1End && pause1End > pause1Start) {
+        const pause1Duration = (pause1End.getTime() - pause1Start.getTime()) / (1000 * 60);
+        totalPauseDuration += pause1Duration;
+        console.log(`⏸️ Pause 1 Duration: ${pause1Duration.toFixed(2)}min`);
+      } else {
+        console.log(`⚠️ Invalid Pause 1 times: Start=${incident.startPause}, End=${incident.endPause}`);
+      }
+    }
+    
+    // Pause 2: Start Pause 2 to End Pause 2
+    if (incident.startPause2 && incident.endPause2) {
+      const pause2Start = parseDateSafe(incident.startPause2);
+      const pause2End = parseDateSafe(incident.endPause2);
+      
+      if (pause2Start && pause2End && pause2End > pause2Start) {
+        const pause2Duration = (pause2End.getTime() - pause2Start.getTime()) / (1000 * 60);
+        totalPauseDuration += pause2Duration;
+        console.log(`⏸️ Pause 2 Duration: ${pause2Duration.toFixed(2)}min`);
+      } else {
+        console.log(`⚠️ Invalid Pause 2 times: Start=${incident.startPause2}, End=${incident.endPause2}`);
+      }
+    }
+    
+    // Calculate final duration based on scenario
+    let finalDuration = 0;
+    
+    if (vendorDuration > 0) {
+      // If vendor was involved, use vendor duration minus pause time
+      finalDuration = Math.max(0, vendorDuration - totalPauseDuration);
+      console.log(`📊 Final Duration (Vendor - Pause): ${vendorDuration} - ${totalPauseDuration} = ${finalDuration.toFixed(2)}min`);
+    } else {
+      // If no vendor, use total duration minus pause time
+      finalDuration = Math.max(0, totalDuration - totalPauseDuration);
+      console.log(`📊 Final Duration (Total - Pause): ${totalDuration} - ${totalPauseDuration} = ${finalDuration.toFixed(2)}min`);
+    }
+    
+    console.log(`✅ Final calculated duration: ${finalDuration.toFixed(2)}min`);
+    return finalDuration;
+  };
+
   // Filter incidents by period
   const filteredIncidents = useMemo(() => {
     if (!allIncidents) return [] as any[];
@@ -255,7 +374,7 @@ const IncidentAnalytics: React.FC = () => {
     const open = filteredIncidents.filter((i) => (i.status || '').toLowerCase() !== 'done').length;
     const closed = total - open;
     const durations = filteredIncidents
-      .map((i) => safeMinutes(i.durationMin))
+      .map((i) => calculateCustomDuration(i))
       .filter((m) => m > 0);
     const mttr = durations.length > 0 ? durations.reduce((a, b) => a + b, 0) / durations.length : 0;
     return { total, open, closed, mttr };
@@ -269,26 +388,16 @@ const IncidentAnalytics: React.FC = () => {
       map[ncal] = (map[ncal] || 0) + 1;
     });
     
-    // Enhanced Debug: Log detailed NCAL data
-    console.log('🔍 ENHANCED NCAL Distribution Debug:', {
+    // Debug: Log NCAL data
+          console.log('NCAL Distribution Debug:', {
       totalIncidents: filteredIncidents.length,
       byNCAL: map,
       sampleNCALValues: filteredIncidents.slice(0, 10).map(inc => ({
         id: inc.id,
         ncal: inc.ncal,
-        normalized: normalizeNCAL(inc.ncal),
-        duration: inc.durationMin,
-        startTime: inc.startTime
+        normalized: normalizeNCAL(inc.ncal)
       })),
-      hasNCALData: Object.values(map).some(count => count > 0),
-      // Check for specific months
-      jan2025Count: filteredIncidents.filter(inc => {
-        if (!inc.startTime) return false;
-        const date = new Date(inc.startTime);
-        return date.getFullYear() === 2025 && date.getMonth() === 0;
-      }).length,
-      // Check raw NCAL values
-      rawNCALValues: [...new Set(filteredIncidents.map(inc => inc.ncal).filter(Boolean))]
+      hasNCALData: Object.values(map).some(count => count > 0)
     });
     
     return map;
@@ -310,36 +419,15 @@ const IncidentAnalytics: React.FC = () => {
   const byMonthNCALDuration = useMemo(() => {
     const map: Record<string, Record<string, { total: number; count: number; avg: number }>> = {};
     
-    // Enhanced Debug: Log all incidents for manual verification
-    console.log('🔍 ENHANCED DEBUG: All incidents for duration calculation:');
-    console.log('📊 Total incidents to process:', filteredIncidents.length);
-    
-    // Check for Jan 2025 specifically
-    const jan2025Incidents = filteredIncidents.filter(inc => {
-      if (!inc.startTime) return false;
-      const date = new Date(inc.startTime);
-      return date.getFullYear() === 2025 && date.getMonth() === 0;
-    });
-    
-    console.log('📊 Jan 2025 incidents found:', jan2025Incidents.length);
-    
-    // Log detailed info for Jan 2025 incidents
-    jan2025Incidents.forEach((inc, index) => {
-      const date = new Date(inc.startTime);
-      const month = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-      const ncal = normalizeNCAL(inc.ncal);
-      const dur = safeMinutes(inc.durationMin);
-      console.log(`Jan 2025 Incident ${index + 1}: ID=${inc.id}, Month=${month}, NCAL="${inc.ncal}"->"${ncal}", Duration=${dur}min (${formatDurationHMS(dur)})`);
-    });
-    
-    // Log all incidents (first 20 for brevity)
-    filteredIncidents.slice(0, 20).forEach((inc, index) => {
+    // Debug: Log all incidents for manual verification
+    console.log('🔍 DEBUG: All incidents for duration calculation:');
+    filteredIncidents.forEach((inc, index) => {
       if (inc.startTime) {
         const date = new Date(inc.startTime);
         const month = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
         const ncal = normalizeNCAL(inc.ncal);
-        const dur = safeMinutes(inc.durationMin);
-        console.log(`Incident ${index + 1}: Month=${month}, NCAL="${inc.ncal}"->"${ncal}", Duration=${dur}min (${formatDurationHMS(dur)})`);
+        const dur = calculateCustomDuration(inc);
+        console.log(`Incident ${index + 1}: Month=${month}, NCAL=${ncal}, Duration=${dur}min (${formatDurationHMS(dur)})`);
       }
     });
     
@@ -350,7 +438,7 @@ const IncidentAnalytics: React.FC = () => {
       const ncal = normalizeNCAL(inc.ncal);
       if (!map[key]) map[key] = {};
       if (!map[key][ncal]) map[key][ncal] = { total: 0, count: 0, avg: 0 };
-      const dur = safeMinutes(inc.durationMin);
+      const dur = calculateCustomDuration(inc);
       if (dur > 0) {
         map[key][ncal].total += dur;
         map[key][ncal].count += 1;
@@ -607,14 +695,14 @@ const IncidentAnalytics: React.FC = () => {
     const now = new Date();
     
     // Consider incidents with duration
-    const withDuration = filteredIncidents.filter((i) => safeMinutes(i.durationMin) > 0);
+    const withDuration = filteredIncidents.filter((i) => calculateCustomDuration(i) > 0);
     const compliant: any[] = [];
     const breach: any[] = [];
     
     withDuration.forEach((i) => {
       const n = normalizeNCAL(i.ncal);
       const target = NCAL_TARGETS[n] || 0;
-      const dur = safeMinutes(i.durationMin);
+      const dur = calculateCustomDuration(i);
       if (dur <= target) compliant.push(i);
       else breach.push(i);
     });
@@ -686,16 +774,16 @@ const IncidentAnalytics: React.FC = () => {
     });
     
     // Outliers
-    const durations = withDuration.map((i) => safeMinutes(i.durationMin));
+    const durations = withDuration.map((i) => calculateCustomDuration(i));
     const p95 = percentile(durations, 0.95);
     const outliers = withDuration
-      .filter((i) => safeMinutes(i.durationMin) >= p95)
-      .sort((a, b) => safeMinutes(b.durationMin) - safeMinutes(a.durationMin))
+      .filter((i) => calculateCustomDuration(i) >= p95)
+      .sort((a, b) => calculateCustomDuration(b) - calculateCustomDuration(a))
       .slice(0, 5)
       .map((i) => ({
         site: i.site || i.location || i.area || 'Unknown Site',
         ncal: normalizeNCAL(i.ncal),
-        duration: safeMinutes(i.durationMin),
+        duration: calculateCustomDuration(i),
         start: i.startTime,
         level: i.level || i.priority || i.severity || '-',
         priority: i.priority || i.level || i.severity || '-',
@@ -881,7 +969,7 @@ const IncidentAnalytics: React.FC = () => {
                 {NCAL_ORDER.map((ncal) => {
                   const target = NCAL_TARGETS[ncal];
                   const ncalInc = filteredIncidents.filter((i) => normalizeNCAL(i.ncal) === ncal);
-                  const avgDur = ncalInc.length > 0 ? ncalInc.reduce((s, i) => s + safeMinutes(i.durationMin), 0) / ncalInc.length : 0;
+                  const avgDur = ncalInc.length > 0 ? ncalInc.reduce((s, i) => s + calculateCustomDuration(i), 0) / ncalInc.length : 0;
                   const perf = target > 0 ? ((target - avgDur) / target) * 100 : 0;
                   return (
                     <div key={ncal} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-zinc-800 rounded-lg ">
