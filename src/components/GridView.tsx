@@ -129,7 +129,7 @@ const GridView = ({ data: propsData }: { data?: ITicket[] }) => {
               <div className="relative max-w-xs w-full">
                 <input
                   type="text"
-                  className="form-input ps-10 px-3 py-2  rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white w-full text-sm"
+                  className="form-input ps-10 px-3 py-2 rounded-md focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white w-full text-sm"
                   placeholder="Quick search..."
                   value={search}
                   onChange={e => { setSearch(e.target.value); setPage(1); }}
@@ -140,7 +140,7 @@ const GridView = ({ data: propsData }: { data?: ITicket[] }) => {
               </div>
               <div className="flex items-center gap-2">
                 <span className="text-sm">Validasi Customer:</span>
-                <select value={validasiFilter} onChange={e => { setValidasiFilter(e.target.value as any); setPage(1); }} className="border rounded px-2 py-1 text-sm">
+                <select value={validasiFilter} onChange={e => { setValidasiFilter(e.target.value as any); setPage(1); }} className="rounded px-2 py-1 text-sm">
                   <option value="all">Semua</option>
                   <option value="valid">Valid</option>
                   <option value="invalid">Tidak Valid</option>
@@ -207,7 +207,7 @@ const GridView = ({ data: propsData }: { data?: ITicket[] }) => {
               <div className="py-5 px-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                 <div className="flex items-center gap-2">
                   <span className="text-sm">Page Size:</span>
-                  <select value={pageSize} onChange={e => { setPageSize(Number(e.target.value)); setPage(1); }} className="border rounded px-2 py-1 text-sm">
+                  <select value={pageSize} onChange={e => { setPageSize(Number(e.target.value)); setPage(1); }} className="rounded px-2 py-1 text-sm">
                     {PAGE_SIZE_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}
                   </select>
                 </div>

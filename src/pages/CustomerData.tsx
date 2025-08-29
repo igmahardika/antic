@@ -273,7 +273,7 @@ const CustomerData: React.FC = () => {
                   onChange={handleFileUpload}
                   className="absolute inset-0 opacity-0 w-full h-full cursor-pointer z-10"
                 />
-                <label htmlFor="customer-upload" className="flex items-center  rounded-lg bg-gray-50 px-3 py-2 h-10 cursor-pointer text-xs font-normal w-full transition focus-within:ring-2 focus-within:ring-blue-200 focus-within:border-blue-400">
+                <label htmlFor="customer-upload" className="flex items-center rounded-lg bg-gray-50 px-3 py-2 h-10 cursor-pointer text-xs font-normal w-full transition focus-within:ring-2 focus-within:ring-blue-200">
                   <span className="text-blue-600 font-semibold mr-2">Choose File</span>
                   <span className="truncate text-gray-500">{fileName || 'No file chosen'}</span>
                 </label>
@@ -287,7 +287,7 @@ const CustomerData: React.FC = () => {
                 <select
                   value={bulanDipilih}
                   onChange={e => setBulanDipilih(e.target.value)}
-                  className="border rounded-lg px-3 py-2 w-full text-xs h-10 bg-gray-50 focus:ring-2 focus:ring-blue-200 focus:border-blue-400 transition"
+                  className="rounded-lg px-3 py-2 w-full text-xs h-10 bg-gray-50 focus:ring-2 focus:ring-blue-200 transition"
                 >
                   {bulanList.slice().sort((a, b) => MONTH_ORDER_ID.indexOf(a) - MONTH_ORDER_ID.indexOf(b)).map(bulan => (
                     <option key={bulan} value={bulan}>{bulan}</option>
@@ -302,7 +302,7 @@ const CustomerData: React.FC = () => {
                 <select
                   value={jenisKlienFilter}
                   onChange={e => setJenisKlienFilter(e.target.value)}
-                  className="border rounded-lg px-3 py-2 w-full text-xs h-10 bg-gray-50 focus:ring-2 focus:ring-blue-200 focus:border-blue-400 transition"
+                  className="rounded-lg px-3 py-2 w-full text-xs h-10 bg-gray-50 focus:ring-2 focus:ring-blue-200 transition"
                 >
                   <option value="ALL">Semua Jenis Klien</option>
                   {jenisKlienList.map(jk => (

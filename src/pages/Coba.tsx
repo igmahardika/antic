@@ -1471,7 +1471,7 @@ export const IncidentAnalytics: React.FC = () => {
                     .sort((a, b) => b[1] - a[1])
                     .slice(0, 5)
                     .map(([penyebab, count], index) => (
-                      <div key={penyebab} className="flex items-center justify-between p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg  dark:border-orange-800">
+                      <div key={penyebab} className="flex items-center justify-between p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg">
                         <div className="flex items-center gap-3">
                           <div className="w-6 h-6 bg-orange-500 text-white rounded-full flex items-center justify-center text-xs font-bold">
                             {index + 1}
@@ -1510,7 +1510,7 @@ export const IncidentAnalytics: React.FC = () => {
                     .sort((a, b) => b[1] - a[1])
                     .slice(0, 5)
                     .map(([action, count], index) => (
-                      <div key={action} className="flex items-center justify-between p-3 bg-green-50 dark:bg-green-900/20 rounded-lg  dark:border-green-800">
+                      <div key={action} className="flex items-center justify-between p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
                         <div className="flex items-center gap-3">
                           <div className="w-6 h-6 bg-green-500 text-white rounded-full flex items-center justify-center text-xs font-bold">
                             {index + 1}

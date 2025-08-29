@@ -2868,10 +2868,10 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
                   return (
                     <div 
                       key={cat.cat} 
-                      className={`p-4 rounded-lg border transition-all duration-200 ${
+                      className={`p-4 rounded-lg transition-all duration-200 ${
                         isOutlier 
-                          ? 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800' 
-                          : 'bg-gray-50 dark:bg-zinc-800/50 border-gray-200 dark:border-zinc-700'
+                          ? 'bg-red-50 dark:bg-red-900/20' 
+                          : 'bg-gray-50 dark:bg-zinc-800/50'
                       }`}
                     >
                       <div className="flex items-center justify-between mb-2">

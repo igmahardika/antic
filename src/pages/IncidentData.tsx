@@ -682,7 +682,7 @@ export const IncidentData: React.FC = () => {
             <select 
               value={selectedMonth} 
               onChange={(e) => handleMonthChange(e.target.value)}
-              className="px-3 py-1.5  rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm h-9"
+              className="px-3 py-1.5 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white text-sm h-9"
             >
               <option value="">All Months</option>
               {availableMonths.map(monthKey => (
@@ -695,7 +695,7 @@ export const IncidentData: React.FC = () => {
             <select 
               value={filter.ncal || ''} 
               onChange={(e) => handleFilterChange('ncal', e.target.value || undefined)}
-              className="px-3 py-1.5  rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm h-9"
+              className="px-3 py-1.5 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white text-sm h-9"
             >
               <option value="">All NCAL</option>
               <option value="Blue">Blue</option>
@@ -708,7 +708,7 @@ export const IncidentData: React.FC = () => {
             <select 
               value={filter.priority || ''} 
               onChange={(e) => handleFilterChange('priority', e.target.value || undefined)}
-              className="px-3 py-1.5  rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm h-9"
+              className="px-3 py-1.5 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white text-sm h-9"
             >
               <option value="">All Priority</option>
               {uniquePriorities.map(priority => (
