@@ -959,10 +959,14 @@ const IncidentAnalytics: React.FC = () => {
                     <table className="w-full text-xs border-collapse">
                       <thead>
                         <tr className="border-b border-border">
-                          <th className="text-left p-2 font-medium text-muted-foreground">Month</th>
-                          {NCAL_ORDER.map((ncal) => (
-                            <th key={ncal} className="text-center p-2 font-medium text-muted-foreground" style={{ color: NCAL_COLORS[ncal] }}>
-                              {ncal}
+                          <th className="text-left p-2 font-medium text-muted-foreground">NCAL</th>
+                          {monthlyNCALData.map((row) => (
+                            <th key={row.month} className="text-center p-2 font-medium text-muted-foreground">
+                              {(() => {
+                                const [year, month] = row.month.split('-');
+                                const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+                                return `${monthNames[parseInt(month) - 1]} ${year}`;
+                              })()}
                             </th>
                           ))}
                           <th className="text-center p-2 font-medium text-muted-foreground bg-muted/50">
@@ -971,19 +975,15 @@ const IncidentAnalytics: React.FC = () => {
                         </tr>
                       </thead>
                       <tbody>
-                        {monthlyNCALData.map((row) => {
-                          const total = NCAL_ORDER.reduce((sum, ncal) => sum + (row[ncal] || 0), 0);
+                        {NCAL_ORDER.map((ncal) => {
+                          const total = monthlyNCALData.reduce((sum, row) => sum + (row[ncal] || 0), 0);
                           return (
-                            <tr key={row.month} className="border-b border-border hover:bg-muted/50">
-                              <td className="p-2 font-medium text-card-foreground">
-                                {(() => {
-                                  const [year, month] = row.month.split('-');
-                                  const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-                                  return `${monthNames[parseInt(month) - 1]} ${year}`;
-                                })()}
+                            <tr key={ncal} className="border-b border-border hover:bg-muted/50">
+                              <td className="p-2 font-medium text-card-foreground" style={{ color: NCAL_COLORS[ncal] }}>
+                                {ncal}
                               </td>
-                              {NCAL_ORDER.map((ncal) => (
-                                <td key={ncal} className="text-center p-2 text-card-foreground">
+                              {monthlyNCALData.map((row) => (
+                                <td key={row.month} className="text-center p-2 text-card-foreground">
                                   {(row[ncal] || 0).toLocaleString()}
                                 </td>
                               ))}
@@ -1054,25 +1054,25 @@ const IncidentAnalytics: React.FC = () => {
                     <table className="w-full text-xs border-collapse">
                       <thead>
                         <tr className="border-b border-border">
-                          <th className="text-left p-2 font-medium text-muted-foreground">Month</th>
-                          {NCAL_ORDER.map((ncal) => (
-                            <th key={ncal} className="text-center p-2 font-medium text-muted-foreground" style={{ color: NCAL_COLORS[ncal] }}>
-                              {ncal}
-                            </th>
-                          ))}
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {monthlyNCALDurationData.map((row) => (
-                          <tr key={row.month} className="border-b border-border hover:bg-muted/50">
-                            <td className="p-2 font-medium text-card-foreground">
+                          <th className="text-left p-2 font-medium text-muted-foreground">NCAL</th>
+                          {monthlyNCALDurationData.map((row) => (
+                            <th key={row.month} className="text-center p-2 font-medium text-muted-foreground">
                               {(() => {
                                 const [year, month] = row.month.split('-');
                                 const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
                                 return `${monthNames[parseInt(month) - 1]} ${year}`;
                               })()}
+                            </th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {NCAL_ORDER.map((ncal) => (
+                          <tr key={ncal} className="border-b border-border hover:bg-muted/50">
+                            <td className="p-2 font-medium text-card-foreground" style={{ color: NCAL_COLORS[ncal] }}>
+                              {ncal}
                             </td>
-                            {NCAL_ORDER.map((ncal) => {
+                            {monthlyNCALDurationData.map((row) => {
                               const value = row[ncal] || 0;
                               const hours = Math.floor(value / 60);
                               const minutes = Math.floor(value % 60);
@@ -1082,7 +1082,7 @@ const IncidentAnalytics: React.FC = () => {
                                 : '0:00:00';
                               
                               return (
-                                <td key={ncal} className="text-center p-2 text-card-foreground">
+                                <td key={row.month} className="text-center p-2 text-card-foreground">
                                   {formattedTime}
                                 </td>
                               );
