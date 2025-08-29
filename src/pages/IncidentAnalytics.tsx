@@ -197,6 +197,28 @@ const IncidentAnalytics: React.FC = () => {
     })) || []
   });
 
+  // Debug: Log sample incident structure
+  React.useEffect(() => {
+    if (allIncidents && allIncidents.length > 0) {
+      console.log('🔍 DEBUG: Sample incident structure:', allIncidents[0]);
+      console.log('🔍 DEBUG: All incident keys:', Object.keys(allIncidents[0]));
+      console.log('🔍 DEBUG: Total incidents:', allIncidents.length);
+      
+      // Check for time-related fields
+      const timeFields = ['start', 'end', 'startTime', 'endTime', 'startEscalationVendor', 
+                         'startPause', 'endPause', 'startPause1', 'endPause1', 
+                         'startPause2', 'endPause2'];
+      
+      timeFields.forEach(field => {
+        const incidentsWithField = allIncidents.filter(inc => inc[field]);
+        console.log(`🔍 DEBUG: Incidents with ${field}:`, incidentsWithField.length);
+        if (incidentsWithField.length > 0) {
+          console.log(`🔍 DEBUG: Sample ${field} value:`, incidentsWithField[0][field]);
+        }
+      });
+    }
+  }, [allIncidents]);
+
   // Normalize NCAL text to capitalized key
   const normalizeNCAL = (ncal: string | null | undefined): string => {
     if (!ncal) return 'Unknown';
@@ -236,67 +258,104 @@ const IncidentAnalytics: React.FC = () => {
     let totalDuration = 0;
     
     console.log(`🔧 Calculating duration for incident ${incident.id || incident.noCase || 'unknown'}`);
+    console.log(`🔍 Incident data:`, {
+      start: incident.start,
+      end: incident.end,
+      startEscalationVendor: incident.startEscalationVendor,
+      startPause: incident.startPause,
+      endPause: incident.endPause,
+      startPause2: incident.startPause2,
+      endPause2: incident.endPause2,
+      // Also check alternative field names
+      startTime: incident.startTime,
+      endTime: incident.endTime,
+      startPause1: incident.startPause1,
+      endPause1: incident.endPause1
+    });
     
     // Priority order for duration calculation:
     // 1. Calculate from Start and End times (most accurate)
     // 2. Calculate from Start Escalation Vendor and End (vendor duration)
     // 3. Calculate pause periods and subtract from total
     
-    // Calculate total duration from Start to End
-    if (incident.start && incident.end) {
-      const startTime = parseDateSafe(incident.start);
-      const endTime = parseDateSafe(incident.end);
+    // Calculate total duration from Start to End (try multiple field names)
+    const startField = incident.start || incident.startTime;
+    const endField = incident.end || incident.endTime;
+    
+    if (startField && endField) {
+      const startTime = parseDateSafe(startField);
+      const endTime = parseDateSafe(endField);
+      
+      console.log(`🔍 Parsed times:`, {
+        startField,
+        endField,
+        startTime: startTime?.toISOString(),
+        endTime: endTime?.toISOString(),
+        startTimeValid: !!startTime,
+        endTimeValid: !!endTime
+      });
       
       if (startTime && endTime && endTime > startTime) {
         totalDuration = (endTime.getTime() - startTime.getTime()) / (1000 * 60); // Convert to minutes
         console.log(`📅 Total Duration (Start to End): ${totalDuration.toFixed(2)}min`);
       } else {
-        console.log(`⚠️ Invalid Start/End times: Start=${incident.start}, End=${incident.end}`);
+        console.log(`⚠️ Invalid Start/End times: Start=${startField}, End=${endField}`);
+        if (startTime && endTime) {
+          console.log(`⚠️ Time comparison: ${startTime.toISOString()} vs ${endTime.toISOString()}`);
+        }
       }
+    } else {
+      console.log(`⚠️ Missing Start/End fields: startField=${startField}, endField=${endField}`);
     }
     
     // Calculate vendor duration from Start Escalation Vendor to End
     let vendorDuration = 0;
-    if (incident.startEscalationVendor && incident.end) {
+    if (incident.startEscalationVendor && endField) {
       const vendorStartTime = parseDateSafe(incident.startEscalationVendor);
-      const endTime = parseDateSafe(incident.end);
+      const endTime = parseDateSafe(endField);
       
       if (vendorStartTime && endTime && endTime > vendorStartTime) {
         vendorDuration = (endTime.getTime() - vendorStartTime.getTime()) / (1000 * 60);
         console.log(`👨‍💼 Vendor Duration (Escalation to End): ${vendorDuration.toFixed(2)}min`);
       } else {
-        console.log(`⚠️ Invalid Vendor Start/End times: VendorStart=${incident.startEscalationVendor}, End=${incident.end}`);
+        console.log(`⚠️ Invalid Vendor Start/End times: VendorStart=${incident.startEscalationVendor}, End=${endField}`);
       }
     }
     
-    // Calculate pause durations
+    // Calculate pause durations (try multiple field names)
     let totalPauseDuration = 0;
     
     // Pause 1: Start Pause to End Pause
-    if (incident.startPause && incident.endPause) {
-      const pause1Start = parseDateSafe(incident.startPause);
-      const pause1End = parseDateSafe(incident.endPause);
+    const pause1StartField = incident.startPause || incident.startPause1;
+    const pause1EndField = incident.endPause || incident.endPause1;
+    
+    if (pause1StartField && pause1EndField) {
+      const pause1Start = parseDateSafe(pause1StartField);
+      const pause1End = parseDateSafe(pause1EndField);
       
       if (pause1Start && pause1End && pause1End > pause1Start) {
         const pause1Duration = (pause1End.getTime() - pause1Start.getTime()) / (1000 * 60);
         totalPauseDuration += pause1Duration;
         console.log(`⏸️ Pause 1 Duration: ${pause1Duration.toFixed(2)}min`);
       } else {
-        console.log(`⚠️ Invalid Pause 1 times: Start=${incident.startPause}, End=${incident.endPause}`);
+        console.log(`⚠️ Invalid Pause 1 times: Start=${pause1StartField}, End=${pause1EndField}`);
       }
     }
     
     // Pause 2: Start Pause 2 to End Pause 2
-    if (incident.startPause2 && incident.endPause2) {
-      const pause2Start = parseDateSafe(incident.startPause2);
-      const pause2End = parseDateSafe(incident.endPause2);
+    const pause2StartField = incident.startPause2;
+    const pause2EndField = incident.endPause2;
+    
+    if (pause2StartField && pause2EndField) {
+      const pause2Start = parseDateSafe(pause2StartField);
+      const pause2End = parseDateSafe(pause2EndField);
       
       if (pause2Start && pause2End && pause2End > pause2Start) {
         const pause2Duration = (pause2End.getTime() - pause2Start.getTime()) / (1000 * 60);
         totalPauseDuration += pause2Duration;
         console.log(`⏸️ Pause 2 Duration: ${pause2Duration.toFixed(2)}min`);
       } else {
-        console.log(`⚠️ Invalid Pause 2 times: Start=${incident.startPause2}, End=${incident.endPause2}`);
+        console.log(`⚠️ Invalid Pause 2 times: Start=${pause2StartField}, End=${pause2EndField}`);
       }
     }
     
