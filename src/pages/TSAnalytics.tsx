@@ -1045,9 +1045,9 @@ const TSAnalytics: React.FC = () => {
         </div>
         {/* Auto Insights Section */}
         {insights.length > 0 && (
-          <Card className="rounded-xl border bg-card text-card-foreground shadow">
+          <Card>
             <CardHeader className="flex flex-col gap-1 pb-1">
-              <CardTitle className="font-extrabold text-xl text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
+              <CardTitle className="font-extrabold text-xl flex items-center gap-2">
                 <InsightsIcon className="w-6 h-6 text-indigo-600" />
                 Key Insights
               </CardTitle>
