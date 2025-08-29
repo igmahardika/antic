@@ -55,7 +55,7 @@ const SummaryCard: React.FC<SummaryCardProps> = ({
         </span>
         {badge && (
           <span
-            className={`ml-2 px-3 py-1 rounded-lg text-xs font-bold text-white ${badgeColor}`}
+                            className={`ml-2 px-2 py-0.5 rounded-md text-xs font-bold text-white ${badgeColor}`}
           >
             {badge}
           </span>

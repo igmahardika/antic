@@ -452,9 +452,9 @@ const KanbanBoard = () => {
     const lastTicket = tickets.slice().sort((a, b) => new Date(b.openTime).getTime() - new Date(a.openTime).getTime())[0];
     // Trend badge
     let trendBadge = null;
-    if (customer.trend === 'Naik') trendBadge = <span className="ml-2 px-2 py-0.5 rounded-xl bg-green-100 text-green-700 text-xs font-bold dark:bg-green-200 dark:text-green-900">Trend: Up</span>;
-    else if (customer.trend === 'Turun') trendBadge = <span className="ml-2 px-2 py-0.5 rounded-xl bg-red-100 text-red-700 text-xs font-bold dark:bg-red-200 dark:text-red-900">Trend: Down</span>;
-    else if (customer.trend === 'Stabil') trendBadge = <span className="ml-2 px-2 py-0.5 rounded-xl bg-gray-100 text-gray-700 text-xs font-bold dark:bg-gray-200 dark:text-gray-900">Trend: Stable</span>;
+                    if (customer.trend === 'Naik') trendBadge = <span className="ml-2 px-2 py-0.5 rounded-md bg-green-100 text-green-700 text-xs font-bold dark:bg-green-200 dark:text-green-900">Trend: Up</span>;
+                else if (customer.trend === 'Turun') trendBadge = <span className="ml-2 px-2 py-0.5 rounded-md bg-red-100 text-red-700 text-xs font-bold dark:bg-red-200 dark:text-red-900">Trend: Down</span>;
+                else if (customer.trend === 'Stabil') trendBadge = <span className="ml-2 px-2 py-0.5 rounded-md bg-gray-100 text-gray-700 text-xs font-bold dark:bg-gray-200 dark:text-gray-900">Trend: Stable</span>;
 
     return (
       <TooltipProvider delayDuration={200}>

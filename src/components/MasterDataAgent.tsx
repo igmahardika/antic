@@ -175,7 +175,7 @@ const MasterDataAgent: React.FC = () => {
                   <td className="w-[13%] min-w-[110px] px-5 py-3 align-top">
                     <div className="flex flex-wrap gap-2">
                       {agent.years.map((y: number) => (
-                        <Badge key={y} className="rounded-xl text-xs px-2 py-0.5 font-bold text-white bg-blue-600">{y}</Badge>
+                        <Badge key={y} className="rounded-md text-xs px-2 py-0.5 font-bold text-white bg-blue-600">{y}</Badge>
                       ))}
                     </div>
                   </td>

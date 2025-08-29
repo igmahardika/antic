@@ -309,7 +309,7 @@ const SummaryDashboard = ({ ticketAnalyticsData, filteredTickets }: any) => {
           <div className="flex flex-col gap-1">
                           <CardTitle className="font-extrabold text-lg">Tickets per Month</CardTitle>
             {latestMonthlyValue !== null && (
-                              <Badge className="bg-blue-600 text-white text-xs px-3 py-1 rounded-xl w-fit font-semibold shadow-lg">Latest: {latestMonthlyValue}</Badge>
+                              <Badge className="bg-blue-600 text-white text-xs px-2 py-0.5 rounded-md w-fit font-semibold">Latest: {latestMonthlyValue}</Badge>
             )}
           </div>
           <div className="mt-2 md:mt-0">
@@ -377,7 +377,7 @@ const SummaryDashboard = ({ ticketAnalyticsData, filteredTickets }: any) => {
         <CardHeader className="flex flex-col gap-1 pb-1">
                       <CardTitle className="font-extrabold text-lg">Tickets per Year</CardTitle>
           {latestYearlyValue !== null && (
-                            <Badge className="bg-blue-600 text-white text-xs px-3 py-1 rounded-xl w-fit font-semibold shadow-lg">Latest: {latestYearlyValue}</Badge>
+                            <Badge className="bg-blue-600 text-white text-xs px-2 py-0.5 rounded-md w-fit font-semibold">Latest: {latestYearlyValue}</Badge>
           )}
         </CardHeader>
         <CardContent className="pl-2">
