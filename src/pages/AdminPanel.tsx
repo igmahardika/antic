@@ -358,10 +358,10 @@ const AdminPanel: React.FC = () => {
                 </h4>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {allMenus.slice(0, 1).map(menu => (
-                    <div key={menu} className={`flex items-center p-3 rounded-lg border transition-all ${
+                    <div key={menu} className={`flex items-center p-3 rounded-lg transition-all ${
                       getMenusForRole(selectedRoleForEditing).includes(menu)
-                        ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800'
-                        : 'bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600'
+                        ? 'bg-blue-50 dark:bg-blue-900/20'
+                        : 'bg-gray-50 dark:bg-gray-700'
                     }`}>
                       <input
                         type="checkbox"
@@ -388,10 +388,10 @@ const AdminPanel: React.FC = () => {
                 </h4>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {allMenus.slice(1, 5).map(menu => (
-                    <div key={menu} className={`flex items-center p-3 rounded-lg border transition-all ${
+                    <div key={menu} className={`flex items-center p-3 rounded-lg transition-all ${
                       getMenusForRole(selectedRoleForEditing).includes(menu)
-                        ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800'
-                        : 'bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600'
+                        ? 'bg-blue-50 dark:bg-blue-900/20'
+                        : 'bg-gray-50 dark:bg-gray-700'
                     }`}>
                       <input
                         type="checkbox"
@@ -418,10 +418,10 @@ const AdminPanel: React.FC = () => {
                 </h4>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {allMenus.slice(5, 9).map(menu => (
-                    <div key={menu} className={`flex items-center p-3 rounded-lg border transition-all ${
+                    <div key={menu} className={`flex items-center p-3 rounded-lg transition-all ${
                       getMenusForRole(selectedRoleForEditing).includes(menu)
-                        ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800'
-                        : 'bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600'
+                        ? 'bg-blue-50 dark:bg-blue-900/20'
+                        : 'bg-gray-50 dark:bg-gray-700'
                     }`}>
                       <input
                         type="checkbox"

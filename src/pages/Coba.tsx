@@ -1800,7 +1800,7 @@ export const IncidentAnalytics: React.FC = () => {
 
               {/* Breakdown */}
               <div className="space-y-3">
-                <div className="flex items-center justify-between p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg  dark:border-orange-800">
+                <div className="flex items-center justify-between p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg">
                   <div className="flex items-center gap-2">
                     <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
                     <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -1844,7 +1844,7 @@ export const IncidentAnalytics: React.FC = () => {
               </div>
 
               {/* Performance Indicator */}
-              <div className="mt-4 p-3 bg-gradient-to-r from-orange-50 to-red-50 dark:from-orange-900/20 dark:to-red-900/20 rounded-lg  dark:border-orange-800">
+              <div className="mt-4 p-3 bg-gradient-to-r from-orange-50 to-red-50 dark:from-orange-900/20 dark:to-red-900/20 rounded-lg">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <WarningAmberIcon className="w-4 h-4 text-orange-600" />

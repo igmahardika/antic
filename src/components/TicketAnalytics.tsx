@@ -1218,12 +1218,12 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
                                     {insightCards.map((card, index) => (
                     <div 
                       key={index}   
-                      className={`p-2 rounded-lg border transition-all duration-200 ${
+                      className={`p-2 rounded-lg transition-all duration-200 ${
                         card.type === 'warning' 
-                          ? 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800' 
+                          ? 'bg-red-50 dark:bg-red-900/20' 
                           : card.type === 'success'
-                          ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800'
-                          : 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800'
+                          ? 'bg-green-50 dark:bg-green-900/20'
+                          : 'bg-blue-50 dark:bg-blue-900/20'
                       }`}
                     >
                       <div className="flex items-start gap-1">
@@ -2603,7 +2603,7 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
               };
               
                   return (
-                <div key={classification} className={`rounded-xl border p-4 ${getClassificationColor(classification)} transition-all duration-200 hover:shadow-md`}>
+                                  <div key={classification} className={`rounded-xl p-4 ${getClassificationColor(classification)} transition-all duration-200 hover:shadow-md`}>
                   {/* Header */}
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-3">
@@ -2756,10 +2756,10 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
                   return (
                     <div 
                       key={shift.shift} 
-                      className={`p-4 rounded-lg border transition-all duration-200 ${
+                      className={`p-4 rounded-lg transition-all duration-200 ${
                         isOutlier 
-                          ? 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800' 
-                          : 'bg-gray-50 dark:bg-zinc-800/50 border-gray-200 dark:border-zinc-700'
+                          ? 'bg-red-50 dark:bg-red-900/20' 
+                          : 'bg-gray-50 dark:bg-zinc-800/50'
                       }`}
                     >
                       <div className="flex items-center justify-between mb-2">

@@ -1283,7 +1283,7 @@ const IncidentAnalytics: React.FC = () => {
                 </div>
               ) : (
                 deep.outliers.map((o, idx) => (
-                  <div key={idx} className="flex items-center justify-between p-3 rounded-lg border bg-gray-50 dark:bg-zinc-800 hover:bg-gray-100 dark:hover:bg-zinc-700 transition-colors">
+                  <div key={idx} className="flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-zinc-800 hover:bg-gray-100 dark:hover:bg-zinc-700 transition-colors">
                     <div className="min-w-0 flex-1">
                       <div className="text-sm font-medium truncate text-card-foreground">{o.site}</div>
                       <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">

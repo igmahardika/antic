@@ -600,7 +600,7 @@ const SiteAnalytics: React.FC = () => {
                           <CardDescription className="text-muted-foreground">
               Risk score calculated from incident frequency, duration, and resolution patterns
             </CardDescription>
-            <div className="mt-2 p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg  dark:border-amber-800">
+                            <div className="mt-2 p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg">
               <div className="text-xs font-medium text-amber-800 dark:text-amber-200 mb-1">Risk Score Formula:</div>
               <div className="text-xs text-amber-700 dark:text-amber-300">
                 <strong>Risk Score = (Incident Count × 10) + (Avg Duration in hours × 2) + (100 - Resolution Rate)</strong><br/>
@@ -712,7 +712,7 @@ const SiteAnalytics: React.FC = () => {
             <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               {/* Reliability Rate */}
-              <div className="text-center p-4 bg-green-50 dark:bg-green-900/20 rounded-xl  dark:border-green-800 shadow-sm">
+              <div className="text-center p-4 bg-green-50 dark:bg-green-900/20 rounded-xl shadow-sm">
                 <CheckCircleIcon className="w-6 h-6 text-green-600 mx-auto mb-2" />
                 <div className="text-lg font-bold text-green-600">
                   {siteStats.siteReliability.toFixed(1)}%
@@ -732,7 +732,7 @@ const SiteAnalytics: React.FC = () => {
               </div>
 
               {/* Recovery Time */}
-              <div className="text-center p-4 bg-orange-50 dark:bg-orange-900/20 rounded-xl  dark:border-orange-800 shadow-sm">
+              <div className="text-center p-4 bg-orange-50 dark:bg-orange-900/20 rounded-xl shadow-sm">
                 <AccessTimeIcon className="w-6 h-6 text-orange-600 mx-auto mb-2" />
                 <div className="text-lg font-bold text-orange-600">
                   {formatDurationHMS(siteStats.avgSiteRecovery)}
@@ -797,7 +797,7 @@ const SiteAnalytics: React.FC = () => {
             <CardContent>
             {/* Summary Stats */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-              <div className="text-center p-3 bg-green-50 dark:bg-green-900/20 rounded-xl  dark:border-green-800 shadow-sm">
+              <div className="text-center p-3 bg-green-50 dark:bg-green-900/20 rounded-xl shadow-sm">
                 <div className="text-lg font-bold text-green-600">
                   {ncalPerformanceData.filter(item => {
                     const target = NCAL_TARGETS[item.name as keyof typeof NCAL_TARGETS] || 0;
@@ -824,7 +824,7 @@ const SiteAnalytics: React.FC = () => {
                 <div className="text-xs text-muted-foreground">Total Incidents</div>
               </div>
               
-              <div className="text-center p-3 bg-orange-50 dark:bg-orange-900/20 rounded-xl  dark:border-orange-800 shadow-sm">
+              <div className="text-center p-3 bg-orange-50 dark:bg-orange-900/20 rounded-xl shadow-sm">
                 <div className="text-lg font-bold text-orange-600">
                   {formatDurationHMS(ncalPerformanceData.reduce((sum, item) => sum + item.avgDuration, 0) / ncalPerformanceData.length)}
                 </div>
