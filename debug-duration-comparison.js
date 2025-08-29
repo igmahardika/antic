@@ -1,221 +1,232 @@
 // Script untuk browser console - bandingkan data duration manual vs sistem
-// Copy paste ke browser console di halaman Incident Analytics
+// Jalankan di browser console pada halaman Incident Analytics
 
-// Data manual dari tabel yang Anda berikan
-const MANUAL_DATA = {
-  '2025-01': {
-    'Blue': { avg: 315.33, count: 18 }, // 5:15:20 = 315.33 minutes
-    'Yellow': { avg: 297.27, count: 141 }, // 4:57:16 = 297.27 minutes
-    'Orange': { avg: 828.47, count: 13 }, // 13:48:28 = 828.47 minutes
-    'Red': { avg: 403.5, count: 6 }, // 6:43:30 = 403.5 minutes
-    'Black': { avg: 0, count: 0 } // 0:00:00
+console.log('🔍 DEBUG: Starting comprehensive data comparison...');
+
+// Data manual dari spreadsheet (sesuai screenshot)
+const manualData = {
+  // Durasi Rata Rata Penanganan Gangguan 2025 (On Net)
+  duration: {
+    '2025-01': { Blue: 315.33, Yellow: 297.27, Orange: 828.47, Red: 403.5, Black: 0 }, // 5:15:20, 4:57:16, 13:48:28, 6:43:30, 0:00:00
+    '2025-02': { Blue: 257.08, Yellow: 381.05, Orange: 345.23, Red: 249, Black: 0 }, // 4:17:05, 6:21:03, 5:45:14, 4:09:00, 0:00:00
+    '2025-03': { Blue: 340.05, Yellow: 399.45, Orange: 287.43, Red: 178, Black: 37 }, // 5:40:03, 6:39:27, 4:47:26, 2:58:00, 0:37:00
+    '2025-04': { Blue: 369, Yellow: 376.07, Orange: 463.93, Red: 152.33, Black: 0 }, // 6:09:00, 6:16:03, 7:43:56, 2:32:20, 0:00:00
+    '2025-05': { Blue: 469.97, Yellow: 413.15, Orange: 314.48, Red: 303.28, Black: 0 }, // 7:49:58, 6:53:10, 5:14:29, 5:03:17, 0:00:00
+    '2025-06': { Blue: 468.25, Yellow: 342.92, Orange: 299.63, Red: 296.5, Black: 0 }, // 7:48:15, 5:42:55, 4:59:38, 4:56:30, 0:00:00
+    '2025-07': { Blue: 130.13, Yellow: 397.2, Orange: 293.82, Red: 0, Black: 46 }, // 2:10:08, 6:37:12, 4:53:49, 0:00:00, 0:46:00
   },
-  '2025-02': {
-    'Blue': { avg: 257.08, count: 23 }, // 4:17:05 = 257.08 minutes
-    'Yellow': { avg: 381.05, count: 125 }, // 6:21:03 = 381.05 minutes
-    'Orange': { avg: 345.23, count: 13 }, // 5:45:14 = 345.23 minutes
-    'Red': { avg: 249, count: 2 }, // 4:09:00 = 249 minutes
-    'Black': { avg: 0, count: 0 } // 0:00:00
-  },
-  '2025-03': {
-    'Blue': { avg: 340.05, count: 19 }, // 5:40:03 = 340.05 minutes
-    'Yellow': { avg: 399.45, count: 121 }, // 6:39:27 = 399.45 minutes
-    'Orange': { avg: 287.43, count: 40 }, // 4:47:26 = 287.43 minutes
-    'Red': { avg: 178, count: 1 }, // 2:58:00 = 178 minutes
-    'Black': { avg: 37, count: 2 } // 0:37:00 = 37 minutes
-  },
-  '2025-04': {
-    'Blue': { avg: 369, count: 29 }, // 6:09:00 = 369 minutes
-    'Yellow': { avg: 376.05, count: 87 }, // 6:16:03 = 376.05 minutes
-    'Orange': { avg: 463.93, count: 15 }, // 7:43:56 = 463.93 minutes
-    'Red': { avg: 152.33, count: 3 }, // 2:32:20 = 152.33 minutes
-    'Black': { avg: 0, count: 0 } // 0:00:00
-  },
-  '2025-05': {
-    'Blue': { avg: 469.97, count: 29 }, // 7:49:58 = 469.97 minutes
-    'Yellow': { avg: 413.17, count: 98 }, // 6:53:10 = 413.17 minutes
-    'Orange': { avg: 314.48, count: 21 }, // 5:14:29 = 314.48 minutes
-    'Red': { avg: 303.28, count: 7 }, // 5:03:17 = 303.28 minutes
-    'Black': { avg: 0, count: 0 } // 0:00:00
-  },
-  '2025-06': {
-    'Blue': { avg: 468.25, count: 20 }, // 7:48:15 = 468.25 minutes
-    'Yellow': { avg: 342.92, count: 97 }, // 5:42:55 = 342.92 minutes
-    'Orange': { avg: 299.63, count: 21 }, // 4:59:38 = 299.63 minutes
-    'Red': { avg: 296.5, count: 2 }, // 4:56:30 = 296.5 minutes
-    'Black': { avg: 0, count: 0 } // 0:00:00
-  },
-  '2025-07': {
-    'Blue': { avg: 130.13, count: 22 }, // 2:10:08 = 130.13 minutes
-    'Yellow': { avg: 397.2, count: 120 }, // 6:37:12 = 397.2 minutes
-    'Orange': { avg: 293.82, count: 14 }, // 4:53:49 = 293.82 minutes
-    'Red': { avg: 0, count: 0 }, // 0:00:00
-    'Black': { avg: 46, count: 2 } // 0:46:00 = 46 minutes
+  // Jumlah Gangguan 2025 (On Net)
+  count: {
+    '2025-01': { Blue: 18, Yellow: 141, Orange: 13, Red: 6, Black: 0 },
+    '2025-02': { Blue: 23, Yellow: 125, Orange: 13, Red: 2, Black: 0 },
+    '2025-03': { Blue: 19, Yellow: 121, Orange: 40, Red: 1, Black: 2 },
+    '2025-04': { Blue: 29, Yellow: 87, Orange: 15, Red: 3, Black: 0 },
+    '2025-05': { Blue: 29, Yellow: 98, Orange: 21, Red: 7, Black: 0 },
+    '2025-06': { Blue: 20, Yellow: 97, Orange: 21, Red: 2, Black: 0 },
+    '2025-07': { Blue: 22, Yellow: 120, Orange: 14, Red: 0, Black: 2 },
   }
 };
 
-// Helper function to normalize NCAL
-const normalizeNCAL = (ncal) => {
-  if (!ncal) return 'Unknown';
-  const normalized = ncal.trim().toLowerCase();
-  switch (normalized) {
-    case 'blue':
-    case 'biru':
-      return 'Blue';
-    case 'yellow':
-    case 'kuning':
-      return 'Yellow';
-    case 'orange':
-    case 'jingga':
-      return 'Orange';
-    case 'red':
-    case 'merah':
-      return 'Red';
-    case 'black':
-    case 'hitam':
-      return 'Black';
-    default:
-      return ncal.trim();
-  }
-};
-
-// Helper function to format duration
-const formatDurationHMS = (minutes) => {
-  if (!minutes || minutes <= 0) return '0:00:00';
-  const hours = Math.floor(minutes / 60);
-  const mins = Math.floor(minutes % 60);
-  const secs = Math.floor((minutes % 1) * 60);
-  return `${hours}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-};
-
-async function compareDurationData() {
+// Fungsi untuk mengakses data sistem
+async function getSystemData() {
   try {
-    console.log('🔍 Comparing Manual vs System Duration Data...\n');
+    // Akses database
+    const allIncidents = await window.db.incidents.toArray();
+    console.log('📊 Total incidents in database:', allIncidents.length);
     
-    // Access the database from the current page
-    const db = window.db || window.InsightTicketDatabase;
-    if (!db) {
-      console.log('❌ Database not found. Make sure you are on the Incident Analytics page.');
-      return;
-    }
-    
-    const allIncidents = await db.incidents.toArray();
-    console.log(`📊 Total incidents in database: ${allIncidents.length}`);
-    
-    if (allIncidents.length === 0) {
-      console.log('❌ No incidents found in database');
-      return;
-    }
-    
-    // Calculate system data
-    const systemData = {};
-    
-    allIncidents.forEach((inc) => {
-      if (!inc.startTime) return;
+    // Filter untuk tahun 2025
+    const incidents2025 = allIncidents.filter(inc => {
+      if (!inc.startTime) return false;
       const date = new Date(inc.startTime);
-      const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+      return date.getFullYear() === 2025;
+    });
+    
+    console.log('📊 Incidents in 2025:', incidents2025.length);
+    
+    // Normalize NCAL function
+    const normalizeNCAL = (ncal) => {
+      if (!ncal) return 'Unknown';
+      const value = ncal.toString().trim().toLowerCase();
+      switch (value) {
+        case 'blue':
+        case 'biru':
+          return 'Blue';
+        case 'yellow':
+        case 'kuning':
+          return 'Yellow';
+        case 'orange':
+        case 'jingga':
+          return 'Orange';
+        case 'red':
+        case 'merah':
+          return 'Red';
+        case 'black':
+        case 'hitam':
+          return 'Black';
+        default:
+          return ncal.trim();
+      }
+    };
+    
+    // Group by month and NCAL
+    const systemData = {
+      duration: {},
+      count: {}
+    };
+    
+    incidents2025.forEach(inc => {
+      if (!inc.startTime) return;
+      
+      const date = new Date(inc.startTime);
+      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
       const ncal = normalizeNCAL(inc.ncal);
-      const dur = inc.durationMin || 0;
+      const duration = inc.durationMin || 0;
       
-      if (!systemData[key]) systemData[key] = {};
-      if (!systemData[key][ncal]) systemData[key][ncal] = { total: 0, count: 0, avg: 0 };
+      // Initialize if not exists
+      if (!systemData.duration[monthKey]) systemData.duration[monthKey] = {};
+      if (!systemData.count[monthKey]) systemData.count[monthKey] = {};
+      if (!systemData.duration[monthKey][ncal]) {
+        systemData.duration[monthKey][ncal] = { total: 0, count: 0, avg: 0 };
+      }
+      if (!systemData.count[monthKey][ncal]) {
+        systemData.count[monthKey][ncal] = 0;
+      }
       
-      if (dur > 0) {
-        systemData[key][ncal].total += dur;
-        systemData[key][ncal].count += 1;
+      // Count incidents
+      systemData.count[monthKey][ncal]++;
+      
+      // Sum durations
+      if (duration > 0) {
+        systemData.duration[monthKey][ncal].total += duration;
+        systemData.duration[monthKey][ncal].count++;
       }
     });
     
     // Calculate averages
-    Object.keys(systemData).forEach((month) => {
-      Object.keys(systemData[month]).forEach((ncal) => {
-        const obj = systemData[month][ncal];
-        obj.avg = obj.count > 0 ? obj.total / obj.count : 0;
-      });
-    });
-    
-    // Compare data
-    console.log('📋 COMPARISON RESULTS:\n');
-    
-    const months = Object.keys(MANUAL_DATA).sort();
-    months.forEach((month) => {
-      console.log(`\n📅 ${month}:`);
-      console.log('─'.repeat(80));
-      
-      const manualMonth = MANUAL_DATA[month];
-      const systemMonth = systemData[month] || {};
-      
-      ['Blue', 'Yellow', 'Orange', 'Red', 'Black'].forEach((ncal) => {
-        const manual = manualMonth[ncal] || { avg: 0, count: 0 };
-        const system = systemMonth[ncal] || { avg: 0, count: 0 };
-        
-        const avgDiff = Math.abs(manual.avg - system.avg);
-        const countDiff = Math.abs(manual.count - system.count);
-        const avgDiffPercent = manual.avg > 0 ? (avgDiff / manual.avg) * 100 : 0;
-        
-        console.log(`${ncal.padEnd(8)} | Manual: ${formatDurationHMS(manual.avg).padEnd(10)} (${manual.count.toString().padStart(3)} items) | System: ${formatDurationHMS(system.avg).padEnd(10)} (${system.count.toString().padStart(3)} items) | Diff: ${formatDurationHMS(avgDiff).padEnd(10)} (${avgDiffPercent.toFixed(1)}%)`);
-        
-        if (avgDiff > 1 || countDiff > 0) {
-          console.log(`  ⚠️  DISCREPANCY DETECTED!`);
+    Object.keys(systemData.duration).forEach(month => {
+      Object.keys(systemData.duration[month]).forEach(ncal => {
+        const obj = systemData.duration[month][ncal];
+        if (obj.count > 0) {
+          obj.avg = obj.total / obj.count;
         }
       });
     });
     
-    // Summary
-    console.log('\n📊 SUMMARY:');
-    console.log('─'.repeat(80));
-    
-    let totalDiscrepancies = 0;
-    let totalComparisons = 0;
-    
-    months.forEach((month) => {
-      const manualMonth = MANUAL_DATA[month];
-      const systemMonth = systemData[month] || {};
-      
-      ['Blue', 'Yellow', 'Orange', 'Red', 'Black'].forEach((ncal) => {
-        const manual = manualMonth[ncal] || { avg: 0, count: 0 };
-        const system = systemMonth[ncal] || { avg: 0, count: 0 };
-        
-        totalComparisons++;
-        const avgDiff = Math.abs(manual.avg - system.avg);
-        const countDiff = Math.abs(manual.count - system.count);
-        
-        if (avgDiff > 1 || countDiff > 0) {
-          totalDiscrepancies++;
-        }
-      });
-    });
-    
-    console.log(`Total comparisons: ${totalComparisons}`);
-    console.log(`Discrepancies found: ${totalDiscrepancies}`);
-    console.log(`Accuracy: ${((totalComparisons - totalDiscrepancies) / totalComparisons * 100).toFixed(1)}%`);
-    
-    if (totalDiscrepancies > 0) {
-      console.log('\n🔍 POSSIBLE ISSUES:');
-      console.log('1. Data filtering: System might be filtering out some incidents');
-      console.log('2. Date parsing: Start time might not be parsed correctly');
-      console.log('3. NCAL normalization: NCAL values might not match');
-      console.log('4. Duration parsing: Duration values might not be parsed correctly');
-      console.log('5. Data completeness: Some incidents might be missing required fields');
-      
-      // Show sample data for debugging
-      console.log('\n🔍 SAMPLE DATA FOR DEBUGGING:');
-      const sampleIncidents = allIncidents.slice(0, 5);
-      sampleIncidents.forEach((inc, index) => {
-        console.log(`\nSample ${index + 1}:`);
-        console.log(`  ID: ${inc.id}`);
-        console.log(`  No Case: ${inc.noCase}`);
-        console.log(`  Start Time: ${inc.startTime}`);
-        console.log(`  NCAL: ${inc.ncal} -> ${normalizeNCAL(inc.ncal)}`);
-        console.log(`  Duration: ${inc.durationMin} minutes`);
-        console.log(`  Status: ${inc.status}`);
-      });
-    }
+    return systemData;
     
   } catch (error) {
-    console.error('❌ Error comparing duration data:', error);
+    console.error('❌ Error accessing database:', error);
+    return null;
   }
 }
 
-// Run the comparison
-compareDurationData();
+// Fungsi untuk membandingkan data
+function compareData(manual, system) {
+  console.log('\n🔍 COMPARISON RESULTS:');
+  console.log('='.repeat(80));
+  
+  const months = Object.keys(manual.duration).sort();
+  
+  months.forEach(month => {
+    console.log(`\n📅 MONTH: ${month}`);
+    console.log('-'.repeat(50));
+    
+    ['Blue', 'Yellow', 'Orange', 'Red', 'Black'].forEach(ncal => {
+      const manualDuration = manual.duration[month]?.[ncal] || 0;
+      const manualCount = manual.count[month]?.[ncal] || 0;
+      const systemDuration = system.duration[month]?.[ncal]?.avg || 0;
+      const systemCount = system.count[month]?.[ncal] || 0;
+      
+      const durationDiff = Math.abs(manualDuration - systemDuration);
+      const countDiff = Math.abs(manualCount - systemCount);
+      
+      console.log(`${ncal}:`);
+      console.log(`  Duration: Manual=${manualDuration.toFixed(2)}min (${formatTime(manualDuration)}) | System=${systemDuration.toFixed(2)}min (${formatTime(systemDuration)}) | Diff=${durationDiff.toFixed(2)}min`);
+      console.log(`  Count: Manual=${manualCount} | System=${systemCount} | Diff=${countDiff}`);
+      
+      if (durationDiff > 1 || countDiff > 0) {
+        console.log(`  ⚠️  DISCREPANCY DETECTED!`);
+      }
+    });
+  });
+}
+
+// Helper function untuk format waktu
+function formatTime(minutes) {
+  if (!minutes || minutes <= 0) return '0:00:00';
+  const hrs = Math.floor(minutes / 60);
+  const mins = Math.floor(minutes % 60);
+  const secs = Math.floor((minutes % 1) * 60);
+  return `${hrs}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+}
+
+// Fungsi untuk menganalisis data mentah
+function analyzeRawData(incidents) {
+  console.log('\n🔍 RAW DATA ANALYSIS:');
+  console.log('='.repeat(80));
+  
+  // Sample incidents untuk analisis
+  const sampleIncidents = incidents.slice(0, 10);
+  
+  sampleIncidents.forEach((inc, index) => {
+    console.log(`\nIncident ${index + 1}:`);
+    console.log(`  ID: ${inc.id}`);
+    console.log(`  Start Time: ${inc.startTime}`);
+    console.log(`  NCAL: "${inc.ncal}" (normalized: "${normalizeNCAL(inc.ncal)}")`);
+    console.log(`  Duration: ${inc.durationMin} minutes`);
+    console.log(`  Status: ${inc.status}`);
+    
+    // Check for duration-related fields
+    const durationFields = Object.keys(inc).filter(key => 
+      key.toLowerCase().includes('duration') || 
+      key.toLowerCase().includes('time') ||
+      key.toLowerCase().includes('min')
+    );
+    
+    if (durationFields.length > 0) {
+      console.log(`  Duration-related fields:`, durationFields.map(field => `${field}=${inc[field]}`));
+    }
+  });
+  
+  // Check NCAL distribution
+  const ncalDistribution = {};
+  incidents.forEach(inc => {
+    const ncal = normalizeNCAL(inc.ncal);
+    ncalDistribution[ncal] = (ncalDistribution[ncal] || 0) + 1;
+  });
+  
+  console.log('\nNCAL Distribution:', ncalDistribution);
+  
+  // Check duration statistics
+  const durations = incidents.map(inc => inc.durationMin).filter(d => d && d > 0);
+  console.log('\nDuration Statistics:');
+  console.log(`  Total incidents with duration: ${durations.length}`);
+  console.log(`  Average duration: ${durations.length > 0 ? (durations.reduce((a, b) => a + b, 0) / durations.length).toFixed(2) : 0} minutes`);
+  console.log(`  Min duration: ${durations.length > 0 ? Math.min(...durations) : 0} minutes`);
+  console.log(`  Max duration: ${durations.length > 0 ? Math.max(...durations) : 0} minutes`);
+}
+
+// Main execution
+async function main() {
+  console.log('🚀 Starting comprehensive data analysis...');
+  
+  const systemData = await getSystemData();
+  if (!systemData) {
+    console.error('❌ Failed to get system data');
+    return;
+  }
+  
+  console.log('📊 System data structure:', systemData);
+  
+  // Get raw incidents for analysis
+  const allIncidents = await window.db.incidents.toArray();
+  analyzeRawData(allIncidents);
+  
+  // Compare data
+  compareData(manualData, systemData);
+  
+  console.log('\n✅ Analysis complete!');
+}
+
+// Jalankan analisis
+main().catch(console.error);

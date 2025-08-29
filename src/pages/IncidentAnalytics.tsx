@@ -269,16 +269,26 @@ const IncidentAnalytics: React.FC = () => {
       map[ncal] = (map[ncal] || 0) + 1;
     });
     
-    // Debug: Log NCAL data
-          console.log('NCAL Distribution Debug:', {
+    // Enhanced Debug: Log detailed NCAL data
+    console.log('🔍 ENHANCED NCAL Distribution Debug:', {
       totalIncidents: filteredIncidents.length,
       byNCAL: map,
       sampleNCALValues: filteredIncidents.slice(0, 10).map(inc => ({
         id: inc.id,
         ncal: inc.ncal,
-        normalized: normalizeNCAL(inc.ncal)
+        normalized: normalizeNCAL(inc.ncal),
+        duration: inc.durationMin,
+        startTime: inc.startTime
       })),
-      hasNCALData: Object.values(map).some(count => count > 0)
+      hasNCALData: Object.values(map).some(count => count > 0),
+      // Check for specific months
+      jan2025Count: filteredIncidents.filter(inc => {
+        if (!inc.startTime) return false;
+        const date = new Date(inc.startTime);
+        return date.getFullYear() === 2025 && date.getMonth() === 0;
+      }).length,
+      // Check raw NCAL values
+      rawNCALValues: [...new Set(filteredIncidents.map(inc => inc.ncal).filter(Boolean))]
     });
     
     return map;
@@ -300,15 +310,36 @@ const IncidentAnalytics: React.FC = () => {
   const byMonthNCALDuration = useMemo(() => {
     const map: Record<string, Record<string, { total: number; count: number; avg: number }>> = {};
     
-    // Debug: Log all incidents for manual verification
-    console.log('🔍 DEBUG: All incidents for duration calculation:');
-    filteredIncidents.forEach((inc, index) => {
+    // Enhanced Debug: Log all incidents for manual verification
+    console.log('🔍 ENHANCED DEBUG: All incidents for duration calculation:');
+    console.log('📊 Total incidents to process:', filteredIncidents.length);
+    
+    // Check for Jan 2025 specifically
+    const jan2025Incidents = filteredIncidents.filter(inc => {
+      if (!inc.startTime) return false;
+      const date = new Date(inc.startTime);
+      return date.getFullYear() === 2025 && date.getMonth() === 0;
+    });
+    
+    console.log('📊 Jan 2025 incidents found:', jan2025Incidents.length);
+    
+    // Log detailed info for Jan 2025 incidents
+    jan2025Incidents.forEach((inc, index) => {
+      const date = new Date(inc.startTime);
+      const month = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+      const ncal = normalizeNCAL(inc.ncal);
+      const dur = safeMinutes(inc.durationMin);
+      console.log(`Jan 2025 Incident ${index + 1}: ID=${inc.id}, Month=${month}, NCAL="${inc.ncal}"->"${ncal}", Duration=${dur}min (${formatDurationHMS(dur)})`);
+    });
+    
+    // Log all incidents (first 20 for brevity)
+    filteredIncidents.slice(0, 20).forEach((inc, index) => {
       if (inc.startTime) {
         const date = new Date(inc.startTime);
         const month = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
         const ncal = normalizeNCAL(inc.ncal);
         const dur = safeMinutes(inc.durationMin);
-        console.log(`Incident ${index + 1}: Month=${month}, NCAL=${ncal}, Duration=${dur}min (${formatDurationHMS(dur)})`);
+        console.log(`Incident ${index + 1}: Month=${month}, NCAL="${inc.ncal}"->"${ncal}", Duration=${dur}min (${formatDurationHMS(dur)})`);
       }
     });
     
