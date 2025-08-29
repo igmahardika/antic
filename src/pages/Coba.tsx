@@ -853,7 +853,7 @@ export const IncidentAnalytics: React.FC = () => {
         {/* Period Filter */}
         <div className="flex items-center gap-2">
           <Filter className="w-4 h-4 text-gray-500" />
-          <div className="flex bg-white/80 dark:bg-zinc-900/80 rounded-2xl shadow-lg  p-1">
+          <div className="flex bg-white/80 dark:bg-zinc-900/80 rounded-2xl shadow-lg p-2">
             {[
               { key: '3m', label: '3M' },
               { key: '6m', label: '6M' },

@@ -259,7 +259,7 @@ const CustomerData: React.FC = () => {
         )}
       </div>
       {/* Filter & Upload Card - Full Width, Modern Layout */}
-      <Card className="w-full mb-8 shadow-lg  bg-card text-card-foreground  min-h-[80px] rounded-2xl">
+      <Card className="w-full mb-8 shadow-lg bg-card text-card-foreground min-h-[80px] rounded-2xl">
         <CardContent className="p-6">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-center w-full">
             {/* File Upload */}
@@ -324,7 +324,7 @@ const CustomerData: React.FC = () => {
           </div>
         </CardContent>
       </Card>
-      <div className="overflow-x-auto rounded-xl shadow-lg  bg-card text-card-foreground ">
+      <div className="overflow-x-auto rounded-xl shadow-lg bg-card text-card-foreground">
         <Table>
           <TableHeader>
             <TableRow>

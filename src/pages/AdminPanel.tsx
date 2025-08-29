@@ -229,9 +229,9 @@ const AdminPanel: React.FC = () => {
         <MigrationPanel />
       </div>
       
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left Column: User Management */}
-        <div className="lg:col-span-1 flex flex-col gap-8">
+        <div className="lg:col-span-1 flex flex-col gap-6">
           {/* Add User Form Card */}
           <div className="bg-background text-foreground rounded-xl shadow-lg p-6">
             <h2 className="text-lg md:text-xl font-bold mb-2 text-card-foreground">Add New User</h2>
@@ -296,7 +296,7 @@ const AdminPanel: React.FC = () => {
           </div>
         </div>
         {/* Right Column: Role and User List */}
-        <div className="lg:col-span-2 flex flex-col gap-8">
+        <div className="lg:col-span-2 flex flex-col gap-6">
           {/* Role Management Card */}
           <div className="bg-background text-foreground rounded-xl shadow-lg p-6">
             <h2 className="text-lg md:text-xl font-bold mb-2 text-card-foreground">Role Menu Permissions</h2>
@@ -356,7 +356,7 @@ const AdminPanel: React.FC = () => {
                 <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 border-b border-gray-200 dark:border-gray-600 pb-1">
                   Dashboard & Overview
                 </h4>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {allMenus.slice(0, 1).map(menu => (
                     <div key={menu} className={`flex items-center p-3 rounded-lg border transition-all ${
                       getMenusForRole(selectedRoleForEditing).includes(menu)
@@ -386,7 +386,7 @@ const AdminPanel: React.FC = () => {
                 <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 border-b border-gray-200 dark:border-gray-600 pb-1">
                   Ticket Management
                 </h4>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {allMenus.slice(1, 5).map(menu => (
                     <div key={menu} className={`flex items-center p-3 rounded-lg border transition-all ${
                       getMenusForRole(selectedRoleForEditing).includes(menu)
@@ -416,7 +416,7 @@ const AdminPanel: React.FC = () => {
                 <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 border-b border-gray-200 dark:border-gray-600 pb-1">
                   Incident Management
                 </h4>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {allMenus.slice(5, 9).map(menu => (
                     <div key={menu} className={`flex items-center p-3 rounded-lg border transition-all ${
                       getMenusForRole(selectedRoleForEditing).includes(menu)
@@ -446,7 +446,7 @@ const AdminPanel: React.FC = () => {
                 <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 border-b border-gray-200 dark:border-gray-600 pb-1">
                   Master Data
                 </h4>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {allMenus.slice(9, 11).map(menu => (
                     <div key={menu} className={`flex items-center p-3 rounded-lg border transition-all ${
                       getMenusForRole(selectedRoleForEditing).includes(menu)
@@ -476,7 +476,7 @@ const AdminPanel: React.FC = () => {
                 <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 border-b border-gray-200 dark:border-gray-600 pb-1">
                   Documentation & Tools
                 </h4>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {allMenus.slice(11, 13).map(menu => (
                     <div key={menu} className={`flex items-center p-3 rounded-lg border transition-all ${
                       getMenusForRole(selectedRoleForEditing).includes(menu)
@@ -506,7 +506,7 @@ const AdminPanel: React.FC = () => {
                 <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 border-b border-gray-200 dark:border-gray-600 pb-1">
                   Administration
                 </h4>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {allMenus.slice(13, 14).map(menu => (
                     <div key={menu} className={`flex items-center p-3 rounded-lg border transition-all ${
                       getMenusForRole(selectedRoleForEditing).includes(menu)

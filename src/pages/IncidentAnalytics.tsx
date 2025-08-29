@@ -641,7 +641,7 @@ const IncidentAnalytics: React.FC = () => {
           {/* Period Filter */}
           <div className="flex items-center gap-2 scale-75 transform origin-right">
             <FilterListIcon className="w-4 h-4 text-muted-foreground" />
-            <div className="flex bg-white/80 dark:bg-zinc-900/80 rounded-2xl shadow-lg  p-1">
+            <div className="flex bg-white/80 dark:bg-zinc-900/80 rounded-2xl shadow-lg p-2">
               {[
                 { key: '3m', label: '3M' },
                 { key: '6m', label: '6M' },
@@ -666,7 +666,7 @@ const IncidentAnalytics: React.FC = () => {
           </div>
         </div>
         {/* KPI Cards - Overview Metrics */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <SummaryCard
             icon={<ErrorOutlineIcon className="w-7 h-7 text-white" />}
             title="Total Incidents"
@@ -707,7 +707,7 @@ const IncidentAnalytics: React.FC = () => {
             </CardTitle>
                           <CardDescription className="text-muted-foreground">Critical findings from the selected period</CardDescription>
           </CardHeader>
-          <CardContent className="grid md:grid-cols-2 gap-3">
+          <CardContent className="grid md:grid-cols-2 gap-4">
             {deep.insights.map((txt, idx) => (
               <div
                 key={idx}

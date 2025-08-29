@@ -988,7 +988,7 @@ const TSAnalytics: React.FC = () => {
           {/* Period Filter */}
           <div className="flex items-center gap-2 scale-75 transform origin-right">
             <FilterListIcon className="w-4 h-4 text-muted-foreground" />
-            <div className="flex bg-white/80 dark:bg-zinc-900/80 rounded-2xl shadow-lg  p-1">
+            <div className="flex bg-white/80 dark:bg-zinc-900/80 rounded-2xl shadow-lg p-2">
               {[
                 { key: '3m', label: '3M' },
                 { key: '6m', label: '6M' },
@@ -1013,7 +1013,7 @@ const TSAnalytics: React.FC = () => {
           </div>
         </div>
         {/* Overall Summary */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <SummaryCard
             icon={<SupportIcon />}
             title="Total Incidents"
@@ -1055,10 +1055,10 @@ const TSAnalytics: React.FC = () => {
                 Automatically generated highlights from recent performance
               </CardDescription>
             </CardHeader>
-            <CardContent className="p-4">
+            <CardContent className="p-6">
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {insights.map((insight, idx) => (
-                  <div key={idx} className="flex items-start gap-3">
+                  <div key={idx} className="flex items-start gap-2">
                     <div className="flex-shrink-0">
                       {insight.icon}
                       </div>
@@ -1078,10 +1078,10 @@ const TSAnalytics: React.FC = () => {
           {/* Vendor Performance */}
           <Card className="rounded-xl border bg-card text-card-foreground shadow">
             <CardHeader className="flex flex-col gap-1 pb-1">
-              <CardTitle className="font-extrabold text-xl text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
+              <CardTitle className="font-extrabold text-xl text-card-foreground flex items-center gap-2">
                 <BusinessIcon className="w-6 h-6 text-blue-600" />
                 Vendor Performance
-                <Badge className="bg-blue-600 text-white text-xs px-3 py-1 rounded-full w-fit font-semibold shadow-md">
+                <Badge className="bg-blue-600 text-white text-xs px-3 py-1 rounded-full w-fit font-semibold shadow-lg">
                   SLA 4H
                 </Badge>
               </CardTitle>
@@ -1089,7 +1089,7 @@ const TSAnalytics: React.FC = () => {
                 Waneda & Lintas Fiber performance metrics
               </CardDescription>
             </CardHeader>
-            <CardContent className="p-4">
+            <CardContent className="p-6">
               <div className="space-y-4">
                 {/* SLA Compliance */}
                 <div className="space-y-2">
@@ -1143,10 +1143,10 @@ const TSAnalytics: React.FC = () => {
           {/* Internal TS Performance */}
           <Card className="rounded-xl border bg-card text-card-foreground shadow">
             <CardHeader className="flex flex-col gap-1 pb-1">
-              <CardTitle className="font-extrabold text-xl text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
+              <CardTitle className="font-extrabold text-xl text-card-foreground flex items-center gap-2">
                 <EngineeringIcon className="w-6 h-6 text-emerald-600" />
                 Internal TS Performance
-                <Badge className="bg-emerald-600 text-white text-xs px-3 py-1 rounded-full w-fit font-semibold shadow-md">
+                <Badge className="bg-emerald-600 text-white text-xs px-3 py-1 rounded-full w-fit font-semibold shadow-lg">
                   NCAL Targets
                 </Badge>
               </CardTitle>
@@ -1154,7 +1154,7 @@ const TSAnalytics: React.FC = () => {
                 Internal Technical Support team performance
               </CardDescription>
             </CardHeader>
-            <CardContent className="p-4">
+            <CardContent className="p-6">
               <div className="space-y-4">
                 {/* NCAL Compliance Overview */}
                 <div className="space-y-3">
