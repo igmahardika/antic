@@ -949,6 +949,56 @@ const IncidentAnalytics: React.FC = () => {
                 </div>
               )}
             </CardContent>
+            
+            {/* Incident Volume Table */}
+            {monthlyNCALData.length > 0 && (
+              <CardFooter className="pt-0">
+                <div className="w-full">
+                  <h4 className="text-sm font-semibold text-card-foreground mb-3">Monthly Incident Count</h4>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-xs border-collapse">
+                      <thead>
+                        <tr className="border-b border-border">
+                          <th className="text-left p-2 font-medium text-muted-foreground">Month</th>
+                          {NCAL_ORDER.map((ncal) => (
+                            <th key={ncal} className="text-center p-2 font-medium text-muted-foreground" style={{ color: NCAL_COLORS[ncal] }}>
+                              {ncal}
+                            </th>
+                          ))}
+                          <th className="text-center p-2 font-medium text-muted-foreground bg-muted/50">
+                            Total
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {monthlyNCALData.map((row) => {
+                          const total = NCAL_ORDER.reduce((sum, ncal) => sum + (row[ncal] || 0), 0);
+                          return (
+                            <tr key={row.month} className="border-b border-border hover:bg-muted/50">
+                              <td className="p-2 font-medium text-card-foreground">
+                                {(() => {
+                                  const [year, month] = row.month.split('-');
+                                  const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+                                  return `${monthNames[parseInt(month) - 1]} ${year}`;
+                                })()}
+                              </td>
+                              {NCAL_ORDER.map((ncal) => (
+                                <td key={ncal} className="text-center p-2 text-card-foreground">
+                                  {(row[ncal] || 0).toLocaleString()}
+                                </td>
+                              ))}
+                              <td className="text-center p-2 font-semibold text-card-foreground bg-muted/50">
+                                {total.toLocaleString()}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </CardFooter>
+            )}
           </Card>
           <Card className="bg-card text-card-foreground  rounded-2xl shadow-lg">
             <CardHeader>
