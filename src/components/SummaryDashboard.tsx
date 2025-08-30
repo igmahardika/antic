@@ -860,11 +860,11 @@ const SummaryDashboard = ({ ticketAnalyticsData, filteredTickets }: any) => {
                 key={row.agent} 
                 className={`relative bg-gradient-to-br rounded-xl p-4 shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:scale-105 cursor-pointer ${
                   i === 0 
-                    ? 'from-yellow-400 to-orange-500 text-white' 
+                    ? 'from-amber-500 to-orange-600 text-white' 
                     : i === 1 
-                    ? 'from-slate-400 to-slate-600 text-white'
+                    ? 'from-gray-500 to-gray-700 text-white'
                     : i === 2 
-                    ? 'from-amber-600 to-orange-600 text-white'
+                    ? 'from-orange-500 to-red-600 text-white'
                     : 'from-white to-gray-50 dark:from-zinc-800 dark:to-zinc-700 text-gray-900 dark:text-gray-100'
                 }`}
               >
@@ -873,7 +873,7 @@ const SummaryDashboard = ({ ticketAnalyticsData, filteredTickets }: any) => {
                   <span className="font-semibold text-sm">#{i+1}</span>
                   {i < 3 && (
                     <EmojiEventsIcon 
-                      className={`${i === 0 ? 'text-amber-200' : i === 1 ? 'text-gray-200' : 'text-orange-200'}`} 
+                      className={`${i === 0 ? 'text-amber-100' : i === 1 ? 'text-gray-100' : 'text-orange-100'}`} 
                       sx={{ fontSize: 16 }} 
                     />
                   )}
