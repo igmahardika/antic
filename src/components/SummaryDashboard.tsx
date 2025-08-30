@@ -482,7 +482,7 @@ const SummaryDashboard = ({ ticketAnalyticsData, filteredTickets }: any) => {
         <Card className="p-2">
           <CardHeader className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 pb-1">
             <div className="flex flex-col gap-1">
-              <CardTitle className="font-extrabold text-lg">Tickets per Month</CardTitle>
+              <CardTitle className="font-semibold text-base">Tickets per Month</CardTitle>
               {latestMonthlyValue !== null && (
                 <Badge className="bg-blue-600 text-white text-xs px-2 py-0.5 rounded-md w-fit font-semibold">Latest: {latestMonthlyValue}</Badge>
               )}
@@ -520,14 +520,14 @@ const SummaryDashboard = ({ ticketAnalyticsData, filteredTickets }: any) => {
                         axisLine={false} 
                         tickMargin={8} 
                         minTickGap={24}
-                        tick={{ fill: '#6B7280', fontSize: 12, fontWeight: 500 }}
+                        tick={{ fill: '#6B7280', fontSize: 11, fontWeight: 500 }}
                       />
                       <YAxis 
                         tickLine={false} 
                         axisLine={false} 
                         tickMargin={8} 
                         minTickGap={24}
-                        tick={{ fill: '#6B7280', fontSize: 12, fontWeight: 500 }}
+                        tick={{ fill: '#6B7280', fontSize: 11, fontWeight: 500 }}
                       />
                       <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
                       <RechartsTooltip 
@@ -553,7 +553,7 @@ const SummaryDashboard = ({ ticketAnalyticsData, filteredTickets }: any) => {
         {/* Incident Trends */}
         <Card className="p-2">
           <CardHeader className="flex flex-col gap-1 pb-1">
-            <CardTitle className="font-extrabold text-lg">Incident Trends</CardTitle>
+            <CardTitle className="font-semibold text-base">Incident Trends</CardTitle>
             <div className="flex flex-wrap gap-2">
               <Badge className="bg-orange-600 text-white text-xs px-2 py-0.5 rounded-md font-semibold">
                 Total: {incidentStats.total.toLocaleString()}
@@ -666,7 +666,7 @@ const SummaryDashboard = ({ ticketAnalyticsData, filteredTickets }: any) => {
         {/* Yearly Ticket Trends */}
         <Card className="p-2">
           <CardHeader className="flex flex-col gap-1 pb-1">
-            <CardTitle className="font-extrabold text-lg">Tickets per Year</CardTitle>
+            <CardTitle className="font-semibold text-base">Tickets per Year</CardTitle>
             {latestYearlyValue !== null && (
               <Badge className="bg-blue-600 text-white text-xs px-2 py-0.5 rounded-md w-fit font-semibold">Latest: {latestYearlyValue}</Badge>
             )}
@@ -692,7 +692,7 @@ const SummaryDashboard = ({ ticketAnalyticsData, filteredTickets }: any) => {
                     axisLine={false} 
                     tickMargin={8} 
                     minTickGap={24}
-                    tick={{ fill: '#6B7280', fontSize: 12, fontWeight: 500 }}
+                    tick={{ fill: '#6B7280', fontSize: 11, fontWeight: 500 }}
                   />
                   <YAxis 
                     tickLine={false} 
@@ -725,7 +725,7 @@ const SummaryDashboard = ({ ticketAnalyticsData, filteredTickets }: any) => {
         {/* NCAL Performance */}
         <Card className="p-2">
           <CardHeader className="flex flex-col gap-1 pb-1">
-            <CardTitle className="font-extrabold text-lg">NCAL Performance</CardTitle>
+            <CardTitle className="font-semibold text-base">NCAL Performance</CardTitle>
             <Badge className="bg-purple-600 text-white text-xs px-2 py-0.5 rounded-md w-fit font-semibold">
               Compliance: {incidentStats.ncalCompliance.toFixed(1)}%
             </Badge>
