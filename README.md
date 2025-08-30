@@ -60,16 +60,30 @@ Buka [http://localhost:3001](http://localhost:3001) di browser
 
 ```
 antic/
-├── src/
-│   ├── components/     # React components
+├── src/               # Source code
+│   ├── components/    # React components
 │   ├── pages/         # Page components
 │   ├── utils/         # Utility functions
 │   ├── lib/           # Database & configurations
-│   └── store/         # State management
+│   ├── store/         # State management
+│   ├── hooks/         # Custom hooks
+│   └── types/         # TypeScript types
 ├── docs/              # Documentation & debug files
 │   ├── debug/         # Debug scripts
+│   ├── ADR/           # Architecture Decision Records
+│   ├── API/           # API documentation
 │   └── *.md           # Documentation files
+├── scripts/           # Deployment & maintenance scripts
+│   ├── deploy/        # Deployment scripts
+│   ├── setup/         # Setup scripts
+│   ├── start/         # Start scripts
+│   ├── test/          # Test scripts
+│   ├── security/      # Security scripts
+│   └── database/      # Database scripts
+├── data/              # Test data files
+├── reports/           # Audit reports & analytics
 ├── public/            # Static assets
+├── dist/              # Build output
 └── package.json       # Dependencies & scripts
 ```
 
@@ -82,6 +96,26 @@ Semua dokumentasi dan file debug telah diorganisir dalam folder `docs/`:
 - **📖 README**: Panduan lengkap penggunaan dan maintenance
 
 Lihat [docs/README.md](docs/README.md) untuk informasi detail.
+
+## 🔧 Scripts
+
+Script untuk deployment, setup, dan maintenance diorganisir dalam folder `scripts/`:
+
+- **🚀 Deploy**: Script deployment ke berbagai environment
+- **⚙️ Setup**: Script setup dan konfigurasi
+- **▶️ Start**: Script menjalankan aplikasi
+- **🧪 Test**: Script testing dan validasi
+- **🔒 Security**: Script keamanan dan maintenance
+- **🗄️ Database**: Script database management
+
+Lihat [scripts/README.md](scripts/README.md) untuk informasi detail.
+
+## 📊 Data & Reports
+
+- **📊 Data**: File Excel untuk testing di folder `data/`
+- **📈 Reports**: Laporan audit dan analytics di folder `reports/`
+
+Lihat [data/README.md](data/README.md) dan [reports/README.md](reports/README.md) untuk informasi detail.
 
 ## 🔄 Recent Updates
 
