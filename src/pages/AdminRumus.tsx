@@ -44,7 +44,7 @@ export default function AdminRumus() {
               <div className="flex items-center gap-3 mb-4">
                 <Badge className="bg-green-600 text-white px-3 py-1">Latest</Badge>
                 <span className="text-sm font-medium text-green-700 dark:text-green-300">v2.3.0 - Summary Dashboard Enhancement & Visual Optimization</span>
-                <span className="text-xs text-muted-foreground">December 2024</span>
+                <span className="text-xs text-muted-foreground">August 2025</span>
             </div>
                 <h4 className="font-bold text-lg text-card-foreground mb-4">Summary Dashboard Enhancement & Visual Optimization</h4>
               
@@ -92,7 +92,7 @@ export default function AdminRumus() {
                 <div className="flex items-center gap-3 mb-4">
                   <Badge className="bg-orange-600 text-white px-3 py-1">v2.2.0</Badge>
                   <span className="text-sm font-medium text-orange-700 dark:text-orange-300">Analytics Enhancement & Cross-Browser Persistence</span>
-                  <span className="text-xs text-muted-foreground">December 2024</span>
+                  <span className="text-xs text-muted-foreground">August 2025</span>
                 </div>
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   <div className="space-y-4">
@@ -131,7 +131,7 @@ export default function AdminRumus() {
                 <div className="flex items-center gap-3 mb-4">
                   <Badge className="bg-blue-600 text-white px-3 py-1">v2.1.0</Badge>
                   <span className="text-sm font-medium text-blue-700 dark:text-blue-300">Major System Overhaul & Optimization</span>
-                  <span className="text-xs text-muted-foreground">December 2024</span>
+                  <span className="text-xs text-muted-foreground">August 2025</span>
                 </div>
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   <div className="space-y-4">
@@ -170,7 +170,7 @@ export default function AdminRumus() {
                 <div className="flex items-center gap-3 mb-4">
                   <Badge className="bg-green-600 text-white px-3 py-1">v2.0.0</Badge>
                   <span className="text-sm font-medium text-green-700 dark:text-green-300">Advanced Export Functionality</span>
-                  <span className="text-xs text-muted-foreground">November 2024</span>
+                  <span className="text-xs text-muted-foreground">August 2025</span>
                 </div>
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   <div className="space-y-4">
