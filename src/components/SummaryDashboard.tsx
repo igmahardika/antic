@@ -380,7 +380,7 @@ const SummaryDashboard = ({ ticketAnalyticsData, filteredTickets }: any) => {
 
 
         <div className="grid grid-cols-1 gap-8">
-      {/* KPI Row - All Summary Cards */}
+      {/* KPI Row 1 - All Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
         <SummaryCard
           icon={<FlashOnIcon className="w-5 h-5 text-white" />}
@@ -411,6 +411,38 @@ const SummaryDashboard = ({ ticketAnalyticsData, filteredTickets }: any) => {
           description={stats[3]?.description || 'handling tickets'}
         />
         <SummaryCard
+          icon={<CheckCircleIcon className="w-5 h-5 text-white" />}
+          iconBg="bg-green-500"
+          title="Closed Rate"
+          value={`${kpis.closedRate}%`}
+          description="closed / total"
+        />
+        <SummaryCard
+          icon={<TimerIcon className="w-5 h-5 text-white" />}
+          iconBg="bg-cyan-500"
+          title="SLA ≤ 24h"
+          value={`${kpis.slaPct}%`}
+          description="percentage closed within 24h"
+        />
+      </div>
+
+      {/* KPI Row 2 - All Summary Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+        <SummaryCard
+          icon={<TimerIcon className="w-5 h-5 text-white" />}
+          iconBg="bg-blue-500"
+          title="Avg FRT"
+          value={formatDurationDHM(kpis.frtAvg / 60)}
+          description="first response time"
+        />
+        <SummaryCard
+          icon={<TimerIcon className="w-5 h-5 text-white" />}
+          iconBg="bg-indigo-500"
+          title="Avg ART"
+          value={formatDurationDHM(kpis.artAvg / 60)}
+          description="resolution time"
+        />
+        <SummaryCard
           icon={<WarningIcon className="w-5 h-5 text-white" />}
           iconBg="bg-orange-500"
           title="Total Incidents"
@@ -423,6 +455,20 @@ const SummaryDashboard = ({ ticketAnalyticsData, filteredTickets }: any) => {
           title="NCAL Compliance"
           value={`${incidentStats.ncalCompliance.toFixed(1)}%`}
           description="within SLA targets"
+        />
+        <SummaryCard
+          icon={<LocationOnIcon className="w-5 h-5 text-white" />}
+          iconBg="bg-emerald-500"
+          title="Site Reliability"
+          value={`${incidentStats.siteReliability.toFixed(1)}%`}
+          description="site performance"
+        />
+        <SummaryCard
+          icon={<TrendingUpIcon className="w-5 h-5 text-white" />}
+          iconBg="bg-blue-500"
+          title="Vendor Performance"
+          value={`${incidentStats.vendorPerformance.toFixed(1)}%`}
+          description="vendor SLA compliance"
         />
       </div>
 
