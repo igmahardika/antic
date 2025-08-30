@@ -625,7 +625,7 @@ const SummaryDashboard = ({ ticketAnalyticsData, filteredTickets }: any) => {
                   />
                   <RechartsLegend 
                     wrapperStyle={{ paddingTop: '10px' }}
-                    formatter={(value, entry) => (
+                    formatter={(value) => (
                       <span style={{ color: '#6B7280', fontSize: '12px' }}>
                         {value}
                       </span>
@@ -799,14 +799,14 @@ const SummaryDashboard = ({ ticketAnalyticsData, filteredTickets }: any) => {
                   />
                   <RechartsLegend 
                     wrapperStyle={{ paddingTop: '10px' }}
-                    formatter={(value, entry) => (
+                    formatter={(value) => (
                       <span style={{ color: '#6B7280', fontSize: '12px' }}>
                         {value}
                       </span>
                     )}
                   />
                   <Bar 
-                    dataKey="count" 
+                    dataKey="count"
                     fill="url(#colorIncidents)" 
                     name="Incidents"
                     radius={[4, 4, 0, 0]}
