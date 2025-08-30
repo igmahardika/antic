@@ -538,7 +538,14 @@ const SummaryDashboard = ({ ticketAnalyticsData, filteredTickets }: any) => {
                           color: '#374151'
                         }}
                       />
-                      <RechartsLegend />
+                      <RechartsLegend 
+                        wrapperStyle={{ paddingTop: '10px' }}
+                        formatter={(value) => (
+                          <span style={{ color: '#6B7280', fontSize: '10px' }}>
+                            {value}
+                          </span>
+                        )}
+                      />
                       <Area type="monotone" dataKey="incoming" stroke="#6366F1" fill="url(#colorIncoming)" name="Incoming Tickets" strokeWidth={1.5} />
                       <Area type="monotone" dataKey="closed" stroke="#22C55E" fill="url(#colorClosed)" name="Closed Tickets" strokeWidth={1.5} />
                     </AreaChart>
@@ -626,7 +633,7 @@ const SummaryDashboard = ({ ticketAnalyticsData, filteredTickets }: any) => {
                   <RechartsLegend 
                     wrapperStyle={{ paddingTop: '10px' }}
                     formatter={(value) => (
-                      <span style={{ color: '#6B7280', fontSize: '12px' }}>
+                      <span style={{ color: '#6B7280', fontSize: '10px' }}>
                         {value}
                       </span>
                     )}
@@ -710,7 +717,14 @@ const SummaryDashboard = ({ ticketAnalyticsData, filteredTickets }: any) => {
                       color: '#374151'
                     }}
                   />
-                  <RechartsLegend />
+                  <RechartsLegend 
+                    wrapperStyle={{ paddingTop: '10px' }}
+                    formatter={(value) => (
+                      <span style={{ color: '#6B7280', fontSize: '10px' }}>
+                        {value}
+                      </span>
+                    )}
+                  />
                   <Area type="monotone" dataKey="incoming" stroke="#6366F1" fill="url(#colorIncomingY)" name="Incoming Tickets" strokeWidth={1.5} />
                   <Area type="monotone" dataKey="closed" stroke="#22C55E" fill="url(#colorClosedY)" name="Closed Tickets" strokeWidth={1.5} />
                 </AreaChart>
@@ -800,7 +814,7 @@ const SummaryDashboard = ({ ticketAnalyticsData, filteredTickets }: any) => {
                   <RechartsLegend 
                     wrapperStyle={{ paddingTop: '10px' }}
                     formatter={(value) => (
-                      <span style={{ color: '#6B7280', fontSize: '12px' }}>
+                      <span style={{ color: '#6B7280', fontSize: '10px' }}>
                         {value}
                       </span>
                     )}
