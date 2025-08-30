@@ -375,15 +375,7 @@ const SummaryDashboard = ({ ticketAnalyticsData, filteredTickets }: any) => {
   return (
     <PageWrapper>
       <div className="space-y-6">
-        {/* Header */}
-        <div className="text-center space-y-4">
-          <h1 className="text-4xl font-bold text-card-foreground">
-            Summary Dashboard
-          </h1>
-          <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
-            Comprehensive overview of ticket management and incident analytics performance
-          </p>
-        </div>
+
 
         <div className="grid grid-cols-1 gap-8">
       {/* KPI Row 1 - Ticket Management */}
