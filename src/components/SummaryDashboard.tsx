@@ -374,6 +374,8 @@ const SummaryDashboard = ({ ticketAnalyticsData, filteredTickets }: any) => {
 
   return (
     <PageWrapper>
+      {/* Gradient background layer */}
+      <div className="fixed inset-0 -z-10 bg-gradient-to-br from-blue-100 via-white to-pink-100 dark:from-gray-900 dark:via-gray-950 dark:to-blue-900" />
       <div className="space-y-6">
 
 
