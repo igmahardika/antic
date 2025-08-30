@@ -526,14 +526,14 @@ const SummaryDashboard = ({ ticketAnalyticsData, filteredTickets }: any) => {
                         axisLine={false} 
                         tickMargin={8} 
                         minTickGap={24}
-                        tick={{ fill: '#6B7280', fontSize: 12 }}
+                        tick={{ fill: '#6B7280', fontSize: 12, fontWeight: 500 }}
                       />
                       <YAxis 
                         tickLine={false} 
                         axisLine={false} 
                         tickMargin={8} 
                         minTickGap={24}
-                        tick={{ fill: '#6B7280', fontSize: 12 }}
+                        tick={{ fill: '#6B7280', fontSize: 12, fontWeight: 500 }}
                       />
                       <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
                       <RechartsTooltip 
@@ -574,13 +574,13 @@ const SummaryDashboard = ({ ticketAnalyticsData, filteredTickets }: any) => {
                     tickLine={false} 
                     axisLine={false} 
                     tickMargin={8} 
-                    tick={{ fill: '#6B7280', fontSize: 12 }}
+                    tick={{ fill: '#6B7280', fontSize: 12, fontWeight: 500 }}
                   />
                   <YAxis 
                     tickLine={false} 
                     axisLine={false} 
                     tickMargin={8} 
-                    tick={{ fill: '#6B7280', fontSize: 12 }}
+                    tick={{ fill: '#6B7280', fontSize: 12, fontWeight: 500 }}
                   />
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
                   <RechartsTooltip 
@@ -635,14 +635,14 @@ const SummaryDashboard = ({ ticketAnalyticsData, filteredTickets }: any) => {
                     axisLine={false} 
                     tickMargin={8} 
                     minTickGap={24}
-                    tick={{ fill: '#6B7280', fontSize: 12 }}
+                    tick={{ fill: '#6B7280', fontSize: 12, fontWeight: 500 }}
                   />
                   <YAxis 
                     tickLine={false} 
                     axisLine={false} 
                     tickMargin={8} 
                     minTickGap={24}
-                    tick={{ fill: '#6B7280', fontSize: 12 }}
+                    tick={{ fill: '#6B7280', fontSize: 12, fontWeight: 500 }}
                   />
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
                   <RechartsTooltip 
@@ -693,13 +693,13 @@ const SummaryDashboard = ({ ticketAnalyticsData, filteredTickets }: any) => {
                     tickLine={false} 
                     axisLine={false} 
                     tickMargin={8} 
-                    tick={{ fill: '#6B7280', fontSize: 12 }}
+                    tick={{ fill: '#6B7280', fontSize: 12, fontWeight: 500 }}
                   />
                   <YAxis 
                     tickLine={false} 
                     axisLine={false} 
                     tickMargin={8} 
-                    tick={{ fill: '#6B7280', fontSize: 12 }}
+                    tick={{ fill: '#6B7280', fontSize: 12, fontWeight: 500 }}
                   />
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
                   <RechartsTooltip 
@@ -756,7 +756,7 @@ const SummaryDashboard = ({ ticketAnalyticsData, filteredTickets }: any) => {
               >
                 {/* Rank Badge */}
                 <div className="absolute top-2 right-2 flex items-center gap-1">
-                  <span className="font-bold text-sm">#{i+1}</span>
+                  <span className="font-semibold text-sm">#{i+1}</span>
                   {i < 3 && (
                     <EmojiEventsIcon 
                       className={`${i === 0 ? 'text-amber-200' : i === 1 ? 'text-gray-200' : 'text-orange-200'}`} 
@@ -775,7 +775,7 @@ const SummaryDashboard = ({ ticketAnalyticsData, filteredTickets }: any) => {
                       alt={row.agent}
                       className="object-cover"
                     />
-                    <AvatarFallback className={`font-bold text-lg ${
+                    <AvatarFallback className={`font-semibold text-lg ${
                       i < 3 ? 'bg-white/20 text-white' : 'bg-gradient-to-br from-blue-500 to-purple-600 text-white'
                     }`}>
                       {getAgentInitials(row.agent)}
