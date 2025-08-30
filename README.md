@@ -1,68 +1,136 @@
-# Helpdesk Management System
+# 🚀 ANTIC - Helpdesk Management System
 
-## Overview
-Helpdesk Management System adalah aplikasi manajemen tiket dan analitik modern untuk monitoring performa agent, tiket, dan customer secara profesional. Dirancang dengan UI/UX modern, clean, dan responsif menggunakan React, Tailwind CSS, dan IndexedDB (Dexie) untuk penyimpanan lokal.
+Sistem manajemen helpdesk modern dengan analitik canggih dan antarmuka yang responsif.
+
+## 📋 Overview
+
+ANTIC adalah aplikasi manajemen tiket dan analitik modern untuk monitoring performa agent, tiket, dan customer secara profesional. Dirancang dengan UI/UX modern, clean, dan responsif menggunakan React, TypeScript, Tailwind CSS, dan IndexedDB (Dexie) untuk penyimpanan lokal.
+
+## ✨ Fitur Utama
+
+### 🔐 Autentikasi & Manajemen User
+- Login multi-browser dengan persistensi data
+- Admin panel dengan role & permission
+- Export/import user data
+- Cross-browser data persistence
+
+### 📊 Dashboard Analitik
+- **Incident Data**: Manajemen data insiden dengan filtering dan pagination
+- **Incident Analytics**: Analitik insiden dengan chart dan visualisasi
+- **Technical Support Analytics**: Analitik khusus vendor dengan durasi calculation
+- **Site Analytics**: Analitik performa site dan monitoring
+
+### 🎨 UI/UX Modern
+- Sidebar navigation dengan shadcn-ui
+- Dark mode support dengan smooth transitions
+- Responsive design untuk semua device
+- Modern table design dengan zebra stripes
+- Progress bars dan visual indicators
+
+### 🔧 Technical Features
+- TypeScript untuk type safety
+- In-memory analytics processing
+- Centralized utility functions
+- Real-time data updates
+- Cross-browser compatibility
+
+## 🚀 Quick Start
+
+### Prerequisites
+- Node.js 18+ 
+- npm atau pnpm
+
+### Installation
+```bash
+# Clone repository
+git clone https://github.com/igmahardika/antic.git
+cd antic
+
+# Install dependencies
+npm install
+
+# Start development server
+npm run dev
+```
+
+### Access Application
+Buka [http://localhost:3001](http://localhost:3001) di browser
+
+## 📁 Project Structure
+
+```
+antic/
+├── src/
+│   ├── components/     # React components
+│   ├── pages/         # Page components
+│   ├── utils/         # Utility functions
+│   ├── lib/           # Database & configurations
+│   └── store/         # State management
+├── docs/              # Documentation & debug files
+│   ├── debug/         # Debug scripts
+│   └── *.md           # Documentation files
+├── public/            # Static assets
+└── package.json       # Dependencies & scripts
+```
+
+## 📚 Documentation
+
+Semua dokumentasi dan file debug telah diorganisir dalam folder `docs/`:
+
+- **📄 Documentation**: Semua file `.md` dengan analisis dan panduan
+- **🐛 Debug Scripts**: File JavaScript untuk debugging dan testing
+- **📖 README**: Panduan lengkap penggunaan dan maintenance
+
+Lihat [docs/README.md](docs/README.md) untuk informasi detail.
+
+## 🔄 Recent Updates
+
+### v2.2.0 - Analytics Enhancement & Cross-Browser Persistence
+- ✅ Cross-browser persistence dengan in-memory processing
+- ✅ Centralized utils untuk shared calculation logic
+- ✅ TS Analytics fix untuk vendor duration calculation
+- ✅ Visual alerts dengan color coding
+- ✅ NCAL Duration Trends chart
+- ✅ Real-time analytics tanpa IndexedDB dependency
+
+### v2.1.0 - Major System Overhaul & Optimization
+- ✅ UI/UX enhancements dengan shadcn-ui
+- ✅ Performance optimization
+- ✅ TypeScript fixes
+- ✅ Dark mode improvements
+
+## 🛠️ Development
+
+### Available Scripts
+```bash
+npm run dev          # Start development server
+npm run build        # Build for production
+npm run preview      # Preview production build
+npm run lint         # Run ESLint
+```
+
+### Code Style
+- TypeScript untuk type safety
+- ESLint untuk code quality
+- Prettier untuk formatting
+- Conventional commits
+
+## 🤝 Contributing
+
+1. Fork repository
+2. Create feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit changes (`git commit -m 'Add amazing feature'`)
+4. Push to branch (`git push origin feature/amazing-feature`)
+5. Open Pull Request
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 📞 Support
+
+Untuk pertanyaan atau dukungan, silakan buat issue di GitHub repository.
 
 ---
 
-## Fitur Utama
-- **Autentikasi & Manajemen User**: Login multi-browser, admin panel, role & permission, export/import user.
-- **Routing & Navigasi**: Sidebar modern, semua menu selalu tampil, routing terstruktur.
-- **Dashboard Analitik**: Customer, Ticket, dan Agent Analytics dengan filter waktu canggih.
-- **Master Data Agent**: Tabel agent otomatis dari data tiket, dengan metrik profesional:
-  - Nama, Tahun Aktif (badge), Jumlah Tiket
-  - Masa Aktif Handle (format singkat: `2 thn 10 bln 18 hr`)
-  - Rata-rata Durasi, Jumlah Customer Unik
-  - Jumlah Tiket Selesai di Hari yang Sama
-  - Jumlah Escalation (menggunakan logika escalation konsisten seluruh aplikasi)
-- **UI/UX Modern**: Tabel zebra, header biru bold, hover effect, rounded-xl, shadow, padding airy, responsive.
-- **Filtering & Aggregasi**: Filter waktu unified, default ke data terbaru, semua komponen downstream ikut filter.
-- **Dark Mode**: Dukungan penuh dark mode dengan standar warna konsisten.
-
----
-
-## Highlight Perubahan Terbaru
-- Tabel Master Data Agent dirombak total: urutan kolom lebih logis, metrik lebih relevan, tampilan modern dan profesional.
-- Format masa aktif handle kini singkat dan mudah dibaca (`2 thn 10 bln 18 hr`).
-- Logika escalation kini konsisten dengan halaman analitik lain.
-- Semua style tabel mengikuti best practice 2024: airy, clean, responsif, dan mudah dibaca.
-
----
-
-## Struktur Proyek
-- `src/components/` — Komponen utama (Dashboard, Analytics, MasterDataAgent, dsb)
-- `src/pages/` — Halaman utama (Login, Admin, NotFound, dsb)
-- `src/lib/` — Utilitas dan koneksi IndexedDB
-- `src/store/` — State management
-- `src/utils/` — Helper dan test
-
----
-
-## Instalasi & Setup
-1. **Clone repo:**
-   ```bash
-   git clone https://github.com/igmahardika/helpdesk-management-system.git
-   cd helpdesk-management-system
-   ```
-2. **Install dependencies:**
-   ```bash
-   npm install
-   ```
-3. **Jalankan development server:**
-   ```bash
-   npm run dev
-   ```
-4. **Akses aplikasi:**
-   Buka [http://localhost:5173](http://localhost:5173)
-
----
-
-## Kontribusi
-- Pull request dan issue sangat diterima.
-- Ikuti standar kode, UI/UX, dan penamaan yang sudah ada.
-- Pastikan fitur baru responsif, clean, dan konsisten dengan style dashboard.
-
----
-
-## Lisensi
-MIT
+**ANTIC** - Advanced Network Ticket Incident Control
