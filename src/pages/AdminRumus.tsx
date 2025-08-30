@@ -87,6 +87,45 @@ export default function AdminRumus() {
             <div className="space-y-6">
               <h5 className="font-semibold text-card-foreground">Previous Updates</h5>
               
+              {/* v2.2.0 Details */}
+              <div className="bg-gradient-to-r from-orange-50 to-amber-50 dark:from-orange-900/20 dark:to-amber-900/20 rounded-xl p-6 ring-1 ring-orange-200 dark:ring-orange-800">
+                <div className="flex items-center gap-3 mb-4">
+                  <Badge className="bg-orange-600 text-white px-3 py-1">v2.2.0</Badge>
+                  <span className="text-sm font-medium text-orange-700 dark:text-orange-300">Analytics Enhancement & Cross-Browser Persistence</span>
+                  <span className="text-xs text-muted-foreground">December 2024</span>
+                </div>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <div className="space-y-4">
+                    <h6 className="font-semibold text-card-foreground flex items-center gap-2">
+                      <TrendingUpIcon className="text-orange-600" />
+                      Analytics Enhancements
+                    </h6>
+                    <ul className="space-y-2 text-sm text-muted-foreground">
+                      <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Cross-Browser Persistence:</strong> All analytics calculations moved to in-memory processing</li>
+                      <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Centralized Utils:</strong> Created incidentUtils.ts for shared calculation logic</li>
+                      <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>TS Analytics Fix:</strong> Fixed vendor duration calculation and timestamp mapping</li>
+                      <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Visual Alerts:</strong> Added red color coding for cases exceeding targets</li>
+                      <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>NCAL Duration Trends:</strong> New chart showing net duration trends by NCAL level</li>
+                      <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Real-time Analytics:</strong> Instant data updates without IndexedDB dependency</li>
+                    </ul>
+                  </div>
+                  <div className="space-y-4">
+                    <h6 className="font-semibold text-card-foreground flex items-center gap-2">
+                      <CodeIcon className="text-purple-600" />
+                      Technical Improvements
+                    </h6>
+                    <ul className="space-y-2 text-sm text-muted-foreground">
+                      <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Duration Calculation:</strong> Fixed double-subtract issue in vendor duration</li>
+                      <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Timestamp Mapping:</strong> Enhanced pause/restart field mapping</li>
+                      <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>TypeScript Fixes:</strong> Resolved all unused variable and import errors</li>
+                      <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Data Consistency:</strong> Improved data handling across all analytics pages</li>
+                      <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Performance:</strong> Optimized calculation speed and memory usage</li>
+                      <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Error Handling:</strong> Better NaN/undefined value handling in charts</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+              
               {/* v2.1.0 Details */}
               <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl p-6 ring-1 ring-blue-200 dark:ring-blue-800">
                 <div className="flex items-center gap-3 mb-4">
