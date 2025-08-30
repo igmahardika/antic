@@ -1,15 +1,8 @@
 import React, { useState, useMemo, useEffect } from 'react';
-// import { Listbox } from '@headlessui/react';
-// import { Calendar } from 'react-feather';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db, ITicket } from '@/lib/db';
 import { analyzeKeywords, formatDurationDHM } from '@/lib/utils';
-// import { Button } from '@/components/ui/button';
-// import { ModeToggle } from './mode-toggle';
 import { useAgentStore } from '@/store/agentStore';
-// import { useNavigate } from 'react-router-dom';
-
-// Dropdown/avatar imports removed (unused)
 
 import UploadProcess from './UploadProcess';
 import GridView from './GridView';
@@ -37,8 +30,6 @@ const allTabs = [
   { name: 'Admin Panel', component: AdminPanel, icon: UsersIcon },
 ];
 
-// Preset time filters removed; using explicit month/year
-
 // Color palette for agent charts. Using Tailwind CSS color names for reference.
 const agentChartColors = [
   '#3b82f6', // blue-500
@@ -55,48 +46,11 @@ const agentChartColors = [
   '#d946ef', // fuchsia-500
 ];
 
-// Month options retained for potential future use
-// const monthOptions = [
-//   { value: '01', label: 'January' },
-//   { value: '02', label: 'February' },
-//   { value: '03', label: 'March' },
-//   { value: '04', label: 'April' },
-//   { value: '05', label: 'May' },
-//   { value: '06', label: 'June' },
-//   { value: '07', label: 'July' },
-//   { value: '08', label: 'August' },
-//   { value: '09', label: 'September' },
-//   { value: '10', label: 'October' },
-//   { value: '11', label: 'November' },
-//   { value: '12', label: 'December' },
-// ];
-
 // Tambahkan array nama bulan Indonesia
 const monthNamesIndo = [
   'January', 'February', 'March', 'April', 'May', 'June',
   'July', 'August', 'September', 'October', 'November', 'December'
 ];
-
-// Ganti FilterWaktu agar hanya ada 3 dropdown: Start Month, End Month, Year
-// Hilangkan preset timeFilters
-// Time filter component retained but unused on summary-only view
-// const FilterWaktu: React.FC<{
-//   startMonth: string | null;
-//   setStartMonth: (v: string | null) => void;
-//   endMonth: string | null;
-//   setEndMonth: (v: string | null) => void;
-//   selectedYear: string | null;
-//   setSelectedYear: (v: string | null) => void;
-//   monthOptions: { value: string, label: string }[];
-//   allYearsInData: string[];
-//   onRefresh: () => void;
-// }> = ({ startMonth, setStartMonth, endMonth, setEndMonth, selectedYear, setSelectedYear, monthOptions, allYearsInData, onRefresh }) => (
-//   <div className="flex flex-wrap items-center gap-3 p-4 bg-white/80 dark:bg-zinc-900/80 rounded-2xl shadow-lg ring-1 ring-gray-200 dark:ring-zinc-800 mb-6">
-//     <Calendar className="h-5 w-5 text-blue-500 mr-2" />
-//     <span className="text-sm font-semibold text-gray-700 dark:text-gray-200 mr-2">Time Filter:</span>
-//     <Button size="sm" className="ml-3 h-9 px-5 rounded-lg bg-blue-500 hover:bg-blue-600 text-white font-bold shadow transition-all" onClick={onRefresh} variant="secondary">Refresh</Button>
-//   </div>
-// );
 
 const Dashboard = () => {
   const [selectedIndex] = useState(0);
@@ -104,12 +58,6 @@ const Dashboard = () => {
   const [startMonth] = useState<string | null>(null);
   const [endMonth] = useState<string | null>(null);
   const [selectedYear] = useState<string | null>(null);
-
-  // const navigate = useNavigate();
-
-  // const handleApplyFilter = () => { /* trigger not used on summary view */ };
-
-  // const handleUploadComplete = () => { /* not used here */ };
 
   // Live query to get data from IndexedDB based on the filter
   const allTickets = useLiveQuery(() => db.tickets.toArray(), [refreshTrigger]);
@@ -129,10 +77,6 @@ const Dashboard = () => {
       useAgentStore.getState().setTickets(mapped);
     }
   }, [allTickets]);
-
-  // Ambil semua bulan unik dari data (mm/yyyy) - tidak digunakan di summary view
-
-  // Ambil semua tahun unik dari data - tidak digunakan di summary view
 
   const { cutoffStart, cutoffEnd } = useMemo(() => {
     if (!startMonth || !endMonth || !selectedYear) return { cutoffStart: null, cutoffEnd: null };
@@ -189,7 +133,6 @@ const Dashboard = () => {
     // --- End of Risk Classification ---
 
     const gridData = filteredTickets;
-    // const kanbanData = processKanbanData(gridData, customerClassMap, customerMasterMap);
 
     // --- Agent Analytics Processing ---
     // Master list of all agents. This ensures they always appear in the analysis.
@@ -599,8 +542,6 @@ const Dashboard = () => {
     }
   }, [gridData]);
 
-  // Helper function for Kanban data processing (unused in summary view)
-
   const user = JSON.parse(localStorage.getItem('user') || '{"role":"user"}');
   const role = user.role || 'user';
   
@@ -634,11 +575,6 @@ const Dashboard = () => {
       document.title = 'Helpdesk Management System';
     }
   }, [selectedIndex, tabs]);
-
-  // const handleLogout = () => {
-  //   localStorage.removeItem('user');
-  //   navigate('/');
-  // };
 
   return (
     <PageWrapper>

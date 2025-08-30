@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend as RechartsLegend, ResponsiveContainer } from 'recharts';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend as RechartsLegend, ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import SummaryCard from '@/components/ui/SummaryCard';
@@ -9,6 +9,11 @@ import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import GroupIcon from '@mui/icons-material/Group';
 import TimerIcon from '@mui/icons-material/Timer';
 import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
+import WarningAmberIcon from '@mui/icons-material/WarningAmber';
+import TrendingUpIcon from '@mui/icons-material/TrendingUp';
+import TrendingDownIcon from '@mui/icons-material/TrendingDown';
+import SpeedIcon from '@mui/icons-material/Speed';
+import AssessmentIcon from '@mui/icons-material/Assessment';
 import { sanitizeTickets, calcAllMetrics, Ticket as AgentTicket, rank as rankBand } from '@/utils/agentKpi';
 
 const SummaryDashboard = ({ ticketAnalyticsData, filteredTickets }: any) => {
@@ -236,8 +241,114 @@ const SummaryDashboard = ({ ticketAnalyticsData, filteredTickets }: any) => {
     }));
   }
 
+  // Prepare complaints data for pie chart
+  const complaintsData = useMemo(() => {
+    if (!ticketAnalyticsData?.complaintsData) return [];
+    const { labels, datasets } = ticketAnalyticsData.complaintsData;
+    return labels.map((label, index) => ({
+      name: label,
+      value: datasets[0].data[index],
+      color: datasets[0].backgroundColor[index],
+    }));
+  }, [ticketAnalyticsData]);
+
+  // Prepare insights data
+  const insights = useMemo(() => {
+    const insights = ticketAnalyticsData?.insights || {};
+    return {
+      busiestMonth: insights.busiestMonth || { month: 'N/A', count: 0 },
+      topComplaint: insights.topComplaint || { category: 'N/A', count: 0, percentage: 0 },
+    };
+  }, [ticketAnalyticsData]);
+
+  // Calculate trend indicators
+  const trendIndicators = useMemo(() => {
+    if (!filteredMonthlyStatsData || !filteredMonthlyStatsData.datasets) return null;
+    
+    const incomingData = filteredMonthlyStatsData.datasets[0].data;
+    const closedData = filteredMonthlyStatsData.datasets[1].data;
+    
+    if (incomingData.length < 2) return null;
+    
+    const currentIncoming = incomingData[incomingData.length - 1];
+    const previousIncoming = incomingData[incomingData.length - 2];
+    const currentClosed = closedData[closedData.length - 1];
+    const previousClosed = closedData[closedData.length - 2];
+    
+    const incomingTrend = previousIncoming > 0 ? ((currentIncoming - previousIncoming) / previousIncoming) * 100 : 0;
+    const closedTrend = previousClosed > 0 ? ((currentClosed - previousClosed) / previousClosed) * 100 : 0;
+    
+    return {
+      incoming: {
+        value: incomingTrend,
+        isPositive: incomingTrend > 0,
+        label: incomingTrend > 0 ? 'Increasing' : 'Decreasing',
+      },
+      closed: {
+        value: closedTrend,
+        isPositive: closedTrend > 0,
+        label: closedTrend > 0 ? 'Improving' : 'Declining',
+      },
+    };
+  }, [filteredMonthlyStatsData]);
+
   return (
     <div className="grid grid-cols-1 gap-8">
+      {/* Header with Quick Stats */}
+      <div className="flex flex-col gap-4">
+        <div>
+          <h1 className="text-3xl font-bold text-card-foreground">Dashboard Overview</h1>
+          <p className="text-muted-foreground">Comprehensive view of helpdesk performance and analytics</p>
+        </div>
+        
+        {/* Quick Insights Row */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <Card className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Busiest Month</p>
+                <p className="text-2xl font-bold">{insights.busiestMonth.month}</p>
+                <p className="text-xs text-muted-foreground">{insights.busiestMonth.count} tickets</p>
+              </div>
+              <TrendingUpIcon className="h-8 w-8 text-orange-500" />
+            </div>
+          </Card>
+          
+          <Card className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Top Complaint</p>
+                <p className="text-lg font-bold truncate">{insights.topComplaint.category}</p>
+                <p className="text-xs text-muted-foreground">{insights.topComplaint.percentage}% of total</p>
+              </div>
+              <WarningAmberIcon className="h-8 w-8 text-red-500" />
+            </div>
+          </Card>
+          
+          <Card className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Backlog</p>
+                <p className="text-2xl font-bold">{kpis.backlog}</p>
+                <p className="text-xs text-muted-foreground">pending tickets</p>
+              </div>
+              <AssessmentIcon className="h-8 w-8 text-yellow-500" />
+            </div>
+          </Card>
+          
+          <Card className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Performance</p>
+                <p className="text-2xl font-bold">{kpis.slaPct}</p>
+                <p className="text-xs text-muted-foreground">SLA compliance</p>
+              </div>
+              <SpeedIcon className="h-8 w-8 text-green-500" />
+            </div>
+          </Card>
+        </div>
+      </div>
+
       {/* KPI Row */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <SummaryCard
@@ -256,7 +367,7 @@ const SummaryDashboard = ({ ticketAnalyticsData, filteredTickets }: any) => {
         />
         <SummaryCard
           icon={<AccessTimeIcon className="w-5 h-5 text-white" />}
-                          iconBg="bg-yellow-500"
+          iconBg="bg-yellow-500"
           title="Avg Duration"
           value={stats[1]?.value || '-'}
           description="average resolution time"
@@ -288,7 +399,7 @@ const SummaryDashboard = ({ ticketAnalyticsData, filteredTickets }: any) => {
         />
         <SummaryCard
           icon={<TimerIcon className="w-5 h-5 text-white" />}
-                          iconBg="bg-red-500"
+          iconBg="bg-red-500"
           title="Avg FRT (min)"
           value={kpis.frtAvg.toFixed(1)}
           description="first response time"
@@ -302,141 +413,240 @@ const SummaryDashboard = ({ ticketAnalyticsData, filteredTickets }: any) => {
         />
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-      {/* Monthly Area Chart */}
-      <Card className="p-2">
-        <CardHeader className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 pb-1">
-          <div className="flex flex-col gap-1">
-                          <CardTitle className="font-extrabold text-lg">Tickets per Month</CardTitle>
-            {latestMonthlyValue !== null && (
-                              <Badge className="bg-blue-600 text-white text-xs px-2 py-0.5 rounded-md w-fit font-semibold">Latest: {latestMonthlyValue}</Badge>
+      {/* Charts Row */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Monthly Area Chart */}
+        <Card className="p-2 lg:col-span-2">
+          <CardHeader className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 pb-1">
+            <div className="flex flex-col gap-1">
+              <CardTitle className="font-extrabold text-lg">Tickets per Month</CardTitle>
+              {latestMonthlyValue !== null && (
+                <Badge className="bg-blue-600 text-white text-xs px-2 py-0.5 rounded-md w-fit font-semibold">Latest: {latestMonthlyValue}</Badge>
+              )}
+              {trendIndicators && (
+                <div className="flex items-center gap-2">
+                  {trendIndicators.incoming.isPositive ? (
+                    <TrendingUpIcon className="h-4 w-4 text-green-500" />
+                  ) : (
+                    <TrendingDownIcon className="h-4 w-4 text-red-500" />
+                  )}
+                  <span className={`text-xs font-medium ${trendIndicators.incoming.isPositive ? 'text-green-600' : 'text-red-600'}`}>
+                    {trendIndicators.incoming.label} ({Math.abs(trendIndicators.incoming.value).toFixed(1)}%)
+                  </span>
+                </div>
+              )}
+            </div>
+            <div className="mt-2 md:mt-0">
+              <select
+                className="rounded px-2 py-1 text-sm bg-white dark:bg-zinc-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                value={selectedYear as string}
+                onChange={e => setSelectedYear(e.target.value)}
+              >
+                {allYears.map(year => (
+                  <option key={year as string} value={year as string}>{year as string}</option>
+                ))}
+              </select>
+            </div>
+          </CardHeader>
+          <CardContent className="pl-2">
+            {filteredMonthlyStatsData && filteredMonthlyStatsData.labels && filteredMonthlyStatsData.labels.length > 0 ? (
+              <ResponsiveContainer width="100%" height={260}>
+                <AreaChart data={toRechartsData(filteredMonthlyStatsData.labels, filteredMonthlyStatsData.datasets)} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="colorIncoming" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#6366F1" stopOpacity={0.6}/>
+                      <stop offset="95%" stopColor="#6366F1" stopOpacity={0.05}/>
+                    </linearGradient>
+                    <linearGradient id="colorClosed" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#22C55E" stopOpacity={0.6}/>
+                      <stop offset="95%" stopColor="#22C55E" stopOpacity={0.05}/>
+                    </linearGradient>
+                  </defs>
+                  <XAxis 
+                    dataKey="label" 
+                    tickLine={false} 
+                    axisLine={false} 
+                    tickMargin={8} 
+                    minTickGap={24}
+                    tick={{ fill: '#6B7280', fontSize: 12 }}
+                  />
+                  <YAxis 
+                    tickLine={false} 
+                    axisLine={false} 
+                    tickMargin={8} 
+                    minTickGap={24}
+                    tick={{ fill: '#6B7280', fontSize: 12 }}
+                  />
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
+                  <RechartsTooltip 
+                    contentStyle={{
+                      backgroundColor: '#FFFFFF',
+                      border: '1px solid #E5E7EB',
+                      borderRadius: '8px',
+                      color: '#374151'
+                    }}
+                  />
+                  <RechartsLegend />
+                  <Area type="monotone" dataKey="incoming" stroke="#6366F1" fill="url(#colorIncoming)" name="Incoming Tickets" strokeWidth={1.5} />
+                  <Area type="monotone" dataKey="closed" stroke="#22C55E" fill="url(#colorClosed)" name="Closed Tickets" strokeWidth={1.5} />
+                </AreaChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="text-center text-gray-500 dark:text-gray-400 py-12">No data for this chart</div>
             )}
-          </div>
-          <div className="mt-2 md:mt-0">
-            <select
-              className=" rounded px-2 py-1 text-sm bg-white dark:bg-zinc-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              value={selectedYear as string}
-              onChange={e => setSelectedYear(e.target.value)}
-            >
-              {allYears.map(year => (
-                <option key={year as string} value={year as string}>{year as string}</option>
-              ))}
-            </select>
-          </div>
-        </CardHeader>
-        <CardContent className="pl-2">
-          {filteredMonthlyStatsData && filteredMonthlyStatsData.labels && filteredMonthlyStatsData.labels.length > 0 ? (
-            <ResponsiveContainer width="100%" height={260}>
-              <AreaChart data={toRechartsData(filteredMonthlyStatsData.labels, filteredMonthlyStatsData.datasets)} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="colorIncoming" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#6366F1" stopOpacity={0.6}/>
-                    <stop offset="95%" stopColor="#6366F1" stopOpacity={0.05}/>
-                  </linearGradient>
-                  <linearGradient id="colorClosed" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#22C55E" stopOpacity={0.6}/>
-                    <stop offset="95%" stopColor="#22C55E" stopOpacity={0.05}/>
-                  </linearGradient>
-                </defs>
-                <XAxis 
-                  dataKey="label" 
-                  tickLine={false} 
-                  axisLine={false} 
-                  tickMargin={8} 
-                  minTickGap={24}
-                  tick={{ fill: '#6B7280', fontSize: 12 }}
-                />
-                <YAxis 
-                  tickLine={false} 
-                  axisLine={false} 
-                  tickMargin={8} 
-                  minTickGap={24}
-                  tick={{ fill: '#6B7280', fontSize: 12 }}
-                />
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
-                <RechartsTooltip 
-                  contentStyle={{
-                    backgroundColor: '#FFFFFF',
-                    border: '1px solid #E5E7EB',
-                    borderRadius: '8px',
-                    color: '#374151'
-                  }}
-                />
-                <RechartsLegend />
-                <Area type="monotone" dataKey="incoming" stroke="#6366F1" fill="url(#colorIncoming)" name="Incoming Tickets" strokeWidth={1.5} />
-                <Area type="monotone" dataKey="closed" stroke="#22C55E" fill="url(#colorClosed)" name="Closed Tickets" strokeWidth={1.5} />
-              </AreaChart>
-            </ResponsiveContainer>
-          ) : (
-            <div className="text-center text-gray-500 dark:text-gray-400 py-12">No data for this chart</div>
-          )}
-        </CardContent>
-      </Card>
-      {/* Yearly Area Chart */}
-      <Card className="p-2">
-        <CardHeader className="flex flex-col gap-1 pb-1">
-                      <CardTitle className="font-extrabold text-lg">Tickets per Year</CardTitle>
-          {latestYearlyValue !== null && (
-                            <Badge className="bg-blue-600 text-white text-xs px-2 py-0.5 rounded-md w-fit font-semibold">Latest: {latestYearlyValue}</Badge>
-          )}
-        </CardHeader>
-        <CardContent className="pl-2">
-          {yearlyStatsData && yearlyStatsData.labels && yearlyStatsData.labels.length > 0 ? (
-            <ResponsiveContainer width="100%" height={260}>
-              <AreaChart data={toRechartsData(yearlyStatsData.labels, yearlyStatsData.datasets)} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="colorIncomingY" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#6366F1" stopOpacity={0.6}/>
-                    <stop offset="95%" stopColor="#6366F1" stopOpacity={0.05}/>
-                  </linearGradient>
-                  <linearGradient id="colorClosedY" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#22C55E" stopOpacity={0.6}/>
-                    <stop offset="95%" stopColor="#22C55E" stopOpacity={0.05}/>
-                  </linearGradient>
-                </defs>
-                <XAxis 
-                  dataKey="label" 
-                  tickLine={false} 
-                  axisLine={false} 
-                  tickMargin={8} 
-                  minTickGap={24}
-                  tick={{ fill: '#6B7280', fontSize: 12 }}
-                />
-                <YAxis 
-                  tickLine={false} 
-                  axisLine={false} 
-                  tickMargin={8} 
-                  minTickGap={24}
-                  tick={{ fill: '#6B7280', fontSize: 12 }}
-                />
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
-                <RechartsTooltip 
-                  contentStyle={{
-                    backgroundColor: '#FFFFFF',
-                    border: '1px solid #E5E7EB',
-                    borderRadius: '8px',
-                    color: '#374151'
-                  }}
-                />
-                <RechartsLegend />
-                <Area type="monotone" dataKey="incoming" stroke="#6366F1" fill="url(#colorIncomingY)" name="Incoming Tickets" strokeWidth={1.5} />
-                <Area type="monotone" dataKey="closed" stroke="#22C55E" fill="url(#colorClosedY)" name="Closed Tickets" strokeWidth={1.5} />
-              </AreaChart>
-            </ResponsiveContainer>
-          ) : (
-            <div className="text-center text-gray-500 dark:text-gray-400 py-12">No data for this chart</div>
-          )}
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+
+        {/* Complaints Pie Chart */}
+        <Card className="p-2">
+          <CardHeader className="pb-1">
+            <CardTitle className="font-extrabold text-lg">Top Complaints</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {complaintsData.length > 0 ? (
+              <ResponsiveContainer width="100%" height={260}>
+                <PieChart>
+                  <Pie
+                    data={complaintsData}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                    outerRadius={80}
+                    fill="#8884d8"
+                    dataKey="value"
+                  >
+                    {complaintsData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <RechartsTooltip />
+                </PieChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="text-center text-gray-500 dark:text-gray-400 py-12">No complaint data available</div>
+            )}
+          </CardContent>
+        </Card>
       </div>
 
-      {/* Agent Leaderboard (per Year) */}
+      {/* Yearly Chart and Agent Leaderboard Row */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* Yearly Area Chart */}
+        <Card className="p-2">
+          <CardHeader className="flex flex-col gap-1 pb-1">
+            <CardTitle className="font-extrabold text-lg">Tickets per Year</CardTitle>
+            {latestYearlyValue !== null && (
+              <Badge className="bg-blue-600 text-white text-xs px-2 py-0.5 rounded-md w-fit font-semibold">Latest: {latestYearlyValue}</Badge>
+            )}
+          </CardHeader>
+          <CardContent className="pl-2">
+            {yearlyStatsData && yearlyStatsData.labels && yearlyStatsData.labels.length > 0 ? (
+              <ResponsiveContainer width="100%" height={260}>
+                <AreaChart data={toRechartsData(yearlyStatsData.labels, yearlyStatsData.datasets)} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="colorIncomingY" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#6366F1" stopOpacity={0.6}/>
+                      <stop offset="95%" stopColor="#6366F1" stopOpacity={0.05}/>
+                    </linearGradient>
+                    <linearGradient id="colorClosedY" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#22C55E" stopOpacity={0.6}/>
+                      <stop offset="95%" stopColor="#22C55E" stopOpacity={0.05}/>
+                    </linearGradient>
+                  </defs>
+                  <XAxis 
+                    dataKey="label" 
+                    tickLine={false} 
+                    axisLine={false} 
+                    tickMargin={8} 
+                    minTickGap={24}
+                    tick={{ fill: '#6B7280', fontSize: 12 }}
+                  />
+                  <YAxis 
+                    tickLine={false} 
+                    axisLine={false} 
+                    tickMargin={8} 
+                    minTickGap={24}
+                    tick={{ fill: '#6B7280', fontSize: 12 }}
+                  />
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
+                  <RechartsTooltip 
+                    contentStyle={{
+                      backgroundColor: '#FFFFFF',
+                      border: '1px solid #E5E7EB',
+                      borderRadius: '8px',
+                      color: '#374151'
+                    }}
+                  />
+                  <RechartsLegend />
+                  <Area type="monotone" dataKey="incoming" stroke="#6366F1" fill="url(#colorIncomingY)" name="Incoming Tickets" strokeWidth={1.5} />
+                  <Area type="monotone" dataKey="closed" stroke="#22C55E" fill="url(#colorClosedY)" name="Closed Tickets" strokeWidth={1.5} />
+                </AreaChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="text-center text-gray-500 dark:text-gray-400 py-12">No data for this chart</div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Top Agents Performance */}
+        <Card className="p-2">
+          <CardHeader className="pb-1">
+            <CardTitle className="font-extrabold text-lg">Top 5 Agents</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {agentLeaderboard.slice(0, 5).map((agent, index) => (
+              <div key={agent.agent} className="flex items-center justify-between py-2 border-b border-gray-100 dark:border-gray-800 last:border-b-0">
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold text-gray-900 dark:text-gray-100">#{index + 1}</span>
+                    {index < 3 && (
+                      <EmojiEventsIcon 
+                        className={`${index === 0 ? 'text-amber-500' : index === 1 ? 'text-gray-400' : 'text-orange-400'}`} 
+                        sx={{ fontSize: 16 }} 
+                      />
+                    )}
+                  </div>
+                  <div>
+                    <p className="font-semibold text-gray-900 dark:text-gray-100 truncate max-w-[120px]">
+                      {agent.agent}
+                    </p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      {agent.tickets} tickets • {agent.slaPct.toFixed(1)}% SLA
+                    </p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <span className={`inline-flex items-center justify-center px-2 py-1 rounded-lg text-xs font-bold min-w-[32px] ${
+                    agent.grade === 'A' 
+                      ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300' 
+                      : agent.grade === 'B' 
+                      ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' 
+                      : agent.grade === 'C' 
+                      ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300'
+                      : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300'
+                  }`}>
+                    {agent.grade}
+                  </span>
+                </div>
+              </div>
+            ))}
+            {agentLeaderboard.length === 0 && (
+              <div className="text-center text-gray-400 dark:text-gray-500 py-8">
+                No agent data available
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Agent Leaderboard (Full) */}
       <Card className="p-2">
         <CardHeader className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 pb-1">
-                      <CardTitle className="font-extrabold text-lg">Agent Leaderboard</CardTitle>
+          <CardTitle className="font-extrabold text-lg">Agent Leaderboard</CardTitle>
           <div className="flex items-center gap-2">
             <select
-              className=" rounded-lg px-3 py-2 text-sm bg-white dark:bg-zinc-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+              className="rounded-lg px-3 py-2 text-sm bg-white dark:bg-zinc-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
               value={agentYear}
               onChange={e=>setAgentYear(e.target.value)}
             >
