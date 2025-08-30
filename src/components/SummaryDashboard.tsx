@@ -554,9 +554,15 @@ const SummaryDashboard = ({ ticketAnalyticsData, filteredTickets }: any) => {
         <Card className="p-2">
           <CardHeader className="flex flex-col gap-1 pb-1">
             <CardTitle className="font-extrabold text-lg">Incident Trends</CardTitle>
-            <Badge className="bg-orange-600 text-white text-xs px-2 py-0.5 rounded-md w-fit font-semibold">
-              Total: {incidentStats.total.toLocaleString()}
-            </Badge>
+            <div className="flex flex-wrap gap-2">
+              <Badge className="bg-orange-600 text-white text-xs px-2 py-0.5 rounded-md font-semibold">
+                Total: {incidentStats.total.toLocaleString()}
+              </Badge>
+              <Badge className="bg-green-600 text-white text-xs px-2 py-0.5 rounded-md font-semibold">
+                Avg Rate: {incidentTrendsData.length > 0 ? 
+                  (incidentTrendsData.reduce((sum, item) => sum + item.resolutionRate, 0) / incidentTrendsData.length).toFixed(1) : 0}%
+              </Badge>
+            </div>
           </CardHeader>
           <CardContent className="p-6">
             {incidentTrendsData.length > 0 ? (
@@ -571,23 +577,80 @@ const SummaryDashboard = ({ ticketAnalyticsData, filteredTickets }: any) => {
                     tick={{ fill: '#6B7280', fontSize: 12, fontWeight: 500 }}
                   />
                   <YAxis 
+                    yAxisId="left"
                     tickLine={false} 
                     axisLine={false} 
                     tickMargin={8} 
                     tick={{ fill: '#6B7280', fontSize: 12, fontWeight: 500 }}
+                    label={{ value: 'Incidents', angle: -90, position: 'insideLeft', style: { textAnchor: 'middle', fill: '#6B7280', fontSize: 12 } }}
+                  />
+                  <YAxis 
+                    yAxisId="right"
+                    orientation="right"
+                    tickLine={false} 
+                    axisLine={false} 
+                    tickMargin={8} 
+                    tick={{ fill: '#6B7280', fontSize: 12, fontWeight: 500 }}
+                    domain={[0, 100]}
+                    label={{ value: 'Resolution Rate (%)', angle: 90, position: 'insideRight', style: { textAnchor: 'middle', fill: '#6B7280', fontSize: 12 } }}
                   />
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
                   <RechartsTooltip 
-                    contentStyle={{
-                      backgroundColor: '#FFFFFF',
-                      border: '1px solid #E5E7EB',
-                      borderRadius: '8px',
-                      color: '#374151'
+                    content={({ active, payload, label }) => {
+                      if (active && payload && payload.length) {
+                        return (
+                          <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg p-3 shadow-lg">
+                            <p className="font-semibold text-gray-900 dark:text-gray-100 mb-2">{label}</p>
+                            {payload.map((entry, index) => (
+                              <div key={index} className="flex items-center gap-2 mb-1">
+                                <div 
+                                  className="w-3 h-3 rounded-full" 
+                                  style={{ backgroundColor: entry.color }}
+                                />
+                                <span className="text-sm text-gray-600 dark:text-gray-300">
+                                  {entry.name}: 
+                                </span>
+                                <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                                  {entry.name === 'Resolution Rate %' 
+                                    ? `${entry.value?.toFixed(1)}%` 
+                                    : entry.value?.toLocaleString()}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        );
+                      }
+                      return null;
                     }}
                   />
-                  <RechartsLegend />
-                  <Line type="monotone" dataKey="incidents" stroke="#F59E0B" strokeWidth={2} name="Incidents" />
-                  <Line type="monotone" dataKey="resolutionRate" stroke="#10B981" strokeWidth={2} name="Resolution Rate %" />
+                  <RechartsLegend 
+                    wrapperStyle={{ paddingTop: '10px' }}
+                    formatter={(value, entry) => (
+                      <span style={{ color: '#6B7280', fontSize: '12px' }}>
+                        {value}
+                      </span>
+                    )}
+                  />
+                  <Line 
+                    yAxisId="left"
+                    type="monotone" 
+                    dataKey="incidents" 
+                    stroke="#F59E0B" 
+                    strokeWidth={3} 
+                    name="Incidents"
+                    dot={{ fill: '#F59E0B', strokeWidth: 2, r: 4 }}
+                    activeDot={{ r: 6, stroke: '#F59E0B', strokeWidth: 2 }}
+                  />
+                  <Line 
+                    yAxisId="right"
+                    type="monotone" 
+                    dataKey="resolutionRate" 
+                    stroke="#10B981" 
+                    strokeWidth={3} 
+                    name="Resolution Rate %"
+                    dot={{ fill: '#10B981', strokeWidth: 2, r: 4 }}
+                    activeDot={{ r: 6, stroke: '#10B981', strokeWidth: 2 }}
+                  />
                 </LineChart>
               </ResponsiveContainer>
                 </div>
