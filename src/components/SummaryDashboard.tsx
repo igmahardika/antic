@@ -424,14 +424,14 @@ const SummaryDashboard = ({ ticketAnalyticsData, filteredTickets }: any) => {
           icon={<CheckCircleIcon className="w-5 h-5 text-white" />}
           iconBg="bg-green-500"
           title="Closed Rate"
-          value={kpis.closedRate}
+          value={`${kpis.closedRate}%`}
           description="closed / total"
         />
         <SummaryCard
           icon={<TimerIcon className="w-5 h-5 text-white" />}
           iconBg="bg-cyan-500"
           title="SLA ≤ 24h"
-          value={kpis.slaPct}
+          value={`${kpis.slaPct}%`}
           description="percentage closed within 24h"
         />
         <SummaryCard
@@ -561,7 +561,7 @@ const SummaryDashboard = ({ ticketAnalyticsData, filteredTickets }: any) => {
           <CardHeader className="flex flex-col gap-1 pb-1">
             <CardTitle className="font-extrabold text-lg">Incident Trends</CardTitle>
             <Badge className="bg-orange-600 text-white text-xs px-2 py-0.5 rounded-md w-fit font-semibold">
-              Total: {incidentStats.total}
+              Total: {incidentStats.total.toLocaleString()}
             </Badge>
           </CardHeader>
           <CardContent className="p-6">
@@ -829,7 +829,7 @@ const SummaryDashboard = ({ ticketAnalyticsData, filteredTickets }: any) => {
                         ? 'text-white' 
                         : row.frtAvg <= 60 ? 'text-green-600' : row.frtAvg <= 120 ? 'text-amber-600' : 'text-red-600'
                     }`}>
-                      {row.frtAvg.toFixed(0)}m
+                      {Math.round(row.frtAvg)}m
                     </div>
                     <div className={`text-xs opacity-80 ${
                       i < 3 ? 'text-white/80' : 'text-gray-500 dark:text-gray-400'
@@ -843,7 +843,7 @@ const SummaryDashboard = ({ ticketAnalyticsData, filteredTickets }: any) => {
                         ? 'text-white' 
                         : row.artAvg <= 1440 ? 'text-green-600' : row.artAvg <= 2880 ? 'text-amber-600' : 'text-red-600'
                     }`}>
-                      {row.artAvg.toFixed(0)}m
+                      {Math.round(row.artAvg)}m
                     </div>
                     <div className={`text-xs opacity-80 ${
                       i < 3 ? 'text-white/80' : 'text-gray-500 dark:text-gray-400'
