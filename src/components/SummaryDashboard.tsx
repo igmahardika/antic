@@ -745,6 +745,16 @@ const SummaryDashboard = ({ ticketAnalyticsData, filteredTickets }: any) => {
                      return duration <= (targets[ncal] || 240);
                    }).length / (count as number) * 100
                 }))} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="colorIncidents" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#8B5CF6" stopOpacity={0.8}/>
+                      <stop offset="95%" stopColor="#7C3AED" stopOpacity={1}/>
+                    </linearGradient>
+                    <linearGradient id="colorCompliance" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#10B981" stopOpacity={0.8}/>
+                      <stop offset="95%" stopColor="#059669" stopOpacity={1}/>
+                    </linearGradient>
+                  </defs>
                   <XAxis 
                     dataKey="ncal" 
                     tickLine={false} 
@@ -760,16 +770,53 @@ const SummaryDashboard = ({ ticketAnalyticsData, filteredTickets }: any) => {
                   />
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
                   <RechartsTooltip 
-                    contentStyle={{
-                      backgroundColor: '#FFFFFF',
-                      border: '1px solid #E5E7EB',
-                      borderRadius: '8px',
-                      color: '#374151'
+                    content={({ active, payload, label }) => {
+                      if (active && payload && payload.length) {
+                        return (
+                          <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg p-3 shadow-lg">
+                            <p className="font-semibold text-gray-900 dark:text-gray-100 mb-2">{label}</p>
+                            {payload.map((entry, index) => (
+                              <div key={index} className="flex items-center gap-2 mb-1">
+                                <div 
+                                  className="w-3 h-3 rounded-full" 
+                                  style={{ backgroundColor: entry.color }}
+                                />
+                                <span className="text-sm text-gray-600 dark:text-gray-300">
+                                  {entry.name}: 
+                                </span>
+                                <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                                  {entry.name === 'Compliance %' 
+                                    ? `${entry.value?.toFixed(1)}%` 
+                                    : entry.value?.toLocaleString()}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        );
+                      }
+                      return null;
                     }}
                   />
-                  <RechartsLegend />
-                  <Bar dataKey="count" fill="#8B5CF6" name="Incidents" />
-                  <Bar dataKey="compliance" fill="#10B981" name="Compliance %" />
+                  <RechartsLegend 
+                    wrapperStyle={{ paddingTop: '10px' }}
+                    formatter={(value, entry) => (
+                      <span style={{ color: '#6B7280', fontSize: '12px' }}>
+                        {value}
+                      </span>
+                    )}
+                  />
+                  <Bar 
+                    dataKey="count" 
+                    fill="url(#colorIncidents)" 
+                    name="Incidents"
+                    radius={[4, 4, 0, 0]}
+                  />
+                  <Bar 
+                    dataKey="compliance" 
+                    fill="url(#colorCompliance)" 
+                    name="Compliance %"
+                    radius={[4, 4, 0, 0]}
+                  />
                 </BarChart>
               </ResponsiveContainer>
                 </div>
