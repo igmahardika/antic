@@ -23,10 +23,10 @@ export default function AdminRumus() {
       <div className="space-y-8">
       {/* Header */}
       <div className="text-center space-y-4">
-          <h1 className="text-4xl font-bold text-card-foreground">
+          <h1 className="text-3xl font-bold text-card-foreground">
             Documentation & Formulas
         </h1>
-          <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
+          <p className="text-base text-muted-foreground max-w-3xl mx-auto">
             Comprehensive documentation for the Helpdesk Management System, including 
             system architecture, data management, analytics formulas, and technical specifications.
         </p>
@@ -46,7 +46,7 @@ export default function AdminRumus() {
                 <span className="text-sm font-medium text-green-700 dark:text-green-300">v2.3.0 - Summary Dashboard Enhancement & Visual Optimization</span>
                 <span className="text-xs text-muted-foreground">August 2025</span>
             </div>
-                <h4 className="font-bold text-lg text-card-foreground mb-4">Summary Dashboard Enhancement & Visual Optimization</h4>
+                <h4 className="font-bold text-base text-card-foreground mb-4">Summary Dashboard Enhancement & Visual Optimization</h4>
               
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Dashboard Enhancements */}
@@ -503,168 +503,6 @@ export default function AdminRumus() {
             </div>
           </div>
         </CollapsibleSection>
-
-        {/* === 3. SYSTEM ADMINISTRATION === */}
-        <CollapsibleSection
-          title="System Administration"
-          icon={<AdminPanelSettingsIcon className="text-red-600" />}
-          defaultExpanded={false}
-        >
-          <div className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div className="space-y-4">
-                <h5 className="font-semibold text-card-foreground">Admin Panel Features</h5>
-                <ul className="space-y-2 text-sm text-muted-foreground">
-                <li>• User management and permissions</li>
-                <li>• System configuration</li>
-                <li>• Data backup and restore</li>
-                <li>• Audit logging</li>
-                <li>• Performance monitoring</li>
-                <li>• Security settings</li>
-                </ul>
-              </div>
-
-              <div className="space-y-4">
-                <h5 className="font-semibold text-card-foreground">Formulas & Calculations</h5>
-                <ul className="space-y-2 text-sm text-muted-foreground">
-                <li>• KPI calculation algorithms</li>
-                <li>• Performance scoring formulas</li>
-                <li>• Trend analysis methods</li>
-                <li>• Statistical computations</li>
-                <li>• Custom metric definitions</li>
-                <li>• Weight adjustment tools</li>
-                </ul>
-              </div>
-            </div>
-
-            <div className="space-y-4">
-              <h5 className="font-semibold text-card-foreground">Upload Data Processing</h5>
-          <div className="space-y-6">
-                    <div>
-                  <h6 className="font-semibold text-card-foreground mb-3">Flow Pemrosesan Upload Data</h6>
-                <div className="bg-orange-50 dark:bg-orange-900/20 ring-1 ring-orange-200 dark:ring-orange-800 rounded-lg p-4">
-                <div className="space-y-3 text-sm">
-                  <div className="flex items-start gap-2">
-                      <span className="font-semibold text-orange-800 dark:text-orange-200">1.</span>
-                    <div>
-                        <strong>File Validation:</strong> Validasi format file (Excel .xlsx/.xls, CSV) dan ukuran
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-2">
-                      <span className="font-semibold text-orange-800 dark:text-orange-200">2.</span>
-                    <div>
-                        <strong>Header Validation:</strong> Memvalidasi header kolom sesuai dengan schema yang dibutuhkan
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-2">
-                      <span className="font-semibold text-orange-800 dark:text-orange-200">3.</span>
-                    <div>
-                        <strong>Data Parsing:</strong> Parsing data dari Excel/CSV ke format JSON dengan validasi tipe data
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-2">
-                      <span className="font-semibold text-orange-800 dark:text-orange-200">4.</span>
-                    <div>
-                        <strong>Data Transformation:</strong> Transformasi data ke format Incident dengan validasi business rules
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-2">
-                      <span className="font-semibold text-orange-800 dark:text-orange-200">5.</span>
-                    <div>
-                        <strong>Database Storage:</strong> Menyimpan data ke IndexedDB dengan chunking untuk file besar
-                    </div>
-                  </div>
-                    <div className="flex items-start gap-2">
-                      <span className="font-semibold text-orange-800 dark:text-orange-200">6.</span>
-                      <div>
-                        <strong>Result Reporting:</strong> Menampilkan laporan hasil upload dengan detail success/error
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-          <div>
-                  <h6 className="font-semibold text-card-foreground mb-3">Error Handling & Recovery</h6>
-                  <div className="bg-red-50 dark:bg-red-900/20 ring-1 ring-red-200 dark:ring-red-800 rounded-lg p-4">
-                <div className="space-y-3 text-sm">
-                  <div className="flex items-start gap-2">
-                        <span className="font-semibold text-red-800 dark:text-red-200">•</span>
-                    <div>
-                          <strong>Validation Errors:</strong> Menampilkan error detail untuk setiap baris yang gagal
-                  </div>
-                  </div>
-                  <div className="flex items-start gap-2">
-                        <span className="font-semibold text-red-800 dark:text-red-200">•</span>
-                    <div>
-                          <strong>Partial Success:</strong> Menyimpan data yang valid dan skip data yang error
-                </div>
-              </div>
-                  <div className="flex items-start gap-2">
-                        <span className="font-semibold text-red-800 dark:text-red-200">•</span>
-                    <div>
-                          <strong>Error Logging:</strong> Error logging komprehensif dan recovery mechanism
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-2">
-                        <span className="font-semibold text-red-800 dark:text-red-200">•</span>
-                    <div>
-                          <strong>Performance:</strong> Optimasi memory dengan chunking dan streaming
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-                </div>
-                </div>
-              </div>
-      </CollapsibleSection>
-
-      {/* System Administration */}
-      <CollapsibleSection 
-        title="System Administration" 
-        icon={<AdminPanelSettingsIcon className="text-red-600" />}
-      >
-        <div className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="space-y-4">
-                <h5 className="font-semibold text-card-foreground">Admin Panel Features</h5>
-                <ul className="space-y-2 text-sm text-muted-foreground">
-                <li>• User management and permissions</li>
-                <li>• System configuration</li>
-                <li>• Data backup and restore</li>
-                <li>• Audit logging</li>
-                <li>• Performance monitoring</li>
-                <li>• Security settings</li>
-                  </ul>
-                </div>
-
-            <div className="space-y-4">
-                <h5 className="font-semibold text-card-foreground">Formulas & Calculations</h5>
-                <ul className="space-y-2 text-sm text-muted-foreground">
-                <li>• KPI calculation algorithms</li>
-                <li>• Performance scoring formulas</li>
-                <li>• Trend analysis methods</li>
-                <li>• Statistical computations</li>
-                <li>• Custom metric definitions</li>
-                <li>• Weight adjustment tools</li>
-                    </ul>
-                </div>
-                </div>
-
-              <div className="space-y-4">
-              <h5 className="font-semibold text-card-foreground">Dependencies Cleanup</h5>
-            <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
-              <div className="text-sm space-y-2">
-                  <div><strong>Removed Libraries:</strong> 20+ unused packages including Bootstrap Icons, Flowbite, Framer Motion, Chart.js, React Hook Form, Styled Components, and more</div>
-                  <div><strong>Bundle Size Reduction:</strong> 40%+ smaller bundle size</div>
-                  <div><strong>Build Performance:</strong> Faster compilation and deployment</div>
-                  <div><strong>Maintenance:</strong> Easier dependency management and updates</div>
-                </div>
-              </div>
-            </div>
-        </div>
-      </CollapsibleSection>
 
                 {/* === 4. TECHNICAL SPECIFICATIONS === */}
         <CollapsibleSection 
