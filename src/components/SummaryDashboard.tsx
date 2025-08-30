@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend as RechartsLegend, ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar } from 'recharts';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend as RechartsLegend, ResponsiveContainer, BarChart, Bar, LineChart, Line } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import SummaryCard from '@/components/ui/SummaryCard';
@@ -9,17 +9,92 @@ import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import GroupIcon from '@mui/icons-material/Group';
 import TimerIcon from '@mui/icons-material/Timer';
 import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
-import WarningAmberIcon from '@mui/icons-material/WarningAmber';
+import WarningIcon from '@mui/icons-material/Warning';
+import ScienceIcon from '@mui/icons-material/Science';
+import LocationOnIcon from '@mui/icons-material/LocationOn';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import TrendingDownIcon from '@mui/icons-material/TrendingDown';
-import SpeedIcon from '@mui/icons-material/Speed';
-import AssessmentIcon from '@mui/icons-material/Assessment';
 import { sanitizeTickets, calcAllMetrics, Ticket as AgentTicket, rank as rankBand } from '@/utils/agentKpi';
+import { useLiveQuery } from 'dexie-react-hooks';
+import { db } from '@/lib/db';
+import { calculateIncidentStats, normalizeNCAL } from '@/utils/incidentUtils';
 
 const SummaryDashboard = ({ ticketAnalyticsData, filteredTickets }: any) => {
+  // Get incident data for comprehensive dashboard
+  const allIncidents = useLiveQuery(() => db.incidents.toArray(), []);
+  
   // Prepare monthly data
   const monthlyStatsData = ticketAnalyticsData?.monthlyStatsData;
   const stats = ticketAnalyticsData?.stats || [];
+
+  // Incident statistics
+  const incidentStats = useMemo(() => {
+    if (!allIncidents || allIncidents.length === 0) {
+      return {
+        total: 0,
+        open: 0,
+        closed: 0,
+        avgDuration: 0,
+        ncalCompliance: 0,
+        vendorPerformance: 0,
+        siteReliability: 0
+      };
+    }
+
+    const stats = calculateIncidentStats(allIncidents);
+    const total = stats.total;
+    const closed = stats.closed;
+    const open = stats.open;
+    
+    // Calculate NCAL compliance
+    const ncalCompliant = allIncidents.filter(inc => {
+      const ncal = normalizeNCAL(inc.ncal);
+      const duration = inc.durationMin || 0;
+      const targets = { 'NCAL1': 60, 'NCAL2': 120, 'NCAL3': 240, 'NCAL4': 480 };
+      return duration <= (targets[ncal] || 240);
+    }).length;
+    
+    const ncalCompliance = total > 0 ? (ncalCompliant / total) * 100 : 0;
+
+    // Calculate vendor performance
+    const vendorIncidents = allIncidents.filter(inc => 
+      (inc.ts || '').toLowerCase().includes('waneda') || 
+      (inc.ts || '').toLowerCase().includes('lintas') ||
+      (inc.ts || '').toLowerCase().includes('fiber')
+    );
+    const vendorSLA = vendorIncidents.filter(inc => {
+      const duration = inc.durationMin || 0;
+      return duration <= 240; // 4 hours SLA
+    }).length;
+    const vendorPerformance = vendorIncidents.length > 0 ? (vendorSLA / vendorIncidents.length) * 100 : 0;
+
+    // Calculate site reliability
+    const siteGroups = allIncidents.reduce((acc, inc) => {
+      const site = inc.site || 'Unknown';
+      if (!acc[site]) acc[site] = [];
+      acc[site].push(inc);
+      return acc;
+    }, {} as Record<string, any[]>);
+
+    const siteReliabilityScores = Object.values(siteGroups).map(incidents => {
+      const resolved = incidents.filter(inc => inc.status?.toLowerCase() === 'done').length;
+      return incidents.length > 0 ? (resolved / incidents.length) * 100 : 0;
+    });
+
+    const siteReliability = siteReliabilityScores.length > 0 
+      ? siteReliabilityScores.reduce((a, b) => a + b, 0) / siteReliabilityScores.length 
+      : 0;
+
+    return {
+      total,
+      open,
+      closed,
+      avgDuration: stats.avgDuration,
+      ncalCompliance,
+      vendorPerformance,
+      siteReliability
+    };
+  }, [allIncidents]);
 
   // Derived KPIs - Konsisten dengan TicketAnalytics
   const kpis = useMemo(() => {
@@ -241,115 +316,38 @@ const SummaryDashboard = ({ ticketAnalyticsData, filteredTickets }: any) => {
     }));
   }
 
-  // Prepare complaints data for pie chart
-  const complaintsData = useMemo(() => {
-    if (!ticketAnalyticsData?.complaintsData) return [];
-    const { labels, datasets } = ticketAnalyticsData.complaintsData;
-    return labels.map((label, index) => ({
-      name: label,
-      value: datasets[0].data[index],
-      color: datasets[0].backgroundColor[index],
-    }));
-  }, [ticketAnalyticsData]);
+  // Incident trends data
+  const incidentTrendsData = useMemo(() => {
+    if (!allIncidents || allIncidents.length === 0) return [];
+    
+    const monthlyData = allIncidents.reduce((acc, inc) => {
+      if (!inc.startTime) return acc;
+      const date = new Date(inc.startTime);
+      const month = date.toLocaleString('default', { month: 'short' });
+      const year = date.getFullYear();
+      const key = `${month} ${year}`;
+      
+      if (!acc[key]) acc[key] = { month: key, incidents: 0, resolved: 0, avgDuration: 0, durations: [] };
+      acc[key].incidents++;
+      acc[key].durations.push(inc.durationMin || 0);
+      
+      if (inc.status?.toLowerCase() === 'done') {
+        acc[key].resolved++;
+      }
+      
+      return acc;
+    }, {} as Record<string, any>);
 
-  // Prepare insights data
-  const insights = useMemo(() => {
-    const insights = ticketAnalyticsData?.insights || {};
-    return {
-      busiestMonth: insights.busiestMonth || { month: 'N/A', count: 0 },
-      topComplaint: insights.topComplaint || { category: 'N/A', count: 0, percentage: 0 },
-    };
-  }, [ticketAnalyticsData]);
-
-  // Calculate trend indicators
-  const trendIndicators = useMemo(() => {
-    if (!filteredMonthlyStatsData || !filteredMonthlyStatsData.datasets) return null;
-    
-    const incomingData = filteredMonthlyStatsData.datasets[0].data;
-    const closedData = filteredMonthlyStatsData.datasets[1].data;
-    
-    if (incomingData.length < 2) return null;
-    
-    const currentIncoming = incomingData[incomingData.length - 1];
-    const previousIncoming = incomingData[incomingData.length - 2];
-    const currentClosed = closedData[closedData.length - 1];
-    const previousClosed = closedData[closedData.length - 2];
-    
-    const incomingTrend = previousIncoming > 0 ? ((currentIncoming - previousIncoming) / previousIncoming) * 100 : 0;
-    const closedTrend = previousClosed > 0 ? ((currentClosed - previousClosed) / previousClosed) * 100 : 0;
-    
-    return {
-      incoming: {
-        value: incomingTrend,
-        isPositive: incomingTrend > 0,
-        label: incomingTrend > 0 ? 'Increasing' : 'Decreasing',
-      },
-      closed: {
-        value: closedTrend,
-        isPositive: closedTrend > 0,
-        label: closedTrend > 0 ? 'Improving' : 'Declining',
-      },
-    };
-  }, [filteredMonthlyStatsData]);
+    return Object.values(monthlyData).map(item => ({
+      ...item,
+      avgDuration: item.durations.length > 0 ? item.durations.reduce((a: number, b: number) => a + b, 0) / item.durations.length : 0,
+      resolutionRate: item.incidents > 0 ? (item.resolved / item.incidents) * 100 : 0
+    })).sort((a, b) => new Date(a.month).getTime() - new Date(b.month).getTime());
+  }, [allIncidents]);
 
   return (
     <div className="grid grid-cols-1 gap-8">
-      {/* Header with Quick Stats */}
-      <div className="flex flex-col gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-card-foreground">Dashboard Overview</h1>
-          <p className="text-muted-foreground">Comprehensive view of helpdesk performance and analytics</p>
-        </div>
-        
-        {/* Quick Insights Row */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Busiest Month</p>
-                <p className="text-2xl font-bold">{insights.busiestMonth.month}</p>
-                <p className="text-xs text-muted-foreground">{insights.busiestMonth.count} tickets</p>
-              </div>
-              <TrendingUpIcon className="h-8 w-8 text-orange-500" />
-            </div>
-          </Card>
-          
-          <Card className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Top Complaint</p>
-                <p className="text-lg font-bold truncate">{insights.topComplaint.category}</p>
-                <p className="text-xs text-muted-foreground">{insights.topComplaint.percentage}% of total</p>
-              </div>
-              <WarningAmberIcon className="h-8 w-8 text-red-500" />
-            </div>
-          </Card>
-          
-          <Card className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Backlog</p>
-                <p className="text-2xl font-bold">{kpis.backlog}</p>
-                <p className="text-xs text-muted-foreground">pending tickets</p>
-              </div>
-              <AssessmentIcon className="h-8 w-8 text-yellow-500" />
-            </div>
-          </Card>
-          
-          <Card className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Performance</p>
-                <p className="text-2xl font-bold">{kpis.slaPct}</p>
-                <p className="text-xs text-muted-foreground">SLA compliance</p>
-              </div>
-              <SpeedIcon className="h-8 w-8 text-green-500" />
-            </div>
-          </Card>
-        </div>
-      </div>
-
-      {/* KPI Row */}
+      {/* KPI Row 1 - Ticket Management */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <SummaryCard
           icon={<FlashOnIcon className="w-5 h-5 text-white" />}
@@ -381,7 +379,7 @@ const SummaryDashboard = ({ ticketAnalyticsData, filteredTickets }: any) => {
         />
       </div>
 
-      {/* KPI Row 2 */}
+      {/* KPI Row 2 - Ticket Performance */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <SummaryCard
           icon={<CheckCircleIcon className="w-5 h-5 text-white" />}
@@ -413,27 +411,47 @@ const SummaryDashboard = ({ ticketAnalyticsData, filteredTickets }: any) => {
         />
       </div>
 
-      {/* Charts Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Monthly Area Chart */}
-        <Card className="p-2 lg:col-span-2">
+      {/* KPI Row 3 - Incident Management */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <SummaryCard
+          icon={<WarningIcon className="w-5 h-5 text-white" />}
+          iconBg="bg-orange-500"
+          title="Total Incidents"
+          value={incidentStats.total.toString()}
+          description="network incidents"
+        />
+        <SummaryCard
+          icon={<ScienceIcon className="w-5 h-5 text-white" />}
+          iconBg="bg-purple-500"
+          title="NCAL Compliance"
+          value={`${incidentStats.ncalCompliance.toFixed(1)}%`}
+          description="within SLA targets"
+        />
+        <SummaryCard
+          icon={<LocationOnIcon className="w-5 h-5 text-white" />}
+          iconBg="bg-emerald-500"
+          title="Site Reliability"
+          value={`${incidentStats.siteReliability.toFixed(1)}%`}
+          description="site performance"
+        />
+        <SummaryCard
+          icon={<TrendingUpIcon className="w-5 h-5 text-white" />}
+          iconBg="bg-blue-500"
+          title="Vendor Performance"
+          value={`${incidentStats.vendorPerformance.toFixed(1)}%`}
+          description="vendor SLA compliance"
+        />
+      </div>
+
+      {/* Charts Section */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        {/* Monthly Ticket Trends */}
+        <Card className="p-2">
           <CardHeader className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 pb-1">
             <div className="flex flex-col gap-1">
               <CardTitle className="font-extrabold text-lg">Tickets per Month</CardTitle>
               {latestMonthlyValue !== null && (
                 <Badge className="bg-blue-600 text-white text-xs px-2 py-0.5 rounded-md w-fit font-semibold">Latest: {latestMonthlyValue}</Badge>
-              )}
-              {trendIndicators && (
-                <div className="flex items-center gap-2">
-                  {trendIndicators.incoming.isPositive ? (
-                    <TrendingUpIcon className="h-4 w-4 text-green-500" />
-                  ) : (
-                    <TrendingDownIcon className="h-4 w-4 text-red-500" />
-                  )}
-                  <span className={`text-xs font-medium ${trendIndicators.incoming.isPositive ? 'text-green-600' : 'text-red-600'}`}>
-                    {trendIndicators.incoming.label} ({Math.abs(trendIndicators.incoming.value).toFixed(1)}%)
-                  </span>
-                </div>
               )}
             </div>
             <div className="mt-2 md:mt-0">
@@ -497,42 +515,55 @@ const SummaryDashboard = ({ ticketAnalyticsData, filteredTickets }: any) => {
           </CardContent>
         </Card>
 
-        {/* Complaints Pie Chart */}
+        {/* Incident Trends */}
         <Card className="p-2">
-          <CardHeader className="pb-1">
-            <CardTitle className="font-extrabold text-lg">Top Complaints</CardTitle>
+          <CardHeader className="flex flex-col gap-1 pb-1">
+            <CardTitle className="font-extrabold text-lg">Incident Trends</CardTitle>
+            <Badge className="bg-orange-600 text-white text-xs px-2 py-0.5 rounded-md w-fit font-semibold">
+              Total: {incidentStats.total}
+            </Badge>
           </CardHeader>
-          <CardContent>
-            {complaintsData.length > 0 ? (
+          <CardContent className="pl-2">
+            {incidentTrendsData.length > 0 ? (
               <ResponsiveContainer width="100%" height={260}>
-                <PieChart>
-                  <Pie
-                    data={complaintsData}
-                    cx="50%"
-                    cy="50%"
-                    labelLine={false}
-                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                    outerRadius={80}
-                    fill="#8884d8"
-                    dataKey="value"
-                  >
-                    {complaintsData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <RechartsTooltip />
-                </PieChart>
+                <LineChart data={incidentTrendsData} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
+                  <XAxis 
+                    dataKey="month" 
+                    tickLine={false} 
+                    axisLine={false} 
+                    tickMargin={8} 
+                    tick={{ fill: '#6B7280', fontSize: 12 }}
+                  />
+                  <YAxis 
+                    tickLine={false} 
+                    axisLine={false} 
+                    tickMargin={8} 
+                    tick={{ fill: '#6B7280', fontSize: 12 }}
+                  />
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
+                  <RechartsTooltip 
+                    contentStyle={{
+                      backgroundColor: '#FFFFFF',
+                      border: '1px solid #E5E7EB',
+                      borderRadius: '8px',
+                      color: '#374151'
+                    }}
+                  />
+                  <RechartsLegend />
+                  <Line type="monotone" dataKey="incidents" stroke="#F59E0B" strokeWidth={2} name="Incidents" />
+                  <Line type="monotone" dataKey="resolutionRate" stroke="#10B981" strokeWidth={2} name="Resolution Rate %" />
+                </LineChart>
               </ResponsiveContainer>
             ) : (
-              <div className="text-center text-gray-500 dark:text-gray-400 py-12">No complaint data available</div>
+              <div className="text-center text-gray-500 dark:text-gray-400 py-12">No incident data available</div>
             )}
           </CardContent>
         </Card>
       </div>
 
-      {/* Yearly Chart and Agent Leaderboard Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Yearly Area Chart */}
+      {/* Yearly Trends */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        {/* Yearly Ticket Trends */}
         <Card className="p-2">
           <CardHeader className="flex flex-col gap-1 pb-1">
             <CardTitle className="font-extrabold text-lg">Tickets per Year</CardTitle>
@@ -589,58 +620,63 @@ const SummaryDashboard = ({ ticketAnalyticsData, filteredTickets }: any) => {
           </CardContent>
         </Card>
 
-        {/* Top Agents Performance */}
+        {/* NCAL Performance */}
         <Card className="p-2">
-          <CardHeader className="pb-1">
-            <CardTitle className="font-extrabold text-lg">Top 5 Agents</CardTitle>
+          <CardHeader className="flex flex-col gap-1 pb-1">
+            <CardTitle className="font-extrabold text-lg">NCAL Performance</CardTitle>
+            <Badge className="bg-purple-600 text-white text-xs px-2 py-0.5 rounded-md w-fit font-semibold">
+              Compliance: {incidentStats.ncalCompliance.toFixed(1)}%
+            </Badge>
           </CardHeader>
-          <CardContent>
-            {agentLeaderboard.slice(0, 5).map((agent, index) => (
-              <div key={agent.agent} className="flex items-center justify-between py-2 border-b border-gray-100 dark:border-gray-800 last:border-b-0">
-                <div className="flex items-center gap-3">
-                  <div className="flex items-center gap-2">
-                    <span className="font-bold text-gray-900 dark:text-gray-100">#{index + 1}</span>
-                    {index < 3 && (
-                      <EmojiEventsIcon 
-                        className={`${index === 0 ? 'text-amber-500' : index === 1 ? 'text-gray-400' : 'text-orange-400'}`} 
-                        sx={{ fontSize: 16 }} 
-                      />
-                    )}
-                  </div>
-                  <div>
-                    <p className="font-semibold text-gray-900 dark:text-gray-100 truncate max-w-[120px]">
-                      {agent.agent}
-                    </p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">
-                      {agent.tickets} tickets • {agent.slaPct.toFixed(1)}% SLA
-                    </p>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <span className={`inline-flex items-center justify-center px-2 py-1 rounded-lg text-xs font-bold min-w-[32px] ${
-                    agent.grade === 'A' 
-                      ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300' 
-                      : agent.grade === 'B' 
-                      ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' 
-                      : agent.grade === 'C' 
-                      ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300'
-                      : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300'
-                  }`}>
-                    {agent.grade}
-                  </span>
-                </div>
-              </div>
-            ))}
-            {agentLeaderboard.length === 0 && (
-              <div className="text-center text-gray-400 dark:text-gray-500 py-8">
-                No agent data available
-              </div>
+          <CardContent className="pl-2">
+            {allIncidents && allIncidents.length > 0 ? (
+              <ResponsiveContainer width="100%" height={260}>
+                <BarChart data={Object.entries(calculateIncidentStats(allIncidents).ncalCounts).map(([ncal, count]) => ({
+                  ncal,
+                  count,
+                                     compliance: allIncidents.filter(inc => {
+                     const incNcal = normalizeNCAL(inc.ncal);
+                     if (incNcal !== ncal) return false;
+                     const duration = inc.durationMin || 0;
+                     const targets: Record<string, number> = { 'NCAL1': 60, 'NCAL2': 120, 'NCAL3': 240, 'NCAL4': 480 };
+                     return duration <= (targets[ncal] || 240);
+                   }).length / (count as number) * 100
+                }))} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
+                  <XAxis 
+                    dataKey="ncal" 
+                    tickLine={false} 
+                    axisLine={false} 
+                    tickMargin={8} 
+                    tick={{ fill: '#6B7280', fontSize: 12 }}
+                  />
+                  <YAxis 
+                    tickLine={false} 
+                    axisLine={false} 
+                    tickMargin={8} 
+                    tick={{ fill: '#6B7280', fontSize: 12 }}
+                  />
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
+                  <RechartsTooltip 
+                    contentStyle={{
+                      backgroundColor: '#FFFFFF',
+                      border: '1px solid #E5E7EB',
+                      borderRadius: '8px',
+                      color: '#374151'
+                    }}
+                  />
+                  <RechartsLegend />
+                  <Bar dataKey="count" fill="#8B5CF6" name="Incidents" />
+                  <Bar dataKey="compliance" fill="#10B981" name="Compliance %" />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="text-center text-gray-500 dark:text-gray-400 py-12">No incident data available</div>
             )}
           </CardContent>
         </Card>
       </div>
 
-      {/* Agent Leaderboard (Full) */}
+      {/* Agent Leaderboard (per Year) */}
       <Card className="p-2">
         <CardHeader className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 pb-1">
           <CardTitle className="font-extrabold text-lg">Agent Leaderboard</CardTitle>
