@@ -377,7 +377,7 @@ const SummaryDashboard = ({ ticketAnalyticsData, filteredTickets }: any) => {
 
   return (
     <PageWrapper>
-      <div className="space-y-8">
+      <div className="space-y-6">
         {/* Header */}
         <div className="text-center space-y-4">
           <h1 className="text-4xl font-bold text-card-foreground">
@@ -512,51 +512,51 @@ const SummaryDashboard = ({ ticketAnalyticsData, filteredTickets }: any) => {
               {filteredMonthlyStatsData && filteredMonthlyStatsData.labels && filteredMonthlyStatsData.labels.length > 0 ? (
                 <div className="aspect-video">
                   <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={toRechartsData(filteredMonthlyStatsData.labels, filteredMonthlyStatsData.datasets)} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
-                  <defs>
-                    <linearGradient id="colorIncoming" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#6366F1" stopOpacity={0.6}/>
-                      <stop offset="95%" stopColor="#6366F1" stopOpacity={0.05}/>
-                    </linearGradient>
-                    <linearGradient id="colorClosed" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#22C55E" stopOpacity={0.6}/>
-                      <stop offset="95%" stopColor="#22C55E" stopOpacity={0.05}/>
-                    </linearGradient>
-                  </defs>
-                  <XAxis 
-                    dataKey="label" 
-                    tickLine={false} 
-                    axisLine={false} 
-                    tickMargin={8} 
-                    minTickGap={24}
-                    tick={{ fill: '#6B7280', fontSize: 12 }}
-                  />
-                  <YAxis 
-                    tickLine={false} 
-                    axisLine={false} 
-                    tickMargin={8} 
-                    minTickGap={24}
-                    tick={{ fill: '#6B7280', fontSize: 12 }}
-                  />
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
-                  <RechartsTooltip 
-                    contentStyle={{
-                      backgroundColor: '#FFFFFF',
-                      border: '1px solid #E5E7EB',
-                      borderRadius: '8px',
-                      color: '#374151'
-                    }}
-                  />
-                  <RechartsLegend />
-                                     <Area type="monotone" dataKey="incoming" stroke="#6366F1" fill="url(#colorIncoming)" name="Incoming Tickets" strokeWidth={1.5} />
-                   <Area type="monotone" dataKey="closed" stroke="#22C55E" fill="url(#colorClosed)" name="Closed Tickets" strokeWidth={1.5} />
-                 </AreaChart>
-               </ResponsiveContainer>
-               </div>
-             ) : (
-               <div className="text-center text-muted-foreground py-12">No data for this chart</div>
-             )}
-          </CardContent>
+                    <AreaChart data={toRechartsData(filteredMonthlyStatsData.labels, filteredMonthlyStatsData.datasets)} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
+                      <defs>
+                        <linearGradient id="colorIncoming" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#6366F1" stopOpacity={0.6}/>
+                          <stop offset="95%" stopColor="#6366F1" stopOpacity={0.05}/>
+                        </linearGradient>
+                        <linearGradient id="colorClosed" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#22C55E" stopOpacity={0.6}/>
+                          <stop offset="95%" stopColor="#22C55E" stopOpacity={0.05}/>
+                        </linearGradient>
+                      </defs>
+                      <XAxis 
+                        dataKey="label" 
+                        tickLine={false} 
+                        axisLine={false} 
+                        tickMargin={8} 
+                        minTickGap={24}
+                        tick={{ fill: '#6B7280', fontSize: 12 }}
+                      />
+                      <YAxis 
+                        tickLine={false} 
+                        axisLine={false} 
+                        tickMargin={8} 
+                        minTickGap={24}
+                        tick={{ fill: '#6B7280', fontSize: 12 }}
+                      />
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
+                      <RechartsTooltip 
+                        contentStyle={{
+                          backgroundColor: '#FFFFFF',
+                          border: '1px solid #E5E7EB',
+                          borderRadius: '8px',
+                          color: '#374151'
+                        }}
+                      />
+                      <RechartsLegend />
+                      <Area type="monotone" dataKey="incoming" stroke="#6366F1" fill="url(#colorIncoming)" name="Incoming Tickets" strokeWidth={1.5} />
+                      <Area type="monotone" dataKey="closed" stroke="#22C55E" fill="url(#colorClosed)" name="Closed Tickets" strokeWidth={1.5} />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+              ) : (
+                <div className="text-center text-muted-foreground py-12">No data for this chart</div>
+              )}
+            </CardContent>
         </Card>
 
         {/* Incident Trends */}
