@@ -43,25 +43,25 @@ export default function AdminRumus() {
             <div className="bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-900/20 dark:to-blue-900/20 rounded-xl p-6 ring-1 ring-green-200 dark:ring-green-800">
               <div className="flex items-center gap-3 mb-4">
                 <Badge className="bg-green-600 text-white px-3 py-1">Latest</Badge>
-                <span className="text-sm font-medium text-green-700 dark:text-green-300">v2.2.0 - Analytics Enhancement & Cross-Browser Persistence</span>
+                <span className="text-sm font-medium text-green-700 dark:text-green-300">v2.3.0 - Summary Dashboard Enhancement & Visual Optimization</span>
                 <span className="text-xs text-muted-foreground">December 2024</span>
             </div>
-                <h4 className="font-bold text-lg text-card-foreground mb-4">Major Analytics Improvements & Cross-Browser Data Persistence</h4>
+                <h4 className="font-bold text-lg text-card-foreground mb-4">Summary Dashboard Enhancement & Visual Optimization</h4>
               
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Analytics Improvements */}
+                {/* Dashboard Enhancements */}
                 <div className="space-y-4">
                   <h5 className="font-semibold text-card-foreground flex items-center gap-2">
-                    <TrendingUpIcon className="text-blue-600" />
-                    Analytics Enhancements
+                    <DashboardIcon className="text-blue-600" />
+                    Summary Dashboard Enhancements
                   </h5>
                   <ul className="space-y-2 text-sm text-muted-foreground">
-                    <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Cross-Browser Persistence:</strong> All analytics calculations moved to in-memory processing</li>
-                    <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Centralized Utils:</strong> Created incidentUtils.ts for shared calculation logic</li>
-                    <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>TS Analytics Fix:</strong> Fixed vendor duration calculation and timestamp mapping</li>
-                    <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Visual Alerts:</strong> Added red color coding for cases exceeding targets</li>
-                    <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>NCAL Duration Trends:</strong> New chart showing net duration trends by NCAL level</li>
-                    <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Real-time Analytics:</strong> Instant data updates without IndexedDB dependency</li>
+                    <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Layout Optimization:</strong> Changed to 2 rows with 6 cards each for better space utilization</li>
+                    <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Agent Leaderboard Redesign:</strong> Transformed from table to card-based grid with 5 agents per row</li>
+                    <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Chart Improvements:</strong> Enhanced Incident Trends with dual Y-axis and NCAL Performance with rounded bars</li>
+                    <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Visual Consistency:</strong> Standardized font sizes, colors, and spacing across all elements</li>
+                    <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Typography Optimization:</strong> Reduced title sizes and improved text hierarchy</li>
+                    <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Color Refinement:</strong> Softened Agent Leaderboard colors for professional appearance</li>
                 </ul>
               </div>
           
@@ -72,12 +72,12 @@ export default function AdminRumus() {
                     Technical Improvements
                   </h5>
                   <ul className="space-y-2 text-sm text-muted-foreground">
-                    <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Duration Calculation:</strong> Fixed double-subtract issue in vendor duration</li>
-                    <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Timestamp Mapping:</strong> Enhanced pause/restart field mapping</li>
-                    <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>TypeScript Fixes:</strong> Resolved all unused variable and import errors</li>
-                    <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Data Consistency:</strong> Improved data handling across all analytics pages</li>
-                    <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Performance:</strong> Optimized calculation speed and memory usage</li>
-                    <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Error Handling:</strong> Better NaN/undefined value handling in charts</li>
+                    <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>TypeScript Optimization:</strong> Fixed unused parameters in chart legends</li>
+                    <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Chart Performance:</strong> Optimized chart rendering and data processing</li>
+                    <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Responsive Design:</strong> Improved mobile and tablet layout compatibility</li>
+                    <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Code Cleanup:</strong> Removed unused imports and optimized component structure</li>
+                    <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Visual Consistency:</strong> Standardized styling across all dashboard elements</li>
+                    <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Performance:</strong> Enhanced loading speed and user experience</li>
                 </ul>
                 </div>
               </div>
@@ -1629,7 +1629,83 @@ export default function AdminRumus() {
                 </div>
               </div>
 
-                        {/* 9. Site Analytics Page - Advanced Web Performance & User Behavior */}
+                        {/* 9. Summary Dashboard - Comprehensive Overview & Visual Optimization */}
+            <div className="space-y-4">
+              <h5 className="font-semibold text-card-foreground text-lg">Summary Dashboard - Comprehensive Overview</h5>
+              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 ring-1 ring-blue-200 dark:ring-blue-800 rounded-lg p-6">
+                <div className="space-y-4 text-sm">
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div>
+                      <h6 className="font-semibold text-blue-800 dark:text-blue-200 mb-3">📊 Layout & Structure Optimization</h6>
+                      <div className="bg-white dark:bg-gray-800 rounded p-3 text-xs">
+                        <div><strong>Summary Cards Layout:</strong></div>
+                        <div className="ml-2">
+                          <div>• Changed from 3 rows (4-4-4) to 2 rows (6-6)</div>
+                          <div>• Responsive grid: 1→2→3→6 columns</div>
+                          <div>• Compact gap: 4px for better space utilization</div>
+                          <div>• Professional appearance with balanced distribution</div>
+                        </div>
+                        <div className="mt-2"><strong>Agent Leaderboard Redesign:</strong></div>
+                        <div className="ml-2">
+                          <div>• Transformed from table to card-based grid</div>
+                          <div>• 5 agents per row layout (lg:grid-cols-5)</div>
+                          <div>• Compact card design with optimized spacing</div>
+                          <div>• Enhanced visual hierarchy and readability</div>
+                        </div>
+                      </div>
+                    </div>
+                    <div>
+                      <h6 className="font-semibold text-blue-800 dark:text-blue-200 mb-3">🎨 Visual Consistency & Typography</h6>
+                      <div className="bg-white dark:bg-gray-800 rounded p-3 text-xs">
+                        <div><strong>Typography Optimization:</strong></div>
+                        <div className="ml-2">
+                          <div>• Title font: font-extrabold → font-semibold</div>
+                          <div>• Title size: text-lg → text-base</div>
+                          <div>• Badge padding: px-2 → px-1.5</div>
+                          <div>• Legend font size: 12px → 10px</div>
+                        </div>
+                        <div className="mt-2"><strong>Color Refinement:</strong></div>
+                        <div className="ml-2">
+                          <div>• 1st Place: amber-500 → orange-600</div>
+                          <div>• 2nd Place: slate-400 → gray-500</div>
+                          <div>• 3rd Place: amber-600 → orange-500</div>
+                          <div>• Trophy icons: softer colors (100 instead of 200)</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <h6 className="font-semibold text-blue-800 dark:text-blue-200 mb-3">📈 Chart Enhancements & Performance</h6>
+                    <div className="bg-gray-50 dark:bg-gray-800 rounded p-3 text-xs">
+                      <div><strong>Incident Trends Chart:</strong></div>
+                      <div className="ml-2">
+                        <div>• Dual Y-axis: Incidents (left) + Resolution Rate % (right)</div>
+                        <div>• Custom tooltip with formatted values</div>
+                        <div>• Line thickness: 3px → 2px, dots: r4 → r2</div>
+                        <div>• Enhanced legend with consistent styling</div>
+                      </div>
+                      <div className="mt-2"><strong>NCAL Performance Chart:</strong></div>
+                      <div className="ml-2">
+                        <div>• Rounded bars: radius={[4, 4, 0, 0]}</div>
+                        <div>• Gradient fills: Purple and Green gradients</div>
+                        <div>• Custom tooltip with color-coded indicators</div>
+                        <div>• Professional appearance with visual depth</div>
+                      </div>
+                      <div className="mt-2"><strong>Technical Improvements:</strong></div>
+                      <div className="ml-2">
+                        <div>• Fixed TypeScript errors (unused parameters)</div>
+                        <div>• Optimized chart rendering performance</div>
+                        <div>• Consistent legend styling across all charts</div>
+                        <div>• Better responsive design compatibility</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+                        {/* 10. Site Analytics Page - Advanced Web Performance & User Behavior */}
             <div className="space-y-4">
               <h5 className="font-semibold text-card-foreground text-lg">Site Analytics Page - Advanced Monitoring</h5>
               <div className="bg-gradient-to-r from-cyan-50 to-sky-50 dark:from-cyan-900/20 dark:to-sky-900/20 ring-1 ring-cyan-200 dark:ring-cyan-800 rounded-lg p-6">
@@ -1708,7 +1784,7 @@ export default function AdminRumus() {
                   </div>
                 </div>
             
-            {/* 10. Master Data Pages - Advanced Data Governance & Quality Management */}
+            {/* 11. Master Data Pages - Advanced Data Governance & Quality Management */}
           <div className="space-y-4">
                               <h5 className="font-semibold text-card-foreground text-lg"><StorageIcon className="w-6 h-6 inline mr-2" /> Master Data Pages - Advanced Management</h5>
               <div className="bg-gradient-to-r from-gray-50 to-slate-50 dark:from-gray-800 dark:to-slate-800 ring-1 ring-gray-200 dark:ring-gray-700 rounded-lg p-6">
