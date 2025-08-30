@@ -698,7 +698,7 @@ const SummaryDashboard = ({ ticketAnalyticsData, filteredTickets }: any) => {
         </Card>
       </div>
 
-      {/* Enhanced Agent Leaderboard (per Year) */}
+      {/* Enhanced Agent Leaderboard - Card Layout */}
       <Card className="p-2">
         <CardHeader className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 pb-1">
           <CardTitle className="font-extrabold text-lg">Agent Leaderboard</CardTitle>
@@ -714,102 +714,168 @@ const SummaryDashboard = ({ ticketAnalyticsData, filteredTickets }: any) => {
             </select>
           </div>
         </CardHeader>
-        <CardContent className="p-0">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="sticky top-0 bg-white/95 dark:bg-zinc-900/95 backdrop-blur ring-b-1 ring-gray-100 dark:ring-zinc-800">
-                <tr>
-                  <th className="px-4 py-3 text-left font-semibold text-gray-700 dark:text-gray-300 w-16">Rank</th>
-                  <th className="px-4 py-3 text-left font-semibold text-gray-700 dark:text-gray-300 min-w-[220px]">Agent</th>
-                  <th className="px-4 py-3 text-right font-semibold text-gray-700 dark:text-gray-300 w-20">Tickets</th>
-                  <th className="px-4 py-3 text-right font-semibold text-gray-700 dark:text-gray-300 w-20">SLA%</th>
-                  <th className="px-4 py-3 text-right font-semibold text-gray-700 dark:text-gray-300 w-24">Avg FRT</th>
-                  <th className="px-4 py-3 text-right font-semibold text-gray-700 dark:text-gray-300 w-24">Avg ART</th>
-                  <th className="px-4 py-3 text-right font-semibold text-gray-700 dark:text-gray-300 w-20">Score</th>
-                  <th className="px-4 py-3 text-right font-semibold text-gray-700 dark:text-gray-300 w-16">Grade</th>
-                </tr>
-              </thead>
-              <tbody>
-                {agentLeaderboard.map((row, i)=> (
-                  <tr key={row.agent} className="border-b border-gray-50 dark:border-zinc-800/50 hover:bg-blue-50/30 dark:hover:bg-blue-900/10 transition-colors duration-200">
-                    <td className="px-4 py-3 flex items-center gap-2">
-                      <span className="font-bold text-gray-900 dark:text-gray-100">#{i+1}</span>
-                      {i < 3 && (
-                        <EmojiEventsIcon 
-                          className={`${i === 0 ? 'text-amber-500' : i === 1 ? 'text-gray-400' : 'text-orange-400'}`} 
-                          sx={{ fontSize: 18 }} 
-                        />
-                      )}
-                    </td>
-                    <td className="px-4 py-3 flex items-center gap-3">
-                      {/* Agent Photo/Avatar */}
-                      <Avatar className="w-10 h-10 border-2 border-gray-200 dark:border-gray-700">
-                        <AvatarImage 
-                          src={getAgentPhotoPath(row.agent)} 
-                          alt={row.agent}
-                          className="object-cover"
-                        />
-                        <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white font-semibold text-sm">
-                          {getAgentInitials(row.agent)}
-                        </AvatarFallback>
-                      </Avatar>
-                      {/* Agent Name */}
-                      <div className="flex flex-col">
-                        <span className="font-semibold text-gray-900 dark:text-gray-100 truncate max-w-[140px]">
-                          {row.agent}
-                        </span>
-                        <span className="text-xs text-gray-500 dark:text-gray-400">
-                          {row.tickets} tickets • {row.slaPct.toFixed(1)}% SLA
-                        </span>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 text-right font-mono text-gray-900 dark:text-gray-100">
+        <CardContent className="p-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {agentLeaderboard.map((row, i) => (
+              <div 
+                key={row.agent} 
+                className={`relative bg-gradient-to-br rounded-2xl p-6 shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:scale-105 cursor-pointer ${
+                  i === 0 
+                    ? 'from-amber-400 to-yellow-500 text-white' 
+                    : i === 1 
+                    ? 'from-gray-400 to-gray-500 text-white'
+                    : i === 2 
+                    ? 'from-orange-400 to-red-500 text-white'
+                    : 'from-white to-gray-50 dark:from-zinc-800 dark:to-zinc-700 text-gray-900 dark:text-gray-100'
+                }`}
+              >
+                {/* Rank Badge */}
+                <div className="absolute top-4 right-4 flex items-center gap-1">
+                  <span className="font-bold text-lg">#{i+1}</span>
+                  {i < 3 && (
+                    <EmojiEventsIcon 
+                      className={`${i === 0 ? 'text-amber-200' : i === 1 ? 'text-gray-200' : 'text-orange-200'}`} 
+                      sx={{ fontSize: 20 }} 
+                    />
+                  )}
+                </div>
+
+                {/* Agent Info */}
+                <div className="flex items-center gap-4 mb-4">
+                  <Avatar className={`w-16 h-16 border-4 ${
+                    i < 3 ? 'border-white/30' : 'border-gray-200 dark:border-gray-600'
+                  }`}>
+                    <AvatarImage 
+                      src={getAgentPhotoPath(row.agent)} 
+                      alt={row.agent}
+                      className="object-cover"
+                    />
+                    <AvatarFallback className={`font-bold text-lg ${
+                      i < 3 ? 'bg-white/20 text-white' : 'bg-gradient-to-br from-blue-500 to-purple-600 text-white'
+                    }`}>
+                      {getAgentInitials(row.agent)}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1">
+                    <h3 className={`font-bold text-lg truncate ${
+                      i < 3 ? 'text-white' : 'text-gray-900 dark:text-gray-100'
+                    }`}>
+                      {row.agent}
+                    </h3>
+                    <p className={`text-sm opacity-80 ${
+                      i < 3 ? 'text-white/80' : 'text-gray-500 dark:text-gray-400'
+                    }`}>
+                      {row.tickets} tickets • {row.slaPct.toFixed(1)}% SLA
+                    </p>
+                  </div>
+                </div>
+
+                {/* Performance Metrics */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="text-center">
+                    <div className={`text-2xl font-bold ${
+                      i < 3 ? 'text-white' : 'text-gray-900 dark:text-gray-100'
+                    }`}>
                       {row.tickets.toLocaleString()}
-                    </td>
-                    <td className="px-4 py-3 text-right font-mono text-gray-900 dark:text-gray-100">
-                      <span className={`${row.slaPct >= 85 ? 'text-green-600 dark:text-green-400' : row.slaPct >= 70 ? 'text-yellow-600 dark:text-yellow-400' : 'text-red-600 dark:text-red-400'} font-semibold`}>
-                        {row.slaPct.toFixed(1)}%
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-right font-mono text-gray-900 dark:text-gray-100">
-                      <span className={`${row.frtAvg <= 60 ? 'text-green-600 dark:text-green-400' : row.frtAvg <= 120 ? 'text-yellow-600 dark:text-yellow-400' : 'text-red-600 dark:text-red-400'} font-semibold`}>
-                        {row.frtAvg.toFixed(1)}m
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-right font-mono text-gray-900 dark:text-gray-100">
-                      <span className={`${row.artAvg <= 1440 ? 'text-green-600 dark:text-green-400' : row.artAvg <= 2880 ? 'text-yellow-600 dark:text-yellow-400' : 'text-red-600 dark:text-red-400'} font-semibold`}>
-                        {row.artAvg.toFixed(1)}m
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-right font-mono text-gray-900 dark:text-gray-100">
-                      <span className={`${row.score >= 80 ? 'text-green-600 dark:text-green-400' : row.score >= 60 ? 'text-yellow-600 dark:text-yellow-400' : 'text-red-600 dark:text-red-400'} font-semibold`}>
-                        {row.score.toFixed(1)}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      <span className={`inline-flex items-center justify-center px-2.5 py-1 rounded-lg text-xs font-bold min-w-[32px] ${
-                        row.grade === 'A' 
-                          ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300' 
-                          : row.grade === 'B' 
-                          ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' 
-                          : row.grade === 'C' 
-                          ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300'
-                          : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300'
-                      }`}>
-                        {row.grade}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-                {agentLeaderboard.length === 0 && (
-                  <tr>
-                    <td colSpan={8} className="px-4 py-8 text-center text-gray-400 dark:text-gray-500">
-                      No data available for selected year
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
+                    </div>
+                    <div className={`text-xs opacity-80 ${
+                      i < 3 ? 'text-white/80' : 'text-gray-500 dark:text-gray-400'
+                    }`}>
+                      Tickets
+                    </div>
+                  </div>
+                  <div className="text-center">
+                    <div className={`text-2xl font-bold ${
+                      row.slaPct >= 85 ? 'text-green-500' : row.slaPct >= 70 ? 'text-yellow-500' : 'text-red-500'
+                    }`}>
+                      {row.slaPct.toFixed(1)}%
+                    </div>
+                    <div className={`text-xs opacity-80 ${
+                      i < 3 ? 'text-white/80' : 'text-gray-500 dark:text-gray-400'
+                    }`}>
+                      SLA
+                    </div>
+                  </div>
+                  <div className="text-center">
+                    <div className={`text-lg font-bold ${
+                      row.frtAvg <= 60 ? 'text-green-500' : row.frtAvg <= 120 ? 'text-yellow-500' : 'text-red-500'
+                    }`}>
+                      {row.frtAvg.toFixed(0)}m
+                    </div>
+                    <div className={`text-xs opacity-80 ${
+                      i < 3 ? 'text-white/80' : 'text-gray-500 dark:text-gray-400'
+                    }`}>
+                      FRT
+                    </div>
+                  </div>
+                  <div className="text-center">
+                    <div className={`text-lg font-bold ${
+                      row.artAvg <= 1440 ? 'text-green-500' : row.artAvg <= 2880 ? 'text-yellow-500' : 'text-red-500'
+                    }`}>
+                      {row.artAvg.toFixed(0)}m
+                    </div>
+                    <div className={`text-xs opacity-80 ${
+                      i < 3 ? 'text-white/80' : 'text-gray-500 dark:text-gray-400'
+                    }`}>
+                      ART
+                    </div>
+                  </div>
+                </div>
+
+                {/* Score & Grade */}
+                <div className="mt-4 flex items-center justify-between">
+                  <div className="text-center">
+                    <div className={`text-xl font-bold ${
+                      row.score >= 80 ? 'text-green-500' : row.score >= 60 ? 'text-yellow-500' : 'text-red-500'
+                    }`}>
+                      {row.score.toFixed(1)}
+                    </div>
+                    <div className={`text-xs opacity-80 ${
+                      i < 3 ? 'text-white/80' : 'text-gray-500 dark:text-gray-400'
+                    }`}>
+                      Score
+                    </div>
+                  </div>
+                  <div className="text-center">
+                    <span className={`inline-flex items-center justify-center w-12 h-12 rounded-full text-lg font-bold ${
+                      row.grade === 'A' 
+                        ? 'bg-green-500 text-white' 
+                        : row.grade === 'B' 
+                        ? 'bg-blue-500 text-white' 
+                        : row.grade === 'C' 
+                        ? 'bg-yellow-500 text-white'
+                        : 'bg-red-500 text-white'
+                    }`}>
+                      {row.grade}
+                    </span>
+                    <div className={`text-xs opacity-80 mt-1 ${
+                      i < 3 ? 'text-white/80' : 'text-gray-500 dark:text-gray-400'
+                    }`}>
+                      Grade
+                    </div>
+                  </div>
+                </div>
+
+                {/* Performance Bar */}
+                <div className="mt-4">
+                  <div className={`w-full bg-opacity-20 rounded-full h-2 ${
+                    i < 3 ? 'bg-white/30' : 'bg-gray-200 dark:bg-gray-600'
+                  }`}>
+                    <div 
+                      className={`h-2 rounded-full transition-all duration-500 ${
+                        row.score >= 80 ? 'bg-green-500' : row.score >= 60 ? 'bg-yellow-500' : 'bg-red-500'
+                      }`}
+                      style={{ width: `${Math.min(row.score, 100)}%` }}
+                    ></div>
+                  </div>
+                </div>
+              </div>
+            ))}
+            {agentLeaderboard.length === 0 && (
+              <div className="col-span-full text-center py-12 text-gray-400 dark:text-gray-500">
+                No data available for selected year
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
