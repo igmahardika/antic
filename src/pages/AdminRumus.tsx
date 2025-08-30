@@ -6,7 +6,7 @@ import BugReportIcon from '@mui/icons-material/BugReport';
 import SpeedIcon from '@mui/icons-material/Speed';
 import PaletteIcon from '@mui/icons-material/Palette';
 import CodeIcon from '@mui/icons-material/Code';
-import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
+
 import StorageIcon from '@mui/icons-material/Storage';
 import LightbulbIcon from '@mui/icons-material/Lightbulb';
 import DashboardIcon from '@mui/icons-material/Dashboard';
@@ -51,11 +51,11 @@ export default function AdminRumus() {
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Dashboard Enhancements */}
                 <div className="space-y-4">
-                  <h5 className="font-semibold text-card-foreground flex items-center gap-2">
+                  <h5 className="font-semibold text-sm text-card-foreground flex items-center gap-2">
                     <DashboardIcon className="text-blue-600" />
                     Summary Dashboard Enhancements
                   </h5>
-                  <ul className="space-y-2 text-sm text-muted-foreground">
+                  <ul className="space-y-2 text-xs text-muted-foreground">
                     <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Layout Optimization:</strong> Changed to 2 rows with 6 cards each for better space utilization</li>
                     <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Agent Leaderboard Redesign:</strong> Transformed from table to card-based grid with 5 agents per row</li>
                     <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Chart Improvements:</strong> Enhanced Incident Trends with dual Y-axis and NCAL Performance with rounded bars</li>
@@ -67,11 +67,11 @@ export default function AdminRumus() {
           
                 {/* Technical Improvements */}
                 <div className="space-y-4">
-                  <h5 className="font-semibold text-card-foreground flex items-center gap-2">
+                  <h5 className="font-semibold text-sm text-card-foreground flex items-center gap-2">
                     <CodeIcon className="text-purple-600" />
                     Technical Improvements
                   </h5>
-                  <ul className="space-y-2 text-sm text-muted-foreground">
+                  <ul className="space-y-2 text-xs text-muted-foreground">
                     <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>TypeScript Optimization:</strong> Fixed unused parameters in chart legends</li>
                     <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Chart Performance:</strong> Optimized chart rendering and data processing</li>
                     <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Responsive Design:</strong> Improved mobile and tablet layout compatibility</li>
@@ -85,7 +85,7 @@ export default function AdminRumus() {
           
             {/* Previous Updates - Combined Summary & Details */}
             <div className="space-y-6">
-              <h5 className="font-semibold text-card-foreground">Previous Updates</h5>
+              <h5 className="font-semibold text-sm text-card-foreground">Previous Updates</h5>
               
               {/* v2.2.0 Details */}
               <div className="bg-gradient-to-r from-orange-50 to-amber-50 dark:from-orange-900/20 dark:to-amber-900/20 rounded-xl p-6 ring-1 ring-orange-200 dark:ring-orange-800">
@@ -96,7 +96,7 @@ export default function AdminRumus() {
                 </div>
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   <div className="space-y-4">
-                    <h6 className="font-semibold text-card-foreground flex items-center gap-2">
+                    <h6 className="font-semibold text-xs text-card-foreground flex items-center gap-2">
                       <TrendingUpIcon className="text-orange-600" />
                       Analytics Enhancements
                     </h6>
@@ -110,7 +110,7 @@ export default function AdminRumus() {
                     </ul>
                   </div>
                   <div className="space-y-4">
-                    <h6 className="font-semibold text-card-foreground flex items-center gap-2">
+                    <h6 className="font-semibold text-xs text-card-foreground flex items-center gap-2">
                       <CodeIcon className="text-purple-600" />
                       Technical Improvements
                     </h6>
@@ -135,7 +135,7 @@ export default function AdminRumus() {
                 </div>
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   <div className="space-y-4">
-                    <h6 className="font-semibold text-card-foreground flex items-center gap-2">
+                    <h6 className="font-semibold text-xs text-card-foreground flex items-center gap-2">
                       <PaletteIcon className="text-purple-600" />
                       UI/UX Enhancements
                     </h6>
@@ -149,7 +149,7 @@ export default function AdminRumus() {
                     </ul>
                   </div>
                   <div className="space-y-4">
-                    <h6 className="font-semibold text-card-foreground flex items-center gap-2">
+                    <h6 className="font-semibold text-xs text-card-foreground flex items-center gap-2">
                       <SpeedIcon className="text-blue-600" />
                       Performance & Optimization
                     </h6>
@@ -174,7 +174,7 @@ export default function AdminRumus() {
                 </div>
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   <div className="space-y-4">
-                    <h6 className="font-semibold text-card-foreground flex items-center gap-2">
+                    <h6 className="font-semibold text-xs text-card-foreground flex items-center gap-2">
                       <FileDownloadIcon className="text-green-600" />
                       Export Features
                     </h6>
@@ -188,7 +188,7 @@ export default function AdminRumus() {
                     </ul>
                   </div>
                   <div className="space-y-4">
-                    <h6 className="font-semibold text-card-foreground flex items-center gap-2">
+                    <h6 className="font-semibold text-xs text-card-foreground flex items-center gap-2">
                       <DashboardIcon className="text-blue-600" />
                       Analytics Enhancements
                     </h6>
@@ -213,7 +213,7 @@ export default function AdminRumus() {
                 </div>
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   <div className="space-y-4">
-                    <h6 className="font-semibold text-card-foreground flex items-center gap-2">
+                    <h6 className="font-semibold text-xs text-card-foreground flex items-center gap-2">
                       <CodeIcon className="text-purple-600" />
                       TypeScript Implementation
                     </h6>
@@ -227,7 +227,7 @@ export default function AdminRumus() {
                     </ul>
                   </div>
                   <div className="space-y-4">
-                    <h6 className="font-semibold text-card-foreground flex items-center gap-2">
+                    <h6 className="font-semibold text-xs text-card-foreground flex items-center gap-2">
                       <SecurityIcon className="text-red-600" />
                       Security & Stability
                     </h6>
@@ -252,7 +252,7 @@ export default function AdminRumus() {
                 </div>
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   <div className="space-y-4">
-                    <h6 className="font-semibold text-card-foreground flex items-center gap-2">
+                    <h6 className="font-semibold text-xs text-card-foreground flex items-center gap-2">
                       <TrendingUpIcon className="text-orange-600" />
                       Analytics Features
                     </h6>
@@ -266,7 +266,7 @@ export default function AdminRumus() {
                     </ul>
                   </div>
                   <div className="space-y-4">
-                    <h6 className="font-semibold text-card-foreground flex items-center gap-2">
+                    <h6 className="font-semibold text-xs text-card-foreground flex items-center gap-2">
                       <BalanceIcon className="text-blue-600" />
                       Data Management
                     </h6>
@@ -296,11 +296,11 @@ export default function AdminRumus() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* UI/UX Improvements */}
                 <div className="space-y-4">
-                  <h5 className="font-semibold text-card-foreground flex items-center gap-2">
+                  <h5 className="font-semibold text-xs text-card-foreground flex items-center gap-2">
                     <PaletteIcon className="text-purple-600" />
                     UI/UX Enhancements
                   </h5>
-                  <ul className="space-y-2 text-sm text-muted-foreground">
+                  <ul className="space-y-2 text-xs text-muted-foreground">
                     <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Sidebar Navigation:</strong> Added shadcn-ui sidebar with collapsible menus</li>
                     <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Dark Mode:</strong> Comprehensive dark mode with smooth transitions</li>
                     <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Layout Consistency:</strong> PageWrapper component for uniform layout</li>
@@ -312,11 +312,11 @@ export default function AdminRumus() {
 
                 {/* Performance Optimizations */}
                 <div className="space-y-4">
-                  <h5 className="font-semibold text-card-foreground flex items-center gap-2">
+                  <h5 className="font-semibold text-xs text-card-foreground flex items-center gap-2">
                     <SpeedIcon className="text-blue-600" />
                     Performance & Optimization
                   </h5>
-                  <ul className="space-y-2 text-sm text-muted-foreground">
+                  <ul className="space-y-2 text-xs text-muted-foreground">
                     <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Bundle Size:</strong> Removed 20+ unused dependencies</li>
                     <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Build Time:</strong> Faster compilation and build process</li>
                     <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Memory Usage:</strong> Optimized component re-rendering</li>
@@ -333,11 +333,11 @@ export default function AdminRumus() {
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Code Quality */}
             <div className="space-y-4">
-                  <h5 className="font-semibold text-card-foreground flex items-center gap-2">
+                  <h5 className="font-semibold text-xs text-card-foreground flex items-center gap-2">
                     <CodeIcon className="text-indigo-600" />
                     Code Quality & Maintenance
                   </h5>
-                  <ul className="space-y-2 text-sm text-muted-foreground">
+                  <ul className="space-y-2 text-xs text-muted-foreground">
                     <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>TypeScript:</strong> Fixed all TypeScript errors and unused imports</li>
                     <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>ESLint:</strong> Clean linting with no warnings</li>
                     <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Code Organization:</strong> Better file structure and imports</li>
@@ -349,11 +349,11 @@ export default function AdminRumus() {
 
                 {/* Bug Fixes */}
                 <div className="space-y-4">
-                  <h5 className="font-semibold text-card-foreground flex items-center gap-2">
+                  <h5 className="font-semibold text-xs text-card-foreground flex items-center gap-2">
                     <BugReportIcon className="text-red-600" />
                     Bug Fixes & Improvements
                   </h5>
-                  <ul className="space-y-2 text-sm text-muted-foreground">
+                  <ul className="space-y-2 text-xs text-muted-foreground">
                     <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Dark Mode:</strong> Fixed color inconsistencies across all pages</li>
                     <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Layout Issues:</strong> Resolved table overflow and boundary problems</li>
                     <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Theme Transitions:</strong> Smooth theme switching without flickering</li>
@@ -367,9 +367,9 @@ export default function AdminRumus() {
 
             {/* Detailed Changes */}
             <div className="space-y-4">
-              <h5 className="font-semibold text-card-foreground">Detailed Changes Summary</h5>
+              <h5 className="font-semibold text-xs text-card-foreground">Detailed Changes Summary</h5>
               <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
-                <div className="text-sm space-y-2">
+                <div className="text-xs space-y-2">
                   <div><strong>Files Modified:</strong> 42 files with significant improvements</div>
                   <div><strong>Lines Added:</strong> 1,968 insertions for new features</div>
                   <div><strong>Lines Removed:</strong> 1,892 deletions for cleanup</div>
@@ -392,7 +392,7 @@ export default function AdminRumus() {
           <div className="space-y-6">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               <div className="space-y-4">
-                <h5 className="font-semibold text-card-foreground">Core Features</h5>
+                <h5 className="font-semibold text-sm text-card-foreground">Core Features</h5>
                 <p className="text-sm text-muted-foreground">
                   Advanced helpdesk management system with comprehensive analytics, 
                   real-time monitoring, and intelligent reporting capabilities.
@@ -406,7 +406,7 @@ export default function AdminRumus() {
                 </div>
 
               <div className="space-y-4">
-                <h5 className="font-semibold text-card-foreground">Analytics Engine</h5>
+                <h5 className="font-semibold text-sm text-card-foreground">Analytics Engine</h5>
                 <p className="text-sm text-muted-foreground">
                   Powerful analytics engine with advanced algorithms for performance 
                   measurement, trend analysis, and predictive insights.
@@ -420,7 +420,7 @@ export default function AdminRumus() {
               </div>
               
               <div className="space-y-4">
-                <h5 className="font-semibold text-card-foreground">Data Management</h5>
+                <h5 className="font-semibold text-sm text-card-foreground">Data Management</h5>
                 <p className="text-sm text-muted-foreground">
                   Robust data management system with secure storage, backup capabilities, 
                   and efficient data processing pipelines.
@@ -435,7 +435,7 @@ export default function AdminRumus() {
             </div>
 
             <div className="space-y-4">
-              <h5 className="font-semibold text-card-foreground">System Architecture</h5>
+              <h5 className="font-semibold text-sm text-card-foreground">System Architecture</h5>
               <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
                 <div className="text-sm space-y-2">
                   <div><strong>Frontend:</strong> React 18 with TypeScript, Vite build system</div>
@@ -460,7 +460,7 @@ export default function AdminRumus() {
         <div className="space-y-6">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="space-y-4">
-                <h5 className="font-semibold text-card-foreground">Master Data</h5>
+                <h5 className="font-semibold text-sm text-card-foreground">Master Data</h5>
                 <p className="text-sm text-muted-foreground">
                 Centralized data management for system configuration, 
                 reference data, and organizational structure.
@@ -474,7 +474,7 @@ export default function AdminRumus() {
           </div>
 
             <div className="space-y-4">
-                <h5 className="font-semibold text-card-foreground">Agent Data</h5>
+                <h5 className="font-semibold text-sm text-card-foreground">Agent Data</h5>
                 <p className="text-sm text-muted-foreground">
                 Comprehensive agent profile management with performance history, 
                 skills tracking, and training records.
@@ -488,7 +488,7 @@ export default function AdminRumus() {
                     </div>
 
             <div className="space-y-4">
-                <h5 className="font-semibold text-card-foreground">Customer Data</h5>
+                <h5 className="font-semibold text-sm text-card-foreground">Customer Data</h5>
                 <p className="text-sm text-muted-foreground">
                 Customer relationship management with interaction history, 
                 preferences, and service level agreements.
@@ -513,7 +513,7 @@ export default function AdminRumus() {
           <div className="space-y-6">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div className="space-y-4">
-                <h5 className="font-semibold text-card-foreground">Performance Optimization</h5>
+                <h5 className="font-semibold text-sm text-card-foreground">Performance Optimization</h5>
                 <ul className="space-y-2 text-sm text-muted-foreground">
                   <li>• React.memo for component optimization</li>
                   <li>• useMemo and useCallback hooks</li>
@@ -525,7 +525,7 @@ export default function AdminRumus() {
                 </div>
 
               <div className="space-y-4">
-                <h5 className="font-semibold text-card-foreground">Data Processing</h5>
+                <h5 className="font-semibold text-sm text-card-foreground">Data Processing</h5>
                 <ul className="space-y-2 text-sm text-muted-foreground">
                   <li>• Real-time data aggregation</li>
                   <li>• Efficient filtering algorithms</li>
@@ -538,7 +538,7 @@ export default function AdminRumus() {
                 </div>
 
             <div className="space-y-4">
-              <h5 className="font-semibold text-card-foreground">Development Guidelines</h5>
+              <h5 className="font-semibold text-sm text-card-foreground">Development Guidelines</h5>
               <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
                 <div className="text-sm space-y-2">
                   <div><strong>Code Style:</strong> ESLint + Prettier configuration</div>
@@ -564,12 +564,12 @@ export default function AdminRumus() {
             <div className="space-y-8">
               {/* Dashboard Metrics */}
               <div className="space-y-4">
-                <h5 className="font-semibold text-card-foreground text-lg">Dashboard Page - Key Performance Indicators</h5>
+                <h5 className="font-semibold text-card-foreground text-sm">Dashboard Page - Key Performance Indicators</h5>
                 <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 ring-1 ring-blue-200 dark:ring-blue-800 rounded-lg p-6">
                   <div className="space-y-4 text-sm">
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div>
-                        <h6 className="font-semibold text-blue-800 dark:text-blue-200 mb-3">First Call Resolution (FCR)</h6>
+                        <h6 className="font-semibold text-xs text-blue-800 dark:text-blue-200 mb-3">First Call Resolution (FCR)</h6>
                         <div className="bg-white dark:bg-gray-800 rounded p-3 text-xs">
                           <div><strong>Formula:</strong></div>
                           <div className="ml-2 font-mono">FCR = (Tickets Resolved on First Call / Total Tickets) × 100%</div>
@@ -589,7 +589,7 @@ export default function AdminRumus() {
                   </div>
                       </div>
                     <div>
-                        <h6 className="font-semibold text-blue-800 dark:text-blue-200 mb-3">Average Resolution Time (ART)</h6>
+                        <h6 className="font-semibold text-xs text-blue-800 dark:text-blue-200 mb-3">Average Resolution Time (ART)</h6>
                         <div className="bg-white dark:bg-gray-800 rounded p-3 text-xs">
                           <div><strong>Formula:</strong></div>
                           <div className="ml-2 font-mono">ART = Σ(Resolution Time) / Number of Resolved Tickets</div>
@@ -612,7 +612,7 @@ export default function AdminRumus() {
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <div>
-                        <h6 className="font-semibold text-blue-800 dark:text-blue-200 mb-3">Customer Satisfaction Score (CSAT)</h6>
+                        <h6 className="font-semibold text-xs text-blue-800 dark:text-blue-200 mb-3">Customer Satisfaction Score (CSAT)</h6>
                         <div className="bg-white dark:bg-gray-800 rounded p-3 text-xs">
                           <div><strong>Formula:</strong></div>
                           <div className="ml-2 font-mono">CSAT = (Satisfied Responses / Total Responses) × 100%</div>
@@ -632,7 +632,7 @@ export default function AdminRumus() {
             </div>
                 </div>
                     <div>
-                        <h6 className="font-semibold text-blue-800 dark:text-blue-200 mb-3">Average Response Time (ART)</h6>
+                        <h6 className="font-semibold text-xs text-blue-800 dark:text-blue-200 mb-3">Average Response Time (ART)</h6>
                         <div className="bg-white dark:bg-gray-800 rounded p-3 text-xs">
                           <div><strong>Formula:</strong></div>
                           <div className="ml-2 font-mono">ART = Σ(First Response Time) / Number of Tickets</div>
@@ -658,7 +658,7 @@ export default function AdminRumus() {
 
               {/* Ticket Analytics Metrics */}
             <div className="space-y-4">
-                <h5 className="font-semibold text-card-foreground text-lg">Ticket Analytics Page - Advanced Metrics</h5>
+                <h5 className="font-semibold text-card-foreground text-sm">Ticket Analytics Page - Advanced Metrics</h5>
                 <div className="bg-gradient-to-r from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-900/30 ring-1 ring-green-200 dark:ring-green-800 rounded-lg p-6">
                   <div className="space-y-4 text-sm">
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -729,7 +729,7 @@ export default function AdminRumus() {
 
               {/* Customer Analytics Metrics */}
               <div className="space-y-4">
-                <h5 className="font-semibold text-card-foreground text-lg">Customer Analytics Page - Customer Metrics</h5>
+                <h5 className="font-semibold text-card-foreground text-sm">Customer Analytics Page - Customer Metrics</h5>
                 <div className="bg-gradient-to-r from-purple-50 to-violet-50 dark:from-purple-900/20 dark:to-violet-900/20 ring-1 ring-purple-200 dark:ring-purple-800 rounded-lg p-6">
                   <div className="space-y-4 text-sm">
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -808,7 +808,7 @@ export default function AdminRumus() {
 
               {/* Agent Analytics Metrics */}
             <div className="space-y-4">
-                <h5 className="font-semibold text-card-foreground text-lg">Agent Analytics Page - Performance Metrics</h5>
+                <h5 className="font-semibold text-card-foreground text-sm">Agent Analytics Page - Performance Metrics</h5>
                 <div className="bg-gradient-to-r from-teal-50 to-cyan-50 dark:from-teal-900/20 dark:to-cyan-900/20 ring-1 ring-teal-200 dark:ring-teal-800 rounded-lg p-6">
                   <div className="space-y-4 text-sm">
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -887,7 +887,7 @@ export default function AdminRumus() {
 
               {/* Incident Analytics Metrics */}
             <div className="space-y-4">
-                <h5 className="font-semibold text-card-foreground text-lg">Incident Analytics Page - Incident Metrics</h5>
+                <h5 className="font-semibold text-card-foreground text-sm">Incident Analytics Page - Incident Metrics</h5>
                 <div className="bg-gradient-to-r from-red-50 to-pink-50 dark:from-red-900/20 dark:to-pink-900/20 ring-1 ring-red-200 dark:ring-red-800 rounded-lg p-6">
                   <div className="space-y-4 text-sm">
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -961,7 +961,7 @@ export default function AdminRumus() {
             
             {/* 1. Dashboard Page - Advanced Analysis */}
             <div className="space-y-4">
-                              <h5 className="font-semibold text-card-foreground text-lg">Dashboard Page - Advanced Analysis</h5>
+                              <h5 className="font-semibold text-card-foreground text-sm">Dashboard Page - Advanced Analysis</h5>
               <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 ring-1 ring-blue-200 dark:ring-blue-800 rounded-lg p-6">
                 <div className="space-y-4 text-sm">
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -1007,7 +1007,7 @@ export default function AdminRumus() {
 
                         {/* 2. Ticket Data Page - Advanced Search & Analytics */}
               <div className="space-y-4">
-              <h5 className="font-semibold text-card-foreground text-lg">Ticket Data Page - Advanced Processing</h5>
+              <h5 className="font-semibold text-card-foreground text-sm">Ticket Data Page - Advanced Processing</h5>
                               <div className="bg-gradient-to-r from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-900/30 ring-1 ring-green-200 dark:ring-green-800 rounded-lg p-6">
                 <div className="space-y-4 text-sm">
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -1066,7 +1066,7 @@ export default function AdminRumus() {
 
                         {/* 3. Customer Analytics Page - Advanced ML & Segmentation */}
             <div className="space-y-4">
-                              <h5 className="font-semibold text-card-foreground text-lg">Customer Analytics Page - Advanced ML</h5>
+                              <h5 className="font-semibold text-card-foreground text-sm">Customer Analytics Page - Advanced ML</h5>
               <div className="bg-gradient-to-r from-purple-50 to-violet-50 dark:from-purple-900/20 dark:to-violet-900/20 ring-1 ring-purple-200 dark:ring-purple-800 rounded-lg p-6">
                 <div className="space-y-4 text-sm">
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -1138,7 +1138,7 @@ export default function AdminRumus() {
 
                         {/* 4. Ticket Analytics Page - Advanced Forecasting & Prediction */}
               <div className="space-y-4">
-                              <h5 className="font-semibold text-card-foreground text-lg">Ticket Analytics Page - Advanced Forecasting</h5>
+                              <h5 className="font-semibold text-card-foreground text-sm">Ticket Analytics Page - Advanced Forecasting</h5>
               <div className="bg-gradient-to-r from-orange-50 to-amber-50 dark:from-orange-900/20 dark:to-amber-900/20 ring-1 ring-orange-200 dark:ring-orange-800 rounded-lg p-6">
                 <div className="space-y-4 text-sm">
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -1211,7 +1211,7 @@ export default function AdminRumus() {
 
                         {/* 5. Agent Analytics Page - Advanced Performance Analysis */}
             <div className="space-y-4">
-                              <h5 className="font-semibold text-card-foreground text-lg">Agent Analytics Page - Advanced Performance</h5>
+                              <h5 className="font-semibold text-card-foreground text-sm">Agent Analytics Page - Advanced Performance</h5>
               <div className="bg-gradient-to-r from-teal-50 to-cyan-50 dark:from-teal-900/20 dark:to-cyan-900/20 ring-1 ring-teal-200 dark:ring-teal-800 rounded-lg p-6">
                 <div className="space-y-4 text-sm">
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -1285,7 +1285,7 @@ export default function AdminRumus() {
 
                         {/* 6. Incident Data Page - Advanced Management & Root Cause Analysis */}
                     <div className="space-y-4">
-                              <h5 className="font-semibold text-card-foreground text-lg">Incident Data Page - Advanced Management</h5>
+                              <h5 className="font-semibold text-card-foreground text-sm">Incident Data Page - Advanced Management</h5>
               <div className="bg-gradient-to-r from-red-50 to-pink-50 dark:from-red-900/20 dark:to-pink-900/20 ring-1 ring-red-200 dark:ring-red-800 rounded-lg p-6">
                 <div className="space-y-4 text-sm">
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -1350,7 +1350,7 @@ export default function AdminRumus() {
 
             {/* 7. Incident Analytics Page - Advanced Pattern Recognition */}
               <div className="space-y-4">
-                              <h5 className="font-semibold text-card-foreground text-lg">Incident Analytics Page - Advanced Patterns</h5>
+                              <h5 className="font-semibold text-card-foreground text-sm">Incident Analytics Page - Advanced Patterns</h5>
               <div className="bg-gradient-to-r from-pink-50 to-rose-50 dark:from-pink-900/20 dark:to-rose-900/20 ring-1 ring-pink-200 dark:ring-pink-800 rounded-lg p-6">
                 <div className="space-y-4 text-sm">
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -1419,7 +1419,7 @@ export default function AdminRumus() {
 
                         {/* 8. Technical Support Analytics Page - Advanced ML & Knowledge Management */}
                     <div className="space-y-4">
-                              <h5 className="font-semibold text-card-foreground text-lg">Technical Support Analytics Page - Advanced ML</h5>
+                              <h5 className="font-semibold text-card-foreground text-sm">Technical Support Analytics Page - Advanced ML</h5>
               <div className="bg-gradient-to-r from-indigo-50 to-blue-50 dark:from-indigo-900/20 dark:to-blue-900/20 ring-1 ring-indigo-200 dark:ring-indigo-800 rounded-lg p-6">
                 <div className="space-y-4 text-sm">
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -1482,7 +1482,7 @@ export default function AdminRumus() {
 
                         {/* 9. Summary Dashboard - Comprehensive Overview & Visual Optimization */}
             <div className="space-y-4">
-              <h5 className="font-semibold text-card-foreground text-lg">Summary Dashboard - Comprehensive Overview</h5>
+              <h5 className="font-semibold text-card-foreground text-sm">Summary Dashboard - Comprehensive Overview</h5>
               <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 ring-1 ring-blue-200 dark:ring-blue-800 rounded-lg p-6">
                 <div className="space-y-4 text-sm">
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -1558,7 +1558,7 @@ export default function AdminRumus() {
 
                         {/* 10. Site Analytics Page - Advanced Web Performance & User Behavior */}
             <div className="space-y-4">
-              <h5 className="font-semibold text-card-foreground text-lg">Site Analytics Page - Advanced Monitoring</h5>
+              <h5 className="font-semibold text-card-foreground text-sm">Site Analytics Page - Advanced Monitoring</h5>
               <div className="bg-gradient-to-r from-cyan-50 to-sky-50 dark:from-cyan-900/20 dark:to-sky-900/20 ring-1 ring-cyan-200 dark:ring-cyan-800 rounded-lg p-6">
                 <div className="space-y-4 text-sm">
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -1637,7 +1637,7 @@ export default function AdminRumus() {
             
             {/* 11. Master Data Pages - Advanced Data Governance & Quality Management */}
           <div className="space-y-4">
-                              <h5 className="font-semibold text-card-foreground text-lg"><StorageIcon className="w-6 h-6 inline mr-2" /> Master Data Pages - Advanced Management</h5>
+                              <h5 className="font-semibold text-card-foreground text-sm"><StorageIcon className="w-6 h-6 inline mr-2" /> Master Data Pages - Advanced Management</h5>
               <div className="bg-gradient-to-r from-gray-50 to-slate-50 dark:from-gray-800 dark:to-slate-800 ring-1 ring-gray-200 dark:ring-gray-700 rounded-lg p-6">
                 <div className="space-y-4 text-sm">
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
