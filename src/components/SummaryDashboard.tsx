@@ -507,7 +507,7 @@ const SummaryDashboard = ({ ticketAnalyticsData, filteredTickets }: any) => {
           </CardHeader>
                       <CardContent className="p-6">
               {filteredMonthlyStatsData && filteredMonthlyStatsData.labels && filteredMonthlyStatsData.labels.length > 0 ? (
-                <div className="aspect-video">
+                <div className="h-64">
                   <ResponsiveContainer width="100%" height="100%">
                     <AreaChart data={toRechartsData(filteredMonthlyStatsData.labels, filteredMonthlyStatsData.datasets)} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
                       <defs>
@@ -566,7 +566,7 @@ const SummaryDashboard = ({ ticketAnalyticsData, filteredTickets }: any) => {
           </CardHeader>
           <CardContent className="p-6">
             {incidentTrendsData.length > 0 ? (
-              <div className="aspect-video">
+              <div className="h-64">
                 <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={incidentTrendsData} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
                   <XAxis 
@@ -616,7 +616,7 @@ const SummaryDashboard = ({ ticketAnalyticsData, filteredTickets }: any) => {
           </CardHeader>
           <CardContent className="p-6">
             {yearlyStatsData && yearlyStatsData.labels && yearlyStatsData.labels.length > 0 ? (
-              <div className="aspect-video">
+              <div className="h-64">
                 <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={toRechartsData(yearlyStatsData.labels, yearlyStatsData.datasets)} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
                   <defs>
@@ -675,7 +675,7 @@ const SummaryDashboard = ({ ticketAnalyticsData, filteredTickets }: any) => {
           </CardHeader>
           <CardContent className="p-6">
             {allIncidents && allIncidents.length > 0 ? (
-              <div className="aspect-video">
+              <div className="h-64">
                 <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={Object.entries(calculateIncidentStats(allIncidents).ncalCounts).map(([ncal, count]) => ({
                   ncal,
