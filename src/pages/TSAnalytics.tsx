@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '@/lib/db';
+// Menggunakan getWanedaDuration yang didefinisikan lokal untuk perhitungan yang lebih akurat
 import { formatDurationDHM } from '@/lib/utils';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -46,7 +47,7 @@ import FilterListIcon from '@mui/icons-material/FilterList';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 
 // Constants sesuai requirements
-const VENDOR_SLA_MINUTES = 240; // 4 jam
+const VENDOR_SLA_MINUTES = 240;
 
 // ---------- Helpers: waktu & overlap (menit)
 const toDate = (v: any) => (v ? new Date(v) : null);
@@ -63,7 +64,9 @@ const overlapMinutes = (
   const s = Math.max(winStart!.getTime(), pStart!.getTime());
   const e = Math.min(winEnd!.getTime(), pEnd!.getTime());
   return Math.max(0, (e - s) / 60000);
-};
+}; // 4 jam
+
+// Fungsi overlapMinutes dihapus karena tidak digunakan setelah menggunakan getWanedaDuration dari utils
 const POWER_DELTA_OK_DBM = 1.0;
 
 const NCAL_COLORS = {
@@ -240,13 +243,13 @@ const TSAnalytics: React.FC = () => {
         'pause1','Pause1','pause','pauseTime','pause_time','pause1Time','startPause','start_pause','start pause','pause1Start','pause1_start','pause1 start','startPause1','pause1_start_time'
       ],
       restart1: [
-        'restart1','Restart1','restart','restartTime','restart_time','restart1Time','endPause','end_pause','end pause','pause1End','pause1_end','pause1 end','restartPause','restart_pause','restart pause','endPause1','end_pause_1','end pause 1'
+        'restart1','Restart1','restart','restartTime','restart_time','restart1Time','endPause','end_pause','end pause','pause1End','pause1_end','pause1 end','restartPause','restart_pause','restart pause','endPause1','end_pause_1','end pause 1','endPause1','endPause1Time','end_pause1_time','end pause1 time'
       ],
       pause2: [
         'pause2','Pause2','pause2Time','pause2_time','pause2Start','startPause2','start_pause_2','start pause 2','pause2_start','pause2 start','pause2StartTime'
       ],
       restart2: [
-        'restart2','Restart2','restart2Time','restart2_time','pause2End','endPause2','end_pause_2','end pause 2','pause2_end','pause2 end','restartPause2','restart_pause_2','restart pause 2','endPause2'
+        'restart2','Restart2','restart2Time','restart2_time','pause2End','endPause2','end_pause_2','end pause 2','pause2_end','pause2 end','restartPause2','restart_pause_2','restart pause 2','endPause2','endPause2Time','end_pause2_time','end pause2 time'
       ]
     };
     const candidates = fieldMap[lower] || [field];
@@ -852,7 +855,7 @@ const TSAnalytics: React.FC = () => {
       });
       // Calculate average power difference with proper handling of decimal places
       const avgPowerBetween = powerDiffs.length > 0 ? 
-        Math.round((powerDiffs.reduce((a, b) => a + b, 0) / powerDiffs.length) * 100) / 100 : 0;
+        Number((powerDiffs.reduce((a, b) => a + b, 0) / powerDiffs.length).toFixed(2)) : 0;
       // actual SLA as percentage (0-100) - menggunakan perhitungan per case yang sudah dihitung
       const actualSlaPercent = item.actualSLA * 100;
       // deduction and payments using definisi B (proportional)
@@ -1559,7 +1562,26 @@ const TSAnalytics: React.FC = () => {
                     <CartesianGrid strokeDasharray="3 3" vertical={false} />
                     <XAxis dataKey="month" tickLine={false} tickMargin={10} axisLine={false} className="text-xs" />
                     <YAxis tickLine={false} tickMargin={10} axisLine={false} className="text-xs" domain={[0, 120]} />
-                    <ChartTooltip content={<ChartTooltipContent />} />
+                    <ChartTooltip 
+                      content={({ active, payload, label }) => {
+                        if (active && payload && payload.length) {
+                          return (
+                            <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 shadow-lg">
+                              <p className="font-medium text-gray-900 dark:text-gray-100">{label}</p>
+                              {payload.map((entry: any, index: number) => (
+                                <p key={index} className="text-sm text-gray-600 dark:text-gray-300">
+                                  <span style={{ color: entry.color }}>
+                                    {entry.name === 'actual' ? 'Actual SLA: ' : 'Target SLA: '}
+                                    {entry.name === 'actual' ? `${entry.value.toFixed(1)}%` : `${entry.value}%`}
+                                  </span>
+                                </p>
+                              ))}
+                            </div>
+                          );
+                        }
+                        return null;
+                      }}
+                    />
                     <Line type="monotone" dataKey="actual" stroke="#10b981" activeDot={{ r: 4 }} />
                     <ReferenceLine y={100} stroke="#ef4444" strokeDasharray="4 4" ifOverflow="visible" />
                 </LineChart>
@@ -1576,15 +1598,32 @@ const TSAnalytics: React.FC = () => {
                     accessibilityLayer
                     data={wanedaItemsSorted.map(item => ({
                       month: item.month,
-                      mttr: item.avgDuration / 60, // convert minutes to hours
-                      extra: item.avgExtra / 60
+                      mttr: item.avgDuration, // keep in minutes for proper formatting
+                      extra: item.avgExtra
                     }))}
                   >
                     <CartesianGrid vertical={false} />
                     <XAxis dataKey="month" tickLine={false} tickMargin={10} axisLine={false} tickFormatter={(value) => value.slice(0, 3)} />
                     <ChartTooltip
                       cursor={false}
-                      content={<ChartTooltipContent indicator="dashed" />}
+                      content={({ active, payload, label }) => {
+                        if (active && payload && payload.length) {
+                          return (
+                            <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 shadow-lg">
+                              <p className="font-medium text-gray-900 dark:text-gray-100">{label}</p>
+                              {payload.map((entry: any, index: number) => (
+                                <p key={index} className="text-sm text-gray-600 dark:text-gray-300">
+                                  <span style={{ color: entry.color }}>
+                                    {entry.name === 'mttr' ? 'MTTR: ' : 'Avg Extra Time: '}
+                                    {formatDurationHM(entry.value)}
+                                  </span>
+                                </p>
+                              ))}
+                            </div>
+                          );
+                        }
+                        return null;
+                      }}
                     />
                     <Bar dataKey="mttr" fill="#3b82f6" radius={4} />
                     <Bar dataKey="extra" fill="#eab308" radius={4} />
@@ -1734,7 +1773,7 @@ const TSAnalytics: React.FC = () => {
                                 case 'avgExtra':
                                   return formatDurationHM(val);
                                 case 'avgPowerBetween':
-                                  return isNaN(val) || val === 0 ? 'N/A' : `${Number(val).toFixed(2)} dBm`;
+                                  return isNaN(val) || val === 0 ? 'N/A' : `${val.toFixed(2)} dBm`;
                                 case 'actualSlaPercent':
                                 case 'targetSlaPercent':
                                 case 'slaType2':
@@ -1757,7 +1796,7 @@ const TSAnalytics: React.FC = () => {
                               case 'avgExtra':
                                 return formatDurationHM(val);
                               case 'avgPowerBetween':
-                                return isNaN(val) || val === 0 ? 'N/A' : `${Number(val).toFixed(2)} dBm`;
+                                return isNaN(val) || val === 0 ? 'N/A' : `${val.toFixed(2)} dBm`;
                               case 'actualSlaPercent':
                               case 'targetSlaPercent':
                               case 'slaType2':
@@ -1834,10 +1873,12 @@ const TSAnalytics: React.FC = () => {
                           const powerDiff = (typeof incident.powerBefore === 'number' && typeof incident.powerAfter === 'number' && 
                                             !isNaN(incident.powerBefore) && !isNaN(incident.powerAfter)) ? 
                                             `${(incident.powerAfter - incident.powerBefore).toFixed(2)} dBm` : 'N/A';
+                          const isPowerOverTarget = typeof incident.powerAfter === 'number' && !isNaN(incident.powerAfter) && incident.powerAfter > POWER_DELTA_OK_DBM;
                           const customer = getCustomerName(incident);
                           const caseNo = getCaseNumber(incident);
                           const classification = getClassification(incident);
                           const note = getNote(incident);
+                          const isOverTarget = duration > VENDOR_SLA_MINUTES;
                           return (
                             <tr key={idx} className="border-b border-gray-200 dark:border-zinc-700 hover:bg-gray-50 dark:hover:bg-zinc-800">
                               <td className="px-2 py-2">{customer}</td>
@@ -1848,13 +1889,23 @@ const TSAnalytics: React.FC = () => {
                               <td className="px-2 py-2">{pause2 || '-'}</td>
                               <td className="px-2 py-2">{restart2 || '-'}</td>
                               <td className="px-2 py-2">{end || '-'}</td>
-                              <td className="px-2 py-2 text-right">{formatDurationHMS(duration)}</td>
+                              <td className={`px-2 py-2 text-right ${isOverTarget ? 'text-red-600 dark:text-red-400 font-semibold' : ''}`}>
+                                {formatDurationHMS(duration)}
+                              </td>
                               <td className="px-2 py-2 text-right">{targetStr}</td>
-                              <td className="px-2 py-2 text-right">{diffStr}</td>
-                              <td className="px-2 py-2 text-right">{perfStr}</td>
+                              <td className={`px-2 py-2 text-right ${isOverTarget ? 'text-red-600 dark:text-red-400 font-semibold' : ''}`}>
+                                {diffStr}
+                              </td>
+                              <td className={`px-2 py-2 text-right ${isOverTarget ? 'text-red-600 dark:text-red-400 font-semibold' : ''}`}>
+                                {perfStr}
+                              </td>
                               <td className="px-2 py-2 text-right">{powerBefore}</td>
-                              <td className="px-2 py-2 text-right">{powerAfter}</td>
-                              <td className="px-2 py-2 text-right">{powerDiff}</td>
+                              <td className={`px-2 py-2 text-right ${isPowerOverTarget ? 'text-red-600 dark:text-red-400 font-semibold' : ''}`}>
+                                {powerAfter}
+                              </td>
+                              <td className={`px-2 py-2 text-right ${isPowerOverTarget ? 'text-red-600 dark:text-red-400 font-semibold' : ''}`}>
+                                {powerDiff}
+                              </td>
                               <td className="px-2 py-2">{classification}</td>
                               <td className="px-2 py-2 whitespace-pre-wrap">{note}</td>
                             </tr>

@@ -778,3 +778,209 @@ export async function validateAndRepairDatabase(): Promise<{
     };
   }
 }
+
+// Fungsi perhitungan durasi yang tidak bergantung pada IndexedDB
+export const calculateCustomDuration = (incident: any): number => {
+  // Use the corrected durationMin that was fixed by our automatic fix
+  if (incident.durationMin && incident.durationMin > 0) {
+    return incident.durationMin;
+  }
+  
+  // Fallback to other duration fields if available
+  if (incident.durationVendorMin && incident.durationVendorMin > 0) {
+    return incident.durationVendorMin;
+  }
+  
+  if (incident.totalDurationVendorMin && incident.totalDurationVendorMin > 0) {
+    return incident.totalDurationVendorMin;
+  }
+  
+  // If no duration available, return 0
+  return 0;
+};
+
+// Fungsi perhitungan durasi net (durasi dikurangi pause time)
+export const calculateNetDuration = (incident: any): number => {
+  const baseDuration = calculateCustomDuration(incident);
+  const pauseTime = safeMinutes(incident.totalDurationPauseMin || incident.pauseDuration || incident.pauseTime || 0);
+  return Math.max(0, baseDuration - pauseTime);
+};
+
+// Fungsi perhitungan durasi Waneda (untuk TS Analytics)
+export const getWanedaDuration = (incident: any): number => {
+  // Waneda formula: Duration Vendor - Total Duration Pause - Total Duration Vendor
+  let duration = 0;
+  if (incident.durationVendorMin && incident.durationVendorMin > 0) {
+    duration = incident.durationVendorMin;
+  }
+  if (incident.totalDurationPauseMin && incident.totalDurationPauseMin > 0) {
+    duration -= incident.totalDurationPauseMin;
+  }
+  if (incident.totalDurationVendorMin && incident.totalDurationVendorMin > 0) {
+    duration -= incident.totalDurationVendorMin;
+  }
+  return Math.max(0, duration);
+};
+
+// Helper function untuk safe minutes
+export const safeMinutes = (m?: number | null) => (m && m > 0 ? m : 0);
+
+// Fungsi perhitungan statistik yang tidak bergantung pada IndexedDB
+export const calculateIncidentStats = (incidents: any[]) => {
+  if (!incidents || incidents.length === 0) {
+    return {
+      total: 0,
+      open: 0,
+      closed: 0,
+      avgDuration: 0,
+      avgNetDuration: 0,
+      ncalCounts: {},
+      siteCounts: {},
+      priorityCounts: {},
+      statusCounts: {}
+    };
+  }
+
+  const total = incidents.length;
+  const open = incidents.filter(i => i.status?.toLowerCase() !== 'done').length;
+  const closed = incidents.filter(i => i.status?.toLowerCase() === 'done').length;
+  
+  // Calculate average duration
+  const incidentsWithDuration = incidents.filter(i => calculateCustomDuration(i) > 0);
+  const avgDuration = incidentsWithDuration.length > 0 
+    ? incidentsWithDuration.reduce((sum, i) => sum + calculateCustomDuration(i), 0) / incidentsWithDuration.length
+    : 0;
+
+  // Calculate average net duration
+  const incidentsWithNetDuration = incidents.filter(i => calculateNetDuration(i) > 0);
+  const avgNetDuration = incidentsWithNetDuration.length > 0 
+    ? incidentsWithNetDuration.reduce((sum, i) => sum + calculateNetDuration(i), 0) / incidentsWithNetDuration.length
+    : 0;
+
+  // Calculate NCAL distribution
+  const ncalCounts = incidents.reduce((acc, incident) => {
+    const ncal = normalizeNCAL(incident.ncal);
+    acc[ncal] = (acc[ncal] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+
+  // Calculate site distribution
+  const siteCounts = incidents.reduce((acc, incident) => {
+    const site = incident.site || 'Unknown';
+    acc[site] = (acc[site] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+
+  // Calculate priority distribution
+  const priorityCounts = incidents.reduce((acc, incident) => {
+    const priority = incident.priority || 'Unknown';
+    acc[priority] = (acc[priority] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+
+  // Calculate status distribution
+  const statusCounts = incidents.reduce((acc, incident) => {
+    const status = incident.status || 'Unknown';
+    acc[status] = (acc[status] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+
+  return {
+    total,
+    open,
+    closed,
+    avgDuration,
+    avgNetDuration,
+    ncalCounts,
+    siteCounts,
+    priorityCounts,
+    statusCounts
+  };
+};
+
+// Fungsi normalisasi NCAL
+export const normalizeNCAL = (ncal: string | null | undefined): string => {
+  if (!ncal) return 'Unknown';
+  const normalized = ncal.trim().toLowerCase();
+  switch (normalized) {
+    case 'blue': return 'Blue';
+    case 'yellow': return 'Yellow';
+    case 'orange': return 'Orange';
+    case 'red': return 'Red';
+    case 'black': return 'Black';
+    default: return ncal.trim();
+  }
+};
+
+// Fungsi filter incidents yang tidak bergantung pada IndexedDB
+export const filterIncidents = (incidents: any[], filter: any) => {
+  let filtered = [...incidents];
+
+  // Filter by date range
+  if (filter.dateFrom && filter.dateTo) {
+    filtered = filtered.filter(incident => {
+      if (!incident.startTime) return false;
+      const incidentDate = new Date(incident.startTime);
+      const fromDate = new Date(filter.dateFrom);
+      const toDate = new Date(filter.dateTo);
+      return incidentDate >= fromDate && incidentDate <= toDate;
+    });
+  }
+
+  // Filter by status
+  if (filter.status) {
+    filtered = filtered.filter(incident => incident.status === filter.status);
+  }
+
+  // Filter by priority
+  if (filter.priority) {
+    filtered = filtered.filter(incident => incident.priority === filter.priority);
+  }
+
+  // Filter by level
+  if (filter.level !== undefined) {
+    filtered = filtered.filter(incident => incident.level === filter.level);
+  }
+
+  // Filter by site
+  if (filter.site) {
+    filtered = filtered.filter(incident => incident.site === filter.site);
+  }
+
+  // Filter by NCAL
+  if (filter.ncal) {
+    filtered = filtered.filter(incident => normalizeNCAL(incident.ncal) === filter.ncal);
+  }
+
+  // Filter by klasifikasi gangguan
+  if (filter.klasifikasiGangguan) {
+    filtered = filtered.filter(incident => incident.klasifikasiGangguan === filter.klasifikasiGangguan);
+  }
+
+  // Search
+  if (filter.search) {
+    const q = filter.search.toLowerCase();
+    filtered = filtered.filter(incident =>
+      (incident.noCase || '').toLowerCase().includes(q) ||
+      (incident.site || '').toLowerCase().includes(q) ||
+      (incident.problem || '').toLowerCase().includes(q)
+    );
+  }
+
+  return filtered;
+};
+
+// Fungsi pagination yang tidak bergantung pada IndexedDB
+export const paginateIncidents = (incidents: any[], page: number = 1, limit: number = 50) => {
+  const startIndex = (page - 1) * limit;
+  const endIndex = startIndex + limit;
+  const paginatedIncidents = incidents.slice(startIndex, endIndex);
+  
+  return {
+    rows: paginatedIncidents,
+    total: incidents.length,
+    page,
+    limit,
+    totalPages: Math.ceil(incidents.length / limit)
+  };
+};

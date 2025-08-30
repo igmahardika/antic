@@ -43,73 +43,206 @@ export default function AdminRumus() {
             <div className="bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-900/20 dark:to-blue-900/20 rounded-xl p-6 ring-1 ring-green-200 dark:ring-green-800">
               <div className="flex items-center gap-3 mb-4">
                 <Badge className="bg-green-600 text-white px-3 py-1">Latest</Badge>
-                <span className="text-sm font-medium text-green-700 dark:text-green-300">v2.1.0 - Major Improvements</span>
+                <span className="text-sm font-medium text-green-700 dark:text-green-300">v2.2.0 - Analytics Enhancement & Cross-Browser Persistence</span>
                 <span className="text-xs text-muted-foreground">December 2024</span>
             </div>
-                <h4 className="font-bold text-lg text-card-foreground mb-4">Major System Overhaul & Optimization</h4>
+                <h4 className="font-bold text-lg text-card-foreground mb-4">Major Analytics Improvements & Cross-Browser Data Persistence</h4>
               
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* UI/UX Improvements */}
+                {/* Analytics Improvements */}
                 <div className="space-y-4">
                   <h5 className="font-semibold text-card-foreground flex items-center gap-2">
-                    <PaletteIcon className="text-purple-600" />
-                    UI/UX Enhancements
+                    <TrendingUpIcon className="text-blue-600" />
+                    Analytics Enhancements
                   </h5>
                   <ul className="space-y-2 text-sm text-muted-foreground">
-                    <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Sidebar Navigation:</strong> Added shadcn-ui sidebar with collapsible menus</li>
-                    <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Dark Mode:</strong> Comprehensive dark mode with smooth transitions</li>
-                    <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Layout Consistency:</strong> PageWrapper component for uniform layout</li>
-                    <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Header Enhancement:</strong> Moved avatar & mode toggle to header</li>
-                    <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Progress Bars:</strong> Standardized all progress bars to shadcn Progress</li>
-                    <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Responsive Design:</strong> Improved mobile and tablet experience</li>
+                    <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Cross-Browser Persistence:</strong> All analytics calculations moved to in-memory processing</li>
+                    <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Centralized Utils:</strong> Created incidentUtils.ts for shared calculation logic</li>
+                    <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>TS Analytics Fix:</strong> Fixed vendor duration calculation and timestamp mapping</li>
+                    <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Visual Alerts:</strong> Added red color coding for cases exceeding targets</li>
+                    <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>NCAL Duration Trends:</strong> New chart showing net duration trends by NCAL level</li>
+                    <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Real-time Analytics:</strong> Instant data updates without IndexedDB dependency</li>
                 </ul>
               </div>
           
-                {/* Performance Optimizations */}
+                {/* Technical Improvements */}
                 <div className="space-y-4">
                   <h5 className="font-semibold text-card-foreground flex items-center gap-2">
-                    <SpeedIcon className="text-blue-600" />
-                    Performance & Optimization
+                    <CodeIcon className="text-purple-600" />
+                    Technical Improvements
                   </h5>
                   <ul className="space-y-2 text-sm text-muted-foreground">
-                    <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Bundle Size:</strong> Removed 20+ unused dependencies</li>
-                    <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Build Time:</strong> Faster compilation and build process</li>
-                    <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Memory Usage:</strong> Optimized component re-rendering</li>
-                    <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Charts Performance:</strong> Enhanced Recharts animations</li>
-                    <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Tree Shaking:</strong> Better dependency optimization</li>
-                    <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Loading Speed:</strong> Improved initial page load time</li>
+                    <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Duration Calculation:</strong> Fixed double-subtract issue in vendor duration</li>
+                    <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Timestamp Mapping:</strong> Enhanced pause/restart field mapping</li>
+                    <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>TypeScript Fixes:</strong> Resolved all unused variable and import errors</li>
+                    <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Data Consistency:</strong> Improved data handling across all analytics pages</li>
+                    <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Performance:</strong> Optimized calculation speed and memory usage</li>
+                    <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Error Handling:</strong> Better NaN/undefined value handling in charts</li>
                 </ul>
                 </div>
               </div>
               </div>
           
-            {/* Previous Updates Summary */}
-            <div className="space-y-4">
+            {/* Previous Updates - Combined Summary & Details */}
+            <div className="space-y-6">
               <h5 className="font-semibold text-card-foreground">Previous Updates</h5>
-          <div className="space-y-3">
-                <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-2xl">
-                  <Badge className="bg-blue-600 text-white px-2 py-1 text-xs">v2.0.0</Badge>
-                  <div>
-                    <div className="font-medium text-sm">Advanced Export Functionality</div>
-                    <div className="text-xs text-muted-foreground">Enhanced data export with multiple formats</div>
+              
+              {/* v2.1.0 Details */}
+              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl p-6 ring-1 ring-blue-200 dark:ring-blue-800">
+                <div className="flex items-center gap-3 mb-4">
+                  <Badge className="bg-blue-600 text-white px-3 py-1">v2.1.0</Badge>
+                  <span className="text-sm font-medium text-blue-700 dark:text-blue-300">Major System Overhaul & Optimization</span>
+                  <span className="text-xs text-muted-foreground">December 2024</span>
                 </div>
-              </div>
-                <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-2xl">
-                  <Badge className="bg-purple-600 text-white px-2 py-1 text-xs">v1.9.0</Badge>
-                  <div>
-                    <div className="font-medium text-sm">TypeScript Migration</div>
-                    <div className="text-xs text-muted-foreground">Complete TypeScript implementation</div>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <div className="space-y-4">
+                    <h6 className="font-semibold text-card-foreground flex items-center gap-2">
+                      <PaletteIcon className="text-purple-600" />
+                      UI/UX Enhancements
+                    </h6>
+                    <ul className="space-y-2 text-sm text-muted-foreground">
+                      <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Sidebar Navigation:</strong> Added shadcn-ui sidebar with collapsible menus</li>
+                      <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Dark Mode:</strong> Comprehensive dark mode with smooth transitions</li>
+                      <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Layout Consistency:</strong> PageWrapper component for uniform layout</li>
+                      <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Header Enhancement:</strong> Moved avatar & mode toggle to header</li>
+                      <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Progress Bars:</strong> Standardized all progress bars to shadcn Progress</li>
+                      <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Responsive Design:</strong> Improved mobile and tablet experience</li>
+                    </ul>
+                  </div>
+                  <div className="space-y-4">
+                    <h6 className="font-semibold text-card-foreground flex items-center gap-2">
+                      <SpeedIcon className="text-blue-600" />
+                      Performance & Optimization
+                    </h6>
+                    <ul className="space-y-2 text-sm text-muted-foreground">
+                      <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Bundle Size:</strong> Removed 20+ unused dependencies</li>
+                      <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Build Time:</strong> Faster compilation and build process</li>
+                      <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Memory Usage:</strong> Optimized component re-rendering</li>
+                      <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Charts Performance:</strong> Enhanced Recharts animations</li>
+                      <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Tree Shaking:</strong> Better dependency optimization</li>
+                      <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Loading Speed:</strong> Improved initial page load time</li>
+                    </ul>
                   </div>
                 </div>
-                <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-2xl">
-                  <Badge className="bg-orange-600 text-white px-2 py-1 text-xs">v1.8.0</Badge>
-                  <div>
-                    <div className="text-sm font-medium">Analytics Dashboard</div>
-                    <div className="text-xs text-muted-foreground">Comprehensive analytics and reporting</div>
+              </div>
+
+              {/* v2.0.0 Details */}
+              <div className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-xl p-6 ring-1 ring-green-200 dark:ring-green-800">
+                <div className="flex items-center gap-3 mb-4">
+                  <Badge className="bg-green-600 text-white px-3 py-1">v2.0.0</Badge>
+                  <span className="text-sm font-medium text-green-700 dark:text-green-300">Advanced Export Functionality</span>
+                  <span className="text-xs text-muted-foreground">November 2024</span>
+                </div>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <div className="space-y-4">
+                    <h6 className="font-semibold text-card-foreground flex items-center gap-2">
+                      <FileDownloadIcon className="text-green-600" />
+                      Export Features
+                    </h6>
+                    <ul className="space-y-2 text-sm text-muted-foreground">
+                      <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Multiple Formats:</strong> Excel, CSV, PDF export capabilities</li>
+                      <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Custom Templates:</strong> Predefined export templates for different use cases</li>
+                      <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Data Filtering:</strong> Export filtered data with applied filters</li>
+                      <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Batch Export:</strong> Export multiple reports simultaneously</li>
+                      <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Format Options:</strong> Customizable date formats and number formatting</li>
+                      <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Compression:</strong> Automatic file compression for large exports</li>
+                    </ul>
+                  </div>
+                  <div className="space-y-4">
+                    <h6 className="font-semibold text-card-foreground flex items-center gap-2">
+                      <DashboardIcon className="text-blue-600" />
+                      Analytics Enhancements
+                    </h6>
+                    <ul className="space-y-2 text-sm text-muted-foreground">
+                      <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Advanced Charts:</strong> Enhanced chart types and visualizations</li>
+                      <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Real-time Updates:</strong> Live data updates and refresh capabilities</li>
+                      <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Custom Metrics:</strong> User-defined KPIs and performance indicators</li>
+                      <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Data Validation:</strong> Enhanced data validation and error handling</li>
+                      <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Performance Monitoring:</strong> System performance tracking and optimization</li>
+                      <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>User Permissions:</strong> Role-based access control for exports</li>
+                    </ul>
+                  </div>
                 </div>
               </div>
-            </div>
-          </div>          </div>
+
+              {/* v1.9.0 Details */}
+              <div className="bg-gradient-to-r from-purple-50 to-violet-50 dark:from-purple-900/20 dark:to-violet-900/20 rounded-xl p-6 ring-1 ring-purple-200 dark:ring-purple-800">
+                <div className="flex items-center gap-3 mb-4">
+                  <Badge className="bg-purple-600 text-white px-3 py-1">v1.9.0</Badge>
+                  <span className="text-sm font-medium text-purple-700 dark:text-purple-300">TypeScript Migration</span>
+                  <span className="text-xs text-muted-foreground">October 2024</span>
+                </div>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <div className="space-y-4">
+                    <h6 className="font-semibold text-card-foreground flex items-center gap-2">
+                      <CodeIcon className="text-purple-600" />
+                      TypeScript Implementation
+                    </h6>
+                    <ul className="space-y-2 text-sm text-muted-foreground">
+                      <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Full Migration:</strong> Complete conversion from JavaScript to TypeScript</li>
+                      <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Type Definitions:</strong> Comprehensive type definitions for all components</li>
+                      <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Interface Design:</strong> Well-defined interfaces for data structures</li>
+                      <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Error Prevention:</strong> Compile-time error checking and validation</li>
+                      <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>IDE Support:</strong> Enhanced IDE support with IntelliSense</li>
+                      <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Code Quality:</strong> Improved code maintainability and readability</li>
+                    </ul>
+                  </div>
+                  <div className="space-y-4">
+                    <h6 className="font-semibold text-card-foreground flex items-center gap-2">
+                      <SecurityIcon className="text-red-600" />
+                      Security & Stability
+                    </h6>
+                    <ul className="space-y-2 text-sm text-muted-foreground">
+                      <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Type Safety:</strong> Runtime type safety and validation</li>
+                      <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Bug Prevention:</strong> Early detection of potential runtime errors</li>
+                      <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Refactoring Support:</strong> Safe code refactoring with type checking</li>
+                      <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Documentation:</strong> Self-documenting code with type annotations</li>
+                      <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Team Collaboration:</strong> Better team collaboration with clear interfaces</li>
+                      <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Future-Proofing:</strong> Easier maintenance and feature additions</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+
+              {/* v1.8.0 Details */}
+              <div className="bg-gradient-to-r from-orange-50 to-amber-50 dark:from-orange-900/20 dark:to-amber-900/20 rounded-xl p-6 ring-1 ring-orange-200 dark:ring-orange-800">
+                <div className="flex items-center gap-3 mb-4">
+                  <Badge className="bg-orange-600 text-white px-3 py-1">v1.8.0</Badge>
+                  <span className="text-sm font-medium text-orange-700 dark:text-orange-300">Analytics Dashboard</span>
+                  <span className="text-xs text-muted-foreground">September 2024</span>
+                </div>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <div className="space-y-4">
+                    <h6 className="font-semibold text-card-foreground flex items-center gap-2">
+                      <TrendingUpIcon className="text-orange-600" />
+                      Analytics Features
+                    </h6>
+                    <ul className="space-y-2 text-sm text-muted-foreground">
+                      <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Comprehensive Dashboard:</strong> Multi-page analytics with detailed insights</li>
+                      <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Real-time Charts:</strong> Interactive charts with Recharts library</li>
+                      <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Performance Metrics:</strong> KPI tracking and performance indicators</li>
+                      <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Data Filtering:</strong> Advanced filtering and search capabilities</li>
+                      <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Export Functionality:</strong> Data export in multiple formats</li>
+                      <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Custom Reports:</strong> User-defined report generation</li>
+                    </ul>
+                  </div>
+                  <div className="space-y-4">
+                    <h6 className="font-semibold text-card-foreground flex items-center gap-2">
+                      <BalanceIcon className="text-blue-600" />
+                      Data Management
+                    </h6>
+                    <ul className="space-y-2 text-sm text-muted-foreground">
+                      <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>IndexedDB Integration:</strong> Local database for offline functionality</li>
+                      <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Data Import:</strong> Excel file import with validation</li>
+                      <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Data Validation:</strong> Comprehensive data validation and error handling</li>
+                      <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Backup & Restore:</strong> Data backup and restoration capabilities</li>
+                      <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Data Integrity:</strong> Ensured data consistency and accuracy</li>
+                      <li><CheckCircleIcon className="w-4 h-4 inline mr-1 text-green-600" /> <strong>Performance Optimization:</strong> Efficient data processing and storage</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>          </div>
       </CollapsibleSection>
 
         {/* === 5. ADVANCED TECHNICAL DOCUMENTATION === */}
@@ -1306,56 +1439,57 @@ export default function AdminRumus() {
                 <div className="space-y-4 text-sm">
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <div>
-                      <h6 className="font-semibold text-red-800 dark:text-red-200 mb-3">Decision Tree Classification</h6>
+                      <h6 className="font-semibold text-red-800 dark:text-red-200 mb-3">Centralized Data Processing</h6>
                       <div className="bg-white dark:bg-gray-800 rounded p-3 text-xs">
-                        <div><strong>Severity Classification Rules:</strong></div>
+                        <div><strong>In-Memory Analytics Engine:</strong></div>
                         <div className="ml-2">
-                          <div>• Critical: System down + Business impact</div>
-                          <div>• High: Partial outage + Multiple users affected</div>
-                          <div>• Medium: Feature unavailable + Single user</div>
-                          <div>• Low: Minor issue + Workaround available</div>
+                          <div>• Data loaded once from IndexedDB to memory</div>
+                          <div>• All calculations performed in-memory for speed</div>
+                          <div>• Cross-browser persistence without re-upload</div>
+                          <div>• Real-time filtering and pagination</div>
                     </div>
-                        <div className="mt-2"><strong>Decision Tree Algorithm:</strong></div>
+                        <div className="mt-2"><strong>Centralized Utils (incidentUtils.ts):</strong></div>
                         <div className="ml-2">
-                          <div>• Information Gain: IG(S,A) = H(S) - Σ(|Sv|/|S| × H(Sv))</div>
-                          <div>• Entropy: H(S) = -Σ(p × log₂(p))</div>
-                          <div>• Split Criteria: Maximum information gain</div>
+                          <div>• calculateIncidentStats(): Comprehensive statistics</div>
+                          <div>• filterIncidents(): In-memory filtering</div>
+                          <div>• paginateIncidents(): Memory-based pagination</div>
+                          <div>• calculateCustomDuration(): Standard duration calc</div>
                   </div>
                     </div>
                   </div>
                     <div>
-                      <h6 className="font-semibold text-red-800 dark:text-red-200 mb-3">Escalation Matrix Engine</h6>
+                      <h6 className="font-semibold text-red-800 dark:text-red-200 mb-3">Enhanced Data Management</h6>
                       <div className="space-y-2 text-xs">
-                        <div><strong>Priority Queue Implementation:</strong></div>
-                        <div>• Critical: Immediate escalation (0-15 min)</div>
-                        <div>• High: 1-hour escalation window</div>
-                        <div>• Medium: 4-hour escalation window</div>
-                        <div>• Low: 24-hour escalation window</div>
-                        <div className="mt-2"><strong>Escalation Triggers:</strong></div>
-                        <div>• Time-based: SLA breach approaching</div>
-                        <div>• Volume-based: Queue length &gt; threshold</div>
-                        <div>• Complexity-based: Skill level mismatch</div>
+                        <div><strong>Performance Improvements:</strong></div>
+                        <div>• Instant data updates without IndexedDB queries</div>
+                        <div>• Consistent calculations across all pages</div>
+                        <div>• Better error handling for NaN/undefined values</div>
+                        <div>• Optimized memory usage and processing speed</div>
+                        <div className="mt-2"><strong>Data Consistency:</strong></div>
+                        <div>• Single source of truth for all calculations</div>
+                        <div>• Standardized duration and time calculations</div>
+                        <div>• Unified filtering and sorting logic</div>
                 </div>
                   </div>
                   </div>
                   
                     <div>
-                                          <h6 className="font-semibold text-red-800 dark:text-red-200 mb-3">Root Cause Analysis (Fishbone)</h6>
+                                          <h6 className="font-semibold text-red-800 dark:text-red-200 mb-3">Advanced Features</h6>
                     <div className="bg-gray-50 dark:bg-gray-800 rounded p-3 text-xs">
-                      <div><strong>Causal Inference Algorithm:</strong></div>
+                      <div><strong>Enhanced Functionality:</strong></div>
                       <div className="ml-2">
-                        <div>1. Data Collection: Incident logs, system metrics</div>
-                        <div>2. Pattern Recognition: Temporal correlation analysis</div>
-                        <div>3. Hypothesis Generation: Causal graph construction</div>
-                        <div>4. Statistical Testing: Granger causality tests</div>
-                        <div>5. Validation: A/B testing on similar incidents</div>
+                        <div>• Real-time data processing and analytics</div>
+                        <div>• Cross-browser data persistence</div>
+                        <div>• Improved data validation and error handling</div>
+                        <div>• Better performance and user experience</div>
+                        <div>• Consistent data handling across sessions</div>
                     </div>
-                      <div className="mt-2"><strong>SLA Calculation Engine:</strong></div>
+                      <div className="mt-2"><strong>Technical Improvements:</strong></div>
                       <div className="ml-2">
-                        <div>• Business Hours: Mon-Fri 9AM-6PM</div>
-                        <div>• Response Time: Time to first acknowledgment</div>
-                        <div>• Resolution Time: Time to incident closure</div>
-                        <div>• SLA Formula: Actual_Time / Target_Time</div>
+                        <div>• TypeScript error fixes and code cleanup</div>
+                        <div>• Removed unused imports and variables</div>
+                        <div>• Better code organization and maintainability</div>
+                        <div>• Enhanced debugging and logging capabilities</div>
                   </div>
                     </div>
                   </div>
@@ -1370,21 +1504,21 @@ export default function AdminRumus() {
                 <div className="space-y-4 text-sm">
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <div>
-                      <h6 className="font-semibold text-pink-800 dark:text-pink-200 mb-3">DBSCAN Clustering Algorithm</h6>
+                      <h6 className="font-semibold text-pink-800 dark:text-pink-200 mb-3">NCAL Duration Trends Chart</h6>
                       <div className="bg-white dark:bg-gray-800 rounded p-3 text-xs">
-                        <div><strong>Pattern Recognition Parameters:</strong></div>
+                        <div><strong>New Chart Implementation:</strong></div>
                         <div className="ml-2">
-                          <div>• Epsilon (ε): 0.5 (neighborhood radius)</div>
-                          <div>• MinPts: 3 (minimum points for core)</div>
-                          <div>• Distance Metric: Euclidean distance</div>
+                          <div>• Replaced "Site Performance" with "NCAL Duration Trends by Month"</div>
+                          <div>• Shows net duration trends by NCAL level per month</div>
+                          <div>• Duration calculation: baseDuration - pauseTime (net duration)</div>
+                          <div>• Line chart with multiple lines for each NCAL level</div>
                     </div>
-                        <div className="mt-2"><strong>Algorithm Steps:</strong></div>
+                        <div className="mt-2"><strong>Chart Features:</strong></div>
                         <div className="ml-2">
-                          <div>1. Mark all points as unvisited</div>
-                          <div>2. Select random unvisited point p</div>
-                          <div>3. Find ε-neighborhood of p</div>
-                          <div>4. If |Nε(p)| &lt; MinPts: mark as noise</div>
-                          <div>5. Else: create new cluster, expand recursively</div>
+                          <div>• NCAL color coding: Blue (#3b82f6), Green (#10b981), etc.</div>
+                          <div>• Monthly matrix table showing average net duration</div>
+                          <div>• Real-time data updates from centralized utils</div>
+                          <div>• Responsive design with proper scaling</div>
                     </div>
                   </div>
                 </div>
@@ -1439,61 +1573,55 @@ export default function AdminRumus() {
                 <div className="space-y-4 text-sm">
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <div>
-                      <h6 className="font-semibold text-indigo-800 dark:text-indigo-200 mb-3">🤖 BERT Classification Pipeline</h6>
+                      <h6 className="font-semibold text-indigo-800 dark:text-indigo-200 mb-3">🔧 Vendor Duration Calculation Fix</h6>
                       <div className="bg-white dark:bg-gray-800 rounded p-3 text-xs">
-                        <div><strong>NLP Processing Steps:</strong></div>
+                        <div><strong>Duration Calculation Improvements:</strong></div>
                         <div className="ml-2">
-                          <div>1. Tokenization: WordPiece algorithm</div>
-                          <div>2. Embedding: 768-dimensional vectors</div>
-                          <div>3. Attention: Multi-head self-attention</div>
-                          <div>4. Classification: Softmax output layer</div>
+                          <div>• Fixed double-subtract issue in vendor duration</div>
+                          <div>• Enhanced timestamp mapping for pause/restart fields</div>
+                          <div>• Added support for endPause1, endPause2, endPause1Time, endPause2Time</div>
+                          <div>• Improved overlap calculation for vendor window</div>
                     </div>
-                        <div className="mt-2"><strong>Model Architecture:</strong></div>
+                        <div className="mt-2"><strong>getWanedaDuration Function:</strong></div>
                         <div className="ml-2">
-                          <div>• Layers: 12 transformer layers</div>
-                          <div>• Attention heads: 12</div>
-                          <div>• Hidden size: 768</div>
-                          <div>• Vocabulary: 30,000 tokens</div>
-                    </div>
-                        <div className="mt-2"><strong>Performance Metrics:</strong></div>
-                        <div className="ml-2">
-                          <div>• Accuracy: 94.2%</div>
-                          <div>• F1-Score: 0.93</div>
-                          <div>• Inference time: 150ms</div>
+                          <div>• Priority: Use totalDurationVendorMin from DB if available</div>
+                          <div>• Fallback: Calculate (Escalation→End) - overlap pauses</div>
+                          <div>• Overlap calculation: Only pause time within vendor window</div>
+                          <div>• Result: Accurate net duration for vendor performance</div>
                     </div>
                   </div>
                 </div>
                     <div>
-                      <h6 className="font-semibold text-indigo-800 dark:text-indigo-200 mb-3">TF-IDF Knowledge Ranking</h6>
+                      <h6 className="font-semibold text-indigo-800 dark:text-indigo-200 mb-3">🎨 Visual Alert System</h6>
                       <div className="space-y-2 text-xs">
-                        <div><strong>TF-IDF Formula:</strong></div>
-                        <div>TF-IDF(t,d) = TF(t,d) × IDF(t)</div>
-                        <div>• TF(t,d) = count(t,d) / total_terms(d)</div>
-                        <div>• IDF(t) = log(total_docs / docs_with_term(t))</div>
-                        <div className="mt-2"><strong>Ranking Algorithm:</strong></div>
-                        <div>• Query expansion: Synonyms + related terms</div>
-                        <div>• Relevance score: Cosine similarity</div>
-                        <div>• Boost factors: Recency, popularity, accuracy</div>
+                        <div><strong>Detail Cases Color Coding:</strong></div>
+                        <div>• Red text for cases exceeding SLA target (4 hours)</div>
+                        <div>• Red text for cases exceeding power target (+1 dBm)</div>
+                        <div>• Applied to: Duration, Selisih, Performa, Power After, Δ Power</div>
+                        <div className="mt-2"><strong>Conditional Styling:</strong></div>
+                        <div>• isOverTarget: duration &gt; VENDOR_SLA_MINUTES (240 min)</div>
+                        <div>• isPowerOverTarget: powerAfter &gt; POWER_DELTA_OK_DBM (+1 dBm)</div>
+                        <div>• Styling: text-red-600 dark:text-red-400 font-semibold</div>
                   </div>
                     </div>
               </div>
 
                   <div>
-                                          <h6 className="font-semibold text-indigo-800 dark:text-indigo-200 mb-3">Skill Matching Algorithm</h6>
+                                          <h6 className="font-semibold text-indigo-800 dark:text-indigo-200 mb-3">🔄 Cross-Browser Persistence</h6>
                     <div className="bg-gray-50 dark:bg-gray-800 rounded p-3 text-xs">
-                      <div><strong>Cosine Similarity Calculation:</strong></div>
+                      <div><strong>In-Memory Processing:</strong></div>
                       <div className="ml-2">
-                        <div>cos(θ) = (A·B) / (||A|| × ||B||)</div>
-                        <div>• A: Agent skill vector</div>
-                        <div>• B: Ticket requirement vector</div>
-                        <div>• Range: 0 (no match) to 1 (perfect match)</div>
+                        <div>• All analytics calculations moved to in-memory processing</div>
+                        <div>• Data loaded once from IndexedDB, processed in memory</div>
+                        <div>• No dependency on IndexedDB for filtering/pagination</div>
+                        <div>• Consistent performance across different browsers</div>
                       </div>
-                      <div className="mt-2"><strong>Training Effectiveness Analysis:</strong></div>
+                      <div className="mt-2"><strong>Technical Improvements:</strong></div>
                       <div className="ml-2">
-                        <div>• Pre-training metrics: Baseline performance</div>
-                        <div>• Post-training metrics: Improved performance</div>
-                        <div>• Statistical significance: t-test (p &lt; 0.05)</div>
-                        <div>• ROI calculation: (improvement - cost) / cost</div>
+                        <div>• Fixed TypeScript errors and unused imports</div>
+                        <div>• Enhanced error handling for NaN/undefined values</div>
+                        <div>• Better code organization and maintainability</div>
+                        <div>• Improved debugging and logging capabilities</div>
                     </div>
                       </div>
                     </div>
@@ -1508,17 +1636,21 @@ export default function AdminRumus() {
                 <div className="space-y-4 text-sm">
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <div>
-                      <h6 className="font-semibold text-cyan-800 dark:text-cyan-200 mb-3">Web Vitals Performance Monitoring</h6>
+                      <h6 className="font-semibold text-cyan-800 dark:text-cyan-200 mb-3">🔄 Centralized Utils Integration</h6>
                       <div className="bg-white dark:bg-gray-800 rounded p-3 text-xs">
-                        <div><strong>Core Web Vitals Metrics:</strong></div>
+                        <div><strong>Shared Calculation Logic:</strong></div>
                         <div className="ml-2">
-                                                   <div>• LCP (Largest Contentful Paint): &lt; 2.5s</div>
-                         <div>• FID (First Input Delay): &lt; 100ms</div>
-                         <div>• CLS (Cumulative Layout Shift): &lt; 0.1</div>
+                          <div>• Imported normalizeNCAL from incidentUtils.ts</div>
+                          <div>• Removed duplicate local function definitions</div>
+                          <div>• Consistent NCAL normalization across all pages</div>
+                          <div>• Better code maintainability and consistency</div>
                 </div>
-                        <div className="mt-2"><strong>Performance Budget:</strong></div>
+                        <div className="mt-2"><strong>Performance Improvements:</strong></div>
                         <div className="ml-2">
-                                                   <div>• JavaScript: &lt; 300KB</div>
+                          <div>• In-memory data processing for faster analytics</div>
+                          <div>• Reduced IndexedDB dependency for calculations</div>
+                          <div>• Better error handling and data validation</div>
+                          <div>• Improved cross-browser compatibility</div>
                          <div>• CSS: &lt; 50KB</div>
                          <div>• Images: &lt; 1MB total</div>
                          <div>• Fonts: &lt; 100KB</div>

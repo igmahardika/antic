@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '@/lib/db';
+import { calculateCustomDuration, calculateNetDuration, normalizeNCAL, safeMinutes } from '@/utils/incidentUtils';
 import {
   Card,
   CardContent,
@@ -60,7 +61,6 @@ const NCAL_TARGETS: Record<string, number> = {
 const NCAL_ORDER = ['Blue', 'Yellow', 'Orange', 'Red', 'Black'];
 
 // Helper functions for deep analytics
-const safeMinutes = (m?: number | null) => (m && m > 0 ? m : 0);
 const pct = (a: number, b: number) => (b > 0 ? (a / b) * 100 : 0);
 const percentile = (arr: number[], p = 0.95) => {
   if (!arr.length) return 0;
@@ -190,29 +190,7 @@ const IncidentAnalytics: React.FC = () => {
   }, [allIncidents]);
 
   // Normalize NCAL text to capitalized key
-  const normalizeNCAL = (ncal: string | null | undefined): string => {
-    if (!ncal) return 'Unknown';
-    const value = ncal.toString().trim().toLowerCase();
-    switch (value) {
-      case 'blue':
-      case 'biru':
-        return 'Blue';
-      case 'yellow':
-      case 'kuning':
-        return 'Yellow';
-      case 'orange':
-      case 'jingga':
-        return 'Orange';
-      case 'red':
-      case 'merah':
-        return 'Red';
-      case 'black':
-      case 'hitam':
-        return 'Black';
-      default:
-        return ncal.trim();
-    }
-  };
+  // Menggunakan fungsi normalizeNCAL dari utils yang tidak bergantung pada IndexedDB
 
   // Format minutes into HH:MM:SS
   const formatDurationHMS = (minutes: number): string => {
@@ -223,25 +201,7 @@ const IncidentAnalytics: React.FC = () => {
     return `${hrs}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
-  // Use the fixed duration from database (already corrected by automatic fix)
-  const calculateCustomDuration = (incident: any): number => {
-    // Use the corrected durationMin that was fixed by our automatic fix
-    if (incident.durationMin && incident.durationMin > 0) {
-      return incident.durationMin;
-    }
-    
-    // Fallback to other duration fields if available
-    if (incident.durationVendorMin && incident.durationVendorMin > 0) {
-      return incident.durationVendorMin;
-    }
-    
-    if (incident.totalDurationVendorMin && incident.totalDurationVendorMin > 0) {
-      return incident.totalDurationVendorMin;
-    }
-    
-    // If no duration available, return 0
-    return 0;
-  };
+  // Menggunakan fungsi calculateCustomDuration dari utils yang tidak bergantung pada IndexedDB
 
   // Filter incidents by period
   const filteredIncidents = useMemo(() => {
@@ -436,6 +396,56 @@ const IncidentAnalytics: React.FC = () => {
     
     return chartData;
   }, [byMonthNCALDuration]);
+
+  // Monthly duration trends with pause time included per NCAL
+  const monthlyDurationWithPauseData = useMemo(() => {
+    const map: Record<string, Record<string, { total: number; count: number; avg: number }>> = {};
+    
+    filteredIncidents.forEach((inc) => {
+      if (!inc.startTime) return;
+      const date = new Date(inc.startTime);
+      const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+      const ncal = normalizeNCAL(inc.ncal);
+      
+      if (!map[key]) map[key] = {};
+      if (!map[key][ncal]) map[key][ncal] = { total: 0, count: 0, avg: 0 };
+      
+      // Calculate net duration (duration minus pause time) - menggunakan fungsi dari utils
+      const netDuration = calculateNetDuration(inc);
+      
+      if (netDuration > 0) {
+        map[key][ncal].total += netDuration;
+        map[key][ncal].count += 1;
+      }
+    });
+    
+    // Calculate averages for each NCAL per month
+    Object.keys(map).forEach((month) => {
+      Object.keys(map[month]).forEach((ncal) => {
+        const obj = map[month][ncal];
+        if (obj.count > 0 && obj.total > 0) {
+          obj.avg = obj.total / obj.count;
+        } else {
+          obj.avg = 0;
+        }
+      });
+    });
+    
+    // Convert to chart data format with NCAL lines
+    const chartData = Object.keys(map)
+      .sort()
+      .map((month) => {
+        const row: any = { month };
+        NCAL_ORDER.forEach((ncal) => {
+          row[ncal] = map[month]?.[ncal]?.avg || 0;
+        });
+        return row;
+      });
+    
+    console.log('📊 DEBUG: Monthly Net Duration data per NCAL (duration minus pause time):', chartData);
+    
+    return chartData;
+  }, [filteredIncidents]);
 
 
 
@@ -1096,40 +1106,103 @@ const IncidentAnalytics: React.FC = () => {
           </Card>
         </div>
 
-        {/* Site Performance & Performance Outliers */}
+        {/* NCAL Duration Trends by Month (net duration minus pause time) & Performance Outliers */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <Card className="bg-card text-card-foreground  rounded-2xl shadow-lg">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <AssignmentIcon className="w-6 h-6 text-blue-600" /> Site Performance
+                <ShowChartIcon className="w-6 h-6 text-blue-600" /> NCAL Duration Trends by Month
               </CardTitle>
-              <CardDescription>Top performing sites by incident volume and resolution time</CardDescription>
+              <CardDescription>Average net duration trends by NCAL level per month (duration minus pause time)</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-2">
-              {deep.topSitesBreach.length === 0 ? (
+            <CardContent>
+              {monthlyDurationWithPauseData.length > 0 ? (
+                <ChartContainer config={{}}>
+                  <LineChart data={monthlyDurationWithPauseData} margin={{ top: 0, right: 12, left: 12, bottom: 0 }}>
+                    <CartesianGrid vertical={false} stroke="#e5e7eb" />
+                    <XAxis dataKey="month" tickLine={false} axisLine={false} tickMargin={8} tick={{ fill: '#6b7280', fontSize: 12 }} tickFormatter={(value: string) => {
+                      const [year, month] = value.split('-');
+                      const names = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+                      return `${names[parseInt(month) - 1]} ${year}`;
+                    }} />
+                    <YAxis tickLine={false} axisLine={false} tickMargin={8} tick={{ fill: '#6b7280', fontSize: 12 }} tickFormatter={(v: number) => formatDurationHMS(v)} />
+                    <ChartTooltip content={<ChartTooltipContent formatter={(value: number) => formatDurationHMS(value)} />} />
+                    {NCAL_ORDER.map((ncal) => (
+                      <Line
+                        key={ncal}
+                        dataKey={ncal}
+                        type="natural"
+                        stroke={NCAL_COLORS[ncal]}
+                        strokeWidth={2}
+                        dot={{ fill: NCAL_COLORS[ncal] }}
+                        activeDot={{ r: 5 }}
+                      />
+                    ))}
+                  </LineChart>
+                </ChartContainer>
+              ) : (
                 <div className="flex flex-col items-center justify-center py-8 text-center">
                   <div className="w-16 h-16 bg-gray-100 dark:bg-zinc-800 rounded-full flex items-center justify-center mb-4">
-                    <AssignmentIcon className="w-8 h-8 text-gray-400" />
+                    <ShowChartIcon className="w-8 h-8 text-gray-400" />
                   </div>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">No site data</p>
-                  <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">No site information available</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">No duration data</p>
+                  <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                    {filteredIncidents.length === 0 ? 'No incidents found' : 'No duration data available'}
+                  </p>
                 </div>
-              ) : (
-                deep.topSitesBreach.map(([name, count], idx) => (
-                  <div key={idx} className="flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-zinc-800 hover:bg-gray-100 dark:hover:bg-zinc-700 transition-colors">
-                    <div className="min-w-0 flex-1">
-                      <div className="text-sm font-medium truncate text-card-foreground">{name}</div>
-                      <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                        {count} incidents
-                      </div>
-                    </div>
-                    <Badge variant="default" className="ml-4 bg-blue-600 text-white">
-                      #{idx + 1}
-                    </Badge>
-                  </div>
-                ))
               )}
             </CardContent>
+            
+            {/* Duration Trends Table */}
+            {monthlyDurationWithPauseData.length > 0 && (
+              <CardFooter className="pt-0">
+                <div className="w-full">
+                  <h4 className="text-sm font-semibold text-card-foreground mb-3">Monthly Average Net Duration per NCAL (HH:MM:SS)</h4>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-xs border-collapse">
+                      <thead>
+                        <tr className="border-b border-border">
+                          <th className="text-left p-2 font-medium text-muted-foreground">NCAL</th>
+                          {monthlyDurationWithPauseData.map((row) => (
+                            <th key={row.month} className="text-center p-2 font-medium text-muted-foreground">
+                              {(() => {
+                                const [year, month] = row.month.split('-');
+                                const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+                                return `${monthNames[parseInt(month) - 1]} ${year}`;
+                              })()}
+                            </th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {NCAL_ORDER.map((ncal) => (
+                          <tr key={ncal} className="border-b border-border hover:bg-muted/50">
+                            <td className="p-2 font-medium text-card-foreground" style={{ color: NCAL_COLORS[ncal] }}>
+                              {ncal}
+                            </td>
+                            {monthlyDurationWithPauseData.map((row) => {
+                              const value = row[ncal] || 0;
+                              const hours = Math.floor(value / 60);
+                              const minutes = Math.floor(value % 60);
+                              const seconds = Math.floor((value % 1) * 60);
+                              const formattedTime = value > 0 
+                                ? `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`
+                                : '0:00:00';
+                              
+                              return (
+                                <td key={row.month} className="text-center p-2 text-card-foreground">
+                                  {formattedTime}
+                                </td>
+                              );
+                            })}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </CardFooter>
+            )}
           </Card>
 
           <Card className="bg-card text-card-foreground rounded-2xl shadow-lg">

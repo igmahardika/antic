@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '@/lib/db';
+import { normalizeNCAL } from '@/utils/incidentUtils';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -99,29 +100,7 @@ const calculateRiskScore = (incidentCount: number, avgDurationMinutes: number, r
   };
 };
 
-  const normalizeNCAL = (ncal: string | null | undefined): string => {
-    if (!ncal) return 'Unknown';
-    const value = ncal.toString().trim().toLowerCase();
-    switch (value) {
-      case 'blue':
-      case 'biru':
-        return 'Blue';
-      case 'yellow':
-      case 'kuning':
-        return 'Yellow';
-      case 'orange':
-      case 'jingga':
-        return 'Orange';
-      case 'red':
-      case 'merah':
-        return 'Red';
-      case 'black':
-      case 'hitam':
-        return 'Black';
-      default:
-        return ncal.trim();
-    }
-  };
+  // Menggunakan fungsi normalizeNCAL dari utils yang tidak bergantung pada IndexedDB
 
 export const SiteAnalytics: React.FC = () => {
   const [selectedPeriod, setSelectedPeriod] = useState<'3m' | '6m' | '1y' | 'all'>('6m');

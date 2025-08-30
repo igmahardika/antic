@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { Incident, IncidentFilter } from '@/types/incident';
-import { queryIncidents, cleanDuplicateIncidents, getDatabaseStats, validateAndRepairDatabase } from '@/utils/incidentUtils';
+import { queryIncidents, cleanDuplicateIncidents, getDatabaseStats, validateAndRepairDatabase, calculateIncidentStats, filterIncidents, paginateIncidents } from '@/utils/incidentUtils';
 import { IncidentUpload } from '@/components/IncidentUpload';
 import { db } from '@/lib/db';
 import { Button } from '@/components/ui/button';
@@ -85,46 +85,18 @@ export const IncidentData: React.FC = () => {
     }
   }, [allIncidents]);
 
-  // Calculate summary data for ALL uploaded data (not filtered)
+  // Calculate summary data for ALL uploaded data (not filtered) - menggunakan fungsi yang tidak bergantung pada IndexedDB
   const allDataSummary = React.useMemo(() => {
-    if (!allIncidents) return { total: 0, open: 0, closed: 0, avgDuration: 0, ncalCounts: {} };
+    if (!allIncidents) return { total: 0, open: 0, closed: 0, avgDuration: 0, avgNetDuration: 0, ncalCounts: {} };
     
-    const total = allIncidents.length;
-    const open = allIncidents.filter(i => i.status?.toLowerCase() !== 'done').length;
-    const closed = allIncidents.filter(i => i.status?.toLowerCase() === 'done').length;
-    const incidentsWithDuration = allIncidents.filter(i => i.durationMin && i.durationMin > 0);
-    const avgDuration = incidentsWithDuration.length > 0 
-      ? Math.round(incidentsWithDuration.reduce((sum, i) => sum + (i.durationMin || 0), 0) / incidentsWithDuration.length)
-      : 0;
-
-    // Calculate NCAL distribution with normalized values
-    const ncalCounts = allIncidents.reduce((acc, incident) => {
-      const normalizedNcal = normalizeNCAL(incident.ncal);
-      acc[normalizedNcal] = (acc[normalizedNcal] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
-
-    // Debug: Log NCAL counts
-    console.log('NCAL Counts:', ncalCounts);
-    console.log('All Incidents Count:', allIncidents.length);
-    console.log('Sample NCAL values:', allIncidents.slice(0, 5).map(i => i.ncal));
-
-    return { total, open, closed, avgDuration, ncalCounts };
+    return calculateIncidentStats(allIncidents);
   }, [allIncidents]);
 
-  // Calculate summary data for filtered data (for comparison)
+  // Calculate summary data for filtered data (for comparison) - menggunakan fungsi yang tidak bergantung pada IndexedDB
   const filteredDataSummary = React.useMemo(() => {
-    if (!incidents) return { total: 0, open: 0, closed: 0, avgDuration: 0 };
+    if (!incidents) return { total: 0, open: 0, closed: 0, avgDuration: 0, avgNetDuration: 0 };
     
-    const total = incidents.length;
-    const open = incidents.filter(i => i.status?.toLowerCase() !== 'done').length;
-    const closed = incidents.filter(i => i.status?.toLowerCase() === 'done').length;
-    const incidentsWithDuration = incidents.filter(i => i.durationMin && i.durationMin > 0);
-    const avgDuration = incidentsWithDuration.length > 0 
-      ? Math.round(incidentsWithDuration.reduce((sum, i) => sum + (i.durationMin || 0), 0) / incidentsWithDuration.length)
-      : 0;
-
-    return { total, open, closed, avgDuration };
+    return calculateIncidentStats(incidents);
   }, [incidents]);
 
   // Get available months from data based on startTime column
@@ -157,9 +129,16 @@ export const IncidentData: React.FC = () => {
     const loadData = async () => {
       setIsLoading(true);
       try {
-        const result = await queryIncidents(filter);
-        setIncidents(result.rows);
-        setTotal(result.total);
+        // Gunakan fungsi yang tidak bergantung pada IndexedDB
+        if (allIncidents) {
+          const filtered = filterIncidents(allIncidents, filter);
+          const result = paginateIncidents(filtered, filter.page, filter.limit);
+          setIncidents(result.rows);
+          setTotal(result.total);
+        } else {
+          setIncidents([]);
+          setTotal(0);
+        }
         
         // Load database stats for debugging
         const stats = await getDatabaseStats();
@@ -167,13 +146,15 @@ export const IncidentData: React.FC = () => {
         console.log('[IncidentData] Database stats:', stats);
       } catch (error) {
         console.error('Error loading incidents:', error);
+        setIncidents([]);
+        setTotal(0);
       } finally {
         setIsLoading(false);
       }
     };
 
     loadData();
-  }, [filter]);
+  }, [filter, allIncidents]);
 
   const handleFilterChange = (key: keyof IncidentFilter, value: any) => {
     setFilter(prev => ({
