@@ -16,7 +16,6 @@ import {
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
-  ChartLegend,
 } from '@/components/ui/chart';
 import {
   BarChart,
@@ -24,8 +23,6 @@ import {
   XAxis,
   YAxis,
   CartesianGrid,
-  PieChart,
-  Pie,
   Cell,
   LineChart,
   Line,
@@ -82,40 +79,7 @@ const takeTop = <T extends string>(map: Record<T, number>, n = 5) => {
 
 
 
-// Custom tooltip component for NCAL charts
-const NCALTooltip = ({ active, payload, label, formatter }: any) => {
-  if (!active || !payload || !payload.length) return null;
-  
-  const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  const [year, month] = label.split('-');
-  const monthName = monthNames[parseInt(month) - 1];
-  
-  return (
-    <div className="bg-card text-card-foreground  rounded-xl shadow-lg  p-4 max-h-52 overflow-y-auto min-w-[200px] text-xs">
-                      <div className="font-semibold text-sm mb-3 text-card-foreground">
-        {monthName} {year}
-      </div>
-      <div className="space-y-2">
-        {payload.map((entry: any, idx: number) => (
-          <div key={idx} className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div 
-                className="w-3 h-3 rounded-full" 
-                style={{ backgroundColor: entry.color }}
-              />
-              <span className="font-semibold text-card-foreground">
-                {entry.name} NCAL
-              </span>
-            </div>
-            <span className="font-mono text-card-foreground">
-              {formatter ? formatter(entry.value) : entry.value}
-            </span>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-};
+
 
 // Custom tooltip for SLA Breach Analysis
 const SLABreachTooltip = ({ active, payload, label }: any) => {
@@ -151,17 +115,32 @@ const SLABreachTooltip = ({ active, payload, label }: any) => {
 // Main component
 const IncidentAnalytics: React.FC = () => {
   const [selectedPeriod, setSelectedPeriod] = useState<'3m' | '6m' | '1y' | 'all'>('6m');
-  // load incidents from indexedDB with error handling
+  
+  // Get all incidents with robust database connection
   const allIncidents = useLiveQuery(async () => {
     try {
       const incidents = await db.incidents.toArray();
       console.log('✅ IncidentAnalytics: Successfully loaded', incidents.length, 'incidents from database');
-      return incidents;
+      
+      // Validate data integrity
+      const validIncidents = incidents.filter(incident => {
+        if (!incident.id || !incident.noCase) {
+          console.warn('❌ IncidentAnalytics: Found invalid incident:', incident);
+          return false;
+        }
+        return true;
+      });
+      
+      if (validIncidents.length !== incidents.length) {
+        console.warn(`❌ IncidentAnalytics: Filtered out ${incidents.length - validIncidents.length} invalid incidents`);
+      }
+      
+      return validIncidents;
     } catch (error) {
       console.error('❌ IncidentAnalytics: Failed to load incidents from database:', error);
       return [];
     }
-  });
+  }, []); // Empty dependency array to ensure stable reference
 
   // Debug: Check if incidents data exists
   console.log('IncidentAnalytics Debug:', {
@@ -269,15 +248,15 @@ const IncidentAnalytics: React.FC = () => {
     if (!allIncidents) return [] as any[];
     
     // Debug: Log filtering process
-    console.log('🔍 Filtering incidents:', {
-      totalIncidents: allIncidents.length,
-      selectedPeriod,
-      incidentsWithStartTime: allIncidents.filter(inc => inc.startTime).length
-    });
-    
-    const now = new Date();
-    let cutoff: Date;
-    switch (selectedPeriod) {
+          console.log('🔍 Filtering incidents:', {
+        totalIncidents: allIncidents.length,
+        selectedPeriod,
+        incidentsWithStartTime: allIncidents.filter(inc => inc.startTime).length
+      });
+      
+      const now = new Date();
+      let cutoff: Date;
+      switch (selectedPeriod) {
       case '3m':
         cutoff = new Date(now.getFullYear(), now.getMonth() - 3, now.getDate());
         break;
@@ -304,8 +283,8 @@ const IncidentAnalytics: React.FC = () => {
       sampleDates: filtered.slice(0, 3).map(inc => inc.startTime)
     });
     
-    return filtered;
-  }, [allIncidents, selectedPeriod]);
+          return filtered;
+    }, [allIncidents, selectedPeriod]);
 
   // Stats aggregator (simple summary for KPI cards)
   const stats = useMemo(() => {
@@ -327,28 +306,7 @@ const IncidentAnalytics: React.FC = () => {
     return { total, open, closed, mttr };
   }, [filteredIncidents]);
 
-  // NCAL distributions & monthly counts for required charts
-  const byNCAL = useMemo(() => {
-    const map: Record<string, number> = {};
-    filteredIncidents.forEach((inc) => {
-      const ncal = normalizeNCAL(inc.ncal);
-      map[ncal] = (map[ncal] || 0) + 1;
-    });
-    
-    // Debug: Log NCAL data
-          console.log('NCAL Distribution Debug:', {
-      totalIncidents: filteredIncidents.length,
-      byNCAL: map,
-      sampleNCALValues: filteredIncidents.slice(0, 10).map(inc => ({
-        id: inc.id,
-        ncal: inc.ncal,
-        normalized: normalizeNCAL(inc.ncal)
-      })),
-      hasNCALData: Object.values(map).some(count => count > 0)
-    });
-    
-    return map;
-  }, [filteredIncidents]);
+
 
   const byMonthNCAL = useMemo(() => {
     const map: Record<string, Record<string, number>> = {};
@@ -479,152 +437,7 @@ const IncidentAnalytics: React.FC = () => {
     return chartData;
   }, [byMonthNCALDuration]);
 
-  // Aggregate real and net durations per NCAL each month along with counts.
-  const ncalDurationMonthly = useMemo(() => {
-    const map: Record<string, Record<string, { count: number; realTotal: number; netTotal: number }>> = {};
-    
-    // Debug: Check if pause data exists
-    const pauseDataCheck = filteredIncidents.filter(inc => {
-      const pause = safeMinutes(
-        inc.totalDurationPauseMin || 
-        inc.pauseDuration || 
-        inc.pauseTime || 
-        inc.totalPauseMin ||
-        0
-      );
-      return pause > 0;
-    });
-            console.log('Debug: Incidents with pause data:', pauseDataCheck.length, 'out of', filteredIncidents.length);
-    if (pauseDataCheck.length > 0) {
-              console.log('Sample pause data:', pauseDataCheck.slice(0, 3).map(inc => ({
-        id: inc.id,
-        durationMin: inc.durationMin,
-        totalDurationPauseMin: inc.totalDurationPauseMin,
-        pauseDuration: inc.pauseDuration,
-        pauseTime: inc.pauseTime,
-        totalPauseMin: inc.totalPauseMin,
-        calculatedPause: safeMinutes(
-          inc.totalDurationPauseMin || 
-          inc.pauseDuration || 
-          inc.pauseTime || 
-          inc.totalPauseMin ||
-          0
-        )
-      })));
-    } else {
-              console.log('No pause data found. Checking available fields:', filteredIncidents.slice(0, 3).map(inc => ({
-        id: inc.id,
-        availableFields: Object.keys(inc).filter(key => 
-          key.toLowerCase().includes('pause') || 
-          key.toLowerCase().includes('delay') ||
-          key.toLowerCase().includes('wait')
-        )
-      })));
-    }
-    
-    filteredIncidents.forEach((inc) => {
-      if (!inc.startTime) return;
-      const date = new Date(inc.startTime);
-      const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-      const ncal = normalizeNCAL(inc.ncal);
-      const real = safeMinutes(inc.durationMin);
-      
-      // Try multiple field names for pause data with fallbacks
-      const pause = safeMinutes(
-        inc.totalDurationPauseMin || 
-        inc.pauseDuration || 
-        inc.pauseTime || 
-        inc.totalPauseMin ||
-        0
-      );
-      
-      // Calculate net duration: real duration minus pause time
-      const net = real > 0 ? Math.max(0, real - pause) : 0;
-      
-      // Calculate effective net duration for the second chart
-      // This represents actual productive work time after accounting for various factors
-      let effectiveNet = net;
-      if (real > 0) {
-        if (pause > 0) {
-          // If we have actual pause data, add additional non-productive time estimate
-          // Assume 10-20% additional non-productive time (coordination, documentation, etc.)
-          const additionalNonProductivePercentage = 0.10 + (Math.random() * 0.10); // 10-20%
-          const additionalNonProductive = real * additionalNonProductivePercentage;
-          effectiveNet = Math.max(0, net - additionalNonProductive);
-        } else {
-          // If no pause data, estimate total non-productive time as 20-35%
-          const totalNonProductivePercentage = 0.20 + (Math.random() * 0.15); // 20-35%
-          const totalNonProductive = real * totalNonProductivePercentage;
-          effectiveNet = Math.max(0, real - totalNonProductive);
-        }
-      }
-      
-      if (!map[key]) map[key] = {};
-      if (!map[key][ncal]) {
-        map[key][ncal] = { count: 0, realTotal: 0, netTotal: 0 };
-      }
-      map[key][ncal].count += 1;
-      map[key][ncal].realTotal += real;
-      map[key][ncal].netTotal += effectiveNet;
-    });
-    
-    const months = Object.keys(map).sort();
-    const realData: any[] = [];
-    const netData: any[] = [];
-    const countData: any[] = [];
-    
-    months.forEach((month) => {
-      const realRow: any = { month };
-      const netRow: any = { month };
-      const countRow: any = { month };
-      
-      NCAL_ORDER.forEach((ncal) => {
-        const data = map[month][ncal];
-        if (data) {
-          const realAvg = data.realTotal / data.count;
-          const netAvg = data.netTotal / data.count;
-          realRow[ncal] = realAvg;
-          netRow[ncal] = netAvg;
-          countRow[ncal] = data.count;
-          
-          // Debug: Log differences
-          if (Math.abs(realAvg - netAvg) > 0.1) {
-            console.log(`${month} ${ncal}: Real=${realAvg.toFixed(2)}, Net=${netAvg.toFixed(2)}, Diff=${(realAvg - netAvg).toFixed(2)}`);
-          }
-        } else {
-          realRow[ncal] = 0;
-          netRow[ncal] = 0;
-          countRow[ncal] = 0;
-        }
-      });
-      
-      realData.push(realRow);
-      netData.push(netRow);
-      countData.push(countRow);
-    });
-    
-    // Debug: Check if realData and netData are identical
-    const isIdentical = JSON.stringify(realData) === JSON.stringify(netData);
-            console.log('Debug: Are realData and netData identical?', isIdentical);
-    if (isIdentical) {
-              console.log('Warning: Real and Net duration data are identical! This suggests pause data may not be available.');
-    } else {
-              console.log('Success: Real and Net duration data are different!');
-      // Show some sample differences
-      realData.forEach((realRow, index) => {
-        const netRow = netData[index];
-        NCAL_ORDER.forEach(ncal => {
-          const realVal = realRow[ncal];
-          const netVal = netRow[ncal];
-          if (Math.abs(realVal - netVal) > 1) {
-            console.log(`${realRow.month} ${ncal}: Real=${realVal.toFixed(2)}, Net=${netVal.toFixed(2)}, Diff=${(realVal - netVal).toFixed(2)}`);
-          }
-        });
-      });
-    }
-    
-    return { realData, netData, countData };
-  }, [filteredIncidents]);
+
 
   // Priority distribution data for bar chart
   const priorityData = useMemo(() => {
@@ -838,17 +651,17 @@ const IncidentAnalytics: React.FC = () => {
                 { key: '1y', label: '1Y' },
                 { key: 'all', label: 'All' },
               ].map(({ key, label }) => (
-                <Button
-                  key={key}
-                  variant={selectedPeriod === key ? 'default' : 'ghost'}
-                  size="sm"
-                  onClick={() => setSelectedPeriod(key as any)}
-                  className={`text-xs rounded-xl ${
-                    selectedPeriod === key 
-                      ? 'bg-blue-600 hover:bg-blue-700 text-white' 
-                      : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-zinc-800'
-                  }`}
-                >
+                                  <Button
+                    key={key}
+                    variant={selectedPeriod === key ? 'default' : 'ghost'}
+                    size="sm"
+                    onClick={() => setSelectedPeriod(key as any)}
+                    className={`text-xs rounded-xl ${
+                      selectedPeriod === key 
+                        ? 'bg-blue-600 hover:bg-blue-700 text-white' 
+                        : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-zinc-800'
+                    }`}
+                  >
                   {label}
                 </Button>
               ))}
@@ -910,171 +723,11 @@ const IncidentAnalytics: React.FC = () => {
           </CardContent>
         </Card>
 
-        {/* NCAL Overview - Performance & Distribution */}
+
+
+        {/* Monthly Duration Trends & Monthly Incident Volume */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <AssignmentIcon className="w-6 h-6 text-indigo-600" /> NCAL Performance vs Targets
-              </CardTitle>
-              <CardDescription className="text-muted-foreground">How each NCAL level performs against SLA targets</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {NCAL_ORDER.map((ncal) => {
-                  const target = NCAL_TARGETS[ncal];
-                  const ncalInc = filteredIncidents.filter((i) => normalizeNCAL(i.ncal) === ncal);
-                  const avgDur = ncalInc.length > 0 ? ncalInc.reduce((s, i) => s + calculateCustomDuration(i), 0) / ncalInc.length : 0;
-                  const perf = target > 0 ? ((target - avgDur) / target) * 100 : 0;
-                  return (
-                    <div key={ncal} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-zinc-800 rounded-lg ">
-                      <div className="flex items-center gap-2">
-                        <div className="w-3 h-3 rounded-full" style={{ backgroundColor: NCAL_COLORS[ncal] }} />
-                        <span className="text-sm font-medium text-card-foreground">{ncal}</span>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-sm font-medium text-card-foreground">
-                          {formatDurationHMS(avgDur)} / {formatDurationHMS(target)}
-                        </div>
-                        <div className={`text-xs ${perf >= 0 ? 'text-green-600' : 'text-red-600'}`}>{perf >= 0 ? '+' : ''}{perf.toFixed(1)}%</div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <PieChartIconMUI className="w-6 h-6 text-purple-600" /> NCAL Distribution
-              </CardTitle>
-              <CardDescription className="text-muted-foreground">Volume distribution across NCAL levels</CardDescription>
-            </CardHeader>
-            <CardContent className="flex flex-col items-center">
-              {Object.values(byNCAL).some(count => count > 0) ? (
-                <ChartContainer config={{}}>
-                  <PieChart width={260} height={260}>
-                    <ChartTooltip content={<ChartTooltipContent hideLabel />} />
-                    <Pie data={NCAL_ORDER.map((ncal) => ({ name: ncal, value: byNCAL[ncal] || 0, color: NCAL_COLORS[ncal] }))} dataKey="value" nameKey="name" innerRadius={60} strokeWidth={5}>
-                      {NCAL_ORDER.map((ncal) => (
-                        <Cell key={ncal} fill={NCAL_COLORS[ncal]} />
-                      ))}
-                    </Pie>
-                  </PieChart>
-                </ChartContainer>
-              ) : (
-                <div className="flex flex-col items-center justify-center py-8 text-center">
-                  <div className="w-16 h-16 bg-gray-100 dark:bg-zinc-800 rounded-full flex items-center justify-center mb-4">
-                    <PieChartIconMUI className="w-8 h-8 text-gray-400" />
-                  </div>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">No NCAL data</p>
-                  <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-                    {filteredIncidents.length === 0 ? 'No incidents found' : 'No NCAL values in incidents'}
-                  </p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-        {/* Trend Analysis - Monthly Patterns */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <Card className="bg-card text-card-foreground  rounded-2xl shadow-lg">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <ShowChartIcon className="w-6 h-6 text-blue-600" /> Monthly Incident Volume
-              </CardTitle>
-              <CardDescription>Trend of incident count by NCAL level over time</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {monthlyNCALData.length > 0 ? (
-                <ChartContainer config={{}}>
-                  <LineChart data={monthlyNCALData} margin={{ top: 0, right: 12, left: 12, bottom: 0 }}>
-                    <CartesianGrid vertical={false} stroke="#e5e7eb" />
-                    <XAxis dataKey="month" tickLine={false} axisLine={false} tickMargin={8} tick={{ fill: '#6b7280', fontSize: 12 }} tickFormatter={(value: string) => {
-                      const [year, month] = value.split('-');
-                      const names = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-                      return `${names[parseInt(month) - 1]} ${year}`;
-                    }} />
-                    <YAxis tickLine={false} axisLine={false} tickMargin={8} tick={{ fill: '#6b7280', fontSize: 12 }} tickFormatter={(v: number) => v.toLocaleString()} />
-                    <ChartTooltip content={<ChartTooltipContent />} />
-                    {NCAL_ORDER.map((ncal) => (
-                      <Line
-                        key={ncal}
-                        dataKey={ncal}
-                        type="natural"
-                        stroke={NCAL_COLORS[ncal]}
-                        strokeWidth={2}
-                        dot={{ fill: NCAL_COLORS[ncal] }}
-                        activeDot={{ r: 5 }}
-                      />
-                    ))}
-                  </LineChart>
-                </ChartContainer>
-              ) : (
-                <div className="flex flex-col items-center justify-center py-8 text-center">
-                  <div className="w-16 h-16 bg-gray-100 dark:bg-zinc-800 rounded-full flex items-center justify-center mb-4">
-                    <ShowChartIcon className="w-8 h-8 text-gray-400" />
-                  </div>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">No monthly data</p>
-                  <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-                    {filteredIncidents.length === 0 ? 'No incidents found' : 'No monthly incident data'}
-                  </p>
-                </div>
-              )}
-            </CardContent>
-            
-            {/* Incident Volume Table */}
-            {monthlyNCALData.length > 0 && (
-              <CardFooter className="pt-0">
-                <div className="w-full">
-                  <h4 className="text-sm font-semibold text-card-foreground mb-3">Monthly Incident Count</h4>
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-xs border-collapse">
-                      <thead>
-                        <tr className="border-b border-border">
-                          <th className="text-left p-2 font-medium text-muted-foreground">NCAL</th>
-                          {monthlyNCALData.map((row) => (
-                            <th key={row.month} className="text-center p-2 font-medium text-muted-foreground">
-                              {(() => {
-                                const [year, month] = row.month.split('-');
-                                const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-                                return `${monthNames[parseInt(month) - 1]} ${year}`;
-                              })()}
-                            </th>
-                          ))}
-                          <th className="text-center p-2 font-medium text-muted-foreground bg-muted/50">
-                            Total
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {NCAL_ORDER.map((ncal) => {
-                          const total = monthlyNCALData.reduce((sum, row) => sum + (row[ncal] || 0), 0);
-                          return (
-                            <tr key={ncal} className="border-b border-border hover:bg-muted/50">
-                              <td className="p-2 font-medium text-card-foreground" style={{ color: NCAL_COLORS[ncal] }}>
-                                {ncal}
-                              </td>
-                              {monthlyNCALData.map((row) => (
-                                <td key={row.month} className="text-center p-2 text-card-foreground">
-                                  {(row[ncal] || 0).toLocaleString()}
-                                </td>
-                              ))}
-                              <td className="text-center p-2 font-semibold text-card-foreground bg-muted/50">
-                                {total.toLocaleString()}
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              </CardFooter>
-            )}
-          </Card>
-          <Card className="bg-card text-card-foreground  rounded-2xl shadow-lg">
+          <Card className="bg-card text-card-foreground rounded-2xl shadow-lg">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <ShowChartIcon className="w-6 h-6 text-green-600" /> Monthly Duration Trends
@@ -1170,245 +823,139 @@ const IncidentAnalytics: React.FC = () => {
               </CardFooter>
             )}
           </Card>
-        </div>
 
-        {/* Priority & Classification Analysis */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <Card className="bg-card text-card-foreground  rounded-2xl shadow-lg">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <TimelineIcon className="w-6 h-6 text-blue-600" /> Priority Distribution
+                <ShowChartIcon className="w-6 h-6 text-blue-600" /> Monthly Incident Volume
               </CardTitle>
-              <CardDescription>Volume breakdown by incident priority levels</CardDescription>
+              <CardDescription>Trend of incident count by NCAL level over time</CardDescription>
             </CardHeader>
             <CardContent>
-              <ChartContainer config={{}}>
-                <BarChart data={priorityData} margin={{ left: 12, right: 12 }}>
-                  <CartesianGrid vertical={false} stroke="#e5e7eb" />
-                  <XAxis dataKey="name" tickLine={false} axisLine={false} tickMargin={8} tick={{ fill: '#6b7280', fontSize: 12 }} />
-                  <YAxis tickLine={false} axisLine={false} tickMargin={8} tick={{ fill: '#6b7280', fontSize: 12 }} tickFormatter={(v: number) => v.toLocaleString()} />
-                  <ChartTooltip content={<ChartTooltipContent />} />
-                  <Bar dataKey="value" radius={8} fill="#3b82f6">
-                    {priorityData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.fill} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ChartContainer>
-            </CardContent>
-          </Card>
-          <Card className="bg-card text-card-foreground  rounded-2xl shadow-lg">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <TimelineIcon className="w-6 h-6 text-purple-600" /> Monthly Volume by NCAL
-              </CardTitle>
-              <CardDescription>Stacked monthly incident count by NCAL level</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ChartContainer config={{
-                Blue: {
-                  label: "Blue",
-                  color: "#3b82f6",
-                },
-                Yellow: {
-                  label: "Yellow", 
-                  color: "#eab308",
-                },
-                Orange: {
-                  label: "Orange",
-                  color: "#f97316",
-                },
-                Red: {
-                  label: "Red",
-                  color: "#ef4444",
-                },
-                Black: {
-                  label: "Black",
-                  color: "#1f2937",
-                },
-              }}>
-                <BarChart accessibilityLayer data={ncalDurationMonthly.countData} margin={{ top: 0, right: 12, left: 12, bottom: 0 }}>
-                  <CartesianGrid vertical={false} stroke="#e5e7eb" />
-                  <XAxis
-                    dataKey="month"
-                    tickLine={false}
-                    axisLine={false}
-                    tickMargin={10}
-                    tick={{ fill: '#6b7280', fontSize: 12 }}
-                    tickFormatter={(value: string) => {
+              {monthlyNCALData.length > 0 ? (
+                <ChartContainer config={{}}>
+                  <LineChart data={monthlyNCALData} margin={{ top: 0, right: 12, left: 12, bottom: 0 }}>
+                    <CartesianGrid vertical={false} stroke="#e5e7eb" />
+                    <XAxis dataKey="month" tickLine={false} axisLine={false} tickMargin={8} tick={{ fill: '#6b7280', fontSize: 12 }} tickFormatter={(value: string) => {
                       const [year, month] = value.split('-');
                       const names = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
                       return `${names[parseInt(month) - 1]} ${year}`;
-                    }}
-                  />
-                  <YAxis tickLine={false} axisLine={false} tickMargin={8} tick={{ fill: '#6b7280', fontSize: 12 }} />
-                  <ChartTooltip content={<NCALTooltip />} />
-                  <ChartLegend />
-                  {NCAL_ORDER.map((ncal, index) => (
-                    <Bar
-                      key={ncal}
-                      dataKey={ncal}
-                      stackId="a"
-                      fill={NCAL_COLORS[ncal]}
-                      radius={index === 0 ? [0, 0, 4, 4] : index === NCAL_ORDER.length - 1 ? [4, 4, 0, 0] : [0, 0, 0, 0]}
-                    />
-                  ))}
-                </BarChart>
-              </ChartContainer>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Detailed Duration Analysis */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <Card className="bg-card text-card-foreground  rounded-2xl shadow-lg">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <AccessTimeIcon className="w-6 h-6 text-indigo-600" /> Real vs Net Duration
-              </CardTitle>
-              <CardDescription className="text-muted-foreground">
-                Real duration (total time) vs Net duration (effective working time)
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ChartContainer config={{}}>
-                <LineChart data={ncalDurationMonthly.realData} margin={{ top: 0, right: 12, left: 12, bottom: 0 }}>
-                  <CartesianGrid vertical={false} stroke="#e5e7eb" />
-                  <XAxis
-                    dataKey="month"
-                    tickLine={false}
-                    axisLine={false}
-                    tickMargin={8}
-                    tick={{ fill: '#6b7280', fontSize: 12 }}
-                    tickFormatter={(value: string) => {
-                      const [year, month] = value.split('-');
-                      const names = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-                      return `${names[parseInt(month) - 1]} ${year}`;
-                    }}
-                  />
-                  <YAxis
-                    tickLine={false}
-                    axisLine={false}
-                    tickMargin={8}
-                    tick={{ fill: '#6b7280', fontSize: 12 }}
-                    tickFormatter={(v: number) => formatDurationHMS(v)}
-                  />
-                  <ChartTooltip content={<NCALTooltip formatter={(value: number) => formatDurationHMS(value)} />} />
-                  {NCAL_ORDER.map((ncal) => (
-                    <Line
-                      key={ncal}
-                      dataKey={ncal}
-                      type="natural"
-                      stroke={NCAL_COLORS[ncal]}
-                      strokeWidth={2}
-                      dot={{ fill: NCAL_COLORS[ncal] }}
-                      activeDot={{ r: 5 }}
-                    />
-                  ))}
-                </LineChart>
-              </ChartContainer>
-              <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                <div className="text-sm text-blue-700 dark:text-blue-300">
-                  <strong>Real Duration:</strong> Total time from start to resolution<br/>
-                  <strong>Net Duration:</strong> Effective working time (excluding pauses/breaks)
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="bg-card text-card-foreground  rounded-2xl shadow-lg">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <AccessTimeIcon className="w-6 h-6 text-indigo-600" /> Effective Resolution Time
-              </CardTitle>
-              <CardDescription className="text-muted-foreground">
-                Net duration after accounting for pauses, breaks, and non-productive time
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ChartContainer config={{}}>
-                <LineChart data={ncalDurationMonthly.netData} margin={{ top: 0, right: 12, left: 12, bottom: 0 }}>
-                  <CartesianGrid vertical={false} stroke="#e5e7eb" />
-                  <XAxis
-                    dataKey="month"
-                    tickLine={false}
-                    axisLine={false}
-                    tickMargin={8}
-                    tick={{ fill: '#6b7280', fontSize: 12 }}
-                    tickFormatter={(value: string) => {
-                      const [year, month] = value.split('-');
-                      const names = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-                      return `${names[parseInt(month) - 1]} ${year}`;
-                    }}
-                  />
-                  <YAxis
-                    tickLine={false}
-                    axisLine={false}
-                    tickMargin={8}
-                    tick={{ fill: '#6b7280', fontSize: 12 }}
-                    tickFormatter={(v: number) => formatDurationHMS(v)}
-                  />
-                  <ChartTooltip content={<NCALTooltip formatter={(value: number) => formatDurationHMS(value)} />} />
-                  {NCAL_ORDER.map((ncal) => (
-                    <Line
-                      key={ncal}
-                      dataKey={ncal}
-                      type="natural"
-                      stroke={NCAL_COLORS[ncal]}
-                      strokeWidth={2}
-                      dot={{ fill: NCAL_COLORS[ncal] }}
-                      activeDot={{ r: 5 }}
-                    />
-                  ))}
-                </LineChart>
-              </ChartContainer>
-              <div className="mt-4 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
-                <div className="text-sm text-green-700 dark:text-green-300">
-                  <strong>Effective Time:</strong> Actual productive work time<br/>
-                  <strong>Calculation:</strong> Real duration minus estimated non-productive time (15-25%)
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-        {/* SLA Performance & Root Cause Analysis */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <Card className="bg-card text-card-foreground  rounded-2xl shadow-lg">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <WarningAmberIcon className="w-6 h-6 text-yellow-600" /> SLA Breach Analysis
-              </CardTitle>
-              <CardDescription>Performance against SLA targets and breach patterns</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-3 gap-3 mb-4">
-                                <div className="text-center p-3 bg-red-50 dark:bg-red-900/20 rounded-lg">
-                <div className="text-lg font-bold text-red-600">{deep.breachRate.toFixed(1)}%</div>
-                  <div className="text-xs text-muted-foreground">Breach Rate</div>
-                </div>
-                <div className="text-center p-3 bg-violet-50 dark:bg-violet-900/20 rounded-lg">
-                  <div className="text-sm font-bold text-violet-600">Pause Impact</div>
-                  <div className="text-xs font-mono text-gray-700 dark:text-gray-300">{formatDurationHMS(deep.avgPauseBreach)}</div>
-                </div>
-                                <div className="text-center p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
-                <div className="text-sm font-bold text-green-600">Compliant Time</div>
-                  <div className="text-xs font-mono text-gray-700 dark:text-gray-300">{formatDurationHMS(deep.avgPauseCompliant)}</div>
-                </div>
-              </div>
-              <ChartContainer config={{}}>
-                <BarChart data={NCAL_ORDER.map((ncal) => ({ ncal, value: deep.breachByNCAL[ncal] || 0 }))} margin={{ left: 12, right: 12 }}>
-                  <CartesianGrid vertical={false} stroke="#e5e7eb" />
-                  <XAxis dataKey="ncal" tickLine={false} axisLine={false} tickMargin={8} tick={{ fill: '#6b7280', fontSize: 12 }} />
-                  <YAxis tickLine={false} axisLine={false} tickMargin={8} tick={{ fill: '#6b7280', fontSize: 12 }} />
-                  <ChartTooltip content={<SLABreachTooltip />} />
-                  <Bar dataKey="value" radius={8} fill="#ef4444">
+                    }} />
+                    <YAxis tickLine={false} axisLine={false} tickMargin={8} tick={{ fill: '#6b7280', fontSize: 12 }} tickFormatter={(v: number) => v.toLocaleString()} />
+                    <ChartTooltip content={<ChartTooltipContent />} />
                     {NCAL_ORDER.map((ncal) => (
-                      <Cell key={ncal} fill={NCAL_COLORS[ncal]} />
+                      <Line
+                        key={ncal}
+                        dataKey={ncal}
+                        type="natural"
+                        stroke={NCAL_COLORS[ncal]}
+                        strokeWidth={2}
+                        dot={{ fill: NCAL_COLORS[ncal] }}
+                        activeDot={{ r: 5 }}
+                      />
                     ))}
-                  </Bar>
-                </BarChart>
-              </ChartContainer>
+                  </LineChart>
+                </ChartContainer>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-8 text-center">
+                  <div className="w-16 h-16 bg-gray-100 dark:bg-zinc-800 rounded-full flex items-center justify-center mb-4">
+                    <ShowChartIcon className="w-8 h-8 text-gray-400" />
+                  </div>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">No monthly data</p>
+                  <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                    {filteredIncidents.length === 0 ? 'No incidents found' : 'No monthly incident data'}
+                  </p>
+                </div>
+              )}
+            </CardContent>
+            
+            {/* Incident Volume Table */}
+            {monthlyNCALData.length > 0 && (
+              <CardFooter className="pt-0">
+                <div className="w-full">
+                  <h4 className="text-sm font-semibold text-card-foreground mb-3">Monthly Incident Count</h4>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-xs border-collapse">
+                      <thead>
+                        <tr className="border-b border-border">
+                          <th className="text-left p-2 font-medium text-muted-foreground">NCAL</th>
+                          {monthlyNCALData.map((row) => (
+                            <th key={row.month} className="text-center p-2 font-medium text-muted-foreground">
+                              {(() => {
+                                const [year, month] = row.month.split('-');
+                                const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+                                return `${monthNames[parseInt(month) - 1]} ${year}`;
+                              })()}
+                            </th>
+                          ))}
+                          <th className="text-center p-2 font-medium text-muted-foreground bg-muted/50">
+                            Total
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {NCAL_ORDER.map((ncal) => {
+                          const total = monthlyNCALData.reduce((sum, row) => sum + (row[ncal] || 0), 0);
+                          return (
+                            <tr key={ncal} className="border-b border-border hover:bg-muted/50">
+                              <td className="p-2 font-medium text-card-foreground" style={{ color: NCAL_COLORS[ncal] }}>
+                                {ncal}
+                              </td>
+                              {monthlyNCALData.map((row) => (
+                                <td key={row.month} className="text-center p-2 text-card-foreground">
+                                  {(row[ncal] || 0).toLocaleString()}
+                                </td>
+                              ))}
+                              <td className="text-center p-2 font-semibold text-card-foreground bg-muted/50">
+                                {total.toLocaleString()}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </CardFooter>
+            )}
+          </Card>
+        </div>
+
+        {/* NCAL Performance vs Targets & Root Cause Analysis */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <Card className="bg-card text-card-foreground rounded-2xl shadow-lg">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <AssignmentIcon className="w-6 h-6 text-indigo-600" /> NCAL Performance vs Targets
+              </CardTitle>
+              <CardDescription className="text-muted-foreground">How each NCAL level performs against SLA targets</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {NCAL_ORDER.map((ncal) => {
+                  const target = NCAL_TARGETS[ncal];
+                  const ncalInc = filteredIncidents.filter((i) => normalizeNCAL(i.ncal) === ncal);
+                  const avgDur = ncalInc.length > 0 ? ncalInc.reduce((s, i) => s + calculateCustomDuration(i), 0) / ncalInc.length : 0;
+                  const perf = target > 0 ? ((target - avgDur) / target) * 100 : 0;
+                  return (
+                    <div key={ncal} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-zinc-800 rounded-lg ">
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 rounded-full" style={{ backgroundColor: NCAL_COLORS[ncal] }} />
+                        <span className="text-sm font-medium text-card-foreground">{ncal}</span>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-sm font-medium text-card-foreground">
+                          {formatDurationHMS(avgDur)} / {formatDurationHMS(target)}
+                        </div>
+                        <div className={`text-xs ${perf >= 0 ? 'text-green-600' : 'text-red-600'}`}>{perf >= 0 ? '+' : ''}{perf.toFixed(1)}%</div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </CardContent>
           </Card>
+
           <Card className="bg-card text-card-foreground  rounded-2xl shadow-lg">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -1440,77 +987,73 @@ const IncidentAnalytics: React.FC = () => {
             </CardContent>
           </Card>
         </div>
-        {/* Current Backlog Status */}
+
+        {/* Priority Distribution & SLA Breach Analysis */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <Card className="bg-card text-card-foreground  rounded-2xl shadow-lg">
+          <Card className="bg-card text-card-foreground rounded-2xl shadow-lg">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <AccessTimeIcon className="w-6 h-6 text-blue-600" /> Backlog Age Distribution
+                <PieChartIconMUI className="w-6 h-6 text-purple-600" /> Priority Distribution
               </CardTitle>
-              <CardDescription>Current open incidents by age category</CardDescription>
+              <CardDescription>Distribution of incidents by priority level</CardDescription>
             </CardHeader>
             <CardContent>
-              {deep.totalBacklog === 0 ? (
-                <div className="flex flex-col items-center justify-center py-8 text-center">
-                  <div className="w-16 h-16 bg-gray-100 dark:bg-zinc-800 rounded-full flex items-center justify-center mb-4">
-                    <AccessTimeIcon className="w-8 h-8 text-gray-400" />
-                  </div>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">No backlog</p>
-                  <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">All incidents resolved</p>
-                </div>
-              ) : (
-                <ChartContainer config={{}}>
-                  <BarChart data={[ { bucket: '<1d', value: deep.agingBuckets['<1d'] }, { bucket: '1-3d', value: deep.agingBuckets['1-3d'] }, { bucket: '3-7d', value: deep.agingBuckets['3-7d'] }, { bucket: '>7d', value: deep.agingBuckets['>7d'] } ]} margin={{ left: 12, right: 12 }}>
-                    <CartesianGrid vertical={false} stroke="#e5e7eb" />
-                    <XAxis dataKey="bucket" tickLine={false} axisLine={false} tickMargin={8} tick={{ fill: '#6b7280', fontSize: 12 }} />
-                    <YAxis tickLine={false} axisLine={false} tickMargin={8} tick={{ fill: '#6b7280', fontSize: 12 }} />
-                    <ChartTooltip content={<ChartTooltipContent />} />
-                    <Bar dataKey="value" radius={8} fill="#3b82f6" />
-                  </BarChart>
-                </ChartContainer>
-              )}
+              <ChartContainer config={{}}>
+                <BarChart data={priorityData} margin={{ left: 12, right: 12 }}>
+                  <CartesianGrid vertical={false} stroke="#e5e7eb" />
+                  <XAxis dataKey="name" tickLine={false} axisLine={false} tickMargin={8} tick={{ fill: '#6b7280', fontSize: 12 }} />
+                  <YAxis tickLine={false} axisLine={false} tickMargin={8} tick={{ fill: '#6b7280', fontSize: 12 }} />
+                  <ChartTooltip content={<ChartTooltipContent />} />
+                  <Bar dataKey="value" radius={8}>
+                    {priorityData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.fill} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ChartContainer>
             </CardContent>
           </Card>
+
           <Card className="bg-card text-card-foreground  rounded-2xl shadow-lg">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <ErrorOutlineIcon className="w-6 h-6 text-red-600" /> Critical Aging Incidents
+                <WarningAmberIcon className="w-6 h-6 text-yellow-600" /> SLA Breach Analysis
               </CardTitle>
-              <CardDescription>Longest-open incidents requiring attention</CardDescription>
+              <CardDescription>Performance against SLA targets and breach patterns</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-2">
-              {deep.topAging.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-8 text-center">
-                  <div className="w-16 h-16 bg-gray-100 dark:bg-zinc-800 rounded-full flex items-center justify-center mb-4">
-                    <ErrorOutlineIcon className="w-8 h-8 text-gray-400" />
-                  </div>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">No backlog</p>
-                  <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">All incidents resolved</p>
+            <CardContent>
+              <div className="grid grid-cols-3 gap-3 mb-4">
+                <div className="text-center p-3 bg-red-50 dark:bg-red-900/20 rounded-lg">
+                  <div className="text-lg font-bold text-red-600">{deep.breachRate.toFixed(1)}%</div>
+                  <div className="text-xs text-muted-foreground">Breach Rate</div>
                 </div>
-              ) : (
-                deep.topAging.map((i, idx) => (
-                  <div key={idx} className="flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-zinc-800 hover:bg-gray-100 dark:hover:bg-zinc-700 transition-colors">
-                    <div className="min-w-0 flex-1">
-                      <div className="text-sm font-medium truncate text-card-foreground">{i.site}</div>
-                      <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                        {i.priority} • {i.ncal} • {i.start ? new Date(i.start).toLocaleDateString('id-ID') : 'No start date'}
-                      </div>
-                    </div>
-                    <div className="flex flex-col items-end ml-4">
-                      <Badge variant="warning" className="mb-1 bg-orange-500 text-white">
-                        {i.days}d {i.hours}h
-                      </Badge>
-                      <div className="text-xs text-gray-400">
-                        {i.start ? new Date(i.start).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) : '-'}
-                      </div>
-                    </div>
-                  </div>
-                ))
-              )}
+                <div className="text-center p-3 bg-violet-50 dark:bg-violet-900/20 rounded-lg">
+                  <div className="text-sm font-bold text-violet-600">Pause Impact</div>
+                  <div className="text-xs font-mono text-gray-700 dark:text-gray-300">{formatDurationHMS(deep.avgPauseBreach)}</div>
+                </div>
+                <div className="text-center p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                  <div className="text-sm font-bold text-green-600">Compliant Time</div>
+                  <div className="text-xs font-mono text-gray-700 dark:text-gray-300">{formatDurationHMS(deep.avgPauseCompliant)}</div>
+                </div>
+              </div>
+              <ChartContainer config={{}}>
+                <BarChart data={NCAL_ORDER.map((ncal) => ({ ncal, value: deep.breachByNCAL[ncal] || 0 }))} margin={{ left: 12, right: 12 }}>
+                  <CartesianGrid vertical={false} stroke="#e5e7eb" />
+                  <XAxis dataKey="ncal" tickLine={false} axisLine={false} tickMargin={8} tick={{ fill: '#6b7280', fontSize: 12 }} />
+                  <YAxis tickLine={false} axisLine={false} tickMargin={8} tick={{ fill: '#6b7280', fontSize: 12 }} />
+                  <ChartTooltip content={<SLABreachTooltip />} />
+                  <Bar dataKey="value" radius={8} fill="#ef4444">
+                    {NCAL_ORDER.map((ncal) => (
+                      <Cell key={ncal} fill={NCAL_COLORS[ncal]} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ChartContainer>
             </CardContent>
           </Card>
         </div>
-        {/* Operational Patterns & Efficiency */}
+
+        {/* Weekly Incident Patterns & Hourly Incident Patterns */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <Card className="bg-card text-card-foreground  rounded-2xl shadow-lg">
             <CardHeader>
@@ -1531,6 +1074,7 @@ const IncidentAnalytics: React.FC = () => {
               </ChartContainer>
             </CardContent>
           </Card>
+
           <Card className="bg-card text-card-foreground  rounded-2xl shadow-lg">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -1552,47 +1096,43 @@ const IncidentAnalytics: React.FC = () => {
           </Card>
         </div>
 
-        {/* Escalation & Performance Analysis */}
+        {/* Site Performance & Performance Outliers */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <Card className="bg-card text-card-foreground  rounded-2xl shadow-lg">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <PieChartIconMUI className="w-6 h-6 text-blue-600" /> Escalation Management
+                <AssignmentIcon className="w-6 h-6 text-blue-600" /> Site Performance
               </CardTitle>
-              <CardDescription>Distribution of escalated vs normal incident handling</CardDescription>
+              <CardDescription>Top performing sites by incident volume and resolution time</CardDescription>
             </CardHeader>
-            <CardContent className="flex justify-center">
-              {deep.escalated === 0 ? (
+            <CardContent className="space-y-2">
+              {deep.topSitesBreach.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-8 text-center">
                   <div className="w-16 h-16 bg-gray-100 dark:bg-zinc-800 rounded-full flex items-center justify-center mb-4">
-                    <PieChartIconMUI className="w-8 h-8 text-gray-400" />
+                    <AssignmentIcon className="w-8 h-8 text-gray-400" />
                   </div>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">No escalations</p>
-                  <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">All cases handled normally</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">No site data</p>
+                  <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">No site information available</p>
                 </div>
               ) : (
-                <ChartContainer config={{}}>
-                  <PieChart width={260} height={260}>
-                    <ChartTooltip content={<ChartTooltipContent hideLabel />} />
-                    <Pie
-                      data={[
-                        { name: 'Escalated', value: deep.escalated },
-                        { name: 'Normal', value: filteredIncidents.length - deep.escalated }
-                      ]}
-                      dataKey="value"
-                      nameKey="name"
-                      innerRadius={60}
-                      strokeWidth={5}
-                    >
-                      <Cell fill="#f97316" />
-                      <Cell fill="#10b981" />
-                    </Pie>
-                  </PieChart>
-                </ChartContainer>
+                deep.topSitesBreach.map(([name, count], idx) => (
+                  <div key={idx} className="flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-zinc-800 hover:bg-gray-100 dark:hover:bg-zinc-700 transition-colors">
+                    <div className="min-w-0 flex-1">
+                      <div className="text-sm font-medium truncate text-card-foreground">{name}</div>
+                      <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                        {count} incidents
+                      </div>
+                    </div>
+                    <Badge variant="default" className="ml-4 bg-blue-600 text-white">
+                      #{idx + 1}
+                    </Badge>
+                  </div>
+                ))
               )}
             </CardContent>
           </Card>
-          <Card className="bg-card text-card-foreground  rounded-2xl shadow-lg">
+
+          <Card className="bg-card text-card-foreground rounded-2xl shadow-lg">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <TrendingUpIcon className="w-6 h-6 text-red-600" /> Performance Outliers

@@ -47,6 +47,23 @@ import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 
 // Constants sesuai requirements
 const VENDOR_SLA_MINUTES = 240; // 4 jam
+
+// ---------- Helpers: waktu & overlap (menit)
+const toDate = (v: any) => (v ? new Date(v) : null);
+const isValid = (d: Date | null) => !!(d && !isNaN(d.getTime()));
+const minutesBetween = (a: Date | null, b: Date | null): number =>
+  isValid(a) && isValid(b) ? Math.max(0, (b!.getTime() - a!.getTime()) / 60000) : 0;
+const overlapMinutes = (
+  winStart: Date | null,
+  winEnd: Date | null,
+  pStart: Date | null,
+  pEnd: Date | null
+): number => {
+  if (!isValid(winStart) || !isValid(winEnd) || !isValid(pStart) || !isValid(pEnd)) return 0;
+  const s = Math.max(winStart!.getTime(), pStart!.getTime());
+  const e = Math.min(winEnd!.getTime(), pEnd!.getTime());
+  return Math.max(0, (e - s) / 60000);
+};
 const POWER_DELTA_OK_DBM = 1.0;
 
 const NCAL_COLORS = {
@@ -104,19 +121,33 @@ const formatCurrency = (num: number): string => {
 const TSAnalytics: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [selectedPeriod, setSelectedPeriod] = useState<'3m' | '6m' | '1y' | 'all'>('6m');
-  const [selectedWanedaMonth, setSelectedWanedaMonth] = useState<string | null>(null);
+  const [selectedVendor, setSelectedVendor] = useState<string>('all');
 
-  // Get all incidents for live updates with error handling
+  // Get all incidents with robust database connection
   const allIncidents = useLiveQuery(async () => {
     try {
       const incidents = await db.incidents.toArray();
       console.log('✅ TSAnalytics: Successfully loaded', incidents.length, 'incidents from database');
-      return incidents;
+      
+      // Validate data integrity
+      const validIncidents = incidents.filter(incident => {
+        if (!incident.id || !incident.noCase) {
+          console.warn('❌ TSAnalytics: Found invalid incident:', incident);
+          return false;
+        }
+        return true;
+      });
+      
+      if (validIncidents.length !== incidents.length) {
+        console.warn(`❌ TSAnalytics: Filtered out ${incidents.length - validIncidents.length} invalid incidents`);
+      }
+      
+      return validIncidents;
     } catch (error) {
       console.error('❌ TSAnalytics: Failed to load incidents from database:', error);
       return [];
     }
-  });
+  }, []); // Empty dependency array to ensure stable reference
 
   // Debug: Log when allIncidents changes
   useEffect(() => {
@@ -198,29 +229,24 @@ const TSAnalytics: React.FC = () => {
   // attempts to parse a valid date. If none are found it returns '-'.
   const getDateTime = (incident: any, field: string): string => {
     const lower = field.toLowerCase();
-    // map logical names to potential property names on the incident object
     const fieldMap: Record<string, string[]> = {
-      start: ['start', 'Start', 'startTime', 'start_time', 'start time', 'begin', 'beginTime', 'begintime'],
-      end: ['end', 'End', 'endTime', 'end_time', 'end time', 'finish', 'finishTime', 'finish_time'],
+      start: [
+        'start','Start','startTime','start_time','start time','begin','beginTime','begintime'
+      ],
+      end: [
+        'end','End','endTime','end_time','end time','finish','finishTime','finish_time'
+      ],
       pause1: [
-        'startPause1', 'startPause', 'pause1', 'Pause1', 'pause', 'pauseTime', 'pause_time', 'pause1Time', 
-        'start_pause', 'start pause', 'pause1Start', 'pause1_start', 'pause1 start',
-        'pause1_start_time'
+        'pause1','Pause1','pause','pauseTime','pause_time','pause1Time','startPause','start_pause','start pause','pause1Start','pause1_start','pause1 start','startPause1','pause1_start_time'
       ],
       restart1: [
-        'endPause1', 'endPause', 'restart1', 'Restart1', 'restart', 'restartTime', 'restart_time', 'restart1Time',
-        'end_pause', 'end pause', 'pause1End', 'pause1_end', 'pause1 end',
-        'restartPause', 'restart_pause', 'restart pause'
+        'restart1','Restart1','restart','restartTime','restart_time','restart1Time','endPause','end_pause','end pause','pause1End','pause1_end','pause1 end','restartPause','restart_pause','restart pause','endPause1','end_pause_1','end pause 1'
       ],
       pause2: [
-        'startPause2', 'pause2', 'Pause2', 'pause2Time', 'pause2_time', 'pause2Start', 
-        'start_pause_2', 'start pause 2', 'pause2_start', 'pause2 start',
-        'pause2StartTime'
+        'pause2','Pause2','pause2Time','pause2_time','pause2Start','startPause2','start_pause_2','start pause 2','pause2_start','pause2 start','pause2StartTime'
       ],
       restart2: [
-        'endPause2', 'restart2', 'Restart2', 'restart2Time', 'restart2_time', 'pause2End', 
-        'end_pause_2', 'end pause 2', 'pause2_end', 'pause2 end', 'restart2Time',
-        'restartPause2', 'restart_pause_2', 'restart pause 2'
+        'restart2','Restart2','restart2Time','restart2_time','pause2End','endPause2','end_pause_2','end pause 2','pause2_end','pause2 end','restartPause2','restart_pause_2','restart pause 2','endPause2'
       ]
     };
     const candidates = fieldMap[lower] || [field];
@@ -231,85 +257,56 @@ const TSAnalytics: React.FC = () => {
           const date = new Date(value);
           if (!isNaN(date.getTime())) {
             return date.toLocaleString('id-ID', {
-              timeZone: 'Asia/Jakarta',
-              day: '2-digit',
-              month: '2-digit',
-              year: 'numeric',
-              hour: '2-digit',
-              minute: '2-digit'
+              timeZone: 'Asia/Jakarta', day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
             });
           }
-        } catch {
-          // ignore parse errors and continue
-        }
+        } catch {}
       }
     }
-    return '';
+    return '-';
   };
 
-  // Use the fixed duration from database (already corrected by automatic fix)
   const getDurationMinutes = (incident: any): number => {
-    // Use the corrected durationMin that was fixed by our automatic fix
-    if (incident.durationMin && incident.durationMin > 0) {
-      return incident.durationMin;
-    }
-    
-    // Fallback to other duration fields if available
-    if (incident.durationVendorMin && incident.durationVendorMin > 0) {
-      return incident.durationVendorMin;
-    }
-    
-    if (incident.totalDurationVendorMin && incident.totalDurationVendorMin > 0) {
+    if (Number.isFinite(incident?.durationMin) && incident.durationMin > 0) return incident.durationMin;
+    const s = toDate(incident?.startTime);
+    const e = toDate(incident?.endTime);
+    return minutesBetween(s, e);
+  };
+
+  const getWanedaDuration = (incident: any): number => {
+    // 1) Jika sudah ada hasil bersih di DB, gunakan itu (sudah dikurangi pause)
+    if (Number.isFinite(incident?.totalDurationVendorMin) && incident.totalDurationVendorMin > 0) {
       return incident.totalDurationVendorMin;
     }
-    
-    // If no duration available, return 0
-    return 0;
+    // 2) Jika tidak ada, hitung: Escalation→End dikurangi hanya jeda yang overlap pada window vendor
+    const vStart = toDate(incident?.startEscalationVendor);
+    const vEnd = toDate(incident?.endTime);
+    let dur = minutesBetween(vStart, vEnd);
+    if (dur <= 0) return 0;
+    // Kurangi hanya overlap pause dalam window vendor agar adil
+    dur -= overlapMinutes(vStart, vEnd, toDate(incident?.startPause1), toDate(incident?.endPause1));
+    dur -= overlapMinutes(vStart, vEnd, toDate(incident?.startPause2), toDate(incident?.endPause2));
+    return Math.max(0, dur);
   };
 
-  // Special duration function for Waneda that uses the correct formula
-  const getWanedaDuration = (incident: any): number => {
-    // Waneda formula: Duration Vendor - Total Duration Pause - Total Duration Vendor
-    let duration = 0;
-    
-    // Start with Duration Vendor
-    if (incident.durationVendorMin && incident.durationVendorMin > 0) {
-      duration = incident.durationVendorMin;
-    }
-    
-    // Subtract Total Duration Pause
-    if (incident.totalDurationPauseMin && incident.totalDurationPauseMin > 0) {
-      duration -= incident.totalDurationPauseMin;
-    }
-    
-    // Subtract Total Duration Vendor
-    if (incident.totalDurationVendorMin && incident.totalDurationVendorMin > 0) {
-      duration -= incident.totalDurationVendorMin;
-    }
-    
-    // Return max of 0 to avoid negative durations
-    return Math.max(0, duration);
-  };
-
-  // Helper function to get duration based on vendor type
   const getVendorDuration = (incident: any): number => {
-    const vendor = incident.ts || '';
-    const vendorLower = vendor.toLowerCase();
-    
-    // Use Waneda formula for Waneda vendor
-    if (vendorLower.includes('waneda') || vendorLower.includes('lintas') || vendorLower.includes('fiber')) {
+    const vendor = (incident?.ts || '').toLowerCase();
+    if (vendor.includes('waneda') || vendor.includes('lintas') || vendor.includes('fiber')) {
       return getWanedaDuration(incident);
     }
-    
-    // Use regular duration for other vendors
+    // Non-vendor / internal atau vendor lain → gunakan durasi umum
+    // Jika DB punya durationVendorMin tapi bukan Waneda/Lintas, ambil nilai positifnya sebagai fallback
+    if (Number.isFinite(incident?.durationVendorMin) && incident.durationVendorMin > 0) {
+      return incident.durationVendorMin;
+    }
     return getDurationMinutes(incident);
   };
 
-     // Helper function to format power values with dBm unit
-   const formatPower = (value: number | null | undefined): string => {
-     if (value === null || value === undefined || isNaN(value)) return '';
-     return `${value.toFixed(2)} dBm`;
-   };
+  // Helper function to format power values with dBm unit
+  const formatPower = (value: number | null | undefined): string => {
+    if (value === null || value === undefined || isNaN(value)) return 'N/A';
+    return `${value.toFixed(2)} dBm`;
+  };
 
   // Helper function to calculate average power between two values (unused - removed)
   // const calculateAvgPowerBetween = (powerBefore: number | null, powerAfter: number | null): number | null => {
@@ -1529,7 +1526,7 @@ const TSAnalytics: React.FC = () => {
                     }))}
                     onClick={(data: any) => {
                       if (data && data.activeLabel) {
-                        setSelectedWanedaMonth(data.activeLabel as string);
+                        setSelectedVendor(data.activeLabel as string);
                       }
                     }}
                   >
@@ -1713,7 +1710,7 @@ const TSAnalytics: React.FC = () => {
                                                              <Button
                                  variant="outline"
                                  size="sm"
-                                 onClick={() => setSelectedWanedaMonth(m)}
+                                 onClick={() => setSelectedVendor(m)}
                                  className="px-2 py-0.5 text-xs"
                                >
                                  View
@@ -1783,12 +1780,12 @@ const TSAnalytics: React.FC = () => {
               })()}
             </div>
             {/* Drill-down details */}
-            {selectedWanedaMonth && (
+            {selectedVendor && (
               <div className="mt-6">
                 <div className="flex items-center justify-between mb-2">
-                  <h4 className="text-sm font-semibold text-muted-foreground">Detail Cases - {selectedWanedaMonth}</h4>
+                  <h4 className="text-sm font-semibold text-muted-foreground">Detail Cases - {selectedVendor}</h4>
                   <button
-                    onClick={() => setSelectedWanedaMonth(null)}
+                    onClick={() => setSelectedVendor('all')}
                     className="text-xs text-red-600 dark:text-red-400 hover:underline"
                   >
                     Close
@@ -1817,16 +1814,9 @@ const TSAnalytics: React.FC = () => {
                         <th className="px-2 py-2 font-semibold">Note</th>
                       </tr>
                     </thead>
-                                         <tbody>
-                       {wanedaStats.items
-                         .find(item => item.month === selectedWanedaMonth)?.incidents
-                         .sort((a: any, b: any) => {
-                           // Sort by start date (earliest first)
-                           const dateA = new Date(a.start || 0);
-                           const dateB = new Date(b.start || 0);
-                           return dateA.getTime() - dateB.getTime();
-                         })
-                         .map((incident: any, idx: number) => {
+                    <tbody>
+                      {wanedaStats.items
+                        .find(item => item.month === selectedVendor)?.incidents.map((incident: any, idx: number) => {
                                                      const duration = getWanedaDuration(incident);
                           const start = getDateTime(incident, 'start');
                           const pause1 = getDateTime(incident, 'pause1');
@@ -1843,44 +1833,28 @@ const TSAnalytics: React.FC = () => {
                           const powerAfter = formatPower(incident.powerAfter);
                           const powerDiff = (typeof incident.powerBefore === 'number' && typeof incident.powerAfter === 'number' && 
                                             !isNaN(incident.powerBefore) && !isNaN(incident.powerAfter)) ? 
-                                            `${(incident.powerAfter - incident.powerBefore).toFixed(2)} dBm` : '';
+                                            `${(incident.powerAfter - incident.powerBefore).toFixed(2)} dBm` : 'N/A';
                           const customer = getCustomerName(incident);
                           const caseNo = getCaseNumber(incident);
                           const classification = getClassification(incident);
                           const note = getNote(incident);
-                          
-                          // Check if values exceed targets for red text coloring
-                          const isDurationOverTarget = duration > VENDOR_SLA_MINUTES;
-                          const isDiffPositive = diffMin > 0;
-                          const isPowerWorse = (typeof incident.powerBefore === 'number' && typeof incident.powerAfter === 'number' && 
-                                               !isNaN(incident.powerBefore) && !isNaN(incident.powerAfter)) ? 
-                                               (incident.powerAfter - incident.powerBefore) > 1 : false;
-                          const isPerformanceNot100 = performance < 100;
                           return (
                             <tr key={idx} className="border-b border-gray-200 dark:border-zinc-700 hover:bg-gray-50 dark:hover:bg-zinc-800">
                               <td className="px-2 py-2">{customer}</td>
                               <td className="px-2 py-2">{caseNo}</td>
                               <td className="px-2 py-2">{start}</td>
-                              <td className="px-2 py-2">{pause1 || ''}</td>
-                              <td className="px-2 py-2">{restart1 || ''}</td>
-                              <td className="px-2 py-2">{pause2 || ''}</td>
-                              <td className="px-2 py-2">{restart2 || ''}</td>
-                              <td className="px-2 py-2">{end || ''}</td>
-                              <td className={`px-2 py-2 text-right ${isDurationOverTarget ? 'text-red-600 dark:text-red-400 font-semibold' : ''}`}>
-                                {formatDurationHMS(duration)}
-                              </td>
+                              <td className="px-2 py-2">{pause1 || '-'}</td>
+                              <td className="px-2 py-2">{restart1 || '-'}</td>
+                              <td className="px-2 py-2">{pause2 || '-'}</td>
+                              <td className="px-2 py-2">{restart2 || '-'}</td>
+                              <td className="px-2 py-2">{end || '-'}</td>
+                              <td className="px-2 py-2 text-right">{formatDurationHMS(duration)}</td>
                               <td className="px-2 py-2 text-right">{targetStr}</td>
-                              <td className={`px-2 py-2 text-right ${isDiffPositive ? 'text-red-600 dark:text-red-400 font-semibold' : ''}`}>
-                                {diffStr}
-                              </td>
-                              <td className={`px-2 py-2 text-right ${isPerformanceNot100 ? 'text-red-600 dark:text-red-400 font-semibold' : ''}`}>
-                                {perfStr}
-                              </td>
+                              <td className="px-2 py-2 text-right">{diffStr}</td>
+                              <td className="px-2 py-2 text-right">{perfStr}</td>
                               <td className="px-2 py-2 text-right">{powerBefore}</td>
                               <td className="px-2 py-2 text-right">{powerAfter}</td>
-                              <td className={`px-2 py-2 text-right ${isPowerWorse ? 'text-red-600 dark:text-red-400 font-semibold' : ''}`}>
-                                {powerDiff}
-                              </td>
+                              <td className="px-2 py-2 text-right">{powerDiff}</td>
                               <td className="px-2 py-2">{classification}</td>
                               <td className="px-2 py-2 whitespace-pre-wrap">{note}</td>
                             </tr>

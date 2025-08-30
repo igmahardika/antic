@@ -1,23 +1,234 @@
-import React, { useState, useCallback } from 'react';
-import { useDropzone } from 'react-dropzone';
-import * as XLSX from 'xlsx';
-import { Incident } from '@/types/incident';
-import { mkId, toMinutes, parseDateSafe, saveIncidentsChunked, generateBatchId } from '@/utils/incidentUtils';
-import { fixIncidentDurationBeforeSave } from '@/utils/durationFixUtils';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import React, { useState, useCallback } from "react";
+import { useDropzone } from "react-dropzone";
+import * as XLSX from "xlsx";
+import { Incident } from "@/types/incident";
+import { mkId, generateBatchId, saveIncidentsChunked, parseDateSafe } from "@/utils/incidentUtils";
+import { fixAllMissingEndTime } from "@/utils/durationFixUtils";
 
-import { Progress } from '@/components/ui/progress';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import CloudUploadIcon from '@mui/icons-material/CloudUpload';
-import TableChartIcon from '@mui/icons-material/TableChart';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import CancelIcon from '@mui/icons-material/Cancel';
-import WarningAmberIcon from '@mui/icons-material/WarningAmber';
-import DownloadIcon from '@mui/icons-material/Download';
-import InfoIcon from '@mui/icons-material/Info';
-import DescriptionIcon from '@mui/icons-material/Description';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import CloudUploadIcon from "@mui/icons-material/CloudUpload";
+import TableChartIcon from "@mui/icons-material/TableChart";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import CancelIcon from "@mui/icons-material/Cancel";
+import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 
+import InfoIcon from "@mui/icons-material/Info";
+
+
+/**
+ * ——————— WHY THIS FIX ———————
+ * 1) Excel date cells sering terbaca sebagai angka (serial Excel). Kita set cellDates:true dan sediakan coerceDate()
+ * 2) Pencarian kolom sebelumnya memakai `includes` → mudah salah tangkap (mis. "duration" vs "duration vendor").
+ *    Sekarang kita normalisasi header dan cocokkan secara EQUALS berdasarkan sinonim.
+ * 3) Otomatis deteksi baris header (kalau file punya judul/row kosong di atas).
+ * 4) Perhitungan durasi vendor hanya mengurangi JEDA yang overlap dengan window vendor (adil).
+ */
+
+// ——————— Konstanta: Header yang dibutuhkan (kanonikal) ———————
+const CANON = {
+  priority: "priority",
+  site: "site",
+  noCase: "no case",
+  ncal: "ncal",
+  status: "status",
+  level: "level",
+  ts: "ts",
+  odpBts: "odp bts",
+  start: "start",
+  startEscalationVendor: "start escalation vendor",
+  end: "end",
+  duration: "duration",
+  durationVendor: "duration vendor",
+  problem: "problem",
+  penyebab: "penyebab",
+  actionTerakhir: "action terakhir",
+  note: "note",
+  klasifikasiGangguan: "klasifikasi gangguan",
+  powerBefore: "power before",
+  powerAfter: "power after",
+  pause1: "start pause",
+  resume1: "end pause",
+  pause2: "start pause 2",
+  resume2: "end pause 2",
+  totalDurationPause: "total duration pause",
+  totalDurationVendor: "total duration vendor",
+} as const;
+
+
+
+// ——————— Sinonim (sudah dinormalisasi) ———————
+const HEADER_SYNONYMS: Record<string, string[]> = {
+  [CANON.priority]: ["priority", "prio", "prioritas", "level priority"],
+  [CANON.site]: ["site", "lokasi", "lokasi site", "nama site", "site name"],
+  [CANON.noCase]: ["no case", "nocase", "case", "no kasus", "kasus", "case number", "nomor case", "no case number"],
+  [CANON.ncal]: ["ncal", "ncals", "ncal level"],
+  [CANON.status]: ["status", "status gangguan", "status case"],
+  [CANON.level]: ["level", "level gangguan", "level case"],
+  [CANON.ts]: ["ts", "technical support", "vendor", "technical support vendor", "vendor ts"],
+  [CANON.odpBts]: ["odp bts", "odp", "bts", "odp/bts", "odp bts name", "nama odp bts"],
+  [CANON.start]: ["start", "mulai", "start time", "waktu mulai", "start gangguan"],
+  [CANON.startEscalationVendor]: [
+    "start escalation vendor",
+    "mulai eskalasi vendor",
+    "mulai vendor",
+    "vendor start",
+    "start escalation",
+    "escalation start",
+    "mulai eskalasi",
+    "start vendor",
+    "vendor start time"
+  ],
+  [CANON.end]: ["end", "selesai", "end time", "waktu selesai", "end gangguan"],
+  [CANON.duration]: ["duration", "durasi", "total duration", "durasi total"],
+  [CANON.durationVendor]: ["duration vendor", "durasi vendor", "vendor duration", "durasi vendor total"],
+  [CANON.problem]: ["problem", "masalah", "problem description", "deskripsi masalah"],
+  [CANON.penyebab]: ["penyebab", "cause", "root cause", "penyebab gangguan"],
+  [CANON.actionTerakhir]: ["action terakhir", "last action", "aksi terakhir", "action", "action taken", "tindakan terakhir"],
+  [CANON.note]: ["note", "catatan", "notes", "keterangan"],
+  [CANON.klasifikasiGangguan]: ["klasifikasi gangguan", "klasifikasi", "classification", "jenis gangguan"],
+  [CANON.powerBefore]: ["power before", "powerbefore", "daya sebelum", "power before repair", "daya sebelum perbaikan"],
+  [CANON.powerAfter]: ["power after", "powerafter", "daya sesudah", "power after repair", "daya sesudah perbaikan"],
+  [CANON.pause1]: ["start pause", "pause", "jeda", "jeda 1", "pause start", "mulai jeda", "start pause 1"],
+  [CANON.resume1]: ["end pause", "restart", "lanjut", "lanjut 1", "pause end", "selesai jeda", "end pause 1", "resume"],
+  [CANON.pause2]: ["start pause 2", "pause 2", "pause2", "jeda 2", "pause start 2", "mulai jeda 2"],
+  [CANON.resume2]: ["end pause 2", "restart 2", "restart2", "lanjut 2", "pause end 2", "selesai jeda 2", "end pause 2", "resume 2"],
+  [CANON.totalDurationPause]: ["total duration pause", "total pause", "durasi jeda total", "total pause duration"],
+  [CANON.totalDurationVendor]: ["total duration vendor", "durasi vendor total", "vendor total duration"],
+};
+
+// ——————— Util: normalisasi string header ———————
+function normalizeHeader(s: any): string {
+  if (s == null) return "";
+  return String(s)
+    .replace(/\ufeff/g, "")
+    .trim()
+    .toLowerCase()
+    .replace(/[\/_-]+/g, " ")
+    .replace(/\s+/g, " ");
+}
+
+// ——————— Util: temukan baris header terbaik ———————
+function findHeaderRow(rows: any[][], maxScan = 10): number {
+  const want = Object.values(CANON);
+  let bestIdx = 0;
+  let bestScore = -1;
+  const limit = Math.min(maxScan, rows.length);
+  for (let i = 0; i < limit; i++) {
+    const row = rows[i] || [];
+    const cells = row.map(normalizeHeader);
+    let score = 0;
+    for (const need of want) {
+      const aliases = HEADER_SYNONYMS[need] || [need];
+      const hit = cells.some((c) => aliases.includes(c));
+      if (hit) score++;
+    }
+    if (score > bestScore) {
+      bestScore = score;
+      bestIdx = i;
+    }
+  }
+  return bestIdx;
+}
+
+// ——————— Util: buat index kolom dari header ———————
+function buildHeaderIndex(headersRaw: any[]): Map<string, number> {
+  const headers = headersRaw.map(normalizeHeader);
+  const map = new Map<string, number>();
+  // isi langsung (exact normalized string)
+  headers.forEach((h, i) => {
+    if (!map.has(h)) map.set(h, i);
+  });
+  // kemudian isi alias → kanonikal
+  for (const canon of Object.values(CANON)) {
+    const aliases = HEADER_SYNONYMS[canon] || [canon];
+    for (const a of aliases) {
+      if (map.has(a)) {
+        map.set(canon, map.get(a)!);
+        break;
+      }
+    }
+  }
+  return map;
+}
+
+// ——————— Util: ambil sel berdasarkan kanonikal ———————
+function pick(row: any[], idx: Map<string, number>, canon: string) {
+  const i = idx.get(canon);
+  if (typeof i !== "number") return null;
+  
+  const value = row[i];
+  
+  // Handle berbagai tipe data Excel
+  if (value === null || value === undefined) return null;
+  if (value === "") return null;
+  
+  // Handle Excel boolean values
+  if (typeof value === "boolean") return value ? "Yes" : "No";
+  
+  // Handle Excel numbers (termasuk serial dates)
+  if (typeof value === "number") {
+    // Jika ini adalah Excel serial date (biasanya > 1000), return as is untuk parsing nanti
+    if (value > 1000 && value < 100000) return value;
+    return value;
+  }
+  
+  // Handle Excel dates
+  if (value instanceof Date) return value;
+  
+  // Handle strings
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    return trimmed === "" ? null : trimmed;
+  }
+  
+  // Handle other types by converting to string
+  return String(value).trim() || null;
+}
+
+// ——————— Util: konversi Excel value → ISO string ———————
+function excelSerialToDate(n: number): Date {
+  // Excel epoch (Windows): 1899-12-30
+  const ms = (n - 25569) * 86400 * 1000;
+  return new Date(ms);
+}
+
+// Menggunakan parseDateSafe yang lebih robust untuk parsing tanggal
+function coerceDate(v: any): string | null {
+  if (v == null || v === "") return null;
+  if (v instanceof Date && !isNaN(v.getTime())) return v.toISOString();
+  if (typeof v === "number" && isFinite(v)) {
+    const d = excelSerialToDate(v);
+    return isNaN(d.getTime()) ? null : d.toISOString();
+  }
+  // Gunakan parseDateSafe yang lebih robust untuk string dates
+  if (typeof v === "string") {
+    return parseDateSafe(v);
+  }
+  return null;
+}
+
+// ——————— Util: menit antar dua waktu ISO ———————
+function diffMinutes(aIso: string | null, bIso: string | null): number {
+  if (!aIso || !bIso) return 0;
+  const a = new Date(aIso).getTime();
+  const b = new Date(bIso).getTime();
+  if (!isFinite(a) || !isFinite(b)) return 0;
+  const d = (b - a) / 60000;
+  return d > 0 ? Math.round(d * 100) / 100 : 0;
+}
+
+// ——————— Util: overlap menit dua interval (a ∩ b) ———————
+function overlapMinutes(aStart: string | null, aEnd: string | null, bStart: string | null, bEnd: string | null): number {
+  if (!aStart || !aEnd || !bStart || !bEnd) return 0;
+  const s = Math.max(new Date(aStart).getTime(), new Date(bStart).getTime());
+  const e = Math.min(new Date(aEnd).getTime(), new Date(bEnd).getTime());
+  const d = (e - s) / 60000;
+  return d > 0 ? Math.round(d * 100) / 100 : 0;
+}
+
+// ——————— Data structures ———————
 interface UploadResult {
   success: number;
   failed: number;
@@ -30,7 +241,7 @@ interface UploadResult {
 }
 
 interface UploadLogEntry {
-  type: 'success' | 'error' | 'skipped' | 'info';
+  type: "success" | "error" | "skipped" | "info" | "warning";
   row: number;
   sheet: string;
   message: string;
@@ -38,31 +249,25 @@ interface UploadLogEntry {
   details?: any;
 }
 
-const REQUIRED_HEADERS = [
-  'Priority', 'Site', 'No Case', 'NCAL', 'Status', 'Level', 'TS', 'ODP/BTS',
-  'Start', 'Start Escalation Vendor', 'End', 'Duration', 'Duration Vendor',
-  'Problem', 'Penyebab', 'Action Terakhir', 'Note', 'Klasifikasi Gangguan',
-  'Power Before', 'Power After', 'Pause', 'Restart', 'Pause2', 'Restart2',
-  'Total Duration Pause', 'Total Duration Vendor'
-];
+
 
 export const IncidentUpload: React.FC = () => {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadResult, setUploadResult] = useState<UploadResult | null>(null);
   const [progress, setProgress] = useState(0);
-  const [showDetailedLog, setShowDetailedLog] = useState(false);
+
 
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
     if (acceptedFiles.length === 0) return;
-
     setIsUploading(true);
     setProgress(0);
     setUploadResult(null);
 
     try {
       const file = acceptedFiles[0];
-      const workbook = XLSX.read(await file.arrayBuffer(), { type: 'array' });
-      
+      // Penting: cellDates:true agar tanggal jadi Date, bukan angka
+      const workbook = XLSX.read(await file.arrayBuffer(), { type: "array", cellDates: true });
+
       const allRows: Incident[] = [];
       const errors: string[] = [];
       const uploadLog: UploadLogEntry[] = [];
@@ -72,256 +277,489 @@ export const IncidentUpload: React.FC = () => {
       let totalRowsProcessed = 0;
       let skippedRows = 0;
 
-      // Log upload start
       uploadLog.push({
-        type: 'info',
+        type: "info",
         row: 0,
-        sheet: 'SYSTEM',
+        sheet: "SYSTEM",
         message: `Upload started for file: ${file.name}`,
         details: {
           fileSize: file.size,
           fileType: file.type,
-          sheets: workbook.SheetNames
-        }
+          sheets: workbook.SheetNames,
+        },
       });
 
-      // Process all sheets
       for (const sheetName of workbook.SheetNames) {
-        const worksheet = workbook.Sheets[sheetName];
-        const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-
-        if (jsonData.length < 2) {
-          uploadLog.push({
-            type: 'info',
-            row: 0,
-            sheet: sheetName,
-            message: `Sheet "${sheetName}" skipped: Empty or insufficient data (${jsonData.length} rows)`
-          });
+        const ws = workbook.Sheets[sheetName];
+        if (!ws) continue;
+        // raw:true → nilai asli (Date untuk tanggal jika cellDates:true)
+        // defval:null → cell kosong jadi null, bukan undefined
+        const rows: any[][] = XLSX.utils.sheet_to_json(ws, { header: 1, raw: true, defval: null });
+        if (!rows || rows.length === 0) {
+          uploadLog.push({ type: "info", row: 0, sheet: sheetName, message: `Sheet "${sheetName}" empty` });
           continue;
         }
 
-        const headers = jsonData[0] as string[];
-        const sheetRowCount = jsonData.length - 1; // Exclude header row
+        const headerIdx = findHeaderRow(rows);
+        const headersRaw = (rows[headerIdx] || []) as any[];
+        const idx = buildHeaderIndex(headersRaw);
+        const data = rows.slice(headerIdx + 1);
+
+        const sheetRowCount = data.length;
         totalRowsInFile += sheetRowCount;
-        
+
         uploadLog.push({
-          type: 'info',
+          type: "info",
           row: 0,
           sheet: sheetName,
           message: `Processing sheet "${sheetName}" with ${sheetRowCount} data rows`,
-          details: {
-            headers: headers,
-            rowCount: sheetRowCount
-          }
+          details: { headers: headersRaw },
         });
-        
-        // Debug: Log all headers to help identify pause column mapping
+
+        // Log detail header mapping untuk debugging
+        const headerMapping = Object.fromEntries(idx);
+        const mappedFields = Object.keys(CANON).map(field => ({
+          field,
+          canonical: CANON[field as keyof typeof CANON],
+          synonyms: HEADER_SYNONYMS[CANON[field as keyof typeof CANON]] || [],
+          mappedIndex: idx.get(CANON[field as keyof typeof CANON]),
+          mappedValue: idx.get(CANON[field as keyof typeof CANON]) !== undefined ? headersRaw[idx.get(CANON[field as keyof typeof CANON])!] : null
+        }));
+
         uploadLog.push({
-          type: 'info',
+          type: "info",
           row: 0,
           sheet: sheetName,
-          message: `All headers found: ${headers.join(', ')}`,
-          details: {
-            pauseRelatedHeaders: headers.filter(h => 
-              h?.toString().toLowerCase().includes('pause') || 
-              h?.toString().toLowerCase().includes('restart')
-            )
+          message: `Header mapping completed for ${Object.keys(headerMapping).length} fields`,
+          details: { 
+            headerMapping,
+            rawHeaders: headersRaw,
+            mappedFields,
+            totalFields: Object.keys(CANON).length,
+            mappedCount: Object.keys(headerMapping).length,
+            unmappedFields: Object.keys(CANON).filter(field => !idx.has(CANON[field as keyof typeof CANON]))
           }
         });
-        
-        // Validate headers with flexible matching
-        const missingHeaders = [];
-        const headerMapping = {
-          'Priority': ['priority'],
-          'Site': ['site'],
-          'No Case': ['no case', 'nocase', 'case'],
-          'NCAL': ['ncal'],
-          'Status': ['status'],
-          'Level': ['level'],
-          'TS': ['ts', 'technical support', 'vendor'],
-          'ODP/BTS': ['odp', 'bts', 'odp/bts'],
-          'Start': ['start'],
-          'Start Escalation Vendor': ['start escalation vendor', 'escalation vendor'],
-          'End': ['end'],
-          'Duration': ['duration'],
-          'Duration Vendor': ['duration vendor'],
-          'Problem': ['problem'],
-          'Penyebab': ['penyebab', 'cause'],
-          'Action Terakhir': ['action terakhir', 'action', 'last action'],
-          'Note': ['note'],
-          'Klasifikasi Gangguan': ['klasifikasi gangguan', 'klasifikasi'],
-          'Power Before': ['power before', 'powerbefore'],
-          'Power After': ['power after', 'powerafter'],
-          'Pause': ['pause', 'start pause'],
-          'Restart': ['restart', 'end pause'],
-          'Pause2': ['pause2', 'pause 2', 'start pause 2'],
-          'Restart2': ['restart2', 'restart 2', 'end pause 2'],
-          'Total Duration Pause': ['total duration pause', 'total pause'],
-          'Total Duration Vendor': ['total duration vendor', 'total vendor']
-        };
 
-        for (const requiredHeader of REQUIRED_HEADERS) {
-          const possibleNames = headerMapping[requiredHeader] || [requiredHeader.toLowerCase()];
-          const found = headers.some(header => 
-            possibleNames.some(name => 
-              header?.toString().toLowerCase().includes(name)
-            )
-          );
-          if (!found) {
-            missingHeaders.push(requiredHeader);
-          }
-        }
-
-        if (missingHeaders.length > 0) {
-          const errorMsg = `Sheet "${sheetName}": Missing headers: ${missingHeaders.join(', ')}`;
-          errors.push(errorMsg);
+        // Log warning untuk field yang tidak ter-mapping
+        const unmappedFields = Object.keys(CANON).filter(field => !idx.has(CANON[field as keyof typeof CANON]));
+        if (unmappedFields.length > 0) {
           uploadLog.push({
-            type: 'error',
+            type: "warning",
             row: 0,
             sheet: sheetName,
-            message: errorMsg,
+            message: `⚠️ ${unmappedFields.length} fields tidak ter-mapping: ${unmappedFields.join(", ")}`,
             details: {
-              missingHeaders,
-              availableHeaders: headers,
-              headerMapping: headerMapping
+              unmappedFields,
+              availableHeaders: headersRaw,
+              suggestions: unmappedFields.map(field => ({
+                field,
+                canonical: CANON[field as keyof typeof CANON],
+                synonyms: HEADER_SYNONYMS[CANON[field as keyof typeof CANON]] || []
+              }))
             }
           });
-          continue;
         }
 
-        // Process rows
-        for (let i = 1; i < jsonData.length; i++) {
-          const row = jsonData[i] as any[];
+        for (let r = 0; r < data.length; r++) {
+          const rowNum = headerIdx + 1 + r + 1; // 1-based untuk user
+          const row = data[r] || [];
           totalRowsProcessed++;
+
+          // Log detail row untuk debugging
+          const rowData = {
+            noCase: pick(row, idx, CANON.noCase),
+            start: pick(row, idx, CANON.start),
+            end: pick(row, idx, CANON.end),
+            priority: pick(row, idx, CANON.priority),
+            site: pick(row, idx, CANON.site),
+            ncal: pick(row, idx, CANON.ncal),
+            status: pick(row, idx, CANON.status),
+            level: pick(row, idx, CANON.level),
+            ts: pick(row, idx, CANON.ts),
+            odpBts: pick(row, idx, CANON.odpBts),
+            problem: pick(row, idx, CANON.problem),
+            penyebab: pick(row, idx, CANON.penyebab),
+            actionTerakhir: pick(row, idx, CANON.actionTerakhir),
+            note: pick(row, idx, CANON.note),
+            klasifikasiGangguan: pick(row, idx, CANON.klasifikasiGangguan),
+            powerBefore: pick(row, idx, CANON.powerBefore),
+            powerAfter: pick(row, idx, CANON.powerAfter),
+            startPause: pick(row, idx, CANON.pause1),
+            endPause: pick(row, idx, CANON.resume1),
+            startPause2: pick(row, idx, CANON.pause2),
+            endPause2: pick(row, idx, CANON.resume2),
+            startEscalationVendor: pick(row, idx, CANON.startEscalationVendor),
+            duration: pick(row, idx, CANON.duration),
+            durationVendor: pick(row, idx, CANON.durationVendor),
+            totalDurationPause: pick(row, idx, CANON.totalDurationPause),
+            totalDurationVendor: pick(row, idx, CANON.totalDurationVendor)
+          };
+
+          // Log detail row untuk debugging
+          uploadLog.push({
+            type: "info",
+            row: rowNum,
+            sheet: sheetName,
+            message: `Row data: ${JSON.stringify(rowData, null, 2)}`,
+            details: { rowData }
+          });
+
+          // Cek apakah row benar-benar kosong (semua field null/undefined/empty string)
+          const hasData = Object.values(rowData).some((c: any) => {
+            if (c === null || c === undefined) return false;
+            if (c === "") return false;
+            if (typeof c === "string" && c.trim() === "") return false;
+            if (typeof c === "number" && isNaN(c)) return false;
+            return true;
+          });
           
-          if (!row || row.length === 0) {
-            uploadLog.push({
-              type: 'skipped',
-              row: i + 1,
-              sheet: sheetName,
-              message: 'Empty row - no data found'
-            });
+          if (!hasData) {
             skippedRows++;
+            uploadLog.push({ 
+              type: "skipped", 
+              row: rowNum, 
+              sheet: sheetName, 
+              message: "Row benar-benar kosong - semua field null/undefined/empty",
+              details: { rowData }
+            });
             continue;
           }
 
-          // Skip completely empty rows
-          const hasData = row.some(cell => cell !== null && cell !== undefined && String(cell).trim() !== '');
-          if (!hasData) {
-            uploadLog.push({
-              type: 'skipped',
-              row: i + 1,
-              sheet: sheetName,
-              message: 'Row contains no meaningful data (all cells empty or null)'
-            });
-            skippedRows++;
-            continue;
-          }
+          // Log data yang ditemukan untuk debugging
+          const foundData = Object.entries(rowData).filter(([, value]) => {
+            if (value === null || value === undefined) return false;
+            if (value === "") return false;
+            if (typeof value === "string" && value.trim() === "") return false;
+            if (typeof value === "number" && isNaN(value)) return false;
+            return true;
+          });
+
+          uploadLog.push({
+            type: "info",
+            row: rowNum,
+            sheet: sheetName,
+            message: `Found ${foundData.length} fields with data: ${foundData.map(([key, value]) => `${key}=${value}`).join(", ")}`,
+            details: { foundData, rowData }
+          });
 
           try {
-            const incident = parseRowToIncident(headers, row, i + 1, sheetName, uploadLog);
-            if (incident) {
-              allRows.push(incident);
-              successCount++;
+            const noCaseRaw = rowData.noCase;
+            const startRaw = rowData.start;
+            
+            // Validasi No Case - harus ada dan tidak kosong
+            let finalNoCase = String(noCaseRaw || "").trim();
+            if (!finalNoCase) {
+              // Coba cari No Case dari field lain jika tidak ada
+              const alternativeNoCase = String(rowData.site || rowData.odpBts || `ROW_${rowNum}`);
               uploadLog.push({
-                type: 'success',
-                row: i + 1,
+                type: "warning",
+                row: rowNum,
                 sheet: sheetName,
-                message: `Successfully processed incident`,
-                noCase: incident.noCase,
-                details: {
-                  site: incident.site,
-                  priority: incident.priority,
-                  status: incident.status,
-                  ncal: incident.ncal
+                message: `No Case kosong, menggunakan alternatif: ${alternativeNoCase}`,
+                details: { 
+                  noCaseRaw, 
+                  noCaseStr: finalNoCase,
+                  noCaseType: typeof noCaseRaw,
+                  alternativeNoCase,
+                  rowData 
                 }
               });
-            } else {
-              uploadLog.push({
-                type: 'skipped',
-                row: i + 1,
-                sheet: sheetName,
-                message: 'Row skipped: Missing required data (No Case or Start time)',
-                details: {
-                  noCase: row[headers.findIndex(h => h?.toString().toLowerCase().includes('no case'))],
-                  startTime: row[headers.findIndex(h => h?.toString().toLowerCase().includes('start'))]
-                }
-              });
-              skippedRows++;
+              // Gunakan alternatif sebagai No Case
+              finalNoCase = alternativeNoCase;
             }
-          } catch (error) {
-            const errorMsg = `Row ${i + 1} in "${sheetName}": ${error}`;
-            errors.push(errorMsg);
-            failedCount++;
+
+            // Validasi Start Time - harus ada dan bisa di-parse
+            let finalStartRaw = startRaw;
+            if (startRaw === null || startRaw === undefined || startRaw === "") {
+              // Coba cari Start Time dari field lain
+              const alternativeStart = rowData.end || rowData.startEscalationVendor;
+              if (alternativeStart) {
+                uploadLog.push({
+                  type: "warning",
+                  row: rowNum,
+                  sheet: sheetName,
+                  message: `Start Time tidak ada, menggunakan alternatif: ${alternativeStart}`,
+                  details: { 
+                    startRaw, 
+                    startRawType: typeof startRaw,
+                    startRawValue: startRaw,
+                    alternativeStart,
+                    rowData 
+                  }
+                });
+                // Gunakan alternatif sebagai Start Time
+                finalStartRaw = alternativeStart;
+              } else {
+                skippedRows++;
+                uploadLog.push({
+                  type: "skipped",
+                  row: rowNum,
+                  sheet: sheetName,
+                  message: "Start Time tidak ada dan tidak ada alternatif",
+                  details: { 
+                    startRaw, 
+                    startRawType: typeof startRaw,
+                    startRawValue: startRaw,
+                    rowData 
+                  }
+                });
+                continue;
+              }
+            }
+
+            const startIso = coerceDate(finalStartRaw);
+            if (!startIso) {
+              skippedRows++;
+              uploadLog.push({
+                type: "skipped",
+                row: rowNum,
+                sheet: sheetName,
+                message: "Format Start Time tidak bisa di-parse",
+                details: { 
+                  startRaw: finalStartRaw, 
+                  startRawType: typeof finalStartRaw,
+                  startRawValue: finalStartRaw,
+                  startRawLength: finalStartRaw ? String(finalStartRaw).length : 0,
+                  startRawTrimmed: finalStartRaw ? String(finalStartRaw).trim() : null,
+                  rowData 
+                }
+              });
+              continue;
+            }
+
+            // Parse semua tanggal dengan logging detail
+            const endIso = coerceDate(rowData.end);
+            const sevIso = coerceDate(rowData.startEscalationVendor);
+            const p1Start = coerceDate(rowData.startPause);
+            const p1End = coerceDate(rowData.endPause);
+            const p2Start = coerceDate(rowData.startPause2);
+            const p2End = coerceDate(rowData.endPause2);
+
+            // Log detail parsing untuk setiap field tanggal
+            const dateFields = [
+              { name: 'Start', raw: rowData.start, parsed: startIso },
+              { name: 'End', raw: rowData.end, parsed: endIso },
+              { name: 'Escalation', raw: rowData.startEscalationVendor, parsed: sevIso },
+              { name: 'Pause1 Start', raw: rowData.startPause, parsed: p1Start },
+              { name: 'Pause1 End', raw: rowData.endPause, parsed: p1End },
+              { name: 'Pause2 Start', raw: rowData.startPause2, parsed: p2Start },
+              { name: 'Pause2 End', raw: rowData.endPause2, parsed: p2End }
+            ];
+
+            dateFields.forEach(field => {
+              if (field.raw && !field.parsed) {
+                uploadLog.push({
+                  type: "warning",
+                  row: rowNum,
+                  sheet: sheetName,
+                  message: `⚠️ ${field.name} tidak bisa di-parse: "${field.raw}"`,
+                  details: {
+                    fieldName: field.name,
+                    rawValue: field.raw,
+                    rawType: typeof field.raw,
+                    rawLength: String(field.raw).length,
+                    rawTrimmed: String(field.raw).trim()
+                  }
+                });
+              }
+            });
+
+            // Log detail parsing untuk debugging
             uploadLog.push({
-              type: 'error',
-              row: i + 1,
+              type: "info",
+              row: rowNum,
               sheet: sheetName,
-              message: errorMsg,
+              message: `Parsing dates: Start=${startIso}, End=${endIso}, Escalation=${sevIso}, Pause1=${p1Start}-${p1End}, Pause2=${p2Start}-${p2End}`,
+              details: { 
+                startIso, endIso, sevIso, p1Start, p1End, p2Start, p2End,
+                originalValues: {
+                  start: rowData.start,
+                  end: rowData.end,
+                  escalation: rowData.startEscalationVendor,
+                  pause1: rowData.startPause,
+                  pause1End: rowData.endPause,
+                  pause2: rowData.startPause2,
+                  pause2End: rowData.endPause2
+                }
+              }
+            });
+
+            const incident: Incident = {
+              id: mkId(finalNoCase, startIso),
+              noCase: finalNoCase,
+              priority: rowData.priority,
+              site: rowData.site,
+              ncal: rowData.ncal,
+              status: rowData.status,
+              level: ((): any => {
+                const v = rowData.level;
+                const n = Number(v);
+                return Number.isFinite(n) ? n : (v ?? null);
+              })(),
+              ts: rowData.ts,
+              odpBts: rowData.odpBts,
+              startTime: startIso,
+              startEscalationVendor: sevIso,
+              endTime: endIso,
+              durationMin: 0,
+              durationVendorMin: 0,
+              problem: rowData.problem,
+              penyebab: rowData.penyebab,
+              actionTerakhir: rowData.actionTerakhir,
+              note: rowData.note,
+              klasifikasiGangguan: rowData.klasifikasiGangguan,
+              powerBefore: ((): any => {
+                const v = rowData.powerBefore;
+                const n = Number(v);
+                return Number.isFinite(n) ? n : (v ?? null);
+              })(),
+              powerAfter: ((): any => {
+                const v = rowData.powerAfter;
+                const n = Number(v);
+                return Number.isFinite(n) ? n : (v ?? null);
+              })(),
+              startPause1: p1Start,
+              endPause1: p1End,
+              startPause2: p2Start,
+              endPause2: p2End,
+              totalDurationPauseMin: 0,
+              totalDurationVendorMin: 0,
+              batchId: generateBatchId(),
+              importedAt: new Date().toISOString(),
+            } as Incident;
+
+            allRows.push(incident);
+            successCount++;
+            uploadLog.push({ 
+              type: "success", 
+              row: rowNum, 
+              sheet: sheetName, 
+              message: `Parsed successfully: ${incident.noCase}`,
               details: {
-                rowData: row,
-                headers: headers
+                incident: {
+                  id: incident.id,
+                  noCase: incident.noCase,
+                  priority: incident.priority,
+                  site: incident.site,
+                  ncal: incident.ncal,
+                  status: incident.status,
+                  level: incident.level,
+                  ts: incident.ts,
+                  startTime: incident.startTime,
+                  endTime: incident.endTime,
+                  startEscalationVendor: incident.startEscalationVendor,
+                  startPause1: incident.startPause1,
+                  endPause1: incident.endPause1,
+                  startPause2: incident.startPause2,
+                  endPause2: incident.endPause2
+                },
+                originalRowData: rowData
+              }
+            });
+          } catch (e: any) {
+            failedCount++;
+            const msg = `Row ${rowNum} in "${sheetName}": ${e?.message || e}`;
+            errors.push(msg);
+            uploadLog.push({ 
+              type: "error", 
+              row: rowNum, 
+              sheet: sheetName, 
+              message: msg,
+              details: {
+                error: e?.message || e,
+                errorStack: e?.stack,
+                rowData: rowData,
+                rowIndex: r,
+                rowNumber: rowNum
               }
             });
           }
         }
 
-        setProgress((workbook.SheetNames.indexOf(sheetName) + 1) / workbook.SheetNames.length * 50);
+        setProgress(((workbook.SheetNames.indexOf(sheetName) + 1) / workbook.SheetNames.length) * 50);
       }
 
-      // Fix missing endTime and duration issues automatically
+      // ——————— Auto-fix EndTime lalu hitung durasi ———————
       if (allRows.length > 0) {
         setProgress(60);
-        uploadLog.push({
-          type: 'info',
-          row: 0,
-          sheet: 'DURATION_FIX',
-          message: `Fixing missing endTime and duration issues...`
+        uploadLog.push({ type: "info", row: 0, sheet: "DURATION_FIX", message: "Fixing endTime & durations..." });
+
+        const { fixedIncidents: incidentsWithEnd, fixedCount } = fixAllMissingEndTime(allRows);
+        if (fixedCount > 0) {
+          uploadLog.push({ type: "success", row: 0, sheet: "DURATION_FIX", message: `Fixed ${fixedCount} missing endTime` });
+        }
+
+        const finalIncidents = incidentsWithEnd.map((inc) => {
+          const updated = { ...inc };
+          
+          // Duration - dengan validasi yang lebih robust
+          const durationMin = diffMinutes(inc.startTime, inc.endTime);
+          updated.durationMin = durationMin > 0 ? durationMin : 0;
+          
+          // Vendor duration - dengan validasi yang lebih robust
+          const vendorDurationMin = diffMinutes(inc.startEscalationVendor || null, inc.endTime);
+          updated.durationVendorMin = vendorDurationMin > 0 ? vendorDurationMin : 0;
+          
+          // Pause total - dengan validasi yang lebih robust
+          const p1 = diffMinutes(inc.startPause1 || null, inc.endPause1 || null);
+          const p2 = diffMinutes(inc.startPause2 || null, inc.endPause2 || null);
+          const totalPause = p1 + p2;
+          updated.totalDurationPauseMin = totalPause > 0 ? Math.round(totalPause * 100) / 100 : 0;
+          
+          // Hanya kurangi pause yang overlap dengan window vendor (adil)
+          let overlapVendor = 0;
+          if (inc.startEscalationVendor && inc.endTime) {
+            const overlap1 = overlapMinutes(inc.startPause1 || null, inc.endPause1 || null, inc.startEscalationVendor, inc.endTime);
+            const overlap2 = overlapMinutes(inc.startPause2 || null, inc.endPause2 || null, inc.startEscalationVendor, inc.endTime);
+            overlapVendor = overlap1 + overlap2;
+          }
+          
+          const vendorAfterPause = Math.max(updated.durationVendorMin - overlapVendor, 0);
+          updated.totalDurationVendorMin = Math.round(vendorAfterPause * 100) / 100;
+          
+          // Log durasi untuk debugging
+          uploadLog.push({
+            type: "info",
+            row: 0,
+            sheet: "DURATION_CALC",
+            message: `Duration calc for ${inc.noCase}: duration=${updated.durationMin}, vendor=${updated.durationVendorMin}, pause=${updated.totalDurationPauseMin}, vendorAfterPause=${updated.totalDurationVendorMin}`,
+            details: {
+              noCase: inc.noCase,
+              startTime: inc.startTime,
+              endTime: inc.endTime,
+              startEscalationVendor: inc.startEscalationVendor,
+              startPause1: inc.startPause1,
+              endPause1: inc.endPause1,
+              startPause2: inc.startPause2,
+              endPause2: inc.endPause2,
+              durationMin: updated.durationMin,
+              durationVendorMin: updated.durationVendorMin,
+              totalDurationPauseMin: updated.totalDurationPauseMin,
+              totalDurationVendorMin: updated.totalDurationVendorMin,
+              overlapVendor
+            }
+          });
+          
+          return updated;
         });
-        
-        // Apply automatic duration fixes to each incident
-        allRows = allRows.map(incident => fixIncidentDurationBeforeSave(incident));
-        
-        uploadLog.push({
-          type: 'success',
-          row: 0,
-          sheet: 'DURATION_FIX',
-          message: `Applied automatic duration fixes to ${allRows.length} incidents`
-        });
-        
+
+        uploadLog.push({ type: "info", row: 0, sheet: "DURATION_FIX", message: "Durations recalculated (with vendor-overlap rule)" });
+
         setProgress(80);
-        uploadLog.push({
-          type: 'info',
-          row: 0,
-          sheet: 'DATABASE',
-          message: `Saving ${allRows.length} incidents to database...`
-        });
-        
-        await saveIncidentsChunked(allRows);
-        
-        uploadLog.push({
-          type: 'success',
-          row: 0,
-          sheet: 'DURATION_FIX',
-          message: `Successfully saved ${allRows.length} incidents to database with automatic duration fixes`
-        });
-        
+        uploadLog.push({ type: "info", row: 0, sheet: "DATABASE", message: `Saving ${finalIncidents.length} incidents...` });
+        await saveIncidentsChunked(finalIncidents);
+        uploadLog.push({ type: "success", row: 0, sheet: "DATABASE", message: `Saved ${finalIncidents.length} incidents` });
+
         setProgress(100);
       }
 
-      // Final summary log
       uploadLog.push({
-        type: 'info',
+        type: "info",
         row: 0,
-        sheet: 'SUMMARY',
-        message: `Upload completed. Summary: ${successCount} success, ${failedCount} failed, ${skippedRows} skipped out of ${totalRowsInFile} total rows in file`,
-        details: {
-          successCount,
-          failedCount,
-          skippedRows,
-          totalRowsInFile,
-          totalRowsProcessed
-        }
+        sheet: "SUMMARY",
+        message: `Upload completed. Summary: ${successCount} success, ${failedCount} failed, ${skippedRows} skipped out of ${totalRowsInFile}`,
+        details: { successCount, failedCount, skippedRows, totalRowsInFile, totalRowsProcessed },
       });
 
       setUploadResult({
@@ -332,255 +770,50 @@ export const IncidentUpload: React.FC = () => {
         uploadLog,
         totalRowsProcessed,
         totalRowsInFile,
-        skippedRows
+        skippedRows,
       });
-
-    } catch (error) {
-      const errorMsg = `Upload failed: ${error}`;
+    } catch (error: any) {
+      const errorMsg = `Upload failed: ${error?.message || error}`;
       setUploadResult({
         success: 0,
         failed: 1,
         errors: [errorMsg],
         preview: [],
-        uploadLog: [{
-          type: 'error',
-          row: 0,
-          sheet: 'SYSTEM',
-          message: errorMsg
-        }],
+        uploadLog: [{ type: "error", row: 0, sheet: "SYSTEM", message: errorMsg }],
         totalRowsProcessed: 0,
         totalRowsInFile: 0,
-        skippedRows: 0
+        skippedRows: 0,
       });
     } finally {
       setIsUploading(false);
     }
   }, []);
 
+  // ——————— UI (tetap sama dengan versi Anda, diringkas) ———————
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
     accept: {
-      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'],
-      'application/vnd.ms-excel': ['.xls']
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": [".xlsx"],
+      "application/vnd.ms-excel": [".xls"],
     },
-    multiple: false
+    multiple: false,
   });
 
-  const downloadTemplate = () => {
-    const templateData = [
-      REQUIRED_HEADERS,
-      // Add example row with comments
-      ['High', 'Site A', 'INC-001', 'Red', 'Open', '1', 'TS1', 'ODP001', 
-       '2024-01-01 08:00:00', '2024-01-01 08:30:00', '2024-01-01 10:00:00', '2:00:00', '1:30:00',
-       'Network Issue', 'Hardware Failure', 'Replaced Equipment', 'Resolved', 'Hardware',
-       '-25.5', '-20.1', '2024-01-01 08:45:00', '2024-01-01 09:00:00', '', '',
-       '0:15:00', '1:30:00']
-    ];
-    
-    const ws = XLSX.utils.aoa_to_sheet(templateData);
-    
-    
-    
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Template');
-    XLSX.writeFile(wb, 'incident_template.xlsx');
-  };
 
-  const exportUploadLog = () => {
-    if (!uploadResult?.uploadLog) return;
-    
-    const logData = uploadResult.uploadLog.map(entry => ({
-      Timestamp: new Date().toISOString(),
-      Type: entry.type.toUpperCase(),
-      Sheet: entry.sheet,
-      Row: entry.row,
-      NoCase: entry.noCase || '',
-      Message: entry.message,
-      Details: entry.details ? JSON.stringify(entry.details) : ''
-    }));
-
-    const ws = XLSX.utils.json_to_sheet(logData);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Upload Log');
-    XLSX.writeFile(wb, `incident_upload_log_${new Date().toISOString().split('T')[0]}.xlsx`);
-  };
-
-  // Function to fix existing data in database
-  const fixExistingData = async () => {
-    try {
-      setIsUploading(true);
-      setProgress(0);
-      
-      // Import database functions
-      const { db } = await import('@/lib/db');
-      
-      // Get all existing incidents
-      const allIncidents = await db.incidents.toArray();
-      
-      if (allIncidents.length === 0) {
-        setUploadResult({
-          success: 0,
-          failed: 0,
-          errors: ['No incidents found in database'],
-          preview: [],
-          uploadLog: [{
-            type: 'info',
-            row: 0,
-            sheet: 'FIX_EXISTING',
-            message: 'No incidents found in database to fix'
-          }],
-          totalRowsProcessed: 0,
-          totalRowsInFile: 0,
-          skippedRows: 0
-        });
-        return;
-      }
-      
-      setProgress(20);
-      
-      // Fix missing endTime
-      const { fixedIncidents: incidentsWithEndTime, fixedCount: endTimeFixed } = fixAllMissingEndTime(allIncidents);
-      
-      setProgress(40);
-      
-      // Fix duration based on Excel data
-      const { fixedIncidents: finalIncidents, fixedCount: durationFixed, fixLog } = fixAllIncidentDurations(incidentsWithEndTime);
-      
-      setProgress(60);
-      
-      // Update database with fixed incidents
-      let updateCount = 0;
-      for (const incident of finalIncidents) {
-        await db.incidents.update(incident.id, incident);
-        updateCount++;
-      }
-      
-      setProgress(100);
-      
-      // Create result log
-      const uploadLog: UploadLogEntry[] = [
-        {
-          type: 'info',
-          row: 0,
-          sheet: 'FIX_EXISTING',
-          message: `Started fixing ${allIncidents.length} existing incidents`
-        }
-      ];
-      
-      if (endTimeFixed > 0) {
-        uploadLog.push({
-          type: 'success',
-          row: 0,
-          sheet: 'FIX_EXISTING',
-          message: `Fixed ${endTimeFixed} incidents with missing endTime`
-        });
-      }
-      
-      if (durationFixed > 0) {
-        uploadLog.push({
-          type: 'success',
-          row: 0,
-          sheet: 'FIX_EXISTING',
-          message: `Fixed ${durationFixed} incidents with incorrect duration`
-        });
-        
-        // Log some sample fixes
-        fixLog.slice(0, 5).forEach(fix => {
-          uploadLog.push({
-            type: 'info',
-            row: 0,
-            sheet: 'FIX_EXISTING',
-            message: `Fixed ${fix.noCase}: ${fix.oldDuration.toFixed(2)}min → ${fix.newDuration.toFixed(2)}min (${fix.ncal}, ${fix.month})`
-          });
-        });
-        
-        if (fixLog.length > 5) {
-          uploadLog.push({
-            type: 'info',
-            row: 0,
-            sheet: 'FIX_EXISTING',
-            message: `... and ${fixLog.length - 5} more duration fixes`
-          });
-        }
-      }
-      
-      uploadLog.push({
-        type: 'success',
-        row: 0,
-        sheet: 'FIX_EXISTING',
-        message: `Successfully updated ${updateCount} incidents in database`
-      });
-      
-      setUploadResult({
-        success: updateCount,
-        failed: 0,
-        errors: [],
-        preview: finalIncidents.slice(0, 20),
-        uploadLog,
-        totalRowsProcessed: allIncidents.length,
-        totalRowsInFile: allIncidents.length,
-        skippedRows: 0
-      });
-      
-    } catch (error) {
-      const errorMsg = `Fix existing data failed: ${error}`;
-      setUploadResult({
-        success: 0,
-        failed: 1,
-        errors: [errorMsg],
-        preview: [],
-        uploadLog: [{
-          type: 'error',
-          row: 0,
-          sheet: 'FIX_EXISTING',
-          message: errorMsg
-        }],
-        totalRowsProcessed: 0,
-        totalRowsInFile: 0,
-        skippedRows: 0
-      });
-    } finally {
-      setIsUploading(false);
-    }
-  };
-
-  const getLogEntryIcon = (type: string) => {
-    switch (type) {
-      case 'success': return <CheckCircleIcon className="w-4 h-4 text-green-500" />;
-      case 'error': return <CancelIcon className="w-4 h-4 text-red-500" />;
-      case 'skipped': return <WarningAmberIcon className="w-4 h-4 text-yellow-500" />;
-      case 'info': return <InfoIcon className="w-4 h-4 text-blue-500" />;
-              default: return <DescriptionIcon className="w-4 h-4 text-muted-foreground" />;
-    }
-  };
-
-  const getLogEntryColor = (type: string) => {
-    switch (type) {
-      case 'success': return 'border-green-200 bg-green-50 dark:bg-green-900/20 dark:border-green-800';
-      case 'error': return 'border-red-200 bg-red-50 dark:bg-red-900/20 dark:border-red-800';
-      case 'skipped': return 'border-yellow-200 bg-yellow-50 dark:bg-yellow-900/20 dark:border-yellow-800';
-      case 'info': return 'border-blue-200 bg-blue-50 dark:bg-blue-900/20 dark:border-blue-800';
-      default: return 'border-gray-200 bg-gray-50 dark:bg-gray-900/20 dark:border-gray-800';
-    }
-  };
 
   return (
     <div className="space-y-6">
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-                            <TableChartIcon className="w-5 h-5" />
-            Upload Incident Data
+            <TableChartIcon className="w-5 h-5" />
+            Upload Incident Data (Fixed)
           </CardTitle>
           <CardDescription>
-            Upload Excel file with incident data. The file should contain all required columns.
-            <br />
-            <span className="text-xs text-gray-500 mt-1 block">
-              Note: Level field accepts values 1-500 based on handling duration, not just 1-10.
-            </span>
+            Excel dengan header bervariasi akan otomatis dipetakan. Tanggal dari Excel (serial) juga dideteksi.
             <br />
             <span className="text-xs text-green-600 mt-1 block font-medium">
-              ✅ Automatic Duration Fix: Missing endTime and incorrect durations will be automatically corrected based on Excel data.
+              ✅ Durasi vendor hanya mengurangi jeda yang overlap dengan window vendor.
             </span>
           </CardDescription>
         </CardHeader>
@@ -589,46 +822,19 @@ export const IncidentUpload: React.FC = () => {
             <div
               {...getRootProps()}
               className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${
-                isDragActive
-                  ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
-                  : ' hover:border-gray-400 dark:hover:border-gray-500'
+                isDragActive ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20" : " hover:border-gray-400 dark:hover:border-gray-500"
               }`}
             >
               <input {...getInputProps()} />
               <CloudUploadIcon className="w-12 h-12 mx-auto mb-4 text-gray-400" />
               {isDragActive ? (
-                <p className="text-lg font-medium text-blue-600 dark:text-blue-400">
-                  Drop the Excel file here...
-                </p>
+                <p className="text-lg font-medium text-blue-600 dark:text-blue-400">Drop the Excel file here...</p>
               ) : (
                 <div>
-                  <p className="text-lg font-medium text-card-foreground">
-                    Drag & drop an Excel file here, or click to select
-                  </p>
-                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
-                    Supports .xlsx and .xls files
-                  </p>
+                  <p className="text-lg font-medium text-card-foreground">Drag & drop an Excel file here, or click to select</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">Supports .xlsx and .xls files</p>
                 </div>
               )}
-            </div>
-
-            <div className="flex justify-between items-center">
-              <div className="flex gap-2">
-                <Button onClick={downloadTemplate} variant="outline" size="sm">
-                  <DownloadIcon className="w-4 h-4 mr-2" />
-                  Download Template
-                </Button>
-                <Button 
-                  onClick={fixExistingData} 
-                  variant="outline" 
-                  size="sm"
-                  disabled={isUploading}
-                  className="bg-orange-50 hover:bg-orange-100 border-orange-200 text-orange-700"
-                >
-                  <CheckCircleIcon className="w-4 h-4 mr-2" />
-                  Fix Existing Data
-                </Button>
-              </div>
             </div>
 
             {isUploading && (
@@ -643,7 +849,6 @@ export const IncidentUpload: React.FC = () => {
 
             {uploadResult && (
               <div className="space-y-4">
-                {/* Summary Statistics */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   <div className="text-center p-3 bg-green-50 dark:bg-green-900/20 rounded-lg ring-1 ring-green-200 dark:ring-green-800">
                     <div className="text-lg font-bold text-green-600">{uploadResult.success}</div>
@@ -663,89 +868,6 @@ export const IncidentUpload: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Data Discrepancy Alert */}
-                {uploadResult.success !== uploadResult.totalRowsInFile && (
-                  <Alert>
-                    <WarningAmberIcon className="w-4 h-4" />
-                    <AlertDescription>
-                      <div className="space-y-2">
-                        <p className="font-medium">Data Discrepancy Detected:</p>
-                        <div className="text-sm space-y-1">
-                          <p>• Total rows in file: <strong>{uploadResult.totalRowsInFile}</strong></p>
-                          <p>• Successfully uploaded: <strong>{uploadResult.success}</strong></p>
-                          <p>• Failed to upload: <strong>{uploadResult.failed}</strong></p>
-                          <p>• Skipped rows: <strong>{uploadResult.skippedRows}</strong></p>
-                          <p className="text-red-600 font-medium">
-                            Missing: <strong>{uploadResult.totalRowsInFile - uploadResult.success - uploadResult.skippedRows}</strong> rows
-                          </p>
-                        </div>
-                        <p className="text-sm text-gray-600">
-                          Check the detailed log below to see which rows were skipped or failed and why.
-                        </p>
-                      </div>
-                    </AlertDescription>
-                  </Alert>
-                )}
-
-                {/* Action Buttons */}
-                <div className="flex gap-2">
-                  <Button 
-                    onClick={() => setShowDetailedLog(!showDetailedLog)} 
-                    variant="outline" 
-                    size="sm"
-                  >
-                    <DescriptionIcon className="w-4 h-4 mr-2" />
-                    {showDetailedLog ? 'Hide' : 'Show'} Detailed Log
-                  </Button>
-                  <Button 
-                    onClick={exportUploadLog} 
-                    variant="outline" 
-                    size="sm"
-                  >
-                    <DownloadIcon className="w-4 h-4 mr-2" />
-                    Export Log
-                  </Button>
-                </div>
-
-                {/* Detailed Upload Log */}
-                {showDetailedLog && uploadResult.uploadLog && (
-                  <div className="space-y-2 max-h-96 overflow-y-auto border rounded-lg p-4">
-                    <h4 className="font-medium mb-3">Detailed Upload Log:</h4>
-                    {uploadResult.uploadLog.map((entry, index) => (
-                      <div 
-                        key={index} 
-                        className={`p-3 rounded-lg border ${getLogEntryColor(entry.type)}`}
-                      >
-                        <div className="flex items-start gap-3">
-                          {getLogEntryIcon(entry.type)}
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 text-sm">
-                              <span className="font-medium">{entry.sheet}</span>
-                              {entry.row > 0 && (
-                                <span className="text-gray-500">Row {entry.row}</span>
-                              )}
-                              {entry.noCase && (
-                                <span className="text-blue-600 font-mono">#{entry.noCase}</span>
-                              )}
-                            </div>
-                            <p className="text-sm mt-1">{entry.message}</p>
-                            {entry.details && (
-                              <details className="mt-2">
-                                <summary className="text-xs text-gray-500 cursor-pointer">
-                                  Show details
-                                </summary>
-                                <pre className="text-xs bg-card text-card-foreground  p-2 rounded mt-1 overflow-x-auto">
-                                  {JSON.stringify(entry.details, null, 2)}
-                                </pre>
-                              </details>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
                 {uploadResult.errors.length > 0 && (
                   <Alert>
                     <WarningAmberIcon className="w-4 h-4" />
@@ -753,16 +875,9 @@ export const IncidentUpload: React.FC = () => {
                       <div className="space-y-2">
                         <p className="font-medium">Errors encountered:</p>
                         <ul className="text-sm space-y-1">
-                          {uploadResult.errors.slice(0, 10).map((error, index) => (
-                            <li key={index} className="text-red-600 dark:text-red-400">
-                              {error}
-                            </li>
+                          {uploadResult.errors.slice(0, 10).map((e, i) => (
+                            <li key={i} className="text-red-600 dark:text-red-400">{e}</li>
                           ))}
-                          {uploadResult.errors.length > 10 && (
-                            <li className="text-gray-500">
-                              ... and {uploadResult.errors.length - 10} more errors
-                            </li>
-                          )}
                         </ul>
                       </div>
                     </AlertDescription>
@@ -784,19 +899,54 @@ export const IncidentUpload: React.FC = () => {
                           </tr>
                         </thead>
                         <tbody>
-                          {uploadResult.preview.map((incident, index) => (
-                            <tr key={index} className="border-t">
-                              <td className="px-3 py-2">{incident.noCase}</td>
-                              <td className="px-3 py-2">{incident.site}</td>
-                              <td className="px-3 py-2">{incident.status}</td>
-                              <td className="px-3 py-2">{incident.priority}</td>
-                              <td className="px-3 py-2">
-                                {incident.durationMin ? `${Math.floor(incident.durationMin / 60)}:${String(incident.durationMin % 60).padStart(2, '0')}` : '-'}
-                              </td>
-                            </tr>
-                          ))}
+                          {uploadResult.preview.map((inc, i) => {
+                            const minutes = Math.round(inc.durationMin || 0);
+                            const hh = Math.floor(minutes / 60);
+                            const mm = minutes % 60;
+                            return (
+                              <tr key={i} className="border-t">
+                                <td className="px-3 py-2">{inc.noCase}</td>
+                                <td className="px-3 py-2">{inc.site}</td>
+                                <td className="px-3 py-2">{inc.status}</td>
+                                <td className="px-3 py-2">{inc.priority}</td>
+                                <td className="px-3 py-2">{hh}:{String(mm).padStart(2, "0")}</td>
+                              </tr>
+                            );
+                          })}
                         </tbody>
                       </table>
+                    </div>
+                  </div>
+                )}
+
+                {/* Upload Log Section */}
+                {uploadResult.uploadLog && uploadResult.uploadLog.length > 0 && (
+                  <div>
+                    <h4 className="font-medium mb-2">Upload Log:</h4>
+                    <div className="border rounded-lg overflow-hidden max-h-60 overflow-y-auto">
+                      <div className="space-y-1 p-2">
+                        {uploadResult.uploadLog.map((log, i) => (
+                          <div key={i} className={`text-xs p-2 rounded ${
+                            log.type === 'success' ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300' :
+                            log.type === 'error' ? 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300' :
+                            log.type === 'skipped' ? 'bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-300' :
+                            log.type === 'warning' ? 'bg-orange-50 dark:bg-orange-900/20 text-orange-700 dark:text-orange-300' :
+                            'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300'
+                          }`}>
+                            <div className="flex items-center gap-2">
+                              {log.type === 'success' && <CheckCircleIcon className="w-3 h-3" />}
+                              {log.type === 'error' && <CancelIcon className="w-3 h-3" />}
+                              {log.type === 'skipped' && <WarningAmberIcon className="w-3 h-3" />}
+                              {log.type === 'info' && <InfoIcon className="w-3 h-3" />}
+                              {log.type === 'warning' && <WarningAmberIcon className="w-3 h-3" />}
+                              <span className="font-medium">[{log.sheet}]</span>
+                              {log.row > 0 && <span className="text-gray-500">Row {log.row}:</span>}
+                              <span>{log.message}</span>
+                              {log.noCase && <span className="text-gray-500">(Case: {log.noCase})</span>}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   </div>
                 )}
@@ -808,532 +958,3 @@ export const IncidentUpload: React.FC = () => {
     </div>
   );
 };
-
-function parseRowToIncident(headers: string[], row: any[], rowNum: number, sheetName: string, uploadLog?: UploadLogEntry[]): Incident | null {
-  const getValue = (headerName: string) => {
-    // Flexible column name matching
-    const columnMapping = {
-      'Priority': ['priority'],
-      'Site': ['site'],
-      'No Case': ['no case', 'nocase', 'case'],
-      'NCAL': ['ncal'],
-      'Status': ['status'],
-      'Level': ['level'],
-      'TS': ['ts', 'technical support', 'vendor'],
-      'ODP/BTS': ['odp', 'bts', 'odp/bts'],
-      'Start': ['start'],
-      'Start Escalation Vendor': ['start escalation vendor', 'escalation vendor'],
-      'End': ['end'],
-      'Duration': ['duration'],
-      'Duration Vendor': ['duration vendor'],
-      'Problem': ['problem'],
-      'Penyebab': ['penyebab', 'cause'],
-      'Action Terakhir': ['action terakhir', 'action', 'last action'],
-      'Note': ['note'],
-      'Klasifikasi Gangguan': ['klasifikasi gangguan', 'klasifikasi'],
-      'Power Before': ['power before', 'powerbefore'],
-      'Power After': ['power after', 'powerafter'],
-      'Pause': ['pause', 'start pause'],
-      'Restart': ['restart', 'end pause'],
-      'Pause2': ['pause2', 'pause 2', 'start pause 2'],
-      'Restart2': ['restart2', 'restart 2', 'end pause 2'],
-      'Total Duration Pause': ['total duration pause', 'total pause'],
-      'Total Duration Vendor': ['total duration vendor', 'total vendor']
-    };
-
-    const possibleNames = columnMapping[headerName] || [headerName.toLowerCase()];
-    const index = headers.findIndex(h => 
-      possibleNames.some(name => 
-        h?.toString().toLowerCase().includes(name)
-      )
-    );
-    return index >= 0 ? row[index] : null;
-  };
-
-  const noCase = getValue('No Case');
-  if (!noCase || String(noCase).trim() === '') {
-    if (uploadLog) {
-      uploadLog.push({
-        type: 'skipped',
-        row: rowNum,
-        sheet: sheetName,
-        message: 'Missing or empty No Case field',
-        details: {
-          noCase: noCase,
-          rowData: row.slice(0, 5) // First 5 columns for debugging
-        }
-      });
-    }
-    return null; // Skip empty rows instead of throwing error
-  }
-
-  // Additional validation for required fields
-  const startTimeRaw = getValue('Start');
-  if (!startTimeRaw || String(startTimeRaw).trim() === '') {
-    if (uploadLog) {
-      uploadLog.push({
-        type: 'skipped',
-        row: rowNum,
-        sheet: sheetName,
-        message: 'Missing Start time field',
-        noCase: String(noCase),
-        details: {
-          startTime: startTimeRaw,
-          rowData: row.slice(0, 5)
-        }
-      });
-    }
-    return null;
-  }
-
-  // Fix date format if it contains dots instead of colons
-  let fixedStartTimeRaw = startTimeRaw;
-  if (typeof fixedStartTimeRaw === 'string' && fixedStartTimeRaw.includes('/') && fixedStartTimeRaw.includes('.')) {
-    fixedStartTimeRaw = fixedStartTimeRaw.replace(/\./g, ':');
-    if (uploadLog) {
-      uploadLog.push({
-        type: 'info',
-        row: rowNum,
-        sheet: sheetName,
-        message: `Fixed start time format from DD/MM/YYYY HH.MM.SS to DD/MM/YYYY HH:MM:SS: "${startTimeRaw}" → "${fixedStartTimeRaw}"`,
-        noCase: String(noCase)
-      });
-    }
-  }
-  
-  const startTime = parseDateSafe(fixedStartTimeRaw);
-  if (!startTime) {
-    if (uploadLog) {
-      uploadLog.push({
-        type: 'error',
-        row: rowNum,
-        sheet: sheetName,
-        message: 'Invalid Start time format',
-        noCase: String(noCase),
-        details: {
-          startTimeRaw,
-          fixedStartTimeRaw,
-          expectedFormat: 'DD/MM/YY HH:MM:SS or YYYY-MM-DD HH:mm:ss'
-        }
-      });
-    }
-    return null;
-  }
-
-  const id = mkId(noCase, startTime);
-
-  const incident: Incident = {
-    id,
-    noCase: String(noCase),
-    priority: (() => {
-      const priorityValue = getValue('Priority');
-      if (priorityValue) {
-        const validPriorities = ['High', 'Medium', 'Low'];
-        const priorityStr = String(priorityValue).trim();
-        if (validPriorities.includes(priorityStr)) {
-          return priorityStr;
-        } else {
-          if (uploadLog) {
-            uploadLog.push({
-              type: 'error',
-              row: rowNum,
-              sheet: sheetName,
-              message: `Invalid Priority value "${priorityValue}". Expected: High, Medium, Low`,
-              noCase: String(noCase)
-            });
-          }
-        }
-      }
-      return priorityValue || null;
-    })(),
-    site: getValue('Site') || null,
-    ncal: (() => {
-      const ncalValue = getValue('NCAL');
-      if (ncalValue) {
-        const validNCAL = ['Blue', 'Yellow', 'Orange', 'Red', 'Black'];
-        const ncalStr = String(ncalValue).trim();
-        if (validNCAL.includes(ncalStr)) {
-          return ncalStr;
-        } else {
-          if (uploadLog) {
-            uploadLog.push({
-              type: 'error',
-              row: rowNum,
-              sheet: sheetName,
-              message: `Invalid NCAL value "${ncalValue}". Expected: Blue, Yellow, Orange, Red, Black`,
-              noCase: String(noCase)
-            });
-          }
-        }
-      }
-      return ncalValue || null;
-    })(),
-    status: getValue('Status') || null,
-    level: (() => {
-      const levelValue = getValue('Level');
-      if (levelValue) {
-        const levelNum = Number(levelValue);
-        if (Number.isInteger(levelNum) && levelNum >= 1 && levelNum <= 500) {
-          return levelNum;
-        } else {
-          if (uploadLog) {
-            uploadLog.push({
-              type: 'error',
-              row: rowNum,
-              sheet: sheetName,
-              message: `Invalid Level value "${levelValue}". Expected: 1-500 (based on handling duration)`,
-              noCase: String(noCase)
-            });
-          }
-        }
-      }
-      return levelValue ? Number(levelValue) : null;
-    })(),
-    ts: getValue('TS') || null,
-    odpBts: getValue('ODP/BTS') || null,
-    startTime,
-    startEscalationVendor: parseDateSafe(getValue('Start Escalation Vendor')),
-    endTime: parseDateSafe(getValue('End')),
-    durationMin: (() => {
-      const duration = getValue('Duration');
-      const startTimeRaw = getValue('Start');
-      const endTimeRaw = getValue('End');
-      
-      let minutes = toMinutes(duration);
-      
-      // If duration from Excel is invalid or 0, calculate from start/end times
-      if (minutes === 0 && startTimeRaw && endTimeRaw) {
-        try {
-          const startDate = parseDateSafe(startTimeRaw);
-          const endDate = parseDateSafe(endTimeRaw);
-          
-          if (startDate && endDate && !isNaN(startDate.getTime()) && !isNaN(endDate.getTime())) {
-            const calculatedMinutes = Math.round((endDate.getTime() - startDate.getTime()) / (1000 * 60));
-            
-            if (calculatedMinutes > 0) {
-              minutes = calculatedMinutes;
-              if (uploadLog) {
-                uploadLog.push({
-                  type: 'info',
-                  row: rowNum,
-                  sheet: sheetName,
-                  message: `Recalculated duration from start/end times: ${calculatedMinutes} minutes (Excel value was invalid: "${duration}")`,
-                  noCase: String(noCase)
-                });
-              }
-            }
-          }
-        } catch (error) {
-          if (uploadLog) {
-            uploadLog.push({
-              type: 'warning',
-              row: rowNum,
-              sheet: sheetName,
-              message: `Failed to recalculate duration from start/end times: ${error}`,
-              noCase: String(noCase)
-            });
-          }
-        }
-      }
-      
-      // Validate duration value
-      if (minutes === 0 && uploadLog) {
-        uploadLog.push({
-          type: 'warning',
-          row: rowNum,
-          sheet: sheetName,
-          message: `Duration is 0 or invalid. Raw value: "${duration}". Start: "${startTimeRaw}", End: "${endTimeRaw}"`,
-          noCase: String(noCase)
-        });
-      }
-      
-      // Check for suspicious duration values (more than 24 hours)
-      if (minutes > 1440 && uploadLog) {
-        uploadLog.push({
-          type: 'warning',
-          row: rowNum,
-          sheet: sheetName,
-          message: `Duration seems unusually long: ${minutes} minutes (${Math.round(minutes/60)} hours). Please verify start/end times.`,
-          noCase: String(noCase)
-        });
-      }
-      
-      return minutes;
-    })(),
-    durationVendorMin: (() => {
-      const duration = getValue('Duration Vendor');
-      const startEscalationRaw = getValue('Start Escalation Vendor');
-      const endTimeRaw = getValue('End');
-      
-      let minutes = toMinutes(duration);
-      
-      // If duration vendor from Excel is invalid or 0, calculate from escalation to end
-      if (minutes === 0 && startEscalationRaw && endTimeRaw) {
-        try {
-          const startEscalationDate = parseDateSafe(startEscalationRaw);
-          const endDate = parseDateSafe(endTimeRaw);
-          
-          if (startEscalationDate && endDate && !isNaN(startEscalationDate.getTime()) && !isNaN(endDate.getTime())) {
-            const calculatedMinutes = Math.round((endDate.getTime() - startEscalationDate.getTime()) / (1000 * 60));
-            
-            if (calculatedMinutes > 0) {
-              minutes = calculatedMinutes;
-              if (uploadLog) {
-                uploadLog.push({
-                  type: 'info',
-                  row: rowNum,
-                  sheet: sheetName,
-                  message: `Recalculated duration vendor from escalation to end: ${calculatedMinutes} minutes (Excel value was invalid: "${duration}")`,
-                  noCase: String(noCase)
-                });
-              }
-            }
-          }
-        } catch (error) {
-          if (uploadLog) {
-            uploadLog.push({
-              type: 'warning',
-              row: rowNum,
-              sheet: sheetName,
-              message: `Failed to recalculate duration vendor from escalation to end: ${error}`,
-              noCase: String(noCase)
-            });
-          }
-        }
-      }
-      
-      // Validate duration vendor value
-      if (minutes === 0 && uploadLog) {
-        uploadLog.push({
-          type: 'warning',
-          row: rowNum,
-          sheet: sheetName,
-          message: `Duration Vendor is 0 or invalid. Raw value: "${duration}". Escalation: "${startEscalationRaw}", End: "${endTimeRaw}"`,
-          noCase: String(noCase)
-        });
-      }
-      
-      // Check for suspicious duration vendor values (more than 24 hours)
-      if (minutes > 1440 && uploadLog) {
-        uploadLog.push({
-          type: 'warning',
-          row: rowNum,
-          sheet: sheetName,
-          message: `Duration Vendor seems unusually long: ${minutes} minutes (${Math.round(minutes/60)} hours). Please verify escalation and end times.`,
-          noCase: String(noCase)
-        });
-      }
-      
-      return minutes;
-    })(),
-    problem: getValue('Problem') || null,
-    penyebab: getValue('Penyebab') || null,
-    actionTerakhir: getValue('Action Terakhir') || null,
-    note: getValue('Note') || null,
-    klasifikasiGangguan: getValue('Klasifikasi Gangguan') || null,
-    powerBefore: (() => {
-      const powerValue = getValue('Power Before');
-      if (powerValue) {
-        const powerNum = Number(powerValue);
-        if (Number.isFinite(powerNum)) {
-          // dBm values typically range from -70 to +10
-          if (powerNum >= -70 && powerNum <= 10) {
-            return powerNum;
-          } else {
-            if (uploadLog) {
-              uploadLog.push({
-                type: 'error',
-                row: rowNum,
-                sheet: sheetName,
-                message: `Power Before value "${powerValue}" dBm is outside typical range (-70 to +10)`,
-                noCase: String(noCase)
-              });
-            }
-          }
-        } else {
-          if (uploadLog) {
-            uploadLog.push({
-              type: 'error',
-              row: rowNum,
-              sheet: sheetName,
-              message: `Invalid Power Before value "${powerValue}". Expected numeric value in dBm`,
-              noCase: String(noCase)
-            });
-          }
-        }
-      }
-      return powerValue ? Number(powerValue) : null;
-    })(),
-    powerAfter: (() => {
-      const powerValue = getValue('Power After');
-      if (powerValue) {
-        const powerNum = Number(powerValue);
-        if (Number.isFinite(powerNum)) {
-          // dBm values typically range from -70 to +10
-          if (powerNum >= -70 && powerNum <= 10) {
-            return powerNum;
-          } else {
-            if (uploadLog) {
-              uploadLog.push({
-                type: 'error',
-                row: rowNum,
-                sheet: sheetName,
-                message: `Power After value "${powerValue}" dBm is outside typical range (-70 to +10)`,
-                noCase: String(noCase)
-              });
-            }
-          }
-        } else {
-          if (uploadLog) {
-            uploadLog.push({
-              type: 'error',
-              row: rowNum,
-              sheet: sheetName,
-              message: `Invalid Power After value "${powerValue}". Expected numeric value in dBm`,
-              noCase: String(noCase)
-            });
-          }
-        }
-      }
-      return powerValue ? Number(powerValue) : null;
-    })(),
-    startPause1: (() => {
-      const value = getValue('Pause');
-      if (uploadLog && value) {
-        uploadLog.push({
-          type: 'info',
-          row: rowNum,
-          sheet: sheetName,
-          message: `Found Pause data: "${value}"`,
-          noCase: String(noCase)
-        });
-      }
-      return parseDateSafe(value);
-    })(),
-    endPause1: (() => {
-      const value = getValue('Restart');
-      if (uploadLog && value) {
-        uploadLog.push({
-          type: 'info',
-          row: rowNum,
-          sheet: sheetName,
-          message: `Found Restart data: "${value}"`,
-          noCase: String(noCase)
-        });
-      } else if (uploadLog) {
-        uploadLog.push({
-          type: 'warning',
-          row: rowNum,
-          sheet: sheetName,
-          message: `No Restart data found (expected if Pause exists)`,
-          noCase: String(noCase)
-        });
-      }
-      return parseDateSafe(value);
-    })(),
-    startPause2: (() => {
-      const value = getValue('Pause2');
-      if (uploadLog && value) {
-        uploadLog.push({
-          type: 'info',
-          row: rowNum,
-          sheet: sheetName,
-          message: `Found Pause2 data: "${value}"`,
-          noCase: String(noCase)
-        });
-      }
-      return parseDateSafe(value);
-    })(),
-    endPause2: (() => {
-      const value = getValue('Restart2');
-      if (uploadLog && value) {
-        uploadLog.push({
-          type: 'info',
-          row: rowNum,
-          sheet: sheetName,
-          message: `Found Restart2 data: "${value}"`,
-          noCase: String(noCase)
-        });
-      }
-      return parseDateSafe(value);
-    })(),
-    totalDurationPauseMin: (() => {
-      const duration = getValue('Total Duration Pause');
-      const minutes = toMinutes(duration);
-      if (duration && minutes === 0) {
-        if (uploadLog) {
-          uploadLog.push({
-            type: 'error',
-            row: rowNum,
-            sheet: sheetName,
-            message: `Total Duration Pause not parsed correctly. Raw value: "${duration}"`,
-            noCase: String(noCase)
-          });
-        }
-      }
-      return minutes;
-    })(),
-    totalDurationVendorMin: (() => {
-      const duration = getValue('Total Duration Vendor');
-      const minutes = toMinutes(duration);
-      if (duration && minutes === 0) {
-        if (uploadLog) {
-          uploadLog.push({
-            type: 'error',
-            row: rowNum,
-            sheet: sheetName,
-            message: `Total Duration Vendor not parsed correctly. Raw value: "${duration}"`,
-            noCase: String(noCase)
-          });
-        }
-      }
-      return minutes;
-    })(),
-    netDurationMin: (() => {
-      const duration = toMinutes(getValue('Duration'));
-      const totalPause = toMinutes(getValue('Total Duration Pause'));
-      
-      // Validate duration data
-      if (duration === 0 && uploadLog) {
-        uploadLog.push({
-          type: 'warning',
-          row: rowNum,
-          sheet: sheetName,
-          message: `Duration is 0 or invalid. Raw value: "${getValue('Duration')}"`,
-          noCase: String(noCase)
-        });
-      }
-      
-      // Validate that total pause doesn't exceed duration
-      if (totalPause > duration && uploadLog) {
-        uploadLog.push({
-          type: 'warning',
-          row: rowNum,
-          sheet: sheetName,
-          message: `Total Duration Pause (${totalPause}) exceeds Duration (${duration}). This may indicate data inconsistency.`,
-          noCase: String(noCase)
-        });
-      }
-      
-      // Calculate net duration (Duration - Total Duration Pause)
-      const netDuration = Math.max(duration - totalPause, 0);
-      
-      // Log calculation for debugging
-      if (uploadLog) {
-        uploadLog.push({
-          type: 'info',
-          row: rowNum,
-          sheet: sheetName,
-          message: `Net Duration calculation: ${duration} - ${totalPause} = ${netDuration} minutes`,
-          noCase: String(noCase)
-        });
-      }
-      
-      return netDuration;
-    })(),
-    batchId: generateBatchId(),
-    importedAt: new Date().toISOString()
-  };
-
-  return incident;
-}

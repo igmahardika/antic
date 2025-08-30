@@ -67,10 +67,11 @@ export const toMinutes = (v: unknown): number => {
   if (Number.isFinite(excelTime) && excelTime > 0 && excelTime < 1) {
     // Excel time: fraction of 24 hours
     const totalMinutes = Math.round(excelTime * 24 * 60);
+    console.log(`Parsed Excel time serial: "${s}" -> ${totalMinutes} minutes`);
     return totalMinutes;
   }
   
-  // First, try to parse as HH:MM:SS format (prioritas utama untuk kolom L, M, Y, Z)
+  // First, try to parse as HH:MM:SS format (prioritas utama untuk kolom Duration, Duration Vendor, Total Duration Pause, Total Duration Vendor)
   const hhmmssResult = parseHHMMSS(s);
   if (hhmmssResult > 0) {
     return hhmmssResult;
@@ -172,6 +173,8 @@ export const parseDateSafe = (dt?: string | Date | null): string | null => {
   const s = String(dt).trim();
   if (!s) return null;
   
+  console.log(`🔍 Parsing date: "${s}"`);
+  
   // Handle Excel serial date numbers (e.g., 45839, 45735)
   const excelSerial = Number(s);
   if (Number.isFinite(excelSerial) && excelSerial > 1000) {
@@ -184,58 +187,135 @@ export const parseDateSafe = (dt?: string | Date | null): string | null => {
     }
   }
   
-  // Coba parse berbagai format string
+  // Coba parse berbagai format string dengan prioritas untuk DD/MM/YYYY HH:MM:SS
   const formats = [
-    /^(\d{1,2})\/(\d{1,2})\/(\d{2})\s+(\d{1,2}):(\d{2}):(\d{2})$/, // dd/mm/yy hh:mm:ss (format utama)
+    // Format utama: DD/M/YYYY HH:M:SS (prioritas tertinggi) - format yang fleksibel
+    /^(\d{1,2})\/(\d{1,2})\/(\d{4})\s+(\d{1,2}):(\d{1,2}):(\d{1,2})$/, // dd/m/yyyy hh:m:ss (fleksibel)
+    /^(\d{1,2})\/(\d{1,2})\/(\d{2})\s+(\d{1,2}):(\d{1,2}):(\d{1,2})$/, // dd/m/yy hh:m:ss (fleksibel)
+    /^(\d{1,2})\/(\d{1,2})\/(\d{4})\s+(\d{1,2}):(\d{1,2})$/, // dd/m/yyyy hh:m (fleksibel)
+    /^(\d{1,2})\/(\d{1,2})\/(\d{2})\s+(\d{1,2}):(\d{1,2})$/, // dd/m/yy hh:m (fleksibel)
+    
+    // Format dengan leading zero (fallback)
     /^(\d{1,2})\/(\d{1,2})\/(\d{4})\s+(\d{1,2}):(\d{2}):(\d{2})$/, // dd/mm/yyyy hh:mm:ss
+    /^(\d{1,2})\/(\d{1,2})\/(\d{2})\s+(\d{1,2}):(\d{2}):(\d{2})$/, // dd/mm/yy hh:mm:ss
     /^(\d{1,2})\/(\d{1,2})\/(\d{4})\s+(\d{1,2}):(\d{2})$/, // dd/mm/yyyy hh:mm
+    /^(\d{1,2})\/(\d{1,2})\/(\d{2})\s+(\d{1,2}):(\d{2})$/, // dd/mm/yy hh:mm
+    
+    // Format alternatif
     /^(\d{4})-(\d{1,2})-(\d{1,2})\s+(\d{1,2}):(\d{2}):(\d{2})$/, // yyyy-mm-dd hh:mm:ss
     /^(\d{4})-(\d{1,2})-(\d{1,2})\s+(\d{1,2}):(\d{2})$/, // yyyy-mm-dd hh:mm
     /^(\d{1,2})-(\d{1,2})-(\d{4})\s+(\d{1,2}):(\d{2}):(\d{2})$/, // dd-mm-yyyy hh:mm:ss
     /^(\d{1,2})-(\d{1,2})-(\d{4})\s+(\d{1,2}):(\d{2})$/, // dd-mm-yyyy hh:mm
+    
+    // Date only formats
     /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/, // dd/mm/yyyy
     /^(\d{1,2})\/(\d{1,2})\/(\d{2})$/, // dd/mm/yy
     /^(\d{4})-(\d{1,2})-(\d{1,2})$/, // yyyy-mm-dd
   ];
   
-  for (const format of formats) {
+  for (let i = 0; i < formats.length; i++) {
+    const format = formats[i];
     const match = s.match(format);
     if (match) {
-      if (match.length === 7) {
-        // With time including seconds: dd/mm/yy hh:mm:ss or dd/mm/yyyy hh:mm:ss
-        const [, day, month, year, hour, minute, second] = match;
-        let fullYear = +year;
-        if (fullYear < 100) {
-          // Convert 2-digit year to 4-digit year (assume 20xx for years < 50, 19xx for years >= 50)
-          fullYear = fullYear < 50 ? 2000 + fullYear : 1900 + fullYear;
+      console.log(`✅ Matched format ${i + 1}: "${s}"`);
+      try {
+        if (match.length === 7) {
+          // With time including seconds: dd/mm/yyyy hh:mm:ss or dd/mm/yy hh:mm:ss
+          const [, day, month, year, hour, minute, second] = match;
+          let fullYear = +year;
+          if (fullYear < 100) {
+            // Convert 2-digit year to 4-digit year (assume 20xx for years < 50, 19xx for years >= 50)
+            fullYear = fullYear < 50 ? 2000 + fullYear : 1900 + fullYear;
+          }
+          
+          // Validate date components
+          const dayNum = +day;
+          const monthNum = +month;
+          const hourNum = +hour;
+          const minuteNum = +minute;
+          const secondNum = +second;
+          
+          if (dayNum < 1 || dayNum > 31 || monthNum < 1 || monthNum > 12 || 
+              hourNum < 0 || hourNum > 23 || minuteNum < 0 || minuteNum > 59 || 
+              secondNum < 0 || secondNum > 59) {
+            console.warn(`Invalid date/time components in: "${s}"`);
+            continue;
+          }
+          
+          const date = new Date(fullYear, monthNum - 1, dayNum, hourNum, minuteNum, secondNum);
+          if (!isNaN(date.getTime())) {
+            console.log(`Successfully parsed date: "${s}" -> ${date.toISOString()}`);
+            return date.toISOString();
+          }
+        } else if (match.length === 6) {
+          // With time without seconds: dd/mm/yyyy hh:mm
+          const [, day, month, year, hour, minute] = match;
+          let fullYear = +year;
+          if (fullYear < 100) {
+            fullYear = fullYear < 50 ? 2000 + fullYear : 1900 + fullYear;
+          }
+          
+          // Validate date components
+          const dayNum = +day;
+          const monthNum = +month;
+          const hourNum = +hour;
+          const minuteNum = +minute;
+          
+          if (dayNum < 1 || dayNum > 31 || monthNum < 1 || monthNum > 12 || 
+              hourNum < 0 || hourNum > 23 || minuteNum < 0 || minuteNum > 59) {
+            console.warn(`Invalid date/time components in: "${s}"`);
+            continue;
+          }
+          
+          const date = new Date(fullYear, monthNum - 1, dayNum, hourNum, minuteNum);
+          if (!isNaN(date.getTime())) {
+            console.log(`Successfully parsed date: "${s}" -> ${date.toISOString()}`);
+            return date.toISOString();
+          }
+        } else if (match.length === 4) {
+          // Date only: dd/mm/yyyy or dd/mm/yy
+          const [, day, month, year] = match;
+          let fullYear = +year;
+          if (fullYear < 100) {
+            fullYear = fullYear < 50 ? 2000 + fullYear : 1900 + fullYear;
+          }
+          
+          // Validate date components
+          const dayNum = +day;
+          const monthNum = +month;
+          
+          if (dayNum < 1 || dayNum > 31 || monthNum < 1 || monthNum > 12) {
+            console.warn(`Invalid date components in: "${s}"`);
+            continue;
+          }
+          
+          const date = new Date(fullYear, monthNum - 1, dayNum);
+          if (!isNaN(date.getTime())) {
+            console.log(`Successfully parsed date: "${s}" -> ${date.toISOString()}`);
+            return date.toISOString();
+          }
         }
-        const date = new Date(fullYear, +month - 1, +day, +hour, +minute, +second);
-        return isNaN(date.getTime()) ? null : date.toISOString();
-      } else if (match.length === 6) {
-        // With time without seconds: dd/mm/yyyy hh:mm
-        const [, day, month, year, hour, minute] = match;
-        let fullYear = +year;
-        if (fullYear < 100) {
-          fullYear = fullYear < 50 ? 2000 + fullYear : 1900 + fullYear;
-        }
-        const date = new Date(fullYear, +month - 1, +day, +hour, +minute);
-        return isNaN(date.getTime()) ? null : date.toISOString();
-      } else if (match.length === 4) {
-        // Date only: dd/mm/yyyy or dd/mm/yy
-        const [, day, month, year] = match;
-        let fullYear = +year;
-        if (fullYear < 100) {
-          fullYear = fullYear < 50 ? 2000 + fullYear : 1900 + fullYear;
-        }
-        const date = new Date(fullYear, +month - 1, +day);
-        return isNaN(date.getTime()) ? null : date.toISOString();
+      } catch (error) {
+        console.warn(`Error parsing date format: "${s}"`, error);
+        continue;
       }
     }
   }
   
   // Fallback ke Date constructor
-  const date = new Date(s);
-  return isNaN(date.getTime()) ? null : date.toISOString();
+  console.log(`⚠️ No format matched, trying fallback for: "${s}"`);
+  try {
+    const date = new Date(s);
+    if (!isNaN(date.getTime())) {
+      console.log(`✅ Fallback parsed date: "${s}" -> ${date.toISOString()}`);
+      return date.toISOString();
+    }
+  } catch (error) {
+    console.warn(`❌ Fallback parsing failed for: "${s}"`, error);
+  }
+  
+  console.warn(`❌ Could not parse date: "${s}" - no valid format found`);
+  return null;
 };
 
 // Simpan ke Dexie (chunked)
@@ -261,7 +341,7 @@ export async function saveIncidentsChunked(rows: Incident[], chunkSize = 2000) {
       }
       
       // Save to database
-      const result = await db.incidents.bulkPut(part);
+      await db.incidents.bulkPut(part);
       totalSaved += part.length;
       
       console.log(`[saveIncidentsChunked] Chunk ${chunkIndex} saved successfully. Total saved so far: ${totalSaved}`);
@@ -465,4 +545,236 @@ export async function getDatabaseStats(): Promise<{
     uniqueStartTimes,
     duplicateGroups
   };
+}
+
+// Validate and repair database data
+export async function validateAndRepairDatabase(): Promise<{
+  totalIncidents: number;
+  validIncidents: number;
+  invalidIncidents: number;
+  repairedIncidents: number;
+  errors: string[];
+}> {
+  console.log('[validateAndRepairDatabase] Starting database validation...');
+  
+  const errors: string[] = [];
+  let validIncidents = 0;
+  let invalidIncidents = 0;
+  let repairedIncidents = 0;
+  
+  try {
+    const allIncidents = await db.incidents.toArray();
+    console.log(`[validateAndRepairDatabase] Found ${allIncidents.length} incidents in database`);
+    
+    const incidentsToUpdate: any[] = [];
+    const incidentsToDelete: string[] = [];
+    
+    for (const incident of allIncidents) {
+      let isValid = true;
+      let needsUpdate = false;
+      
+      // Check required fields
+      if (!incident.id || !incident.noCase) {
+        console.warn(`[validateAndRepairDatabase] Invalid incident missing required fields:`, incident);
+        incidentsToDelete.push(incident.id);
+        invalidIncidents++;
+        continue;
+      }
+      
+      // Validate and fix date fields
+      if (incident.startTime) {
+        try {
+          const startDate = new Date(incident.startTime);
+          if (isNaN(startDate.getTime())) {
+            console.warn(`[validateAndRepairDatabase] Invalid startTime for incident ${incident.noCase}: ${incident.startTime}`);
+            incident.startTime = null;
+            needsUpdate = true;
+          }
+        } catch (error) {
+          console.warn(`[validateAndRepairDatabase] Error parsing startTime for incident ${incident.noCase}:`, error);
+          incident.startTime = null;
+          needsUpdate = true;
+        }
+      }
+      
+      if (incident.endTime) {
+        try {
+          const endDate = new Date(incident.endTime);
+          if (isNaN(endDate.getTime())) {
+            console.warn(`[validateAndRepairDatabase] Invalid endTime for incident ${incident.noCase}: ${incident.endTime}`);
+            incident.endTime = null;
+            needsUpdate = true;
+          }
+        } catch (error) {
+          console.warn(`[validateAndRepairDatabase] Error parsing endTime for incident ${incident.noCase}:`, error);
+          incident.endTime = null;
+          needsUpdate = true;
+        }
+      }
+      
+      // Validate and fix duration fields
+      if (typeof incident.durationMin !== 'number' || isNaN(incident.durationMin)) {
+        incident.durationMin = 0;
+        needsUpdate = true;
+      }
+      
+      if (typeof incident.durationVendorMin !== 'number' || isNaN(incident.durationVendorMin)) {
+        incident.durationVendorMin = 0;
+        needsUpdate = true;
+      }
+      
+      if (typeof incident.totalDurationPauseMin !== 'number' || isNaN(incident.totalDurationPauseMin)) {
+        incident.totalDurationPauseMin = 0;
+        needsUpdate = true;
+      }
+      
+      if (typeof incident.totalDurationVendorMin !== 'number' || isNaN(incident.totalDurationVendorMin)) {
+        incident.totalDurationVendorMin = 0;
+        needsUpdate = true;
+      }
+      
+      if (typeof incident.netDurationMin !== 'number' || isNaN(incident.netDurationMin)) {
+        incident.netDurationMin = 0;
+        needsUpdate = true;
+      }
+      
+      // Validate and fix pause fields
+      if (incident.startPause1) {
+        try {
+          const pauseDate = new Date(incident.startPause1);
+          if (isNaN(pauseDate.getTime())) {
+            incident.startPause1 = null;
+            needsUpdate = true;
+          }
+        } catch (error) {
+          incident.startPause1 = null;
+          needsUpdate = true;
+        }
+      }
+      
+      if (incident.endPause1) {
+        try {
+          const pauseDate = new Date(incident.endPause1);
+          if (isNaN(pauseDate.getTime())) {
+            incident.endPause1 = null;
+            needsUpdate = true;
+          }
+        } catch (error) {
+          incident.endPause1 = null;
+          needsUpdate = true;
+        }
+      }
+      
+      if (incident.startPause2) {
+        try {
+          const pauseDate = new Date(incident.startPause2);
+          if (isNaN(pauseDate.getTime())) {
+            incident.startPause2 = null;
+            needsUpdate = true;
+          }
+        } catch (error) {
+          incident.startPause2 = null;
+          needsUpdate = true;
+        }
+      }
+      
+      if (incident.endPause2) {
+        try {
+          const pauseDate = new Date(incident.endPause2);
+          if (isNaN(pauseDate.getTime())) {
+            incident.endPause2 = null;
+            needsUpdate = true;
+          }
+        } catch (error) {
+          incident.endPause2 = null;
+          needsUpdate = true;
+        }
+      }
+      
+      // Validate and fix numeric fields
+      if (typeof incident.level !== 'number' || isNaN(incident.level)) {
+        incident.level = null;
+        needsUpdate = true;
+      }
+      
+      if (typeof incident.powerBefore !== 'number' || isNaN(incident.powerBefore)) {
+        incident.powerBefore = null;
+        needsUpdate = true;
+      }
+      
+      if (typeof incident.powerAfter !== 'number' || isNaN(incident.powerAfter)) {
+        incident.powerAfter = null;
+        needsUpdate = true;
+      }
+      
+      // Ensure string fields are strings
+      if (typeof incident.priority !== 'string') {
+        incident.priority = String(incident.priority || '');
+        needsUpdate = true;
+      }
+      
+      if (typeof incident.site !== 'string') {
+        incident.site = String(incident.site || '');
+        needsUpdate = true;
+      }
+      
+      if (typeof incident.ncal !== 'string') {
+        incident.ncal = String(incident.ncal || '');
+        needsUpdate = true;
+      }
+      
+      if (typeof incident.status !== 'string') {
+        incident.status = String(incident.status || '');
+        needsUpdate = true;
+      }
+      
+      if (typeof incident.ts !== 'string') {
+        incident.ts = String(incident.ts || '');
+        needsUpdate = true;
+      }
+      
+      // Update incident if needed
+      if (needsUpdate) {
+        incidentsToUpdate.push(incident);
+        repairedIncidents++;
+      }
+      
+      if (isValid) {
+        validIncidents++;
+      }
+    }
+    
+    // Delete invalid incidents
+    if (incidentsToDelete.length > 0) {
+      console.log(`[validateAndRepairDatabase] Deleting ${incidentsToDelete.length} invalid incidents`);
+      await db.incidents.bulkDelete(incidentsToDelete);
+    }
+    
+    // Update repaired incidents
+    if (incidentsToUpdate.length > 0) {
+      console.log(`[validateAndRepairDatabase] Updating ${incidentsToUpdate.length} repaired incidents`);
+      await db.incidents.bulkPut(incidentsToUpdate);
+    }
+    
+    console.log(`[validateAndRepairDatabase] Validation complete. Valid: ${validIncidents}, Invalid: ${invalidIncidents}, Repaired: ${repairedIncidents}`);
+    
+    return {
+      totalIncidents: allIncidents.length,
+      validIncidents,
+      invalidIncidents,
+      repairedIncidents,
+      errors
+    };
+    
+  } catch (error) {
+    console.error('[validateAndRepairDatabase] Error during validation:', error);
+    errors.push(`Database validation failed: ${error}`);
+    return {
+      totalIncidents: 0,
+      validIncidents: 0,
+      invalidIncidents: 0,
+      repairedIncidents: 0,
+      errors
+    };
+  }
 }

@@ -1,220 +1,149 @@
-// Script untuk memperbaiki data durasi di database
-// Copy paste ke browser console di halaman Incident Analytics
+// Script untuk memperbaiki data durasi yang bermasalah
+// Jalankan di browser console pada halaman Incident Data
 
-console.log('🔧 FIXING DURATION DATA...');
+console.log('🔧 MEMPERBAIKI DATA DURASI YANG BERMASALAH...');
 
-// Fungsi untuk parse tanggal dengan format DD/MM/YY HH:MM:SS
-const parseDateSafe = (dt) => {
-  if (!dt) return null;
-  if (dt instanceof Date) return dt;
-  
+// Import database
+import('/src/lib/db.js').then(async ({ db }) => {
   try {
-    // Handle DD/MM/YY HH:MM:SS format
-    if (typeof dt === 'string' && dt.includes('/')) {
-      const parts = dt.split(' ');
-      if (parts.length === 2) {
-        const datePart = parts[0]; // DD/MM/YY
-        const timePart = parts[1]; // HH:MM:SS
-        
-        const [day, month, year] = datePart.split('/');
-        const [hour, minute, second] = timePart.split(':');
-        
-        // Convert 2-digit year to 4-digit
-        const fullYear = parseInt(year) < 50 ? 2000 + parseInt(year) : 1900 + parseInt(year);
-        
-        return new Date(fullYear, parseInt(month) - 1, parseInt(day), 
-                       parseInt(hour), parseInt(minute), parseInt(second));
-      }
-    }
-    
-    // Handle ISO format or other formats
-    const parsed = new Date(dt);
-    return isNaN(parsed.getTime()) ? null : parsed;
-  } catch (error) {
-    console.warn('Failed to parse date:', dt, error);
-    return null;
-  }
-};
-
-// Fungsi untuk menghitung durasi dari format HH:MM:SS
-const toMinutes = (duration) => {
-  if (!duration) return 0;
-  
-  if (typeof duration === 'number') return duration;
-  
-  const str = String(duration).trim();
-  if (!str || str === '-') return 0;
-  
-  // Handle HH:MM:SS format
-  if (str.includes(':')) {
-    const parts = str.split(':');
-    if (parts.length === 3) {
-      const hours = parseInt(parts[0]) || 0;
-      const minutes = parseInt(parts[1]) || 0;
-      const seconds = parseInt(parts[2]) || 0;
-      return hours * 60 + minutes + seconds / 60;
-    } else if (parts.length === 2) {
-      const hours = parseInt(parts[0]) || 0;
-      const minutes = parseInt(parts[1]) || 0;
-      return hours * 60 + minutes;
-    }
-  }
-  
-  // Handle decimal hours
-  const num = parseFloat(str);
-  if (!isNaN(num)) {
-    return num * 60;
-  }
-  
-  return 0;
-};
-
-// Fungsi untuk menghitung durasi yang akurat
-const calculateAccurateDuration = (incident) => {
-  // Priority 1: Use existing calculated duration if available and valid
-  if (incident.durationMin && incident.durationMin > 0) {
-    return incident.durationMin;
-  }
-  
-  // Priority 2: Use vendor duration if available
-  if (incident.durationVendorMin && incident.durationVendorMin > 0) {
-    return incident.durationVendorMin;
-  }
-  
-  // Priority 3: Use total duration vendor if available
-  if (incident.totalDurationVendorMin && incident.totalDurationVendorMin > 0) {
-    return incident.totalDurationVendorMin;
-  }
-  
-  // Priority 4: Calculate from time fields
-  let calculatedDuration = 0;
-  
-  // Try to calculate from Start and End times
-  if (incident.startTime && incident.endTime) {
-    const startTime = parseDateSafe(incident.startTime);
-    const endTime = parseDateSafe(incident.endTime);
-    
-    if (startTime && endTime && endTime > startTime) {
-      calculatedDuration = (endTime.getTime() - startTime.getTime()) / (1000 * 60);
-    }
-  }
-  
-  // If no start/end calculation, try vendor escalation
-  if (calculatedDuration === 0 && incident.startEscalationVendor && incident.endTime) {
-    const vendorStart = parseDateSafe(incident.startEscalationVendor);
-    const endTime = parseDateSafe(incident.endTime);
-    
-    if (vendorStart && endTime && endTime > vendorStart) {
-      calculatedDuration = (endTime.getTime() - vendorStart.getTime()) / (1000 * 60);
-    }
-  }
-  
-  // Calculate pause time to subtract
-  let pauseTime = 0;
-  
-  // Use existing pause duration if available
-  if (incident.totalDurationPauseMin && incident.totalDurationPauseMin > 0) {
-    pauseTime = incident.totalDurationPauseMin;
-  } else {
-    // Calculate pause time from pause fields
-    if (incident.startPause1 && incident.endPause1) {
-      const pause1Start = parseDateSafe(incident.startPause1);
-      const pause1End = parseDateSafe(incident.endPause1);
-      
-      if (pause1Start && pause1End && pause1End > pause1Start) {
-        pauseTime += (pause1End.getTime() - pause1Start.getTime()) / (1000 * 60);
-      }
-    }
-    
-    if (incident.startPause2 && incident.endPause2) {
-      const pause2Start = parseDateSafe(incident.startPause2);
-      const pause2End = parseDateSafe(incident.endPause2);
-      
-      if (pause2Start && pause2End && pause2End > pause2Start) {
-        pauseTime += (pause2End.getTime() - pause2Start.getTime()) / (1000 * 60);
-      }
-    }
-  }
-  
-  // Final duration calculation
-  return Math.max(0, calculatedDuration - pauseTime);
-};
-
-// Fungsi untuk memperbaiki data durasi
-async function fixDurationData() {
-  try {
-    console.log('🔧 Starting duration data fix...');
-    
-    // Akses database
-    const db = window.db || window.InsightTicketDatabase;
-    if (!db) {
-      console.log('❌ Database not found');
-      return;
-    }
-    
+    console.log('📊 Mengakses database...');
     const allIncidents = await db.incidents.toArray();
-    console.log(`📊 Total incidents to process: ${allIncidents.length}`);
-    
-    if (allIncidents.length === 0) {
-      console.log('❌ No incidents found');
-      return;
-    }
-    
-    let fixedCount = 0;
-    let errorCount = 0;
-    
-    // Process each incident
-    for (let i = 0; i < allIncidents.length; i++) {
-      const incident = allIncidents[i];
-      
-      try {
-        // Calculate accurate duration
-        const accurateDuration = calculateAccurateDuration(incident);
-        
-        // Check if duration needs to be updated
-        const currentDuration = incident.durationMin || 0;
-        const needsUpdate = Math.abs(accurateDuration - currentDuration) > 0.01;
-        
-        if (needsUpdate && accurateDuration > 0) {
-          // Update the incident with accurate duration
-          await db.incidents.update(incident.id, {
-            durationMin: Math.round(accurateDuration * 100) / 100, // Round to 2 decimal places
-            netDurationMin: Math.round(accurateDuration * 100) / 100
-          });
-          
-          fixedCount++;
-          
-          if (fixedCount % 10 === 0) {
-            console.log(`✅ Fixed ${fixedCount} incidents...`);
-          }
-        }
-      } catch (error) {
-        console.error(`❌ Error fixing incident ${incident.noCase || incident.id}:`, error);
-        errorCount++;
-      }
-    }
-    
-    console.log(`\n🎉 Duration fix completed!`);
-    console.log(`✅ Fixed: ${fixedCount} incidents`);
-    console.log(`❌ Errors: ${errorCount} incidents`);
-    
-    // Verify the fix
-    console.log('\n🔍 Verifying fix...');
-    
-    const updatedIncidents = await db.incidents.toArray();
-    const withDuration = updatedIncidents.filter(inc => inc.durationMin > 0);
-    
-    console.log(`📊 Incidents with duration after fix: ${withDuration.length}/${updatedIncidents.length}`);
-    
-    if (withDuration.length > 0) {
-      const avgDuration = withDuration.reduce((sum, inc) => sum + inc.durationMin, 0) / withDuration.length;
-      console.log(`📊 Average duration after fix: ${avgDuration.toFixed(2)} minutes`);
-    }
-    
-  } catch (error) {
-    console.error('❌ Error during duration fix:', error);
-  }
-}
+    console.log(`📋 Total incidents: ${allIncidents.length}`);
 
-// Jalankan perbaikan
-fixDurationData();
+    const incidentsToUpdate = [];
+    let fixedCount = 0;
+    let invalidCount = 0;
+
+    allIncidents.forEach((incident) => {
+      let needsUpdate = false;
+      const updatedIncident = { ...incident };
+
+      // Cek dan perbaiki durasi yang tidak masuk akal
+      if (incident.durationMin && incident.durationMin > 1440) {
+        console.log(`⚠️ Invalid duration found for ${incident.noCase}: ${incident.durationMin} minutes`);
+        updatedIncident.durationMin = 0;
+        needsUpdate = true;
+        invalidCount++;
+      }
+
+      // Cek dan perbaiki durasi vendor yang tidak masuk akal
+      if (incident.durationVendorMin && incident.durationVendorMin > 1440) {
+        console.log(`⚠️ Invalid vendor duration found for ${incident.noCase}: ${incident.durationVendorMin} minutes`);
+        updatedIncident.durationVendorMin = 0;
+        needsUpdate = true;
+        invalidCount++;
+      }
+
+      // Recalculate duration jika ada start dan end time
+      if (incident.startTime && incident.endTime) {
+        try {
+          const start = new Date(incident.startTime);
+          const end = new Date(incident.endTime);
+          
+          if (!isNaN(start.getTime()) && !isNaN(end.getTime())) {
+            const calculatedMinutes = (end.getTime() - start.getTime()) / (1000 * 60);
+            
+            // Validasi durasi yang masuk akal
+            if (calculatedMinutes > 0 && calculatedMinutes <= 1440) {
+              if (Math.abs(calculatedMinutes - (incident.durationMin || 0)) > 1) {
+                console.log(`🔄 Recalculating duration for ${incident.noCase}:`);
+                console.log(`  Old: ${incident.durationMin || 0} minutes`);
+                console.log(`  New: ${calculatedMinutes} minutes`);
+                updatedIncident.durationMin = Math.round(calculatedMinutes * 100) / 100;
+                needsUpdate = true;
+                fixedCount++;
+              }
+            } else {
+              console.log(`❌ Invalid calculated duration for ${incident.noCase}: ${calculatedMinutes} minutes`);
+              updatedIncident.durationMin = 0;
+              needsUpdate = true;
+              invalidCount++;
+            }
+          }
+        } catch (error) {
+          console.error(`Error calculating duration for ${incident.noCase}:`, error);
+        }
+      }
+
+      // Recalculate vendor duration jika ada start escalation vendor dan end time
+      if (incident.startEscalationVendor && incident.endTime) {
+        try {
+          const start = new Date(incident.startEscalationVendor);
+          const end = new Date(incident.endTime);
+          
+          if (!isNaN(start.getTime()) && !isNaN(end.getTime())) {
+            const calculatedMinutes = (end.getTime() - start.getTime()) / (1000 * 60);
+            
+            // Validasi durasi yang masuk akal
+            if (calculatedMinutes > 0 && calculatedMinutes <= 1440) {
+              if (Math.abs(calculatedMinutes - (incident.durationVendorMin || 0)) > 1) {
+                console.log(`🔄 Recalculating vendor duration for ${incident.noCase}:`);
+                console.log(`  Old: ${incident.durationVendorMin || 0} minutes`);
+                console.log(`  New: ${calculatedMinutes} minutes`);
+                updatedIncident.durationVendorMin = Math.round(calculatedMinutes * 100) / 100;
+                needsUpdate = true;
+                fixedCount++;
+              }
+            } else {
+              console.log(`❌ Invalid calculated vendor duration for ${incident.noCase}: ${calculatedMinutes} minutes`);
+              updatedIncident.durationVendorMin = 0;
+              needsUpdate = true;
+              invalidCount++;
+            }
+          }
+        } catch (error) {
+          console.error(`Error calculating vendor duration for ${incident.noCase}:`, error);
+        }
+      }
+
+      // Reset durasi jika tidak ada end time
+      if (!incident.endTime && incident.durationMin && incident.durationMin > 0) {
+        console.log(`🔄 Resetting duration for ${incident.noCase} (no end time): ${incident.durationMin} → 0`);
+        updatedIncident.durationMin = 0;
+        needsUpdate = true;
+        fixedCount++;
+      }
+
+      if (!incident.endTime && incident.durationVendorMin && incident.durationVendorMin > 0) {
+        console.log(`🔄 Resetting vendor duration for ${incident.noCase} (no end time): ${incident.durationVendorMin} → 0`);
+        updatedIncident.durationVendorMin = 0;
+        needsUpdate = true;
+        fixedCount++;
+      }
+
+      if (needsUpdate) {
+        incidentsToUpdate.push(updatedIncident);
+      }
+    });
+
+    // Update database jika ada perubahan
+    if (incidentsToUpdate.length > 0) {
+      console.log(`\n💾 Updating ${incidentsToUpdate.length} incidents...`);
+      await db.incidents.bulkPut(incidentsToUpdate);
+      console.log('✅ Database updated successfully!');
+    } else {
+      console.log('✅ No incidents need to be updated.');
+    }
+
+    console.log('\n📊 SUMMARY:');
+    console.log(`Fixed durations: ${fixedCount}`);
+    console.log(`Invalid durations reset: ${invalidCount}`);
+    console.log(`Total updated: ${incidentsToUpdate.length}`);
+
+    // Verify the fix
+    console.log('\n🔍 VERIFICATION:');
+    const updatedIncidents = await db.incidents.toArray();
+    const validDurations = updatedIncidents.filter(inc => 
+      inc.durationMin && inc.durationMin > 0 && inc.durationMin <= 1440
+    ).length;
+    const validVendorDurations = updatedIncidents.filter(inc => 
+      inc.durationVendorMin && inc.durationVendorMin > 0 && inc.durationVendorMin <= 1440
+    ).length;
+
+    console.log(`Valid durations: ${validDurations}/${updatedIncidents.length}`);
+    console.log(`Valid vendor durations: ${validVendorDurations}/${updatedIncidents.length}`);
+
+  } catch (error) {
+    console.error('❌ Error fixing duration data:', error);
+  }
+});

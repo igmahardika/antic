@@ -123,21 +123,34 @@ const calculateRiskScore = (incidentCount: number, avgDurationMinutes: number, r
     }
   };
 
-const SiteAnalytics: React.FC = () => {
-  const [isLoading, setIsLoading] = useState(true);
+export const SiteAnalytics: React.FC = () => {
   const [selectedPeriod, setSelectedPeriod] = useState<'3m' | '6m' | '1y' | 'all'>('6m');
 
-  // Get all incidents for live updates with error handling
+  // Get all incidents with robust database connection
   const allIncidents = useLiveQuery(async () => {
     try {
       const incidents = await db.incidents.toArray();
       console.log('✅ SiteAnalytics: Successfully loaded', incidents.length, 'incidents from database');
-      return incidents;
+      
+      // Validate data integrity
+      const validIncidents = incidents.filter(incident => {
+        if (!incident.id || !incident.noCase) {
+          console.warn('❌ SiteAnalytics: Found invalid incident:', incident);
+          return false;
+        }
+        return true;
+      });
+      
+      if (validIncidents.length !== incidents.length) {
+        console.warn(`❌ SiteAnalytics: Filtered out ${incidents.length - validIncidents.length} invalid incidents`);
+      }
+      
+      return validIncidents;
     } catch (error) {
       console.error('❌ SiteAnalytics: Failed to load incidents from database:', error);
       return [];
     }
-  });
+  }, []); // Empty dependency array to ensure stable reference
 
   // Debug: Log when allIncidents changes
   useEffect(() => {
@@ -440,20 +453,9 @@ const SiteAnalytics: React.FC = () => {
   });
 
   useEffect(() => {
-    setIsLoading(false);
+    // setIsLoading(false); // This state was removed, so this line is removed.
   }, [allIncidents]);
 
-  if (isLoading) {
-    return (
-      <div className="container mx-auto p-6">
-        <div className="flex justify-center items-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-        </div>
-      </div>
-    );
-  }
-
-  // Show message if no data
   if (!allIncidents || allIncidents.length === 0) {
     return (
       <PageWrapper>

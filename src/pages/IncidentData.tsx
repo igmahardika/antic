@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { fixAllDurationIssues } from '../utils/durationFixUtils';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { Incident, IncidentFilter } from '@/types/incident';
-import { queryIncidents, cleanDuplicateIncidents, getDatabaseStats } from '@/utils/incidentUtils';
+import { queryIncidents, cleanDuplicateIncidents, getDatabaseStats, validateAndRepairDatabase } from '@/utils/incidentUtils';
 import { IncidentUpload } from '@/components/IncidentUpload';
 import { db } from '@/lib/db';
 import { Button } from '@/components/ui/button';
@@ -25,7 +24,8 @@ import {
   XCircle,
   RefreshCw,
   X,
-  Database
+  Database,
+  Calculator
 } from 'lucide-react';
 
 export const IncidentData: React.FC = () => {
@@ -42,17 +42,7 @@ export const IncidentData: React.FC = () => {
   const [showCleanupConfirm, setShowCleanupConfirm] = useState(false);
   const [selectedMonth, setSelectedMonth] = useState<string>('');
   const [dbStats, setDbStats] = useState<any>(null);
-  const [isFixingDuration, setIsFixingDuration] = useState(false);
-  const [durationFixResult, setDurationFixResult] = useState<any>(null);
-
-  // NCAL targets in minutes
-  const NCAL_TARGETS: Record<string, number> = {
-    Blue: 360,    // 6:00:00
-    Yellow: 300,  // 5:00:00
-    Orange: 240,  // 4:00:00
-    Red: 180,     // 3:00:00
-    Black: 60     // 1:00:00
-  };
+  const [isRecalculating, setIsRecalculating] = useState(false);
 
   // Helper function to normalize NCAL values
   const normalizeNCAL = (ncal: string | null | undefined): string => {
@@ -72,40 +62,6 @@ export const IncidentData: React.FC = () => {
   const getNCALCount = (ncalCounts: Record<string, number>, targetNCAL: string): number => {
     const normalizedTarget = normalizeNCAL(targetNCAL);
     return ncalCounts[normalizedTarget] || 0;
-  };
-
-  // Function to fix duration issues automatically
-  const handleFixDurationIssues = async () => {
-    try {
-      setIsFixingDuration(true);
-      setDurationFixResult(null);
-      
-      console.log('🔧 Starting automatic duration fixes...');
-      const result = await fixAllDurationIssues();
-      
-      setDurationFixResult(result);
-      console.log('✅ Duration fixes completed:', result);
-      
-      // Refresh data
-      if (allIncidents) {
-        // Force refresh by triggering a re-render
-        setIncidents([...incidents]);
-      }
-      
-    } catch (error) {
-      console.error('❌ Error fixing duration issues:', error);
-      setDurationFixResult({
-        totalProcessed: 0,
-        totalFixed: 0,
-        durationFixed: 0,
-        durationVendorFixed: 0,
-        netDurationFixed: 0,
-        formatFixed: 0,
-        errors: [error?.toString() || 'Unknown error']
-      });
-    } finally {
-      setIsFixingDuration(false);
-    }
   };
 
   // Get unique values for filter options with error handling
@@ -243,6 +199,137 @@ export const IncidentData: React.FC = () => {
     });
   };
 
+  // Function to recalculate all durations
+  const handleRecalculateDurations = async () => {
+    if (!allIncidents || allIncidents.length === 0) {
+      toast({
+        title: "No Data",
+        description: "No incidents found to recalculate.",
+        duration: 3000,
+      });
+      return;
+    }
+
+    setIsRecalculating(true);
+    
+    try {
+      console.log('🔄 Starting duration recalculation for', allIncidents.length, 'incidents...');
+      
+      // Helper function untuk menghitung durasi
+      const calculateDuration = (startTime: string | null, endTime: string | null): number => {
+        if (!startTime || !endTime) return 0;
+        try {
+          const start = new Date(startTime);
+          const end = new Date(endTime);
+          if (isNaN(start.getTime()) || isNaN(end.getTime())) return 0;
+          const diffMs = end.getTime() - start.getTime();
+          const diffMinutes = diffMs / (1000 * 60);
+          return Math.max(0, diffMinutes);
+        } catch (error) {
+          console.warn('Error calculating duration:', error);
+          return 0;
+        }
+      };
+
+      const incidentsToUpdate = [];
+      let recalculatedCount = 0;
+      let problematicCount = 0;
+
+      allIncidents.forEach((incident) => {
+        const updatedIncident = { ...incident };
+        let needsUpdate = false;
+
+        // 1. Recalculate Duration (Start → End)
+        if (incident.startTime && incident.endTime) {
+          const calculatedDuration = calculateDuration(incident.startTime, incident.endTime);
+          if (calculatedDuration > 0) {
+            updatedIncident.durationMin = Math.round(calculatedDuration * 100) / 100;
+            needsUpdate = true;
+            recalculatedCount++;
+          } else {
+            updatedIncident.durationMin = 0;
+            needsUpdate = true;
+            problematicCount++;
+          }
+        } else {
+          updatedIncident.durationMin = 0;
+          needsUpdate = true;
+          problematicCount++;
+        }
+
+        // 2. Recalculate Duration Vendor (Start Escalation Vendor → End)
+        if (incident.startEscalationVendor && incident.endTime) {
+          const calculatedVendorDuration = calculateDuration(incident.startEscalationVendor, incident.endTime);
+          if (calculatedVendorDuration > 0) {
+            updatedIncident.durationVendorMin = Math.round(calculatedVendorDuration * 100) / 100;
+            needsUpdate = true;
+          } else {
+            updatedIncident.durationVendorMin = 0;
+            needsUpdate = true;
+          }
+        } else {
+          updatedIncident.durationVendorMin = 0;
+          needsUpdate = true;
+        }
+
+        // 3. Recalculate Total Duration Pause (Pause 1 + Pause 2)
+        let totalPauseMinutes = 0;
+        if (incident.startPause1 && incident.endPause1) {
+          const pause1Duration = calculateDuration(incident.startPause1, incident.endPause1);
+          if (pause1Duration > 0) {
+            totalPauseMinutes += pause1Duration;
+          }
+        }
+        if (incident.startPause2 && incident.endPause2) {
+          const pause2Duration = calculateDuration(incident.startPause2, incident.endPause2);
+          if (pause2Duration > 0) {
+            totalPauseMinutes += pause2Duration;
+          }
+        }
+        updatedIncident.totalDurationPauseMin = Math.round(totalPauseMinutes * 100) / 100;
+        needsUpdate = true;
+
+        // 4. Recalculate Total Duration Vendor (Duration Vendor - Total Duration Pause)
+        const totalVendorDuration = Math.max(updatedIncident.durationVendorMin - updatedIncident.totalDurationPauseMin, 0);
+        updatedIncident.totalDurationVendorMin = Math.round(totalVendorDuration * 100) / 100;
+        needsUpdate = true;
+
+
+
+        if (needsUpdate) {
+          incidentsToUpdate.push(updatedIncident);
+        }
+      });
+
+      // Update database
+      if (incidentsToUpdate.length > 0) {
+        console.log(`💾 Updating ${incidentsToUpdate.length} incidents...`);
+        await db.incidents.bulkPut(incidentsToUpdate);
+        console.log('✅ Database updated successfully!');
+      }
+
+      // Show success message
+      toast({
+        title: "Duration Recalculation Complete",
+        description: `Successfully recalculated ${recalculatedCount} durations. ${problematicCount} incidents had issues.`,
+        duration: 5000,
+      });
+
+      // Force refresh data
+      window.location.reload();
+
+    } catch (error) {
+      console.error('❌ Error recalculating durations:', error);
+      toast({
+        title: "Error",
+        description: "Failed to recalculate durations. Please try again.",
+        duration: 5000,
+      });
+    } finally {
+      setIsRecalculating(false);
+    }
+  };
+
   const handlePageChange = (newPage: number) => {
     setFilter(prev => ({
       ...prev,
@@ -288,7 +375,7 @@ export const IncidentData: React.FC = () => {
       'Start Time', 'Start Escalation Vendor', 'End Time', 'Duration', 'Duration Vendor',
       'Problem', 'Penyebab', 'Action Terakhir', 'Note', 'Klasifikasi Gangguan',
       'Power Before', 'Power After', 'Start Pause 1', 'End Pause 1', 'Start Pause 2', 'End Pause 2',
-      'Total Duration Pause', 'Total Duration Vendor', 'Net Duration'
+      'Total Duration Pause', 'Total Duration Vendor'
     ];
 
     const data = incidents.map(incident => [
@@ -318,7 +405,7 @@ export const IncidentData: React.FC = () => {
       incident.endPause2,
       incident.totalDurationPauseMin,
       incident.totalDurationVendorMin,
-      incident.netDurationMin
+
     ]);
 
     const csvContent = [headers, ...data].map(row => 
@@ -383,8 +470,46 @@ export const IncidentData: React.FC = () => {
     }
   };
 
+  const validateDatabase = async () => {
+    try {
+      toast({
+        title: "Validating Database",
+        description: "Please wait while we validate and repair the database...",
+      });
+      
+      const result = await validateAndRepairDatabase();
+      
+      // Refresh data
+      const queryResult = await queryIncidents(filter);
+      setIncidents(queryResult.rows);
+      setTotal(queryResult.total);
+      
+      toast({
+        title: "Database Validation Complete",
+        description: `Total: ${result.totalIncidents}, Valid: ${result.validIncidents}, Invalid: ${result.invalidIncidents}, Repaired: ${result.repairedIncidents}`,
+        variant: "default",
+      });
+      
+      if (result.errors.length > 0) {
+        console.error('Database validation errors:', result.errors);
+        toast({
+          title: "Validation Warnings",
+          description: `${result.errors.length} errors found during validation. Check console for details.`,
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error('Error validating database:', error);
+      toast({
+        title: "Validation Failed",
+        description: `Error: ${error}`,
+        variant: "destructive",
+      });
+    }
+  };
+
   const formatDuration = (minutes: number | null | undefined) => {
-    if (!minutes || minutes === 0) return '';
+    if (!minutes || minutes === 0) return '-';
     const totalSeconds = Math.floor(minutes * 60);
     const h = Math.floor(totalSeconds / 3600);
     const m = Math.floor((totalSeconds % 3600) / 60);
@@ -393,65 +518,232 @@ export const IncidentData: React.FC = () => {
     return `${pad(h)}:${pad(m)}:${pad(s)}`;
   };
 
-  // Definisi kolom untuk tabel incident
+  // Fungsi untuk menghitung durasi berdasarkan start dan end time
+  const calculateDuration = (startTime: string | null, endTime: string | null): number => {
+    if (!startTime || !endTime) return 0;
+    
+    try {
+      const start = new Date(startTime);
+      const end = new Date(endTime);
+      
+      if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+        return 0;
+      }
+      
+      const diffMs = end.getTime() - start.getTime();
+      const diffMinutes = diffMs / (1000 * 60);
+      
+      return Math.max(0, diffMinutes);
+    } catch (error) {
+      console.warn('Error calculating duration:', error);
+      return 0;
+    }
+  };
+
+  // Fungsi untuk validasi durasi yang bermasalah
+  const isProblematicDuration = (minutes: number): boolean => {
+    const problematicDurations = [434, 814, 314]; // 07:14:19, 13:34:30, 05:14:28 dalam menit
+    return problematicDurations.includes(Math.round(minutes));
+  };
+
+  // Fungsi untuk memformat tanggal dengan format DD/MM/YYYY HH:MM:SS
+  const formatDate = (dateString: string | null | undefined) => {
+    if (!dateString) return '-';
+    
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return '-';
+      
+      const day = date.getDate().toString().padStart(2, '0');
+      const month = (date.getMonth() + 1).toString().padStart(2, '0');
+      const year = date.getFullYear();
+      const hours = date.getHours().toString().padStart(2, '0');
+      const minutes = date.getMinutes().toString().padStart(2, '0');
+      const seconds = date.getSeconds().toString().padStart(2, '0');
+      
+      return `${day}/${month}/${year} ${hours}:${minutes}:${seconds}`;
+    } catch (error) {
+      console.warn('Error formatting date:', error);
+      return '-';
+    }
+  };
+
+  // Definisi kolom untuk tabel incident dengan visual improvements
   const columns: Array<{
     key: keyof Incident;
     label: string;
-    render?: (value: any, incident: Incident) => React.ReactNode;
+    render?: (value: any) => React.ReactNode;
+    width?: string;
   }> = [
-    { key: 'noCase', label: 'No Case' },
-    { key: 'priority', label: 'Priority', render: (v: string) => v ? <Badge variant={getPriorityBadgeVariant(v)}>{v}</Badge> : '' },
-    { key: 'site', label: 'Site' },
-    { key: 'ncal', label: 'NCAL', render: (v: string) => v ? <Badge variant={getNCALBadgeVariant(v)}>{v}</Badge> : '' },
-    { key: 'status', label: 'Status', render: (v: string) => v ? <Badge variant={getStatusBadgeVariant(v)}>{v}</Badge> : '' },
-    { key: 'level', label: 'Level', render: (v: any, incident: Incident) => {
-      const level = v || '';
-      const ncal = incident.ncal;
-      const target = NCAL_TARGETS[normalizeNCAL(ncal) as keyof typeof NCAL_TARGETS] || 0;
-      const duration = incident.durationMin || 0;
-      const isOverTarget = duration > target;
-      return <span className={isOverTarget ? 'text-red-600 dark:text-red-400 font-semibold' : ''}>{level}</span>;
-    }},
-    { key: 'ts', label: 'TS' },
-    { key: 'odpBts', label: 'ODP/BTS' },
-    { key: 'startTime', label: 'Start Time', render: (v: string) => formatDate(v) },
-    { key: 'startEscalationVendor', label: 'Start Escalation Vendor', render: (v: string) => formatDate(v) },
-    { key: 'endTime', label: 'End Time', render: (v: string) => formatDate(v) },
-    { key: 'durationMin', label: 'Duration', render: (v: number, incident: Incident) => {
-      const duration = v || 0;
-      const ncal = incident.ncal;
-      const target = NCAL_TARGETS[normalizeNCAL(ncal) as keyof typeof NCAL_TARGETS] || 0;
-      const isOverTarget = duration > target;
-      return <span className={isOverTarget ? 'text-red-600 dark:text-red-400 font-semibold' : ''}>{formatDuration(duration)}</span>;
-    }},
-    { key: 'durationVendorMin', label: 'Duration Vendor', render: (v: number) => formatDuration(v) },
-    { key: 'problem', label: 'Problem' },
-    { key: 'penyebab', label: 'Penyebab' },
-    { key: 'actionTerakhir', label: 'Action Terakhir' },
-    { key: 'note', label: 'Note' },
-    { key: 'klasifikasiGangguan', label: 'Klasifikasi Gangguan' },
-    { key: 'powerBefore', label: 'Power Before (dBm)' },
-    { key: 'powerAfter', label: 'Power After (dBm)', render: (v: number, incident: Incident) => {
-      const powerAfter = v;
-      const powerBefore = incident.powerBefore;
-      const isPowerWorse = (typeof powerBefore === 'number' && typeof powerAfter === 'number' && 
-                           !isNaN(powerBefore) && !isNaN(powerAfter)) ? 
-                           (powerAfter - powerBefore) > 1 : false;
-      return <span className={isPowerWorse ? 'text-red-600 dark:text-red-400 font-semibold' : ''}>{powerAfter || ''}</span>;
-    }},
-    { key: 'startPause1', label: 'Start Pause 1', render: (v: string) => formatDate(v) },
-    { key: 'endPause1', label: 'End Pause 1', render: (v: string) => formatDate(v) },
-    { key: 'startPause2', label: 'Start Pause 2', render: (v: string) => formatDate(v) },
-    { key: 'endPause2', label: 'End Pause 2', render: (v: string) => formatDate(v) },
-    { key: 'totalDurationPauseMin', label: 'Total Duration Pause', render: (v: number) => formatDuration(v) },
-    { key: 'totalDurationVendorMin', label: 'Total Duration Vendor', render: (v: number) => formatDuration(v) },
-    { key: 'netDurationMin', label: 'Net Duration', render: (v: number) => formatDuration(v) },
+    { key: 'noCase', label: 'No Case', width: 'w-24' },
+    { 
+      key: 'priority', 
+      label: 'Priority', 
+      width: 'w-20',
+      render: (v: string) => v ? (
+        <Badge variant={getPriorityBadgeVariant(v)} className="text-xs font-medium">
+          {v.toUpperCase()}
+        </Badge>
+      ) : '-' 
+    },
+    { key: 'site', label: 'Site', width: 'w-32' },
+    { 
+      key: 'ncal', 
+      label: 'NCAL', 
+      width: 'w-20',
+      render: (v: string) => v ? (
+        <Badge variant={getNCALBadgeVariant(v)} className="text-xs font-medium">
+          {v}
+        </Badge>
+      ) : '-' 
+    },
+    { 
+      key: 'status', 
+      label: 'Status', 
+      width: 'w-24',
+      render: (v: string) => v ? (
+        <div className="flex items-center gap-2">
+          {getStatusIcon(v)}
+          <Badge variant={getStatusBadgeVariant(v)} className="text-xs font-medium">
+            {v}
+          </Badge>
+        </div>
+      ) : '-' 
+    },
+    { key: 'level', label: 'Level', width: 'w-16' },
+    { key: 'ts', label: 'TS', width: 'w-28' },
+    { key: 'odpBts', label: 'ODP/BTS', width: 'w-24' },
+    { 
+      key: 'startTime', 
+      label: 'Start Time', 
+      width: 'w-32',
+      render: (v: string) => (
+        <div className="text-xs font-mono">
+          {formatDate(v)}
+        </div>
+      ) 
+    },
+    { 
+      key: 'startEscalationVendor', 
+      label: 'Start Escalation Vendor', 
+      width: 'w-32',
+      render: (v: string) => (
+        <div className="text-xs font-mono">
+          {formatDate(v)}
+        </div>
+      ) 
+    },
+    { 
+      key: 'endTime', 
+      label: 'End Time', 
+      width: 'w-32',
+      render: (v: string) => (
+        <div className="text-xs font-mono">
+          {formatDate(v)}
+        </div>
+      ) 
+    },
+    { 
+      key: 'durationMin', 
+      label: 'Duration', 
+      width: 'w-20'
+      // Render akan dihandle di level tabel untuk perhitungan real-time
+    },
+    { 
+      key: 'durationVendorMin', 
+      label: 'Duration Vendor', 
+      width: 'w-24'
+      // Render akan dihandle di level tabel untuk perhitungan real-time
+    },
+    { key: 'problem', label: 'Problem', width: 'w-40' },
+    { key: 'penyebab', label: 'Penyebab', width: 'w-40' },
+    { key: 'actionTerakhir', label: 'Action Terakhir', width: 'w-40' },
+    { key: 'note', label: 'Note', width: 'w-40' },
+    { key: 'klasifikasiGangguan', label: 'Klasifikasi Gangguan', width: 'w-32' },
+    { 
+      key: 'powerBefore', 
+      label: 'Power Before (dBm)', 
+      width: 'w-24',
+      render: (v: number) => v ? (
+        <div className="text-xs font-mono text-orange-600 dark:text-orange-400">
+          {v} dBm
+        </div>
+      ) : '-' 
+    },
+    { 
+      key: 'powerAfter', 
+      label: 'Power After (dBm)', 
+      width: 'w-24',
+      render: (v: number) => v ? (
+        <div className="text-xs font-mono text-purple-600 dark:text-purple-400">
+          {v} dBm
+        </div>
+      ) : '-' 
+    },
+    { 
+      key: 'startPause1', 
+      label: 'Start Pause 1', 
+      width: 'w-32',
+      render: (v: string) => (
+        <div className="text-xs font-mono text-gray-600 dark:text-gray-400">
+          {formatDate(v)}
+        </div>
+      ) 
+    },
+    { 
+      key: 'endPause1', 
+      label: 'End Pause 1', 
+      width: 'w-32',
+      render: (v: string) => (
+        <div className="text-xs font-mono text-gray-600 dark:text-gray-400">
+          {formatDate(v)}
+        </div>
+      ) 
+    },
+    { 
+      key: 'startPause2', 
+      label: 'Start Pause 2', 
+      width: 'w-32',
+      render: (v: string) => (
+        <div className="text-xs font-mono text-gray-600 dark:text-gray-400">
+          {formatDate(v)}
+        </div>
+      ) 
+    },
+    { 
+      key: 'endPause2', 
+      label: 'End Pause 2', 
+      width: 'w-32',
+      render: (v: string) => (
+        <div className="text-xs font-mono text-gray-600 dark:text-gray-400">
+          {formatDate(v)}
+        </div>
+      ) 
+    },
+    { 
+      key: 'totalDurationPauseMin', 
+      label: 'Total Duration Pause', 
+      width: 'w-28',
+      render: (v: number) => (
+        <div className="text-xs font-mono font-medium text-red-600 dark:text-red-400">
+          {formatDuration(v)}
+        </div>
+      ) 
+    },
+    { 
+      key: 'totalDurationVendorMin', 
+      label: 'Total Duration Vendor', 
+      width: 'w-32',
+      render: (v: number) => (
+        <div className="text-xs font-mono font-medium text-indigo-600 dark:text-indigo-400">
+          {formatDuration(v)}
+        </div>
+      ) 
+    },
+
   ];
 
-  const formatDate = (dateString: string | null | undefined) => {
-    if (!dateString) return '';
-    return new Date(dateString).toLocaleString('id-ID');
-  };
+
 
   const getStatusBadgeVariant = (status: string | null | undefined) => {
     if (!status || typeof status !== 'string') return 'secondary';
@@ -459,7 +751,18 @@ export const IncidentData: React.FC = () => {
     if (s === 'done') return 'success';
     if (s === 'open') return 'warning';
     if (s === 'escalated') return 'danger';
+    if (s === 'closed') return 'success';
+    if (s === 'pending') return 'warning';
     return 'default';
+  };
+
+  const getStatusIcon = (status: string | null | undefined) => {
+    if (!status || typeof status !== 'string') return null;
+    const s = status.toLowerCase();
+    if (s === 'done' || s === 'closed') return <CheckCircle className="w-3 h-3" />;
+    if (s === 'open' || s === 'pending') return <Clock className="w-3 h-3" />;
+    if (s === 'escalated') return <AlertTriangle className="w-3 h-3" />;
+    return null;
   };
 
   const getPriorityBadgeVariant = (priority: string | null | undefined) => {
@@ -494,24 +797,6 @@ export const IncidentData: React.FC = () => {
               <Upload className="w-4 h-4 mr-2" />
               Upload Data
             </Button>
-            <Button 
-              onClick={handleFixDurationIssues} 
-              disabled={isFixingDuration}
-              variant="outline"
-              className="bg-green-600 hover:bg-green-700 text-white"
-            >
-              {isFixingDuration ? (
-                <>
-                  <div className="w-4 h-4 mr-2 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                  Fixing...
-                </>
-              ) : (
-                <>
-                  <div className="w-4 h-4 mr-2">🔧</div>
-                  Fix Duration Issues
-                </>
-              )}
-            </Button>
             <Button onClick={exportToCSV} variant="outline">
               <Download className="w-4 h-4 mr-2" />
               Export CSV
@@ -526,6 +811,23 @@ export const IncidentData: React.FC = () => {
                 Clean Duplicates ({dbStats.duplicateGroups})
               </Button>
             )}
+            <Button
+              onClick={validateDatabase}
+              variant="outline"
+              className="bg-green-600 hover:bg-green-700 text-white"
+            >
+              <Database className="w-4 h-4 mr-2" />
+              Validate Database
+            </Button>
+            <Button
+              onClick={handleRecalculateDurations}
+              disabled={isRecalculating}
+              variant="outline"
+              className="bg-blue-600 hover:bg-blue-700 text-white"
+            >
+              <Calculator className="w-4 h-4 mr-2" />
+              {isRecalculating ? 'Recalculating...' : 'Recalculate Durations'}
+            </Button>
             <Button 
               onClick={() => setShowResetConfirm(true)} 
               variant="destructive"
@@ -575,60 +877,6 @@ export const IncidentData: React.FC = () => {
           iconBg="bg-purple-500"
         />
       </div>
-
-      {/* Duration Fix Result */}
-      {durationFixResult && (
-        <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4 mb-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-lg font-semibold text-green-800 dark:text-green-200">
-                ✅ Duration Issues Fixed Successfully!
-              </h3>
-              <div className="text-sm text-green-700 dark:text-green-300 mt-1">
-                Processed {durationFixResult.totalProcessed} incidents, fixed {durationFixResult.totalFixed} issues
-              </div>
-            </div>
-            <Button 
-              onClick={() => setDurationFixResult(null)} 
-              variant="outline" 
-              size="sm"
-              className="text-green-700 border-green-300 hover:bg-green-100"
-            >
-              ✕
-            </Button>
-          </div>
-          
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-3">
-            <div className="text-center">
-              <div className="text-2xl font-bold text-green-600">{durationFixResult.durationFixed}</div>
-              <div className="text-xs text-green-600">Duration Fixed</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-green-600">{durationFixResult.durationVendorFixed}</div>
-              <div className="text-xs text-green-600">Duration Vendor Fixed</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-green-600">{durationFixResult.netDurationFixed}</div>
-              <div className="text-xs text-green-600">Net Duration Fixed</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-green-600">{durationFixResult.formatFixed}</div>
-              <div className="text-xs text-green-600">Format Fixed</div>
-            </div>
-          </div>
-          
-          {durationFixResult.errors.length > 0 && (
-            <div className="mt-3 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded">
-              <div className="text-sm font-semibold text-red-700 dark:text-red-300">Errors:</div>
-              <div className="text-xs text-red-600 dark:text-red-400">
-                {durationFixResult.errors.map((error, index) => (
-                  <div key={index}>• {error}</div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-      )}
 
       {/* NCAL Category Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-4">
@@ -935,10 +1183,6 @@ export const IncidentData: React.FC = () => {
         </div>
       )}
 
-      {showUpload && (
-        <IncidentUpload />
-      )}
-
       {/* Reset Confirmation Modal */}
       {showResetConfirm && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -998,28 +1242,258 @@ export const IncidentData: React.FC = () => {
             </div>
           ) : (
             <div className="space-y-4">
-              <div className="overflow-x-auto">
+              <div className="overflow-x-auto border border-gray-200 dark:border-gray-700 rounded-lg">
                 <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                  <thead className="bg-gray-50 dark:bg-gray-700">
+                  <thead className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-gray-800 dark:to-gray-700">
                     <tr>
                       {columns.map(col => (
-                        <th key={col.key} className="px-5 py-3 text-left text-xs font-bold text-gray-500 uppercase whitespace-nowrap">{col.label}</th>
+                        <th key={col.key} className="px-4 py-4 text-left text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider whitespace-nowrap border-r border-gray-200 dark:border-gray-600 last:border-r-0">
+                          <div className="flex items-center gap-2">
+                            <span>{col.label}</span>
+                            {col.key === 'priority' && <span className="text-red-500">*</span>}
+                            {col.key === 'status' && <span className="text-green-500">*</span>}
+                          </div>
+                        </th>
                       ))}
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                  <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
                     {incidents.length === 0 ? (
-                      <tr><td colSpan={columns.length} className="text-center py-8 text-gray-400">No data found</td></tr>
+                      <tr>
+                        <td colSpan={columns.length} className="text-center py-12 text-gray-500 dark:text-gray-400">
+                          <div className="flex flex-col items-center gap-2">
+                            <div className="w-12 h-12 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center">
+                              <FileSpreadsheet className="w-6 h-6 text-gray-400" />
+                            </div>
+                            <span className="text-sm font-medium">No data found</span>
+                            <span className="text-xs text-gray-400">Try adjusting your filters or upload new data</span>
+                          </div>
+                        </td>
+                      </tr>
                     ) : (
                       incidents.map((incident, i) => (
                         <tr key={incident.id} className={
-                          i % 2 === 0 ? 'bg-card' : 'bg-muted'
+                          i % 2 === 0 
+                            ? 'bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors duration-150' 
+                            : 'bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-150'
                         }>
-                          {columns.map(col => (
-                            <td key={col.key} className="px-5 py-3 whitespace-pre-line text-sm text-card-foreground align-top">
-                              {col.render ? col.render(incident[col.key as keyof Incident], incident) : incident[col.key as keyof Incident] || ''}
+                          {columns.map(col => {
+                            let displayValue: React.ReactNode;
+                            
+                            // Special handling for duration columns - SELALU gunakan perhitungan real-time
+                            if (col.key === 'durationMin') {
+                              // SELALU hitung durasi berdasarkan start dan end time yang sebenarnya
+                              if (incident.startTime && incident.endTime) {
+                                const calculatedDuration = calculateDuration(incident.startTime, incident.endTime);
+                                
+                                // Debug: Log untuk memastikan perhitungan berjalan
+                                console.log(`🔍 Duration Debug for ${incident.noCase}:`, {
+                                  startTime: incident.startTime,
+                                  endTime: incident.endTime,
+                                  calculatedDuration: calculatedDuration,
+                                  formattedDuration: formatDuration(calculatedDuration),
+                                  oldDurationMin: incident.durationMin
+                                });
+                                
+                                // Validasi durasi - hanya tolak durasi yang bermasalah seperti 07:14:19, 13:34:30, 05:14:28
+                                const isProblematic = isProblematicDuration(calculatedDuration);
+                                
+                                // Debug: Log detail validasi
+                                console.log(`🔍 Duration Validation for ${incident.noCase}:`, {
+                                  calculatedDuration,
+                                  isProblematic,
+                                  isValid: calculatedDuration > 0 && !isProblematic,
+                                  reason: calculatedDuration <= 0 ? 'Zero/Negative' : 
+                                          isProblematic ? 'Problematic Data' : 'Valid'
+                                });
+                                
+                                if (calculatedDuration > 0 && !isProblematic) {
+                                  displayValue = (
+                                    <div className="text-xs font-mono font-medium text-blue-600 dark:text-blue-400">
+                                      {formatDuration(calculatedDuration)}
+                                    </div>
+                                  );
+                                } else {
+                                  let invalidReason = 'Invalid';
+                                  if (calculatedDuration <= 0) {
+                                    invalidReason = 'Zero/Neg';
+                                  } else if (isProblematic) {
+                                    invalidReason = 'Invalid Data';
+                                  }
+                                  
+                                  displayValue = (
+                                    <div className="text-xs font-mono font-medium text-red-500 dark:text-red-400" 
+                                         title={`Duration: ${calculatedDuration} minutes. Reason: ${invalidReason}`}>
+                                      {invalidReason}
+                                    </div>
+                                  );
+                                }
+                              } else {
+                                // Jika tidak ada start/end time, tampilkan '-'
+                                console.log(`⚠️ No start/end time for ${incident.noCase}:`, {
+                                  startTime: incident.startTime,
+                                  endTime: incident.endTime,
+                                  oldDurationMin: incident.durationMin
+                                });
+                                displayValue = (
+                                  <div className="text-xs font-mono font-medium text-gray-500 dark:text-gray-400">
+                                    -
+                                  </div>
+                                );
+                              }
+                            } else if (col.key === 'durationVendorMin') {
+                              // SELALU hitung durasi vendor berdasarkan start escalation vendor dan end time
+                              if (incident.startEscalationVendor && incident.endTime) {
+                                const calculatedDuration = calculateDuration(incident.startEscalationVendor, incident.endTime);
+                                
+                                // Validasi durasi - hanya tolak durasi yang bermasalah seperti 07:14:19, 13:34:30, 05:14:28
+                                const isProblematic = isProblematicDuration(calculatedDuration);
+                                
+                                // Debug: Log detail validasi vendor
+                                console.log(`🔍 Vendor Duration Validation for ${incident.noCase}:`, {
+                                  startEscalationVendor: incident.startEscalationVendor,
+                                  endTime: incident.endTime,
+                                  calculatedDuration,
+                                  isProblematic,
+                                  isValid: calculatedDuration > 0 && !isProblematic,
+                                  reason: calculatedDuration <= 0 ? 'Zero/Negative' : 
+                                          isProblematic ? 'Problematic Data' : 'Valid'
+                                });
+                                
+                                if (calculatedDuration > 0 && !isProblematic) {
+                                  displayValue = (
+                                    <div className="text-xs font-mono font-medium text-green-600 dark:text-green-400">
+                                      {formatDuration(calculatedDuration)}
+                                    </div>
+                                  );
+                                } else {
+                                  let invalidReason = 'Invalid';
+                                  if (calculatedDuration <= 0) {
+                                    invalidReason = 'Zero/Neg';
+                                  } else if (isProblematic) {
+                                    invalidReason = 'Invalid Data';
+                                  }
+                                  
+                                  displayValue = (
+                                    <div className="text-xs font-mono font-medium text-red-500 dark:text-red-400"
+                                         title={`Vendor Duration: ${calculatedDuration} minutes. Reason: ${invalidReason}`}>
+                                      {invalidReason}
+                                    </div>
+                                  );
+                                }
+                              } else {
+                                // Jika tidak ada start escalation vendor atau end time, tampilkan '-'
+                                console.log(`⚠️ No vendor escalation data for ${incident.noCase}:`, {
+                                  startEscalationVendor: incident.startEscalationVendor,
+                                  endTime: incident.endTime,
+                                  hasStartEscalation: !!incident.startEscalationVendor,
+                                  hasEndTime: !!incident.endTime
+                                });
+                                
+                                displayValue = (
+                                  <div className="text-xs font-mono font-medium text-gray-500 dark:text-gray-400"
+                                       title={`No vendor escalation data. Start Escalation: ${incident.startEscalationVendor || 'Missing'}, End: ${incident.endTime || 'Missing'}`}>
+                                    -
+                                  </div>
+                                );
+                              }
+                            } else if (col.key === 'totalDurationPauseMin') {
+                              // Hitung Total Duration Pause berdasarkan pause data yang sebenarnya
+                              let totalPauseMinutes = 0;
+                              
+                              // Pause 1
+                              if (incident.startPause1 && incident.endPause1) {
+                                const pause1Duration = calculateDuration(incident.startPause1, incident.endPause1);
+                                if (pause1Duration > 0) {
+                                  totalPauseMinutes += pause1Duration;
+                                }
+                              }
+                              
+                              // Pause 2
+                              if (incident.startPause2 && incident.endPause2) {
+                                const pause2Duration = calculateDuration(incident.startPause2, incident.endPause2);
+                                if (pause2Duration > 0) {
+                                  totalPauseMinutes += pause2Duration;
+                                }
+                              }
+                              
+                              // TOLAK durasi yang bermasalah seperti 07:14:19, 13:34:30, 05:14:28
+                              const isProblematic = isProblematicDuration(totalPauseMinutes);
+                              
+                              if (totalPauseMinutes > 0 && !isProblematic) {
+                                displayValue = (
+                                  <div className="text-xs font-mono font-medium text-orange-600 dark:text-orange-400">
+                                    {formatDuration(totalPauseMinutes)}
+                                  </div>
+                                );
+                              } else {
+                                displayValue = (
+                                  <div className="text-xs font-mono font-medium text-red-500 dark:text-red-400">
+                                    {isProblematic ? 'Invalid Data' : '-'}
+                                  </div>
+                                );
+                              }
+                            } else if (col.key === 'totalDurationVendorMin') {
+                              // Hitung Total Duration Vendor: Duration Vendor - Total Duration Pause
+                              let vendorDuration = 0;
+                              let pauseDuration = 0;
+                              
+                              // Get vendor duration
+                              if (incident.startEscalationVendor && incident.endTime) {
+                                vendorDuration = calculateDuration(incident.startEscalationVendor, incident.endTime);
+                              }
+                              
+                              // Get pause duration
+                              if (incident.startPause1 && incident.endPause1) {
+                                const pause1Duration = calculateDuration(incident.startPause1, incident.endPause1);
+                                if (pause1Duration > 0) {
+                                  pauseDuration += pause1Duration;
+                                }
+                              }
+                              if (incident.startPause2 && incident.endPause2) {
+                                const pause2Duration = calculateDuration(incident.startPause2, incident.endPause2);
+                                if (pause2Duration > 0) {
+                                  pauseDuration += pause2Duration;
+                                }
+                              }
+                              
+                              const totalVendorDuration = Math.max(vendorDuration - pauseDuration, 0);
+                              
+                              // TOLAK durasi yang bermasalah seperti 07:14:19, 13:34:30, 05:14:28
+                              const isProblematic = isProblematicDuration(totalVendorDuration);
+                              
+                              if (totalVendorDuration > 0 && !isProblematic) {
+                                displayValue = (
+                                  <div className="text-xs font-mono font-medium text-purple-600 dark:text-purple-400">
+                                    {formatDuration(totalVendorDuration)}
+                                  </div>
+                                );
+                              } else {
+                                displayValue = (
+                                  <div className="text-xs font-mono font-medium text-red-500 dark:text-red-400">
+                                    {isProblematic ? 'Invalid Data' : '-'}
+                                  </div>
+                                );
+                              }
+
+                            } else {
+                              // Untuk kolom lain, gunakan render function atau nilai default
+                              if (col.render) {
+                                displayValue = col.render(incident[col.key as keyof Incident]);
+                              } else {
+                                const value = incident[col.key as keyof Incident];
+                                displayValue = value !== null && value !== undefined ? String(value) : '-';
+                              }
+                            }
+                            
+                            return (
+                              <td key={col.key} className={`px-4 py-4 text-sm text-gray-900 dark:text-gray-100 align-top border-r border-gray-200 dark:border-gray-700 last:border-r-0 ${col.width || ''}`}>
+                                <div className="max-w-full truncate" title={String(incident[col.key as keyof Incident] || '-')}>
+                                  {displayValue}
+                                </div>
                             </td>
-                          ))}
+                            );
+                          })}
                         </tr>
                       ))
                     )}
