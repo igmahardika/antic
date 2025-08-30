@@ -636,20 +636,20 @@ const SummaryDashboard = ({ ticketAnalyticsData, filteredTickets }: any) => {
                     type="monotone" 
                     dataKey="incidents" 
                     stroke="#F59E0B" 
-                    strokeWidth={3} 
+                    strokeWidth={2} 
                     name="Incidents"
-                    dot={{ fill: '#F59E0B', strokeWidth: 2, r: 4 }}
-                    activeDot={{ r: 6, stroke: '#F59E0B', strokeWidth: 2 }}
+                    dot={{ fill: '#F59E0B', strokeWidth: 1, r: 2 }}
+                    activeDot={{ r: 4, stroke: '#F59E0B', strokeWidth: 1 }}
                   />
                   <Line 
                     yAxisId="right"
                     type="monotone" 
                     dataKey="resolutionRate" 
                     stroke="#10B981" 
-                    strokeWidth={3} 
+                    strokeWidth={2} 
                     name="Resolution Rate %"
-                    dot={{ fill: '#10B981', strokeWidth: 2, r: 4 }}
-                    activeDot={{ r: 6, stroke: '#10B981', strokeWidth: 2 }}
+                    dot={{ fill: '#10B981', strokeWidth: 1, r: 2 }}
+                    activeDot={{ r: 4, stroke: '#10B981', strokeWidth: 1 }}
                   />
                 </LineChart>
               </ResponsiveContainer>
