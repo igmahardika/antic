@@ -17,10 +17,7 @@ import WarningIcon from '@mui/icons-material/Warning';
 import ScienceIcon from '@mui/icons-material/Science';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
-import TrendingDownIcon from '@mui/icons-material/TrendingDown';
-import BarChartIcon from '@mui/icons-material/BarChart';
-import TimelineIcon from '@mui/icons-material/Timeline';
-import AssessmentIcon from '@mui/icons-material/Assessment';
+
 
 import { sanitizeTickets, calcAllMetrics, Ticket as AgentTicket, rank as rankBand } from '@/utils/agentKpi';
 import { useLiveQuery } from 'dexie-react-hooks';
@@ -407,9 +404,9 @@ const SummaryDashboard = ({ ticketAnalyticsData, filteredTickets }: any) => {
         />
         <SummaryCard
           icon={<AccessTimeIcon className="w-5 h-5 text-white" />}
-          iconBg="bg-yellow-500"
+          iconBg="bg-amber-500"
           title="Avg Duration"
-          value={stats[1]?.value ? formatDurationDHM(parseFloat(stats[1].value)) : '-'}
+          value={stats[1]?.value ? `${Math.round(parseFloat(stats[1].value))}m` : '-'}
           description="average resolution time"
         />
         <SummaryCard
@@ -439,16 +436,16 @@ const SummaryDashboard = ({ ticketAnalyticsData, filteredTickets }: any) => {
         />
         <SummaryCard
           icon={<TimerIcon className="w-5 h-5 text-white" />}
-          iconBg="bg-red-500"
-          title="Avg FRT (min)"
-          value={formatDurationDHM(kpis.frtAvg / 60)}
+          iconBg="bg-blue-500"
+          title="Avg FRT"
+          value={`${Math.round(kpis.frtAvg)}m`}
           description="first response time"
         />
         <SummaryCard
           icon={<TimerIcon className="w-5 h-5 text-white" />}
-          iconBg="bg-violet-500"
-          title="Avg ART (min)"
-          value={formatDurationDHM(kpis.artAvg / 60)}
+          iconBg="bg-indigo-500"
+          title="Avg ART"
+          value={`${Math.round(kpis.artAvg)}m`}
           description="resolution time"
         />
       </div>
@@ -567,9 +564,10 @@ const SummaryDashboard = ({ ticketAnalyticsData, filteredTickets }: any) => {
               Total: {incidentStats.total}
             </Badge>
           </CardHeader>
-          <CardContent className="pl-2">
+          <CardContent className="p-6">
             {incidentTrendsData.length > 0 ? (
-              <ResponsiveContainer width="100%" height={260}>
+              <div className="aspect-video">
+                <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={incidentTrendsData} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
                   <XAxis 
                     dataKey="month" 
@@ -598,8 +596,9 @@ const SummaryDashboard = ({ ticketAnalyticsData, filteredTickets }: any) => {
                   <Line type="monotone" dataKey="resolutionRate" stroke="#10B981" strokeWidth={2} name="Resolution Rate %" />
                 </LineChart>
               </ResponsiveContainer>
+                </div>
             ) : (
-              <div className="text-center text-gray-500 dark:text-gray-400 py-12">No incident data available</div>
+              <div className="text-center text-muted-foreground py-12">No incident data available</div>
             )}
           </CardContent>
         </Card>
@@ -615,9 +614,10 @@ const SummaryDashboard = ({ ticketAnalyticsData, filteredTickets }: any) => {
               <Badge className="bg-blue-600 text-white text-xs px-2 py-0.5 rounded-md w-fit font-semibold">Latest: {latestYearlyValue}</Badge>
             )}
           </CardHeader>
-          <CardContent className="pl-2">
+          <CardContent className="p-6">
             {yearlyStatsData && yearlyStatsData.labels && yearlyStatsData.labels.length > 0 ? (
-              <ResponsiveContainer width="100%" height={260}>
+              <div className="aspect-video">
+                <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={toRechartsData(yearlyStatsData.labels, yearlyStatsData.datasets)} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
                   <defs>
                     <linearGradient id="colorIncomingY" x1="0" y1="0" x2="0" y2="1">
@@ -658,8 +658,9 @@ const SummaryDashboard = ({ ticketAnalyticsData, filteredTickets }: any) => {
                   <Area type="monotone" dataKey="closed" stroke="#22C55E" fill="url(#colorClosedY)" name="Closed Tickets" strokeWidth={1.5} />
                 </AreaChart>
               </ResponsiveContainer>
+                </div>
             ) : (
-              <div className="text-center text-gray-500 dark:text-gray-400 py-12">No data for this chart</div>
+              <div className="text-center text-muted-foreground py-12">No data for this chart</div>
             )}
           </CardContent>
         </Card>
@@ -672,9 +673,10 @@ const SummaryDashboard = ({ ticketAnalyticsData, filteredTickets }: any) => {
               Compliance: {incidentStats.ncalCompliance.toFixed(1)}%
             </Badge>
           </CardHeader>
-          <CardContent className="pl-2">
+          <CardContent className="p-6">
             {allIncidents && allIncidents.length > 0 ? (
-              <ResponsiveContainer width="100%" height={260}>
+              <div className="aspect-video">
+                <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={Object.entries(calculateIncidentStats(allIncidents).ncalCounts).map(([ncal, count]) => ({
                   ncal,
                   count,
@@ -713,8 +715,9 @@ const SummaryDashboard = ({ ticketAnalyticsData, filteredTickets }: any) => {
                   <Bar dataKey="compliance" fill="#10B981" name="Compliance %" />
                 </BarChart>
               </ResponsiveContainer>
+                </div>
             ) : (
-              <div className="text-center text-gray-500 dark:text-gray-400 py-12">No incident data available</div>
+              <div className="text-center text-muted-foreground py-12">No incident data available</div>
             )}
           </CardContent>
         </Card>
@@ -743,11 +746,11 @@ const SummaryDashboard = ({ ticketAnalyticsData, filteredTickets }: any) => {
                 key={row.agent} 
                 className={`relative bg-gradient-to-br rounded-2xl p-6 shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:scale-105 cursor-pointer ${
                   i === 0 
-                    ? 'from-amber-400 to-yellow-500 text-white' 
+                    ? 'from-yellow-400 to-orange-500 text-white' 
                     : i === 1 
-                    ? 'from-gray-400 to-gray-500 text-white'
+                    ? 'from-slate-400 to-slate-600 text-white'
                     : i === 2 
-                    ? 'from-orange-400 to-red-500 text-white'
+                    ? 'from-amber-600 to-orange-600 text-white'
                     : 'from-white to-gray-50 dark:from-zinc-800 dark:to-zinc-700 text-gray-900 dark:text-gray-100'
                 }`}
               >
@@ -808,7 +811,9 @@ const SummaryDashboard = ({ ticketAnalyticsData, filteredTickets }: any) => {
                   </div>
                   <div className="text-center">
                     <div className={`text-2xl font-bold ${
-                      row.slaPct >= 85 ? 'text-green-500' : row.slaPct >= 70 ? 'text-yellow-500' : 'text-red-500'
+                      i < 3 
+                        ? 'text-white' 
+                        : row.slaPct >= 85 ? 'text-green-600' : row.slaPct >= 70 ? 'text-amber-600' : 'text-red-600'
                     }`}>
                       {row.slaPct.toFixed(1)}%
                     </div>
@@ -820,7 +825,9 @@ const SummaryDashboard = ({ ticketAnalyticsData, filteredTickets }: any) => {
                   </div>
                   <div className="text-center">
                     <div className={`text-lg font-bold ${
-                      row.frtAvg <= 60 ? 'text-green-500' : row.frtAvg <= 120 ? 'text-yellow-500' : 'text-red-500'
+                      i < 3 
+                        ? 'text-white' 
+                        : row.frtAvg <= 60 ? 'text-green-600' : row.frtAvg <= 120 ? 'text-amber-600' : 'text-red-600'
                     }`}>
                       {row.frtAvg.toFixed(0)}m
                     </div>
@@ -832,7 +839,9 @@ const SummaryDashboard = ({ ticketAnalyticsData, filteredTickets }: any) => {
                   </div>
                   <div className="text-center">
                     <div className={`text-lg font-bold ${
-                      row.artAvg <= 1440 ? 'text-green-500' : row.artAvg <= 2880 ? 'text-yellow-500' : 'text-red-500'
+                      i < 3 
+                        ? 'text-white' 
+                        : row.artAvg <= 1440 ? 'text-green-600' : row.artAvg <= 2880 ? 'text-amber-600' : 'text-red-600'
                     }`}>
                       {row.artAvg.toFixed(0)}m
                     </div>
@@ -848,7 +857,9 @@ const SummaryDashboard = ({ ticketAnalyticsData, filteredTickets }: any) => {
                 <div className="mt-4 flex items-center justify-between">
                   <div className="text-center">
                     <div className={`text-xl font-bold ${
-                      row.score >= 80 ? 'text-green-500' : row.score >= 60 ? 'text-yellow-500' : 'text-red-500'
+                      i < 3 
+                        ? 'text-white' 
+                        : row.score >= 80 ? 'text-green-600' : row.score >= 60 ? 'text-amber-600' : 'text-red-600'
                     }`}>
                       {row.score.toFixed(1)}
                     </div>
@@ -861,12 +872,12 @@ const SummaryDashboard = ({ ticketAnalyticsData, filteredTickets }: any) => {
                   <div className="text-center">
                     <span className={`inline-flex items-center justify-center w-12 h-12 rounded-full text-lg font-bold ${
                       row.grade === 'A' 
-                        ? 'bg-green-500 text-white' 
+                        ? 'bg-green-600 text-white' 
                         : row.grade === 'B' 
-                        ? 'bg-blue-500 text-white' 
+                        ? 'bg-blue-600 text-white' 
                         : row.grade === 'C' 
-                        ? 'bg-yellow-500 text-white'
-                        : 'bg-red-500 text-white'
+                        ? 'bg-amber-600 text-white'
+                        : 'bg-red-600 text-white'
                     }`}>
                       {row.grade}
                     </span>
@@ -885,7 +896,9 @@ const SummaryDashboard = ({ ticketAnalyticsData, filteredTickets }: any) => {
                   }`}>
                     <div 
                       className={`h-2 rounded-full transition-all duration-500 ${
-                        row.score >= 80 ? 'bg-green-500' : row.score >= 60 ? 'bg-yellow-500' : 'bg-red-500'
+                        i < 3 
+                          ? 'bg-white/80' 
+                          : row.score >= 80 ? 'bg-green-600' : row.score >= 60 ? 'bg-amber-600' : 'bg-red-600'
                       }`}
                       style={{ width: `${Math.min(row.score, 100)}%` }}
                     ></div>
