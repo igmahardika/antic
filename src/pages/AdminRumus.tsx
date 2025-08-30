@@ -209,7 +209,7 @@ export default function AdminRumus() {
                 <div className="flex items-center gap-3 mb-4">
                   <Badge className="bg-purple-600 text-white px-3 py-1">v1.9.0</Badge>
                   <span className="text-sm font-medium text-purple-700 dark:text-purple-300">TypeScript Migration</span>
-                  <span className="text-xs text-muted-foreground">October 2024</span>
+                  <span className="text-xs text-muted-foreground">August 2025</span>
                 </div>
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   <div className="space-y-4">
@@ -248,7 +248,7 @@ export default function AdminRumus() {
                 <div className="flex items-center gap-3 mb-4">
                   <Badge className="bg-orange-600 text-white px-3 py-1">v1.8.0</Badge>
                   <span className="text-sm font-medium text-orange-700 dark:text-orange-300">Analytics Dashboard</span>
-                  <span className="text-xs text-muted-foreground">September 2024</span>
+                  <span className="text-xs text-muted-foreground">August 2025</span>
                 </div>
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   <div className="space-y-4">
@@ -380,33 +380,7 @@ export default function AdminRumus() {
               </div>
             </div>
 
-            {/* Previous Updates */}
-            <div className="space-y-4">
-              <h5 className="font-semibold text-card-foreground">Previous Updates</h5>
-              <div className="space-y-3">
-                <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-2xl">
-                  <Badge className="bg-blue-600 text-white px-2 py-1 text-xs">v2.0.0</Badge>
-                <div>
-                    <div className="font-medium text-sm">Advanced Export Functionality</div>
-                    <div className="text-xs text-muted-foreground">Enhanced data export with multiple formats</div>
-                    </div>
-                  </div>
-                <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-2xl">
-                  <Badge className="bg-purple-600 text-white px-2 py-1 text-xs">v1.9.0</Badge>
-                    <div>
-                    <div className="font-medium text-sm">TypeScript Migration</div>
-                    <div className="text-xs text-muted-foreground">Complete TypeScript implementation</div>
-                    </div>
-                  </div>
-                <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-2xl">
-                  <Badge className="bg-orange-600 text-white px-2 py-1 text-xs">v1.8.0</Badge>
-                    <div>
-                    <div className="font-medium text-sm">Analytics Dashboard</div>
-                    <div className="text-xs text-muted-foreground">Comprehensive analytics and reporting</div>
-                    </div>
-                    </div>
-                    </div>
-                  </div>
+
         </CollapsibleSection>
 
         {/* === 2. SYSTEM OVERVIEW === */}
