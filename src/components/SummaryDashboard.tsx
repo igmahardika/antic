@@ -18,6 +18,7 @@ import { sanitizeTickets, calcAllMetrics, Ticket as AgentTicket, rank as rankBan
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '@/lib/db';
 import { calculateIncidentStats, normalizeNCAL } from '@/utils/incidentUtils';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 
 const SummaryDashboard = ({ ticketAnalyticsData, filteredTickets }: any) => {
   // Get incident data for comprehensive dashboard
@@ -314,6 +315,27 @@ const SummaryDashboard = ({ ticketAnalyticsData, filteredTickets }: any) => {
       incoming: datasets[0]?.data[i] ?? 0,
       closed: datasets[1]?.data[i] ?? 0,
     }));
+  }
+
+  // Helper: normalize agent name for photo lookup
+  function getAgentPhotoPath(agentName: string): string {
+    // Special handling for Difa' Fathir Aditya
+    if (agentName.includes('Difa')) {
+      return `/agent-photos/Difa' Fathir Aditya.png`;
+    }
+    
+    // For other agents, use the original name
+    return `/agent-photos/${agentName}.png`;
+  }
+
+  // Helper: get agent initials for avatar fallback
+  function getAgentInitials(agentName: string): string {
+    if (!agentName) return '?';
+    const names = agentName.split(' ');
+    if (names.length >= 2) {
+      return (names[0][0] + names[names.length - 1][0]).toUpperCase();
+    }
+    return agentName[0]?.toUpperCase() || '?';
   }
 
   // Incident trends data
@@ -676,7 +698,7 @@ const SummaryDashboard = ({ ticketAnalyticsData, filteredTickets }: any) => {
         </Card>
       </div>
 
-      {/* Agent Leaderboard (per Year) */}
+      {/* Enhanced Agent Leaderboard (per Year) */}
       <Card className="p-2">
         <CardHeader className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 pb-1">
           <CardTitle className="font-extrabold text-lg">Agent Leaderboard</CardTitle>
@@ -698,7 +720,7 @@ const SummaryDashboard = ({ ticketAnalyticsData, filteredTickets }: any) => {
               <thead className="sticky top-0 bg-white/95 dark:bg-zinc-900/95 backdrop-blur ring-b-1 ring-gray-100 dark:ring-zinc-800">
                 <tr>
                   <th className="px-4 py-3 text-left font-semibold text-gray-700 dark:text-gray-300 w-16">Rank</th>
-                  <th className="px-4 py-3 text-left font-semibold text-gray-700 dark:text-gray-300 min-w-[180px]">Agent</th>
+                  <th className="px-4 py-3 text-left font-semibold text-gray-700 dark:text-gray-300 min-w-[220px]">Agent</th>
                   <th className="px-4 py-3 text-right font-semibold text-gray-700 dark:text-gray-300 w-20">Tickets</th>
                   <th className="px-4 py-3 text-right font-semibold text-gray-700 dark:text-gray-300 w-20">SLA%</th>
                   <th className="px-4 py-3 text-right font-semibold text-gray-700 dark:text-gray-300 w-24">Avg FRT</th>
@@ -719,23 +741,50 @@ const SummaryDashboard = ({ ticketAnalyticsData, filteredTickets }: any) => {
                         />
                       )}
                     </td>
-                    <td className="px-4 py-3 font-semibold text-gray-900 dark:text-gray-100 truncate max-w-[180px]">
-                      {row.agent}
+                    <td className="px-4 py-3 flex items-center gap-3">
+                      {/* Agent Photo/Avatar */}
+                      <Avatar className="w-10 h-10 border-2 border-gray-200 dark:border-gray-700">
+                        <AvatarImage 
+                          src={getAgentPhotoPath(row.agent)} 
+                          alt={row.agent}
+                          className="object-cover"
+                        />
+                        <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white font-semibold text-sm">
+                          {getAgentInitials(row.agent)}
+                        </AvatarFallback>
+                      </Avatar>
+                      {/* Agent Name */}
+                      <div className="flex flex-col">
+                        <span className="font-semibold text-gray-900 dark:text-gray-100 truncate max-w-[140px]">
+                          {row.agent}
+                        </span>
+                        <span className="text-xs text-gray-500 dark:text-gray-400">
+                          {row.tickets} tickets • {row.slaPct.toFixed(1)}% SLA
+                        </span>
+                      </div>
                     </td>
                     <td className="px-4 py-3 text-right font-mono text-gray-900 dark:text-gray-100">
                       {row.tickets.toLocaleString()}
                     </td>
                     <td className="px-4 py-3 text-right font-mono text-gray-900 dark:text-gray-100">
-                      {row.slaPct.toFixed(1)}%
+                      <span className={`${row.slaPct >= 85 ? 'text-green-600 dark:text-green-400' : row.slaPct >= 70 ? 'text-yellow-600 dark:text-yellow-400' : 'text-red-600 dark:text-red-400'} font-semibold`}>
+                        {row.slaPct.toFixed(1)}%
+                      </span>
                     </td>
                     <td className="px-4 py-3 text-right font-mono text-gray-900 dark:text-gray-100">
-                      {row.frtAvg.toFixed(1)}m
+                      <span className={`${row.frtAvg <= 60 ? 'text-green-600 dark:text-green-400' : row.frtAvg <= 120 ? 'text-yellow-600 dark:text-yellow-400' : 'text-red-600 dark:text-red-400'} font-semibold`}>
+                        {row.frtAvg.toFixed(1)}m
+                      </span>
                     </td>
                     <td className="px-4 py-3 text-right font-mono text-gray-900 dark:text-gray-100">
-                      {row.artAvg.toFixed(1)}m
+                      <span className={`${row.artAvg <= 1440 ? 'text-green-600 dark:text-green-400' : row.artAvg <= 2880 ? 'text-yellow-600 dark:text-yellow-400' : 'text-red-600 dark:text-red-400'} font-semibold`}>
+                        {row.artAvg.toFixed(1)}m
+                      </span>
                     </td>
                     <td className="px-4 py-3 text-right font-mono text-gray-900 dark:text-gray-100">
-                      {row.score.toFixed(1)}
+                      <span className={`${row.score >= 80 ? 'text-green-600 dark:text-green-400' : row.score >= 60 ? 'text-yellow-600 dark:text-yellow-400' : 'text-red-600 dark:text-red-400'} font-semibold`}>
+                        {row.score.toFixed(1)}
+                      </span>
                     </td>
                     <td className="px-4 py-3 text-right">
                       <span className={`inline-flex items-center justify-center px-2.5 py-1 rounded-lg text-xs font-bold min-w-[32px] ${
