@@ -406,7 +406,7 @@ const SummaryDashboard = ({ ticketAnalyticsData, filteredTickets }: any) => {
           icon={<AccessTimeIcon className="w-5 h-5 text-white" />}
           iconBg="bg-amber-500"
           title="Avg Duration"
-          value={stats[1]?.value ? `${Math.round(parseFloat(stats[1].value))}m` : '-'}
+          value={stats[1]?.value ? formatDurationDHM(parseFloat(stats[1].value)) : '-'}
           description="average resolution time"
         />
         <SummaryCard
@@ -438,14 +438,14 @@ const SummaryDashboard = ({ ticketAnalyticsData, filteredTickets }: any) => {
           icon={<TimerIcon className="w-5 h-5 text-white" />}
           iconBg="bg-blue-500"
           title="Avg FRT"
-          value={`${Math.round(kpis.frtAvg)}m`}
+          value={formatDurationDHM(kpis.frtAvg / 60)}
           description="first response time"
         />
         <SummaryCard
           icon={<TimerIcon className="w-5 h-5 text-white" />}
           iconBg="bg-indigo-500"
           title="Avg ART"
-          value={`${Math.round(kpis.artAvg)}m`}
+          value={formatDurationDHM(kpis.artAvg / 60)}
           description="resolution time"
         />
       </div>
@@ -829,7 +829,7 @@ const SummaryDashboard = ({ ticketAnalyticsData, filteredTickets }: any) => {
                         ? 'text-white' 
                         : row.frtAvg <= 60 ? 'text-green-600' : row.frtAvg <= 120 ? 'text-amber-600' : 'text-red-600'
                     }`}>
-                      {Math.round(row.frtAvg)}m
+                      {formatDurationDHM(row.frtAvg / 60)}
                     </div>
                     <div className={`text-xs opacity-80 ${
                       i < 3 ? 'text-white/80' : 'text-gray-500 dark:text-gray-400'
@@ -843,7 +843,7 @@ const SummaryDashboard = ({ ticketAnalyticsData, filteredTickets }: any) => {
                         ? 'text-white' 
                         : row.artAvg <= 1440 ? 'text-green-600' : row.artAvg <= 2880 ? 'text-amber-600' : 'text-red-600'
                     }`}>
-                      {Math.round(row.artAvg)}m
+                      {formatDurationDHM(row.artAvg / 60)}
                     </div>
                     <div className={`text-xs opacity-80 ${
                       i < 3 ? 'text-white/80' : 'text-gray-500 dark:text-gray-400'
