@@ -3,6 +3,10 @@ import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsToolti
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import SummaryCard from '@/components/ui/SummaryCard';
+import PageWrapper from '@/components/PageWrapper';
+import { formatDurationDHM } from '@/lib/utils';
+
+// MUI Icons for consistency with project standards
 import FlashOnIcon from '@mui/icons-material/FlashOn';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
@@ -14,6 +18,10 @@ import ScienceIcon from '@mui/icons-material/Science';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import TrendingDownIcon from '@mui/icons-material/TrendingDown';
+import BarChartIcon from '@mui/icons-material/BarChart';
+import TimelineIcon from '@mui/icons-material/Timeline';
+import AssessmentIcon from '@mui/icons-material/Assessment';
+
 import { sanitizeTickets, calcAllMetrics, Ticket as AgentTicket, rank as rankBand } from '@/utils/agentKpi';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '@/lib/db';
@@ -368,7 +376,19 @@ const SummaryDashboard = ({ ticketAnalyticsData, filteredTickets }: any) => {
   }, [allIncidents]);
 
   return (
-    <div className="grid grid-cols-1 gap-8">
+    <PageWrapper>
+      <div className="space-y-8">
+        {/* Header */}
+        <div className="text-center space-y-4">
+          <h1 className="text-4xl font-bold text-card-foreground">
+            Summary Dashboard
+          </h1>
+          <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
+            Comprehensive overview of ticket management and incident analytics performance
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 gap-8">
       {/* KPI Row 1 - Ticket Management */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <SummaryCard
@@ -389,7 +409,7 @@ const SummaryDashboard = ({ ticketAnalyticsData, filteredTickets }: any) => {
           icon={<AccessTimeIcon className="w-5 h-5 text-white" />}
           iconBg="bg-yellow-500"
           title="Avg Duration"
-          value={stats[1]?.value || '-'}
+          value={stats[1]?.value ? formatDurationDHM(parseFloat(stats[1].value)) : '-'}
           description="average resolution time"
         />
         <SummaryCard
@@ -421,14 +441,14 @@ const SummaryDashboard = ({ ticketAnalyticsData, filteredTickets }: any) => {
           icon={<TimerIcon className="w-5 h-5 text-white" />}
           iconBg="bg-red-500"
           title="Avg FRT (min)"
-          value={kpis.frtAvg.toFixed(1)}
+          value={formatDurationDHM(kpis.frtAvg / 60)}
           description="first response time"
         />
         <SummaryCard
           icon={<TimerIcon className="w-5 h-5 text-white" />}
           iconBg="bg-violet-500"
           title="Avg ART (min)"
-          value={kpis.artAvg.toFixed(1)}
+          value={formatDurationDHM(kpis.artAvg / 60)}
           description="resolution time"
         />
       </div>
@@ -439,7 +459,7 @@ const SummaryDashboard = ({ ticketAnalyticsData, filteredTickets }: any) => {
           icon={<WarningIcon className="w-5 h-5 text-white" />}
           iconBg="bg-orange-500"
           title="Total Incidents"
-          value={incidentStats.total.toString()}
+          value={incidentStats.total.toLocaleString()}
           description="network incidents"
         />
         <SummaryCard
@@ -488,9 +508,10 @@ const SummaryDashboard = ({ ticketAnalyticsData, filteredTickets }: any) => {
               </select>
             </div>
           </CardHeader>
-          <CardContent className="pl-2">
-            {filteredMonthlyStatsData && filteredMonthlyStatsData.labels && filteredMonthlyStatsData.labels.length > 0 ? (
-              <ResponsiveContainer width="100%" height={260}>
+                      <CardContent className="p-6">
+              {filteredMonthlyStatsData && filteredMonthlyStatsData.labels && filteredMonthlyStatsData.labels.length > 0 ? (
+                <div className="aspect-video">
+                  <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={toRechartsData(filteredMonthlyStatsData.labels, filteredMonthlyStatsData.datasets)} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
                   <defs>
                     <linearGradient id="colorIncoming" x1="0" y1="0" x2="0" y2="1">
@@ -527,13 +548,14 @@ const SummaryDashboard = ({ ticketAnalyticsData, filteredTickets }: any) => {
                     }}
                   />
                   <RechartsLegend />
-                  <Area type="monotone" dataKey="incoming" stroke="#6366F1" fill="url(#colorIncoming)" name="Incoming Tickets" strokeWidth={1.5} />
-                  <Area type="monotone" dataKey="closed" stroke="#22C55E" fill="url(#colorClosed)" name="Closed Tickets" strokeWidth={1.5} />
-                </AreaChart>
-              </ResponsiveContainer>
-            ) : (
-              <div className="text-center text-gray-500 dark:text-gray-400 py-12">No data for this chart</div>
-            )}
+                                     <Area type="monotone" dataKey="incoming" stroke="#6366F1" fill="url(#colorIncoming)" name="Incoming Tickets" strokeWidth={1.5} />
+                   <Area type="monotone" dataKey="closed" stroke="#22C55E" fill="url(#colorClosed)" name="Closed Tickets" strokeWidth={1.5} />
+                 </AreaChart>
+               </ResponsiveContainer>
+               </div>
+             ) : (
+               <div className="text-center text-muted-foreground py-12">No data for this chart</div>
+             )}
           </CardContent>
         </Card>
 
@@ -879,7 +901,9 @@ const SummaryDashboard = ({ ticketAnalyticsData, filteredTickets }: any) => {
           </div>
         </CardContent>
       </Card>
-    </div>
+        </div>
+      </div>
+    </PageWrapper>
   );
 };
 
