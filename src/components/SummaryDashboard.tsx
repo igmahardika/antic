@@ -740,11 +740,11 @@ const SummaryDashboard = ({ ticketAnalyticsData, filteredTickets }: any) => {
           </div>
         </CardHeader>
         <CardContent className="p-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
             {agentLeaderboard.map((row, i) => (
               <div 
                 key={row.agent} 
-                className={`relative bg-gradient-to-br rounded-2xl p-6 shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:scale-105 cursor-pointer ${
+                className={`relative bg-gradient-to-br rounded-xl p-4 shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:scale-105 cursor-pointer ${
                   i === 0 
                     ? 'from-yellow-400 to-orange-500 text-white' 
                     : i === 1 
@@ -755,19 +755,19 @@ const SummaryDashboard = ({ ticketAnalyticsData, filteredTickets }: any) => {
                 }`}
               >
                 {/* Rank Badge */}
-                <div className="absolute top-4 right-4 flex items-center gap-1">
-                  <span className="font-bold text-lg">#{i+1}</span>
+                <div className="absolute top-2 right-2 flex items-center gap-1">
+                  <span className="font-bold text-sm">#{i+1}</span>
                   {i < 3 && (
                     <EmojiEventsIcon 
                       className={`${i === 0 ? 'text-amber-200' : i === 1 ? 'text-gray-200' : 'text-orange-200'}`} 
-                      sx={{ fontSize: 20 }} 
+                      sx={{ fontSize: 16 }} 
                     />
                   )}
                 </div>
 
                 {/* Agent Info */}
-                <div className="flex items-center gap-4 mb-4">
-                  <Avatar className={`w-16 h-16 border-4 ${
+                <div className="flex items-center gap-3 mb-3">
+                  <Avatar className={`w-12 h-12 border-2 ${
                     i < 3 ? 'border-white/30' : 'border-gray-200 dark:border-gray-600'
                   }`}>
                     <AvatarImage 
@@ -782,12 +782,12 @@ const SummaryDashboard = ({ ticketAnalyticsData, filteredTickets }: any) => {
                     </AvatarFallback>
                   </Avatar>
                   <div className="flex-1">
-                    <h3 className={`font-bold text-lg truncate ${
+                    <h3 className={`font-bold text-sm truncate ${
                       i < 3 ? 'text-white' : 'text-gray-900 dark:text-gray-100'
                     }`}>
                       {row.agent}
                     </h3>
-                    <p className={`text-sm opacity-80 ${
+                    <p className={`text-xs opacity-80 ${
                       i < 3 ? 'text-white/80' : 'text-gray-500 dark:text-gray-400'
                     }`}>
                       {row.tickets} tickets • {row.slaPct.toFixed(1)}% SLA
@@ -796,9 +796,9 @@ const SummaryDashboard = ({ ticketAnalyticsData, filteredTickets }: any) => {
                 </div>
 
                 {/* Performance Metrics */}
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-2 gap-2">
                   <div className="text-center">
-                    <div className={`text-2xl font-bold ${
+                    <div className={`text-lg font-bold ${
                       i < 3 ? 'text-white' : 'text-gray-900 dark:text-gray-100'
                     }`}>
                       {row.tickets.toLocaleString()}
@@ -810,7 +810,7 @@ const SummaryDashboard = ({ ticketAnalyticsData, filteredTickets }: any) => {
                     </div>
                   </div>
                   <div className="text-center">
-                    <div className={`text-2xl font-bold ${
+                    <div className={`text-lg font-bold ${
                       i < 3 
                         ? 'text-white' 
                         : row.slaPct >= 85 ? 'text-green-600' : row.slaPct >= 70 ? 'text-amber-600' : 'text-red-600'
@@ -824,7 +824,7 @@ const SummaryDashboard = ({ ticketAnalyticsData, filteredTickets }: any) => {
                     </div>
                   </div>
                   <div className="text-center">
-                    <div className={`text-lg font-bold ${
+                    <div className={`text-sm font-bold ${
                       i < 3 
                         ? 'text-white' 
                         : row.frtAvg <= 60 ? 'text-green-600' : row.frtAvg <= 120 ? 'text-amber-600' : 'text-red-600'
@@ -838,7 +838,7 @@ const SummaryDashboard = ({ ticketAnalyticsData, filteredTickets }: any) => {
                     </div>
                   </div>
                   <div className="text-center">
-                    <div className={`text-lg font-bold ${
+                    <div className={`text-sm font-bold ${
                       i < 3 
                         ? 'text-white' 
                         : row.artAvg <= 1440 ? 'text-green-600' : row.artAvg <= 2880 ? 'text-amber-600' : 'text-red-600'
@@ -854,9 +854,9 @@ const SummaryDashboard = ({ ticketAnalyticsData, filteredTickets }: any) => {
                 </div>
 
                 {/* Score & Grade */}
-                <div className="mt-4 flex items-center justify-between">
+                <div className="mt-3 flex items-center justify-between">
                   <div className="text-center">
-                    <div className={`text-xl font-bold ${
+                    <div className={`text-lg font-bold ${
                       i < 3 
                         ? 'text-white' 
                         : row.score >= 80 ? 'text-green-600' : row.score >= 60 ? 'text-amber-600' : 'text-red-600'
@@ -870,7 +870,7 @@ const SummaryDashboard = ({ ticketAnalyticsData, filteredTickets }: any) => {
                     </div>
                   </div>
                   <div className="text-center">
-                    <span className={`inline-flex items-center justify-center w-12 h-12 rounded-full text-lg font-bold ${
+                    <span className={`inline-flex items-center justify-center w-10 h-10 rounded-full text-sm font-bold ${
                       row.grade === 'A' 
                         ? 'bg-green-600 text-white' 
                         : row.grade === 'B' 
@@ -890,12 +890,12 @@ const SummaryDashboard = ({ ticketAnalyticsData, filteredTickets }: any) => {
                 </div>
 
                 {/* Performance Bar */}
-                <div className="mt-4">
-                  <div className={`w-full bg-opacity-20 rounded-full h-2 ${
+                <div className="mt-3">
+                  <div className={`w-full bg-opacity-20 rounded-full h-1.5 ${
                     i < 3 ? 'bg-white/30' : 'bg-gray-200 dark:bg-gray-600'
                   }`}>
                     <div 
-                      className={`h-2 rounded-full transition-all duration-500 ${
+                      className={`h-1.5 rounded-full transition-all duration-500 ${
                         i < 3 
                           ? 'bg-white/80' 
                           : row.score >= 80 ? 'bg-green-600' : row.score >= 60 ? 'bg-amber-600' : 'bg-red-600'
