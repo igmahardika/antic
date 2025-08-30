@@ -484,7 +484,7 @@ const SummaryDashboard = ({ ticketAnalyticsData, filteredTickets }: any) => {
             <div className="flex flex-col gap-1">
               <CardTitle className="font-semibold text-base">Tickets per Month</CardTitle>
               {latestMonthlyValue !== null && (
-                <Badge className="bg-blue-600 text-white text-xs px-2 py-0.5 rounded-md w-fit font-semibold">Latest: {latestMonthlyValue}</Badge>
+                <Badge className="bg-blue-600 text-white text-xs px-1.5 py-0.5 rounded-md w-fit font-semibold">Latest: {latestMonthlyValue}</Badge>
               )}
             </div>
             <div className="mt-2 md:mt-0">
@@ -555,10 +555,10 @@ const SummaryDashboard = ({ ticketAnalyticsData, filteredTickets }: any) => {
           <CardHeader className="flex flex-col gap-1 pb-1">
             <CardTitle className="font-semibold text-base">Incident Trends</CardTitle>
             <div className="flex flex-wrap gap-2">
-              <Badge className="bg-orange-600 text-white text-xs px-2 py-0.5 rounded-md font-semibold">
+              <Badge className="bg-orange-600 text-white text-xs px-1.5 py-0.5 rounded-md font-semibold">
                 Total: {incidentStats.total.toLocaleString()}
               </Badge>
-              <Badge className="bg-green-600 text-white text-xs px-2 py-0.5 rounded-md font-semibold">
+              <Badge className="bg-green-600 text-white text-xs px-1.5 py-0.5 rounded-md font-semibold">
                 Avg Rate: {incidentTrendsData.length > 0 ? 
                   (incidentTrendsData.reduce((sum, item) => sum + item.resolutionRate, 0) / incidentTrendsData.length).toFixed(1) : 0}%
               </Badge>
@@ -668,7 +668,7 @@ const SummaryDashboard = ({ ticketAnalyticsData, filteredTickets }: any) => {
           <CardHeader className="flex flex-col gap-1 pb-1">
             <CardTitle className="font-semibold text-base">Tickets per Year</CardTitle>
             {latestYearlyValue !== null && (
-              <Badge className="bg-blue-600 text-white text-xs px-2 py-0.5 rounded-md w-fit font-semibold">Latest: {latestYearlyValue}</Badge>
+              <Badge className="bg-blue-600 text-white text-xs px-1.5 py-0.5 rounded-md w-fit font-semibold">Latest: {latestYearlyValue}</Badge>
             )}
           </CardHeader>
           <CardContent className="p-6">
@@ -726,7 +726,7 @@ const SummaryDashboard = ({ ticketAnalyticsData, filteredTickets }: any) => {
         <Card className="p-2">
           <CardHeader className="flex flex-col gap-1 pb-1">
             <CardTitle className="font-semibold text-base">NCAL Performance</CardTitle>
-            <Badge className="bg-purple-600 text-white text-xs px-2 py-0.5 rounded-md w-fit font-semibold">
+            <Badge className="bg-purple-600 text-white text-xs px-1.5 py-0.5 rounded-md w-fit font-semibold">
               Compliance: {incidentStats.ncalCompliance.toFixed(1)}%
             </Badge>
           </CardHeader>
