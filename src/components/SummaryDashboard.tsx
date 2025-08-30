@@ -775,13 +775,13 @@ const SummaryDashboard = ({ ticketAnalyticsData, filteredTickets }: any) => {
                       {getAgentInitials(row.agent)}
                     </AvatarFallback>
                   </Avatar>
-                  <div className="flex-1">
-                    <h3 className={`font-bold text-sm truncate ${
+                  <div className="flex-1 min-w-0">
+                    <h3 className={`font-bold text-xs leading-tight break-words line-clamp-2 ${
                       i < 3 ? 'text-white' : 'text-gray-900 dark:text-gray-100'
                     }`}>
                       {row.agent}
                     </h3>
-                    <p className={`text-xs opacity-80 ${
+                    <p className={`text-xs opacity-80 leading-tight mt-1 ${
                       i < 3 ? 'text-white/80' : 'text-gray-500 dark:text-gray-400'
                     }`}>
                       {row.tickets} tickets • {row.slaPct.toFixed(1)}% SLA
@@ -790,56 +790,56 @@ const SummaryDashboard = ({ ticketAnalyticsData, filteredTickets }: any) => {
                 </div>
 
                 {/* Performance Metrics */}
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-2 gap-1">
                   <div className="text-center">
-                    <div className={`text-lg font-bold ${
+                    <div className={`text-sm font-bold leading-tight ${
                       i < 3 ? 'text-white' : 'text-gray-900 dark:text-gray-100'
                     }`}>
                       {row.tickets.toLocaleString()}
                     </div>
-                    <div className={`text-xs opacity-80 ${
+                    <div className={`text-xs opacity-80 leading-tight ${
                       i < 3 ? 'text-white/80' : 'text-gray-500 dark:text-gray-400'
                     }`}>
                       Tickets
                     </div>
                   </div>
                   <div className="text-center">
-                    <div className={`text-lg font-bold ${
+                    <div className={`text-sm font-bold leading-tight ${
                       i < 3 
                         ? 'text-white' 
                         : row.slaPct >= 85 ? 'text-green-600' : row.slaPct >= 70 ? 'text-amber-600' : 'text-red-600'
                     }`}>
                       {row.slaPct.toFixed(1)}%
                     </div>
-                    <div className={`text-xs opacity-80 ${
+                    <div className={`text-xs opacity-80 leading-tight ${
                       i < 3 ? 'text-white/80' : 'text-gray-500 dark:text-gray-400'
                     }`}>
                       SLA
                     </div>
                   </div>
                   <div className="text-center">
-                    <div className={`text-sm font-bold ${
+                    <div className={`text-xs font-bold leading-tight ${
                       i < 3 
                         ? 'text-white' 
                         : row.frtAvg <= 60 ? 'text-green-600' : row.frtAvg <= 120 ? 'text-amber-600' : 'text-red-600'
                     }`}>
                       {formatDurationDHM(row.frtAvg / 60)}
                     </div>
-                    <div className={`text-xs opacity-80 ${
+                    <div className={`text-xs opacity-80 leading-tight ${
                       i < 3 ? 'text-white/80' : 'text-gray-500 dark:text-gray-400'
                     }`}>
                       FRT
                     </div>
                   </div>
                   <div className="text-center">
-                    <div className={`text-sm font-bold ${
+                    <div className={`text-xs font-bold leading-tight ${
                       i < 3 
                         ? 'text-white' 
                         : row.artAvg <= 1440 ? 'text-green-600' : row.artAvg <= 2880 ? 'text-amber-600' : 'text-red-600'
                     }`}>
                       {formatDurationDHM(row.artAvg / 60)}
                     </div>
-                    <div className={`text-xs opacity-80 ${
+                    <div className={`text-xs opacity-80 leading-tight ${
                       i < 3 ? 'text-white/80' : 'text-gray-500 dark:text-gray-400'
                     }`}>
                       ART
@@ -848,23 +848,23 @@ const SummaryDashboard = ({ ticketAnalyticsData, filteredTickets }: any) => {
                 </div>
 
                 {/* Score & Grade */}
-                <div className="mt-3 flex items-center justify-between">
+                <div className="mt-2 flex items-center justify-between">
                   <div className="text-center">
-                    <div className={`text-lg font-bold ${
+                    <div className={`text-sm font-bold leading-tight ${
                       i < 3 
                         ? 'text-white' 
                         : row.score >= 80 ? 'text-green-600' : row.score >= 60 ? 'text-amber-600' : 'text-red-600'
                     }`}>
                       {row.score.toFixed(1)}
                     </div>
-                    <div className={`text-xs opacity-80 ${
+                    <div className={`text-xs opacity-80 leading-tight ${
                       i < 3 ? 'text-white/80' : 'text-gray-500 dark:text-gray-400'
                     }`}>
                       Score
                     </div>
                   </div>
                   <div className="text-center">
-                    <span className={`inline-flex items-center justify-center w-10 h-10 rounded-full text-sm font-bold ${
+                    <span className={`inline-flex items-center justify-center w-8 h-8 rounded-full text-xs font-bold ${
                       row.grade === 'A' 
                         ? 'bg-green-600 text-white' 
                         : row.grade === 'B' 
@@ -875,7 +875,7 @@ const SummaryDashboard = ({ ticketAnalyticsData, filteredTickets }: any) => {
                     }`}>
                       {row.grade}
                     </span>
-                    <div className={`text-xs opacity-80 mt-1 ${
+                    <div className={`text-xs opacity-80 mt-1 leading-tight ${
                       i < 3 ? 'text-white/80' : 'text-gray-500 dark:text-gray-400'
                     }`}>
                       Grade
@@ -884,12 +884,12 @@ const SummaryDashboard = ({ ticketAnalyticsData, filteredTickets }: any) => {
                 </div>
 
                 {/* Performance Bar */}
-                <div className="mt-3">
-                  <div className={`w-full bg-opacity-20 rounded-full h-1.5 ${
+                <div className="mt-2">
+                  <div className={`w-full bg-opacity-20 rounded-full h-1 ${
                     i < 3 ? 'bg-white/30' : 'bg-gray-200 dark:bg-gray-600'
                   }`}>
                     <div 
-                      className={`h-1.5 rounded-full transition-all duration-500 ${
+                      className={`h-1 rounded-full transition-all duration-500 ${
                         i < 3 
                           ? 'bg-white/80' 
                           : row.score >= 80 ? 'bg-green-600' : row.score >= 60 ? 'bg-amber-600' : 'bg-red-600'
