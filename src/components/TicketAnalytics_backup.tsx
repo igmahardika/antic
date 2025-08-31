@@ -650,7 +650,7 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
   }
 
   const pdfPageStyle = { padding: 24, fontFamily: 'Helvetica' };
-  const pdfSectionTitle = { fontSize: 11, fontWeight: 700, marginBottom: 6, marginTop: 12, fontFamily: 'Helvetica' };
+  const pdfSectionTitle = { fontSize: 13, fontWeight: 700, marginBottom: 6, marginTop: 12, fontFamily: 'Helvetica' };
   const pdfTableCellStyle = { fontSize: 10, padding: 6, fontFamily: 'Helvetica' };
   const pdfTableHeaderStyleColor = { fontWeight: 700, fontSize: 11, backgroundColor: '#38bdf8', color: '#fff', padding: 6, borderBottom: '1px solid #38bdf8', fontFamily: 'Helvetica' };
   const pdfTableRowEvenColor = { backgroundColor: '#e0f2fe' };
@@ -1518,14 +1518,14 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
                     axisLine={false} 
                     tickMargin={12} 
                     minTickGap={24} 
-                    tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11, fontWeight: 500 }} 
+                    tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 13, fontWeight: 500 }} 
                   />
                   <YAxis 
                     tickLine={false} 
                     axisLine={false} 
                     tickMargin={12} 
                     minTickGap={24} 
-                    tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11, fontWeight: 500 }} 
+                    tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 13, fontWeight: 500 }} 
                   />
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" opacity={0.3} />
                   <RechartsTooltip content={<TicketAnalyticsTooltip />} />
@@ -1600,7 +1600,7 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
                         axisLine={false} 
                         tickMargin={12} 
                         minTickGap={24} 
-                        tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11, fontWeight: 500 }} 
+                        tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 13, fontWeight: 500 }} 
                       />
                       <YAxis 
                         tickLine={false} 
@@ -1608,7 +1608,7 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
                         tickMargin={12} 
                         minTickGap={24} 
                         allowDecimals={false} 
-                        tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11, fontWeight: 500 }} 
+                        tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 13, fontWeight: 500 }} 
                       />
                       <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" opacity={0.3} />
                       <RechartsTooltip content={<TicketAnalyticsTooltip />} />
@@ -1706,7 +1706,7 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
                   axisLine={false} 
                   tickMargin={12} 
                   minTickGap={24} 
-                  tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11, fontWeight: 500 }} 
+                  tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 13, fontWeight: 500 }} 
                 />
                 <YAxis 
                   tickLine={false} 
@@ -1714,7 +1714,7 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
                   tickMargin={12} 
                   minTickGap={24} 
                   allowDecimals={false} 
-                  tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11, fontWeight: 500 }} 
+                  tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 13, fontWeight: 500 }} 
                 />
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" opacity={0.3} />
                 <RechartsTooltip content={<TicketAnalyticsTooltip />} />
@@ -1810,9 +1810,9 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
                     </linearGradient>
                   ))}
                 </defs>
-                <XAxis dataKey="month" tickLine={false} axisLine={false} tickMargin={12} minTickGap={24} tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11, fontWeight: 500 }} />
-                <YAxis tickLine={false} axisLine={false} tickMargin={12} minTickGap={24} allowDecimals={false} tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11, fontWeight: 500 }} />
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" opacity={0.3} />
+                <XAxis dataKey="month" tickLine={false} axisLine={false} tickMargin={8} minTickGap={24} />
+                <YAxis tickLine={false} axisLine={false} tickMargin={8} minTickGap={24} allowDecimals={false} />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} />
                 <RechartsTooltip content={<TicketAnalyticsTooltip />} />
                 <RechartsLegend 
                   wrapperStyle={{ fontSize: '11px', fontWeight: '500' }}
@@ -1932,9 +1932,9 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
                     <stop offset="95%" stopColor="#f59e42" stopOpacity={0.05}/>
                   </linearGradient>
                 </defs>
-                <XAxis dataKey="month" tickLine={false} axisLine={false} tickMargin={12} minTickGap={24} tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11, fontWeight: 500 }} />
-                <YAxis tickLine={false} axisLine={false} tickMargin={12} minTickGap={24} allowDecimals={false} tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11, fontWeight: 500 }} />
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" opacity={0.3} />
+                <XAxis dataKey="month" tickLine={false} axisLine={false} tickMargin={8} minTickGap={24} />
+                <YAxis tickLine={false} axisLine={false} tickMargin={8} minTickGap={24} allowDecimals={false} />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} />
                 <RechartsTooltip content={<TicketAnalyticsTooltip />} />
                 <RechartsLegend 
                   wrapperStyle={{ fontSize: '11px', fontWeight: '500' }}
@@ -2008,10 +2008,10 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
         {/* 6. Unique Complaining Clients by Category (2025) */}
         <Card className="bg-card text-card-foreground rounded-2xl shadow-lg">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
+            <CardTitle className="flex items-center gap-2">
               <ShowChartIcon className="w-5 h-5 text-orange-600" /> Unique Complaining Clients by Category (2025)
             </CardTitle>
-            <CardDescription className="text-xs">Number of unique clients with complaints by category</CardDescription>
+            <CardDescription>Number of unique clients with complaints by category</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="w-full h-[300px] min-w-0">
@@ -2051,7 +2051,7 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
                     axisLine={false} 
                     tickMargin={12} 
                     minTickGap={24} 
-                    tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11, fontWeight: 500 }} 
+                    tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 13, fontWeight: 500 }} 
                   />
                   <YAxis 
                     tickLine={false} 
@@ -2059,7 +2059,7 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
                     tickMargin={12} 
                     minTickGap={24} 
                     allowDecimals={false} 
-                    tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11, fontWeight: 500 }} 
+                    tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 13, fontWeight: 500 }} 
                   />
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" opacity={0.3} />
                   <RechartsTooltip content={<TicketAnalyticsTooltip />} />
@@ -2191,7 +2191,7 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
                     axisLine={false} 
                     tickMargin={12} 
                     minTickGap={24} 
-                    tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11, fontWeight: 500 }} 
+                    tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 13, fontWeight: 500 }} 
                   />
                   <YAxis 
                     tickLine={false} 
@@ -2199,7 +2199,7 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
                     tickMargin={12} 
                     minTickGap={24} 
                     allowDecimals={true} 
-                    tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11, fontWeight: 500 }} 
+                    tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 13, fontWeight: 500 }} 
                   />
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" opacity={0.3} />
                   <RechartsTooltip content={<TicketAnalyticsTooltip />} />
@@ -2292,9 +2292,9 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
                     </linearGradient>
                   ))}
                 </defs>
-                <XAxis dataKey="month" tickLine={false} axisLine={false} tickMargin={12} minTickGap={24} tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11, fontWeight: 500 }} />
-                <YAxis tickLine={false} axisLine={false} tickMargin={12} minTickGap={24} allowDecimals={true} tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11, fontWeight: 500 }} />
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" opacity={0.3} />
+                <XAxis dataKey="month" tickLine={false} axisLine={false} tickMargin={8} minTickGap={24} />
+                <YAxis tickLine={false} axisLine={false} tickMargin={8} minTickGap={24} allowDecimals={true} />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} />
                 <RechartsTooltip content={<TicketAnalyticsTooltip />} />
                 <RechartsLegend 
                   wrapperStyle={{ fontSize: '11px', fontWeight: '500' }}
@@ -2406,19 +2406,19 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
                     axisLine={false} 
                     tickMargin={12} 
                     minTickGap={24} 
-                    tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11, fontWeight: 500 }} 
+                    tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 13, fontWeight: 500 }} 
                   />
                   <YAxis 
                     tickLine={false} 
                     axisLine={false} 
                     tickMargin={12} 
                     minTickGap={24} 
-                    tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11, fontWeight: 500 }} 
+                    tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 13, fontWeight: 500 }} 
                   />
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" opacity={0.3} />
                   <RechartsTooltip content={<TicketAnalyticsTooltip />} />
                   <RechartsLegend 
-                    wrapperStyle={{ fontSize: '11px', fontWeight: '500' }}
+                    wrapperStyle={{ fontSize: '13px', fontWeight: '500' }}
                   />
                 <Area type="monotone" dataKey="Active Clients" stroke="#6366F1" fill="url(#colorActiveClients2025)" name="Active Clients" strokeWidth={1.5} />
                 <Area type="monotone" dataKey="Complaint Clients" stroke="#F43F5E" fill="url(#colorComplaintClients2025)" name="Complaint Clients" strokeWidth={1.5} />
@@ -2532,11 +2532,11 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
                     <stop offset="95%" stopColor="#6366F1" stopOpacity={0.05}/>
                   </linearGradient>
                 </defs>
-                <XAxis dataKey="month" tickLine={false} axisLine={false} tickMargin={12} minTickGap={24} tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11, fontWeight: 500 }} />
-                <YAxis tickLine={false} axisLine={false} tickMargin={12} minTickGap={24} allowDecimals={true} tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11, fontWeight: 500 }} />
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" opacity={0.3} />
+                <XAxis dataKey="month" tickLine={false} axisLine={false} tickMargin={8} minTickGap={24} />
+                <YAxis tickLine={false} axisLine={false} tickMargin={8} minTickGap={24} allowDecimals={true} />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} />
                 <RechartsTooltip content={<TicketAnalyticsTooltip />} />
-                <RechartsLegend wrapperStyle={{ fontSize: '11px', fontWeight: '500' }} />
+                <RechartsLegend />
                 <Area type="monotone" dataKey="Total Ratio" stroke="#6366F1" fill="url(#colorTotalRatio)" name="Total Ratio" strokeWidth={1.5} />
               </AreaChart>
                   </ResponsiveContainer>
@@ -2941,7 +2941,7 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
                         <stop offset="100%" stopColor="#fbbf24" stopOpacity={1} />
                     </linearGradient>
                   </defs>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" opacity={0.3} />
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
                     <XAxis dataKey="shift" axisLine={false} tickLine={false} />
                     <YAxis axisLine={false} tickLine={false} />
                     <ChartTooltip 
@@ -3053,7 +3053,7 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
                         <stop offset="100%" stopColor="#f472b6" stopOpacity={1} />
                     </linearGradient>
                   </defs>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" opacity={0.3} />
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
                     <XAxis dataKey="category" axisLine={false} tickLine={false} />
                     <YAxis axisLine={false} tickLine={false} />
                     <ChartTooltip 
