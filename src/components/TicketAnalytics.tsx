@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { useTicketAnalytics } from './TicketAnalyticsContext';
 import SummaryCard from './ui/SummaryCard';
@@ -167,6 +167,68 @@ function formatDurationHMS(hours: number): string {
   const pad = (num: number) => num.toString().padStart(2, '0');
   return `${pad(h)}:${pad(m)}:${pad(s)}`;
 }
+
+// Custom tooltip for Ticket Analytics (matching Monthly Duration Trends design)
+const TicketAnalyticsTooltip = ({ active, payload, label }: any) => {
+  if (!active || !payload || !payload.length) return null;
+  
+  // Helper function to detect card type and format value with appropriate unit
+  const formatValue = (value: any, dataKey: string) => {
+    if (typeof value !== 'number') return value;
+    
+    // Check if this is a percentage value (ratio cards)
+    // Look for ratio/penetration in dataKey or check if all values are <= 100
+    const isPercentageCard = dataKey.toLowerCase().includes('ratio') || 
+                            dataKey.toLowerCase().includes('penetration') ||
+                            payload.every((p: any) => typeof p.value === 'number' && p.value <= 100);
+    
+    if (isPercentageCard) {
+      return `${value.toFixed(2)}%`;
+    }
+    
+    // For count values (tickets, clients), use locale string
+    return value.toLocaleString();
+  };
+  
+  // Helper function to get appropriate unit label
+  const getUnitLabel = (dataKey: string) => {
+    const key = dataKey.toLowerCase();
+    if (key.includes('ratio') || key.includes('penetration')) return '';
+    if (key.includes('client')) return 'clients';
+    if (key.includes('ticket')) return 'tickets';
+    return '';
+  };
+  
+  return (
+    <div className="bg-card text-card-foreground rounded-xl shadow-lg p-4 min-w-[220px] text-xs">
+      <div className="font-semibold text-sm mb-3 text-card-foreground border-b border-border pb-2">
+        {label}
+      </div>
+      <div className="space-y-2">
+        {payload.map((entry: any, idx: number) => {
+          const unitLabel = getUnitLabel(entry.dataKey);
+          return (
+            <div key={idx} className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div 
+                  className="w-3 h-3 rounded-full" 
+                  style={{ backgroundColor: entry.color }}
+                />
+                <span className="font-medium text-card-foreground">
+                  {entry.dataKey}
+                </span>
+              </div>
+              <span className="font-mono font-bold text-card-foreground">
+                {formatValue(entry.value, entry.dataKey)}
+                {unitLabel && <span className="text-muted-foreground ml-1">{unitLabel}</span>}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
 
 
 
@@ -866,50 +928,59 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
 
   return (
     <PageWrapper>
-
-      <div className="flex justify-end mb-6">
-        <div className="scale-75 transform origin-right">
-          <TimeFilter
-            startMonth={startMonth}
-            setStartMonth={setStartMonth}
-            endMonth={endMonth}
-            setEndMonth={setEndMonth}
-            selectedYear={selectedYear}
-            setSelectedYear={setSelectedYear}
-            monthOptions={monthOptions}
-            allYearsInData={allYearsInData}
-            onRefresh={refresh}
-          />
+      {/* Header Section */}
+      <div className="mb-8">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-bold text-card-foreground mb-2">Ticket Analytics</h1>
+            <p className="text-gray-600 dark:text-gray-400 text-base">Comprehensive analysis of ticket performance and trends</p>
+          </div>
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+            {/* Time Filter */}
+            <div className="scale-90 transform origin-right">
+              <TimeFilter
+                startMonth={startMonth}
+                setStartMonth={setStartMonth}
+                endMonth={endMonth}
+                setEndMonth={setEndMonth}
+                selectedYear={selectedYear}
+                setSelectedYear={setSelectedYear}
+                monthOptions={monthOptions}
+                allYearsInData={allYearsInData}
+                onRefresh={refresh}
+              />
+            </div>
+            
+            {/* Normalize Toggle */}
+            <div className="flex items-center gap-2">
+              <label className="inline-flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={normalizePer1000}
+                  onChange={(e) => setNormalizePer1000(e.target.checked)}
+                  className="h-4 w-4 rounded border-gray-300 focus:ring-blue-500"
+                />
+                <span className="text-sm font-medium">Normalize per 1,000 clients</span>
+              </label>
+            </div>
+          </div>
         </div>
       </div>
-      
-      {/* ====================== NORMALIZE TOGGLE (NEW) ====================== */}
-      <div className="flex items-center justify-end mb-4">
-        <label className="inline-flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300 cursor-pointer select-none">
-          <input
-            type="checkbox"
-            checked={normalizePer1000}
-            onChange={(e) => setNormalizePer1000(e.target.checked)}
-            className="h-4 w-4 rounded"
-          />
-          Normalize per 1.000 active clients
-        </label>
-      </div>
-      {/* =================================================================== */}
+
       {/* Summary Cards - Top Row (4 cards) */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         {/* Total Tickets */}
         <SummaryCard
-          icon={<ConfirmationNumberIcon className="w-5 h-5 text-white" />}
+          icon={<ConfirmationNumberIcon className="w-6 h-6 text-white" />}
           title="Total Tickets"
           value={stats.find(s => s.title === 'Total Tickets')?.value || '0'}
           description={stats.find(s => s.title === 'Total Tickets')?.description || ''}
-          iconBg="bg-blue-700"
+          iconBg="bg-blue-600"
         />
         
         {/* Closed */}
         <SummaryCard
-          icon={<CheckCircleIcon className="w-5 h-5 text-white" />}
+          icon={<CheckCircleIcon className="w-6 h-6 text-white" />}
           title="Closed"
           value={stats.find(s => s.title === 'Closed')?.value || '0'}
           description={stats.find(s => s.title === 'Closed')?.description || ''}
@@ -918,7 +989,7 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
         
         {/* Open */}
         <SummaryCard
-          icon={<ErrorOutlineIcon className="w-5 h-5 text-white" />}
+          icon={<ErrorOutlineIcon className="w-6 h-6 text-white" />}
           title="Open"
           value={stats.find(s => s.title === 'Open')?.value || '0'}
           description={stats.find(s => s.title === 'Open')?.description || ''}
@@ -927,7 +998,7 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
         
         {/* SLA Attainment */}
         <SummaryCard
-          icon={<AccessTimeIcon className="w-5 h-5 text-white" />}
+          icon={<AccessTimeIcon className="w-6 h-6 text-white" />}
           title="SLA Attainment"
           value={`${advancedKpis.slaAttainment.toFixed(1)}%`}
           description="Closed ≤ SLA target (by severity) di periode terpilih"
@@ -936,10 +1007,10 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
       </div>
 
       {/* Summary Cards - Second Row (4 cards) */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         {/* Overdue */}
         <SummaryCard
-          icon={<AccessTimeIcon className="w-5 h-5 text-white" />}
+          icon={<AccessTimeIcon className="w-6 h-6 text-white" />}
           title="Overdue"
           value={stats.find(s => s.title === 'Overdue')?.value || '0'}
           description={stats.find(s => s.title === 'Overdue')?.description || ''}
@@ -948,29 +1019,29 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
         
         {/* Escalated */}
         <SummaryCard
-          icon={<WarningAmberIcon className="w-5 h-5 text-white" />}
+          icon={<WarningAmberIcon className="w-6 h-6 text-white" />}
           title="Escalated"
           value={stats.find(s => s.title === 'Escalated')?.value || '0'}
           description={stats.find(s => s.title === 'Escalated')?.description || ''}
-          iconBg="bg-yellow-400"
+          iconBg="bg-yellow-500"
         />
         
         {/* Close Rate (Periode) */}
         <SummaryCard
-          icon={<CheckCircleIcon className="w-5 h-5 text-white" />}
+          icon={<CheckCircleIcon className="w-6 h-6 text-white" />}
           title="Close Rate (Periode)"
           value={`${advancedKpis.closeRatePeriod.toFixed(1)}%`}
           description="Closed / total tiket yang DIBUKA di periode"
-                          iconBg="bg-green-600"
+          iconBg="bg-green-600"
         />
         
         {/* Resolution Rate (Lifetime) */}
         <SummaryCard
-          icon={<HowToRegIcon className="w-5 h-5 text-white" />}
+          icon={<HowToRegIcon className="w-6 h-6 text-white" />}
           title="Resolution Rate (Lifetime)"
           value={`${advancedKpis.resolutionRateLifetime.toFixed(1)}%`}
           description="Closed / total semua tiket (histori)"
-          iconBg="bg-slate-700"
+          iconBg="bg-slate-600"
         />
       </div>
 
@@ -1018,21 +1089,21 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
           return (
             <>
             <SummaryCard
-                icon={<ErrorOutlineIcon className="w-5 h-5 text-white" />}
+                icon={<ErrorOutlineIcon className="w-6 h-6 text-white" />}
                 title="Backlog (Open)"
                 value={openTickets.length.toLocaleString()}
                 description="Tiket open: no closeTime, future closeTime, atau >30 hari"
                 iconBg="bg-yellow-600"
               />
               <SummaryCard
-                icon={<AccessTimeIcon className="w-5 h-5 text-white" />}
+                icon={<AccessTimeIcon className="w-6 h-6 text-white" />}
                 title="Backlog Age P50"
                 value={formatDurationHMS(p50)}
                 description="Median umur backlog (jam)"
                 iconBg="bg-sky-600"
               />
               <SummaryCard
-                icon={<AccessTimeIcon className="w-5 h-5 text-white" />}
+                icon={<AccessTimeIcon className="w-6 h-6 text-white" />}
                 title="Backlog Age P90"
                 value={formatDurationHMS(p90)}
                 description="90% backlog lebih muda dari ini"
@@ -1046,22 +1117,22 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
       {/* Automated Insights - Professional & Informative Design */}
       {insights && (
         <div className="mb-6">
-          <div className="bg-card text-card-foreground rounded-2xl shadow-lg p-3 ">
-            <div className="flex items-center justify-between mb-2">
+          <div className="bg-card text-card-foreground rounded-xl shadow-sm p-6">
+            <div className="flex items-center justify-between mb-4">
               <div>
-                <h2 className="text-lg font-bold text-card-foreground">Automated Insights</h2>
-                <p className="text-xs text-muted-foreground">Analisis otomatis berdasarkan data tiket dan performa</p>
+                <h2 className="text-xl font-bold text-card-foreground">Automated Insights</h2>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Real-time analysis based on ticket data and performance metrics</p>
               </div>
-              <div className="flex items-center gap-1">
-                <div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div>
-                <span className="text-xs text-muted-foreground">Real-time</span>
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                <span className="text-sm text-gray-600 dark:text-gray-400 font-medium">Live</span>
               </div>
             </div>
             
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Key Metrics */}
-              <div className="space-y-2">
-                <h3 className="text-sm font-semibold text-card-foreground border-b border-gray-200 dark:border-zinc-700 pb-1">Key Metrics</h3>
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold text-card-foreground border-b border-gray-200 dark:border-zinc-700 pb-2">Key Metrics</h3>
                 
             {/* Bulan tersibuk */}
             {insights.busiestMonth && (
@@ -1260,8 +1331,8 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
         </div>
       )}
 
-      {/* Tombol Export PDF & CSV */}
-      <div className="flex gap-4 mb-6">
+      {/* Export Buttons */}
+      <div className="flex gap-4 mb-8">
         <PDFDownloadLink
           document={
             <Document>
@@ -1402,13 +1473,13 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
           fileName="ticket-analytics-report.pdf"
         >
           {({ loading }) => (
-            <button className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded shadow">
+            <button className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg shadow-sm transition-colors duration-200">
               {loading ? 'Preparing PDF...' : 'Export PDF'}
             </button>
           )}
         </PDFDownloadLink>
         <button
-          className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded shadow"
+          className="bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-6 rounded-lg shadow-sm transition-colors duration-200"
           onClick={handleExportCSV}
         >
           Export CSV
@@ -1418,15 +1489,18 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
       {/* --- Agent Ticket per Shift Chart (Area) --- */}
 
       {/* --- ANALYTICS CARDS GRID --- */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10 w-full">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-10 w-full">
         {/* 1. Tickets per Month */}
-        <Card>
+        <Card className="bg-card text-card-foreground rounded-2xl shadow-lg">
           <CardHeader>
-            <CardTitle>Tickets per Month</CardTitle>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <ShowChartIcon className="w-5 h-5 text-green-600" /> Tickets per Month
+            </CardTitle>
+            <CardDescription className="text-xs">Monthly ticket volume trends</CardDescription>
           </CardHeader>
           <CardContent className="pt-2 h-auto flex flex-col gap-4 min-w-0">
-            <div className="w-full h-[260px] min-w-0">
-              <ResponsiveContainer width="100%" height={260}>
+            <div className="w-full h-[300px] min-w-0">
+              <ResponsiveContainer width="100%" height={300}>
                 <AreaChart data={toRechartsData(monthlyStatsData.labels, monthlyStatsData.datasets)} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
                   <defs>
                     <linearGradient id="colorIncoming" x1="0" y1="0" x2="0" y2="1">
@@ -1438,43 +1512,55 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
                       <stop offset="95%" stopColor="#EC4899" stopOpacity={0.05}/>
                     </linearGradient>
                   </defs>
-                  <XAxis dataKey="label" tickLine={false} axisLine={false} tickMargin={8} minTickGap={24} tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }} />
-                  <YAxis tickLine={false} axisLine={false} tickMargin={8} minTickGap={24} tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }} />
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
-                  <RechartsTooltip contentStyle={{
-                    backgroundColor: 'hsl(var(--background))',
-                    border: '1px solid hsl(var(--border))',
-                    borderRadius: '8px',
-                    color: 'hsl(var(--foreground))'
-                  }} />
-                  <RechartsLegend />
+                  <XAxis 
+                    dataKey="label" 
+                    tickLine={false} 
+                    axisLine={false} 
+                    tickMargin={12} 
+                    minTickGap={24} 
+                    tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 13, fontWeight: 500 }} 
+                  />
+                  <YAxis 
+                    tickLine={false} 
+                    axisLine={false} 
+                    tickMargin={12} 
+                    minTickGap={24} 
+                    tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 13, fontWeight: 500 }} 
+                  />
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" opacity={0.3} />
+                  <RechartsTooltip content={<TicketAnalyticsTooltip />} />
+                  <RechartsLegend 
+                    wrapperStyle={{ fontSize: '13px', fontWeight: '500' }}
+                  />
                   {/* Area harus incoming dulu, lalu closed, dan dataKey case sensitive */}
                   <Area type="monotone" dataKey="incoming" stroke="#6366F1" fill="url(#colorIncoming)" name="Incoming" strokeWidth={1.5} />
                   <Area type="monotone" dataKey="closed" stroke="#EC4899" fill="url(#colorClosed)" name="Closed" strokeWidth={1.5} />
                 </AreaChart>
               </ResponsiveContainer>
             </div>
+            {/* Table */}
             <div className="overflow-x-auto w-full">
-              <table className="min-w-max w-full text-sm text-left mt-6 bg-card text-card-foreground rounded-xl overflow-hidden ">
-                <thead className="bg-card text-card-foreground">
-                  <tr>
-                    <th className="px-4 py-2">Tipe</th>
+              <h4 className="text-sm font-semibold text-card-foreground mb-3">Monthly Ticket Values</h4>
+              <table className="w-full text-xs border-collapse">
+                <thead>
+                  <tr className="border-b border-border">
+                    <th className="text-left p-2 font-medium text-muted-foreground">Type</th>
                     {monthlyStatsData.labels.map((month) => (
-                      <th key={month} className="px-4 py-2 font-bold font-mono text-center">{month}</th>
+                      <th key={month} className="text-center p-2 font-medium text-muted-foreground">{month}</th>
                     ))}
                   </tr>
                 </thead>
-                <tbody className="bg-card text-card-foreground">
-                  <tr>
-                    <td className="px-4 py-2 font-bold text-pink-600">Closed</td>
+                <tbody>
+                  <tr className="border-b border-border hover:bg-muted/50">
+                    <td className="p-2 font-medium text-card-foreground" style={{ color: '#EC4899' }}>Closed</td>
                     {monthlyStatsData.labels.map((month, idx) => (
-                      <td key={month} className="px-4 py-2 text-center font-mono">{monthlyStatsData.datasets[0]?.data[idx] ?? 0}</td>
+                      <td key={month} className="text-center p-2 text-card-foreground">{monthlyStatsData.datasets[0]?.data[idx] ?? 0}</td>
                     ))}
                   </tr>
-                  <tr>
-                    <td className="px-4 py-2 font-bold text-blue-600">Incoming</td>
+                  <tr className="border-b border-border hover:bg-muted/50">
+                    <td className="p-2 font-medium text-card-foreground" style={{ color: '#6366F1' }}>Incoming</td>
                     {monthlyStatsData.labels.map((month, idx) => (
-                      <td key={month} className="px-4 py-2 text-center font-mono">{monthlyStatsData.datasets[1]?.data[idx] ?? 0}</td>
+                      <td key={month} className="text-center p-2 text-card-foreground">{monthlyStatsData.datasets[1]?.data[idx] ?? 0}</td>
                     ))}
                   </tr>
                 </tbody>
@@ -1483,13 +1569,16 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
           </CardContent>
         </Card>
         {/* 2. Agent Tickets per Shift */}
-                <Card>
+        <Card className="bg-card text-card-foreground rounded-2xl shadow-lg">
           <CardHeader>
-            <CardTitle>Agent Tickets per Shift</CardTitle>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <ShowChartIcon className="w-5 h-5 text-blue-600" /> Agent Tickets per Shift
+            </CardTitle>
+            <CardDescription className="text-xs">Ticket distribution across different shifts</CardDescription>
           </CardHeader>
           <CardContent className="pt-2 h-auto flex flex-col gap-4 min-w-0">
-            <div className="w-full h-[260px] min-w-0">
-              <ResponsiveContainer width="100%" height={260}>
+            <div className="w-full h-[300px] min-w-0">
+              <ResponsiveContainer width="100%" height={300}>
             <AreaChart data={agentShiftAreaData} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
               <defs>
                         <linearGradient id="colorMalam" x1="0" y1="0" x2="0" y2="1">
@@ -1505,49 +1594,62 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
                   <stop offset="95%" stopColor="#3b82f6" stopOpacity={0.05}/>
                 </linearGradient>
               </defs>
-                      <XAxis dataKey="month" tickLine={false} axisLine={false} tickMargin={8} minTickGap={24} tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }} />
-                      <YAxis tickLine={false} axisLine={false} tickMargin={8} minTickGap={24} tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }} />
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
-                      <RechartsTooltip contentStyle={{
-                        backgroundColor: 'hsl(var(--background))',
-                        border: '1px solid hsl(var(--border))',
-                        borderRadius: '8px',
-                        color: 'hsl(var(--foreground))'
-                      }} />
-                      <RechartsLegend />
+                      <XAxis 
+                        dataKey="month" 
+                        tickLine={false} 
+                        axisLine={false} 
+                        tickMargin={12} 
+                        minTickGap={24} 
+                        tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 13, fontWeight: 500 }} 
+                      />
+                      <YAxis 
+                        tickLine={false} 
+                        axisLine={false} 
+                        tickMargin={12} 
+                        minTickGap={24} 
+                        allowDecimals={false} 
+                        tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 13, fontWeight: 500 }} 
+                      />
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" opacity={0.3} />
+                      <RechartsTooltip content={<TicketAnalyticsTooltip />} />
+                      <RechartsLegend 
+                        wrapperStyle={{ fontSize: '13px', fontWeight: '500' }}
+                      />
               <Area type="monotone" dataKey="Malam" stroke="#ef4444" fill="url(#colorMalam)" name="Malam (01:00–07:59)" strokeWidth={1.5} />
               <Area type="monotone" dataKey="Pagi" stroke="#22c55e" fill="url(#colorPagi)" name="Pagi (08:00–16:59)" strokeWidth={1.5} />
                               <Area type="monotone" dataKey="Sore" stroke="#3b82f6" fill="url(#colorSore)" name="Sore (00:00–00:59 & 17:00–23:59)" strokeWidth={1.5} />
             </AreaChart>
           </ResponsiveContainer>
                 </div>
+                {/* Table */}
                 <div className="overflow-x-auto w-full">
-                  <table className="min-w-max w-full text-sm text-left mt-6 bg-card text-card-foreground rounded-xl overflow-hidden ">
-                    <thead className="bg-card text-card-foreground">
-                      <tr>
-                        <th className="px-4 py-2">Shift</th>
+                  <h4 className="text-sm font-semibold text-card-foreground mb-3">Monthly Shift Values</h4>
+                  <table className="w-full text-xs border-collapse">
+                    <thead>
+                      <tr className="border-b border-border">
+                        <th className="text-left p-2 font-medium text-muted-foreground">Shift</th>
                         {agentShiftAreaData.map((row) => (
-                          <th key={row.month} className="px-4 py-2 font-bold font-mono text-center">{row.month}</th>
+                          <th key={row.month} className="text-center p-2 font-medium text-muted-foreground">{row.month}</th>
                         ))}
                       </tr>
                     </thead>
-                    <tbody className="bg-card text-card-foreground ">
-                      <tr>
-                        <td className="px-4 py-2 font-bold text-green-600">Pagi</td>
+                    <tbody>
+                      <tr className="border-b border-border hover:bg-muted/50">
+                        <td className="p-2 font-medium text-card-foreground" style={{ color: '#22c55e' }}>Pagi</td>
                         {agentShiftAreaData.map((row) => (
-                          <td key={row.month} className="px-4 py-2 text-center font-mono">{row.Pagi}</td>
+                          <td key={row.month} className="text-center p-2 text-card-foreground">{row.Pagi}</td>
                         ))}
                       </tr>
-                      <tr>
-                        <td className="px-4 py-2 font-bold text-blue-600">Sore</td>
+                      <tr className="border-b border-border hover:bg-muted/50">
+                        <td className="p-2 font-medium text-card-foreground" style={{ color: '#3b82f6' }}>Sore</td>
                         {agentShiftAreaData.map((row) => (
-                          <td key={row.month} className="px-4 py-2 text-center font-mono">{row.Sore}</td>
+                          <td key={row.month} className="text-center p-2 text-card-foreground">{row.Sore}</td>
                         ))}
                       </tr>
-                      <tr>
-                        <td className="px-4 py-2 font-bold text-red-600">Malam</td>
+                      <tr className="border-b border-border hover:bg-muted/50">
+                        <td className="p-2 font-medium text-card-foreground" style={{ color: '#ef4444' }}>Malam</td>
                         {agentShiftAreaData.map((row) => (
-                          <td key={row.month} className="px-4 py-2 text-center font-mono">{row.Malam}</td>
+                          <td key={row.month} className="text-center p-2 text-card-foreground">{row.Malam}</td>
                         ))}
                       </tr>
                     </tbody>
@@ -1556,12 +1658,15 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
         </CardContent>
       </Card>
         {/* 3. Tickets by Client Type (2025) */}
-                <Card>
+        <Card className="bg-card text-card-foreground rounded-2xl shadow-lg">
           <CardHeader>
-            <CardTitle>Tickets by Client Type (2025)</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <ShowChartIcon className="w-6 h-6 text-purple-600" /> Tickets by Client Type (2025)
+            </CardTitle>
+            <CardDescription>Ticket distribution by client categories</CardDescription>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={260}>
+            <ResponsiveContainer width="100%" height={300}>
               <AreaChart
                 data={(() => {
                   const months = Object.keys(tiketPerJenisKlienPerBulan).sort();
@@ -1595,11 +1700,27 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
                     <stop offset="95%" stopColor="#f59e42" stopOpacity={0.05}/>
                       </linearGradient>
                     </defs>
-                <XAxis dataKey="month" tickLine={false} axisLine={false} tickMargin={8} minTickGap={24} />
-                <YAxis tickLine={false} axisLine={false} tickMargin={8} minTickGap={24} allowDecimals={false} />
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                    <RechartsTooltip />
-                    <RechartsLegend />
+                <XAxis 
+                  dataKey="month" 
+                  tickLine={false} 
+                  axisLine={false} 
+                  tickMargin={12} 
+                  minTickGap={24} 
+                  tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 13, fontWeight: 500 }} 
+                />
+                <YAxis 
+                  tickLine={false} 
+                  axisLine={false} 
+                  tickMargin={12} 
+                  minTickGap={24} 
+                  allowDecimals={false} 
+                  tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 13, fontWeight: 500 }} 
+                />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" opacity={0.3} />
+                <RechartsTooltip content={<TicketAnalyticsTooltip />} />
+                <RechartsLegend 
+                  wrapperStyle={{ fontSize: '13px', fontWeight: '500' }}
+                />
                 <Area type="monotone" dataKey="Broadband" stroke="#3b82f6" fill="url(#colorBroadband)" name="Broadband" strokeWidth={1.5} />
                 <Area type="monotone" dataKey="Broadband Business" stroke="#22c55e" fill="url(#colorBroadbandBusiness)" name="Broadband Business" strokeWidth={1.5} />
                 <Area type="monotone" dataKey="Dedicated" stroke="#f59e42" fill="url(#colorDedicated)" name="Dedicated" strokeWidth={1.5} />
@@ -1607,19 +1728,20 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
                 </ResponsiveContainer>
             {/* Table */}
             <div className="overflow-x-auto w-full">
-            <table className="min-w-max w-full text-xs md:text-sm text-left mt-4 table-fixed break-words bg-card text-card-foreground  rounded-xl overflow-hidden">
-              <thead>
-                <tr>
-                  <th className="px-4 py-2">Client Type</th>
+              <h4 className="text-sm font-semibold text-card-foreground mb-3">Monthly Client Type Values</h4>
+              <table className="w-full text-xs border-collapse">
+                <thead>
+                  <tr className="border-b border-border">
+                    <th className="text-left p-2 font-medium text-muted-foreground">Client Type</th>
                     {Object.keys(tiketPerJenisKlienPerBulan).sort().map(month => (
-                      <th key={month} className="px-4 py-2">{month}</th>
+                      <th key={month} className="text-center p-2 font-medium text-muted-foreground">{month}</th>
                     ))}
                 </tr>
               </thead>
-              <tbody>
+                <tbody>
                 {jenisKlienList.map(jk => (
-                  <tr key={jk}>
-                    <td className="px-4 py-2 font-bold text-blue-700 dark:text-blue-300">{jk}</td>
+                    <tr key={jk} className="border-b border-border hover:bg-muted/50">
+                      <td className="p-2 font-medium text-card-foreground" style={{ color: jk === 'Broadband' ? '#3b82f6' : jk === 'Broadband Business' ? '#22c55e' : '#f59e42' }}>{jk}</td>
                     {Object.keys(tiketPerJenisKlienPerBulan).sort().map(month => {
                       const tickets = (tiketPerJenisKlienPerBulan[month]?.[jk] || 0);
                       const val = normalizePer1000
@@ -1628,14 +1750,14 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
                             return denom > 0 ? `${(tickets / denom * 1000).toFixed(2)}` : '0';
                           })()
                         : `${tickets}`;
-                      return <td key={month} className="px-4 py-2 text-center font-mono">{val}</td>;
+                        return <td key={month} className="text-center p-2 text-card-foreground">{val}</td>;
                     })}
                   </tr>
                 ))}
               </tbody>
               <tfoot>
-                <tr>
-                  <td className="px-4 py-2 font-bold">Total</td>
+                  <tr className="border-b border-border">
+                    <td className="p-2 font-bold text-card-foreground">Total</td>
                   {Object.keys(tiketPerJenisKlienPerBulan).sort().map(month => {
                     const obj = customerMonthRowCountByType.get(month) || {};
                     const totalTickets = jenisKlienList.reduce((s, jk) => s + (tiketPerJenisKlienPerBulan[month]?.[jk] || 0), 0);
@@ -1643,7 +1765,7 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
                     const totalVal = normalizePer1000
                       ? (totalActive > 0 ? (totalTickets / totalActive * 1000).toFixed(2) : '0')
                       : String(totalTickets);
-                    return <td key={month} className="px-4 py-2 text-center font-bold font-mono">{totalVal}</td>;
+                      return <td key={month} className="text-center p-2 font-bold text-card-foreground">{totalVal}</td>;
                   })}
                 </tr>
               </tfoot>
@@ -1651,13 +1773,16 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
             </div>
             </CardContent>
           </Card>
-        {/* 4. Tickets by Client Category (2025) */}
-                <Card>
+                {/* 4. Tickets by Client Category (2025) */}
+        <Card className="bg-card text-card-foreground rounded-2xl shadow-lg">
           <CardHeader>
-            <CardTitle>Tickets by Client Category (2025)</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <ShowChartIcon className="w-6 h-6 text-indigo-600" /> Tickets by Client Category (2025)
+            </CardTitle>
+            <CardDescription>Ticket distribution by client categories</CardDescription>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={260}>
+            <ResponsiveContainer width="100%" height={300}>
               <AreaChart
                 data={(() => {
                   const months = Object.keys(tiketPerKategoriPerBulan).sort();
@@ -1688,7 +1813,7 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
                 <XAxis dataKey="month" tickLine={false} axisLine={false} tickMargin={8} minTickGap={24} />
                 <YAxis tickLine={false} axisLine={false} tickMargin={8} minTickGap={24} allowDecimals={false} />
                 <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                <RechartsTooltip />
+                <RechartsTooltip content={<TicketAnalyticsTooltip />} />
                 <RechartsLegend />
                 {kategoriList.map((kat, idx) => (
                   <Area
@@ -1705,19 +1830,20 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
             </ResponsiveContainer>
             {/* Table */}
             <div className="overflow-x-auto w-full">
-            <table className="min-w-max w-full text-xs md:text-sm text-left mt-4 table-fixed break-words bg-card text-card-foreground  rounded-xl overflow-hidden">
+              <h4 className="text-sm font-semibold text-card-foreground mb-3">Monthly Client Category Values</h4>
+              <table className="w-full text-xs border-collapse">
               <thead>
-                <tr>
-                  <th className="px-4 py-2">Client Category</th>
+                  <tr className="border-b border-border">
+                    <th className="text-left p-2 font-medium text-muted-foreground">Client Category</th>
                   {Object.keys(tiketPerKategoriPerBulan).sort().map(month => (
-                    <th key={month} className="px-4 py-2">{month}</th>
+                      <th key={month} className="text-center p-2 font-medium text-muted-foreground">{month}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
-                {kategoriList.map(kat => (
-                  <tr key={kat}>
-                    <td className="px-4 py-2 font-bold text-blue-700 dark:text-blue-300">{kat}</td>
+                  {kategoriList.map((kat, idx) => (
+                    <tr key={kat} className="border-b border-border hover:bg-muted/50">
+                      <td className="p-2 font-medium text-card-foreground" style={{ color: AREA_COLORS[idx % AREA_COLORS.length] }}>{kat}</td>
                     {Object.keys(tiketPerKategoriPerBulan).sort().map(month => {
                       const tickets = (tiketPerKategoriPerBulan[month]?.[kat] || 0);
                       const val = normalizePer1000
@@ -1726,22 +1852,32 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
                             return denom > 0 ? `${(tickets / denom * 1000).toFixed(2)}` : '0';
                           })()
                         : `${tickets}`;
-                      return <td key={month} className="px-4 py-2 text-center font-mono">{val}</td>;
+                        return <td key={month} className="text-center p-2 text-card-foreground">{val}</td>;
                     })}
                   </tr>
                 ))}
               </tbody>
               <tfoot>
-                <tr>
-                  <td className="px-4 py-2 font-bold">Total</td>
+                  <tr className="border-b border-border">
+                    <td className="p-2 font-bold text-card-foreground">Total</td>
                   {Object.keys(tiketPerKategoriPerBulan).sort().map(month => {
-                    const obj = customerMonthRowCountByCategory.get(month) || {};
-                    const totalTickets = kategoriList.reduce((s, k) => s + (tiketPerKategoriPerBulan[month]?.[k] || 0), 0);
-                    const totalActive = kategoriList.reduce((s, k) => s + (obj[k] || 0), 0);
-                    const totalVal = normalizePer1000
-                      ? (totalActive > 0 ? (totalTickets / totalActive * 1000).toFixed(2) : '0')
-                      : String(totalTickets);
-                    return <td key={month} className="px-4 py-2 text-center font-bold font-mono">{totalVal}</td>;
+                      // Total unique clients across ALL categories this month (union, active, excluded classifications)
+                      const unionSet = new Set<string>(
+                        gridData2025
+                          .filter(t => {
+                            const d = new Date(t.openTime);
+                            const m = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+                            if (m !== month) return false;
+                            const name = (t.name || '').trim().toLowerCase();
+                            if (!name) return false;
+                            const cls = (t.classification || '').toString().trim().toLowerCase();
+                            if (cls === 'di luar layanan' || cls === 'gangguan diluar layanan' || cls === 'request') return false;
+                            const activeMonths = customerMonthMap.get(name) || [];
+                            return activeMonths.includes(month);
+                          })
+                          .map(t => (t.name || '').trim().toLowerCase())
+                      );
+                      return <td key={month} className="text-center p-2 font-bold text-card-foreground">{unionSet.size}</td>;
                   })}
                 </tr>
               </tfoot>
@@ -1749,13 +1885,16 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
             </div>
           </CardContent>
         </Card>
-        {/* 5. Unique Complaining Clients by Type (2025) */}
-                <Card>
+                {/* 5. Unique Complaining Clients by Type (2025) */}
+        <Card className="bg-card text-card-foreground rounded-2xl shadow-lg">
           <CardHeader>
-            <CardTitle>Unique Complaining Clients by Type (2025)</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <ShowChartIcon className="w-6 h-6 text-teal-600" /> Unique Complaining Clients by Type (2025)
+            </CardTitle>
+            <CardDescription>Number of unique clients with complaints by type</CardDescription>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={260}>
+            <ResponsiveContainer width="100%" height={300}>
               <AreaChart
                 data={(() => {
                   const months = Object.keys(tiketPerJenisKlienPerBulan).sort();
@@ -1794,7 +1933,7 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
                 <XAxis dataKey="month" tickLine={false} axisLine={false} tickMargin={8} minTickGap={24} />
                 <YAxis tickLine={false} axisLine={false} tickMargin={8} minTickGap={24} allowDecimals={false} />
                 <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                <RechartsTooltip />
+                <RechartsTooltip content={<TicketAnalyticsTooltip />} />
                 <RechartsLegend />
                 <Area type="monotone" dataKey="Broadband" stroke="#3b82f6" fill="url(#colorBroadbandU)" name="Broadband" strokeWidth={1.5} />
                 <Area type="monotone" dataKey="Broadband Business" stroke="#22c55e" fill="url(#colorBroadbandBusinessU)" name="Broadband Business" strokeWidth={1.5} />
@@ -1803,19 +1942,20 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
             </ResponsiveContainer>
             {/* Table */}
             <div className="overflow-x-auto w-full">
-            <table className="min-w-max w-full text-xs md:text-sm text-left mt-4 table-fixed break-words bg-card text-card-foreground  rounded-xl overflow-hidden">
+              <h4 className="text-sm font-semibold text-card-foreground mb-3">Monthly Unique Client Type Values</h4>
+              <table className="w-full text-xs border-collapse">
               <thead>
-                <tr>
-                  <th className="px-4 py-2">Client Type</th>
+                  <tr className="border-b border-border">
+                    <th className="text-left p-2 font-medium text-muted-foreground">Client Type</th>
                   {Object.keys(tiketPerJenisKlienPerBulan).sort().map(month => (
-                    <th key={month} className="px-4 py-2">{month}</th>
+                      <th key={month} className="text-center p-2 font-medium text-muted-foreground">{month}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {jenisKlienList.map(jk => (
-                  <tr key={jk}>
-                    <td className="px-4 py-2 font-bold text-blue-700 dark:text-blue-300">{jk}</td>
+                    <tr key={jk} className="border-b border-border hover:bg-muted/50">
+                      <td className="p-2 font-medium text-card-foreground" style={{ color: jk === 'Broadband' ? '#3b82f6' : jk === 'Broadband Business' ? '#22c55e' : '#f59e42' }}>{jk}</td>
                     {Object.keys(tiketPerJenisKlienPerBulan).sort().map(month => {
                       const uniqueClients = Array.from(new Set(gridData2025.filter(t => {
                         const d = new Date(t.openTime);
@@ -1827,15 +1967,15 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
                         return m === month && jenis === jk && name && activeMonths.includes(month) && cls !== 'di luar layanan' && cls !== 'gangguan diluar layanan' && cls !== 'request';
                       }).map(t => (t.name || '').trim().toLowerCase()))).length;
                               return (
-                        <td key={month} className="px-4 py-2 text-center font-mono">{uniqueClients}</td>
+                          <td key={month} className="text-center p-2 text-card-foreground">{uniqueClients}</td>
                       );
                     })}
                   </tr>
                 ))}
               </tbody>
               <tfoot>
-                <tr>
-                  <td className="px-4 py-2 font-bold">Total</td>
+                  <tr className="border-b border-border">
+                    <td className="p-2 font-bold text-card-foreground">Total</td>
                   {Object.keys(tiketPerJenisKlienPerBulan).sort().map(month => {
                     // Total unique clients across ALL types this month (union, active, excluded classifications)
                     const unionSet = new Set<string>(
@@ -1853,7 +1993,7 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
                         })
                         .map(t => (t.name || '').trim().toLowerCase())
                     );
-                    return <td key={month} className="px-4 py-2 text-center font-bold font-mono">{unionSet.size}</td>;
+                      return <td key={month} className="text-center p-2 font-bold text-card-foreground">{unionSet.size}</td>;
                   })}
                 </tr>
               </tfoot>
@@ -1862,12 +2002,16 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
           </CardContent>
         </Card>
         {/* 6. Unique Complaining Clients by Category (2025) */}
-        <Card>
+        <Card className="bg-card text-card-foreground rounded-2xl shadow-lg">
           <CardHeader>
-            <CardTitle>Unique Complaining Clients by Category (2025)</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <ShowChartIcon className="w-6 h-6 text-orange-600" /> Unique Complaining Clients by Category (2025)
+            </CardTitle>
+            <CardDescription>Number of unique clients with complaints by category</CardDescription>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={260}>
+            <div className="w-full h-[300px] min-w-0">
+              <ResponsiveContainer width="100%" height={300}>
               <AreaChart
                 data={(() => {
                   const months = Object.keys(tiketPerKategoriPerBulan).sort();
@@ -1897,11 +2041,27 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
                     </linearGradient>
                   ))}
                 </defs>
-                <XAxis dataKey="month" tickLine={false} axisLine={false} tickMargin={8} minTickGap={24} />
-                <YAxis tickLine={false} axisLine={false} tickMargin={8} minTickGap={24} allowDecimals={false} />
-                <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                <RechartsTooltip />
-                <RechartsLegend />
+                  <XAxis 
+                    dataKey="month" 
+                    tickLine={false} 
+                    axisLine={false} 
+                    tickMargin={12} 
+                    minTickGap={24} 
+                    tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 13, fontWeight: 500 }} 
+                  />
+                  <YAxis 
+                    tickLine={false} 
+                    axisLine={false} 
+                    tickMargin={12} 
+                    minTickGap={24} 
+                    allowDecimals={false} 
+                    tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 13, fontWeight: 500 }} 
+                  />
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" opacity={0.3} />
+                  <RechartsTooltip content={<TicketAnalyticsTooltip />} />
+                  <RechartsLegend 
+                    wrapperStyle={{ fontSize: '13px', fontWeight: '500' }}
+                  />
                 {kategoriList.map((kat, idx) => (
                   <Area
                     key={kat}
@@ -1915,21 +2075,23 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
                 ))}
               </AreaChart>
             </ResponsiveContainer>
+            </div>
             {/* Table */}
             <div className="overflow-x-auto w-full">
-            <table className="min-w-max w-full text-xs md:text-sm text-left mt-4 table-fixed break-words bg-card text-card-foreground  rounded-xl overflow-hidden">
+              <h4 className="text-sm font-semibold text-card-foreground mb-3">Unique Clients by Category (2025)</h4>
+              <table className="w-full text-xs border-collapse">
               <thead>
-                <tr>
-                  <th className="px-4 py-2">Client Category</th>
+                  <tr className="border-b border-border">
+                    <th className="text-left p-2 font-medium text-muted-foreground">Category</th>
                   {Object.keys(tiketPerKategoriPerBulan).sort().map(month => (
-                    <th key={month} className="px-4 py-2">{month}</th>
+                      <th key={month} className="text-center p-2 font-medium text-muted-foreground">{month}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {kategoriList.map(kat => (
-                  <tr key={kat}>
-                    <td className="px-4 py-2 font-bold text-blue-700 dark:text-blue-300">{kat}</td>
+                    <tr key={kat} className="border-b border-border hover:bg-muted/50">
+                      <td className="p-2 font-medium text-card-foreground">{kat}</td>
                     {Object.keys(tiketPerKategoriPerBulan).sort().map(month => {
                       const uniqueClients = Array.from(new Set(gridData2025.filter(t => {
                         const d = new Date(t.openTime);
@@ -1938,15 +2100,15 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
                         return m === month && kategori === kat;
                       }).map(t => (t.name || '').trim().toLowerCase()))).length;
                       return (
-                        <td key={month} className="px-4 py-2 text-center font-mono">{uniqueClients}</td>
+                          <td key={month} className="text-center p-2 text-card-foreground">{uniqueClients}</td>
                       );
                     })}
                   </tr>
                 ))}
               </tbody>
               <tfoot>
-                <tr>
-                  <td className="px-4 py-2 font-bold">Total</td>
+                  <tr className="border-b border-border hover:bg-muted/50">
+                    <td className="p-2 font-bold text-card-foreground">Total</td>
                   {Object.keys(tiketPerKategoriPerBulan).sort().map(month => {
                     // Total unique clients across ALL categories this month (union, active, excluded classifications)
                     const unionSet = new Set<string>(
@@ -1964,7 +2126,7 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
                         })
                         .map(t => (t.name || '').trim().toLowerCase())
                     );
-                    return <td key={month} className="px-4 py-2 text-center font-bold font-mono">{unionSet.size}</td>;
+                      return <td key={month} className="text-center p-2 font-bold text-card-foreground">{unionSet.size}</td>;
                   })}
                 </tr>
               </tfoot>
@@ -1973,12 +2135,16 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
           </CardContent>
         </Card>
         {/* 7. Complaint Penetration Ratio by Type (2025) */}
-        <Card>
+        <Card className="bg-card text-card-foreground rounded-2xl shadow-lg">
           <CardHeader>
-            <CardTitle>Complaint Penetration Ratio by Type (2025)</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <ShowChartIcon className="w-6 h-6 text-red-600" /> Complaint Penetration Ratio by Type (2025)
+            </CardTitle>
+            <CardDescription>Percentage of clients with complaints by client type</CardDescription>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={260}>
+            <div className="w-full h-[300px] min-w-0">
+              <ResponsiveContainer width="100%" height={300}>
               <AreaChart
                 data={(() => {
                   const months = Object.keys(tiketPerJenisKlienPerBulan).sort();
@@ -2015,31 +2181,49 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
                     <stop offset="95%" stopColor="#f59e42" stopOpacity={0.05}/>
                   </linearGradient>
                 </defs>
-                <XAxis dataKey="month" tickLine={false} axisLine={false} tickMargin={8} minTickGap={24} />
-                <YAxis tickLine={false} axisLine={false} tickMargin={8} minTickGap={24} allowDecimals={true} />
-                <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                <RechartsTooltip formatter={v => (typeof v === 'number' ? `${v.toFixed(2)}%` : v)} />
-                <RechartsLegend />
+                  <XAxis 
+                    dataKey="month" 
+                    tickLine={false} 
+                    axisLine={false} 
+                    tickMargin={12} 
+                    minTickGap={24} 
+                    tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 13, fontWeight: 500 }} 
+                  />
+                  <YAxis 
+                    tickLine={false} 
+                    axisLine={false} 
+                    tickMargin={12} 
+                    minTickGap={24} 
+                    allowDecimals={true} 
+                    tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 13, fontWeight: 500 }} 
+                  />
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" opacity={0.3} />
+                  <RechartsTooltip content={<TicketAnalyticsTooltip />} />
+                  <RechartsLegend 
+                    wrapperStyle={{ fontSize: '13px', fontWeight: '500' }}
+                  />
                 <Area type="monotone" dataKey="Broadband" stroke="#3b82f6" fill="url(#colorBroadbandP)" name="Broadband" strokeWidth={1.5} />
                 <Area type="monotone" dataKey="Broadband Business" stroke="#22c55e" fill="url(#colorBroadbandBusinessP)" name="Broadband Business" strokeWidth={1.5} />
                 <Area type="monotone" dataKey="Dedicated" stroke="#f59e42" fill="url(#colorDedicatedP)" name="Dedicated" strokeWidth={1.5} />
               </AreaChart>
             </ResponsiveContainer>
+            </div>
             {/* Table */}
             <div className="overflow-x-auto w-full">
-            <table className="min-w-max w-full text-xs md:text-sm text-left mt-4 table-fixed break-words bg-card text-card-foreground  rounded-xl overflow-hidden">
+              <h4 className="text-sm font-semibold text-card-foreground mb-3">Penetration Ratio by Type (2025)</h4>
+              <table className="w-full text-xs border-collapse">
               <thead>
-                <tr>
-                  <th className="px-4 py-2">Client Type</th>
+                  <tr className="border-b border-border">
+                    <th className="text-left p-2 font-medium text-muted-foreground">Type</th>
                   {Object.keys(tiketPerJenisKlienPerBulan).sort().map(month => (
-                    <th key={month} className="px-4 py-2">{month}</th>
+                      <th key={month} className="text-center p-2 font-medium text-muted-foreground">{month}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {jenisKlienList.map(jk => (
-                  <tr key={jk}>
-                    <td className="px-4 py-2 font-bold text-blue-700 dark:text-blue-300">{jk}</td>
+                    <tr key={jk} className="border-b border-border hover:bg-muted/50">
+                      <td className="p-2 font-medium text-card-foreground">{jk}</td>
                     {Object.keys(tiketPerJenisKlienPerBulan).sort().map(month => {
                       const denom = Array.from(customerJenisKlienMap.entries())
                         .filter(([name, jenis2]) => jenis2 === jk && (customerMonthMap.get(name) || []).includes(month)).length;
@@ -2051,7 +2235,7 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
                         return m === month && jenis === jk && t.name && t.name.trim() && cls !== 'di luar layanan' && cls !== 'gangguan diluar layanan' && cls !== 'request';
                       }).map(t => (t.name || '').trim().toLowerCase()))).length;
                       const ratio = denom > 0 ? (numer / denom) * 100 : 0;
-                      return <td key={month} className="px-4 py-2 text-center font-mono">{ratio.toFixed(2)}%</td>;
+                        return <td key={month} className="text-center p-2 text-card-foreground">{ratio.toFixed(2)}%</td>;
                     })}
                   </tr>
                 ))}
@@ -2061,9 +2245,12 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
           </CardContent>
         </Card>
         {/* 8. Complaint Penetration Ratio by Category (2025) */}
-        <Card>
+        <Card className="bg-card text-card-foreground rounded-2xl shadow-lg">
           <CardHeader>
-            <CardTitle>Complaint Penetration Ratio by Category (2025)</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <ShowChartIcon className="w-6 h-6 text-pink-600" /> Complaint Penetration Ratio by Category (2025)
+            </CardTitle>
+            <CardDescription>Percentage of clients with complaints by client category</CardDescription>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={260}>
@@ -2077,8 +2264,11 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
                       const uniqueClients = Array.from(new Set(gridData2025.filter(t => {
                         const d = new Date(t.openTime);
                         const m = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-                        const kategori = customerKategoriMap.get((t.name || '').trim().toLowerCase()) || 'Unknown';
-                        return m === month && kategori === kat;
+                        const name = (t.name || '').trim().toLowerCase();
+                        const kategori = customerKategoriMap.get(name) || 'Unknown';
+                        const cls = (t.classification || '').toString().trim().toLowerCase();
+                        const activeMonths = customerMonthMap.get(name) || [];
+                        return m === month && kategori === kat && name && activeMonths.includes(month) && cls !== 'di luar layanan' && cls !== 'gangguan diluar layanan' && cls !== 'request';
                       }).map(t => (t.name || '').trim().toLowerCase()))).length;
                       // Denominator: total rows uploaded for that category this month
                       const obj = customerMonthRowCountByCategory.get(month) || {};
@@ -2101,7 +2291,7 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
                 <XAxis dataKey="month" tickLine={false} axisLine={false} tickMargin={8} minTickGap={24} />
                 <YAxis tickLine={false} axisLine={false} tickMargin={8} minTickGap={24} allowDecimals={true} />
                 <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                <RechartsTooltip formatter={v => (typeof v === 'number' ? `${v.toFixed(2)}%` : v)} />
+                <RechartsTooltip content={<TicketAnalyticsTooltip />} />
                 <RechartsLegend />
                 {kategoriList.map((kat, idx) => (
                   <Area
@@ -2118,19 +2308,20 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
                   </ResponsiveContainer>
             {/* Table */}
             <div className="overflow-x-auto w-full">
-            <table className="min-w-max w-full text-sm text-left mt-4 table-fixed break-words bg-card text-card-foreground  rounded-xl overflow-hidden">
+              <h4 className="text-sm font-semibold text-card-foreground mb-3">Penetration Ratio by Category (2025)</h4>
+              <table className="w-full text-xs border-collapse">
               <thead>
-                <tr>
-                  <th className="px-4 py-2">Client Category</th>
+                  <tr className="border-b border-border">
+                    <th className="text-left p-2 font-medium text-muted-foreground">Category</th>
                   {Object.keys(tiketPerKategoriPerBulan).sort().map(month => (
-                    <th key={month} className="px-4 py-2">{month}</th>
+                      <th key={month} className="text-center p-2 font-medium text-muted-foreground">{month}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {kategoriList.map(kat => (
-                  <tr key={kat}>
-                    <td className="px-4 py-2 font-bold text-blue-700 dark:text-blue-300">{kat}</td>
+                    <tr key={kat} className="border-b border-border hover:bg-muted/50">
+                      <td className="p-2 font-medium text-card-foreground">{kat}</td>
                     {Object.keys(tiketPerKategoriPerBulan).sort().map(month => {
                       // Klien unik yang komplain bulan ini (aktif + exclude klasifikasi)
                       const uniqueClients = Array.from(new Set(gridData2025.filter(t => {
@@ -2147,7 +2338,7 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
                       const totalClients = obj[kat] || 0;
                       const ratio = totalClients > 0 ? (uniqueClients / totalClients) * 100 : 0;
                       return (
-                        <td key={month} className="px-4 py-2 text-center font-mono">{ratio.toFixed(2)}%</td>
+                          <td key={month} className="text-center p-2 text-card-foreground">{ratio.toFixed(2)}%</td>
                       );
                     })}
                   </tr>
@@ -2158,12 +2349,16 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
           </CardContent>
         </Card>
         {/* Active Clients per Month (2025) */}
-        <Card>
+        <Card className="bg-card text-card-foreground rounded-2xl shadow-lg">
           <CardHeader>
-            <CardTitle>Active Clients per Month (2025)</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <ShowChartIcon className="w-6 h-6 text-cyan-600" /> Active Clients per Month (2025)
+            </CardTitle>
+            <CardDescription>Total active clients vs clients with complaints</CardDescription>
           </CardHeader>
           <CardContent className="overflow-x-auto">
-            <ResponsiveContainer width="100%" height={260}>
+            <div className="w-full h-[300px] min-w-0">
+              <ResponsiveContainer width="100%" height={300}>
               <AreaChart
                 data={(() => {
                   const months = Object.keys(tiketPerJenisKlienPerBulan).sort();
@@ -2199,37 +2394,54 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
                     <stop offset="95%" stopColor="#F43F5E" stopOpacity={0.05}/>
                   </linearGradient>
                 </defs>
-                <XAxis dataKey="month" tickLine={false} axisLine={false} tickMargin={8} minTickGap={24} />
-                <YAxis tickLine={false} axisLine={false} tickMargin={8} minTickGap={24} />
-                <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                <RechartsTooltip formatter={v => (typeof v === 'number' ? v.toLocaleString() : v)} />
-                <RechartsLegend />
+                  <XAxis 
+                    dataKey="month" 
+                    tickLine={false} 
+                    axisLine={false} 
+                    tickMargin={12} 
+                    minTickGap={24} 
+                    tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 13, fontWeight: 500 }} 
+                  />
+                  <YAxis 
+                    tickLine={false} 
+                    axisLine={false} 
+                    tickMargin={12} 
+                    minTickGap={24} 
+                    tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 13, fontWeight: 500 }} 
+                  />
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" opacity={0.3} />
+                  <RechartsTooltip content={<TicketAnalyticsTooltip />} />
+                  <RechartsLegend 
+                    wrapperStyle={{ fontSize: '13px', fontWeight: '500' }}
+                  />
                 <Area type="monotone" dataKey="Active Clients" stroke="#6366F1" fill="url(#colorActiveClients2025)" name="Active Clients" strokeWidth={1.5} />
                 <Area type="monotone" dataKey="Complaint Clients" stroke="#F43F5E" fill="url(#colorComplaintClients2025)" name="Complaint Clients" strokeWidth={1.5} />
               </AreaChart>
             </ResponsiveContainer>
-            <div className="max-w-full overflow-x-auto">
-            <table className="min-w-max w-full text-xs md:text-sm text-left table-fixed break-words">
+            </div>
+            <div className="overflow-x-auto w-full">
+              <h4 className="text-sm font-semibold text-card-foreground mb-3">Active vs Complaint Clients (2025)</h4>
+              <table className="w-full text-xs border-collapse">
               <thead>
-                <tr>
-                  <th className="px-4 py-2">Month</th>
+                  <tr className="border-b border-border">
+                    <th className="text-left p-2 font-medium text-muted-foreground">Type</th>
                   {Object.keys(tiketPerJenisKlienPerBulan).sort().map(month => (
-                    <th key={month} className="px-4 py-2">{month}</th>
+                      <th key={month} className="text-center p-2 font-medium text-muted-foreground">{month}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
-                <tr>
-                  <td className="px-4 py-2 font-bold text-blue-700 dark:text-blue-300">Active Clients</td>
+                  <tr className="border-b border-border hover:bg-muted/50">
+                    <td className="p-2 font-medium text-card-foreground">Active Clients</td>
                   {Object.keys(tiketPerJenisKlienPerBulan).sort().map(month => {
                     const totalClients = customerMonthRowCount.get(month) || 0;
                     return (
-                      <td key={month} className="px-4 py-2 text-center font-mono">{totalClients}</td>
+                        <td key={month} className="text-center p-2 text-card-foreground">{totalClients}</td>
                     );
                   })}
                 </tr>
-                <tr>
-                  <td className="px-4 py-2 font-bold text-red-700 dark:text-red-300">Complaint Clients</td>
+                  <tr className="border-b border-border hover:bg-muted/50">
+                    <td className="p-2 font-medium text-card-foreground">Complaint Clients</td>
                   {Object.keys(tiketPerJenisKlienPerBulan).sort().map(month => {
                     // Complaining clients that are also active this month (union)
                     const activeNames = new Set(
@@ -2251,7 +2463,7 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
                     );
                     let uniqueActiveComplain = 0; complainNames.forEach(n => { if (activeNames.has(n)) uniqueActiveComplain += 1; });
                     return (
-                      <td key={month} className="px-4 py-2 text-center font-mono">{uniqueActiveComplain}</td>
+                        <td key={month} className="text-center p-2 text-card-foreground">{uniqueActiveComplain}</td>
                     );
                   })}
                 </tr>
@@ -2264,9 +2476,12 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
         {/* Active Clients by Service Type (2025) - removed per request */}
 
         {/* 9. Total Complaint Penetration Ratio (2025) */}
-        <Card>
+        <Card className="bg-card text-card-foreground rounded-2xl shadow-lg">
           <CardHeader>
-            <CardTitle>Total Complaint Penetration Ratio (2025)</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <ShowChartIcon className="w-6 h-6 text-emerald-600" /> Total Complaint Penetration Ratio (2025)
+            </CardTitle>
+            <CardDescription>Overall complaint penetration ratio across all client types</CardDescription>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={260}>
@@ -2314,25 +2529,26 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
                 <XAxis dataKey="month" tickLine={false} axisLine={false} tickMargin={8} minTickGap={24} />
                 <YAxis tickLine={false} axisLine={false} tickMargin={8} minTickGap={24} allowDecimals={true} />
                 <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                <RechartsTooltip formatter={v => (typeof v === 'number' ? `${v.toFixed(2)}%` : v)} />
+                <RechartsTooltip content={<TicketAnalyticsTooltip />} />
                 <RechartsLegend />
                 <Area type="monotone" dataKey="Total Ratio" stroke="#6366F1" fill="url(#colorTotalRatio)" name="Total Ratio" strokeWidth={1.5} />
               </AreaChart>
                   </ResponsiveContainer>
             {/* Table */}
             <div className="overflow-x-auto w-full">
-            <table className="min-w-max w-full text-xs md:text-sm text-left mt-4 table-fixed break-words bg-card text-card-foreground  rounded-xl overflow-hidden">
+              <h4 className="text-sm font-semibold text-card-foreground mb-3">Total Penetration Ratio (2025)</h4>
+              <table className="w-full text-xs border-collapse">
               <thead>
-                <tr>
-                  <th className="px-4 py-2">Month</th>
+                  <tr className="border-b border-border">
+                    <th className="text-left p-2 font-medium text-muted-foreground">Month</th>
                   {Object.keys(tiketPerJenisKlienPerBulan).sort().map(month => (
-                    <th key={month} className="px-4 py-2">{month}</th>
+                      <th key={month} className="text-center p-2 font-medium text-muted-foreground">{month}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
-                <tr>
-                  <td className="px-4 py-2 font-bold text-blue-700 dark:text-blue-300">Total</td>
+                  <tr className="border-b border-border hover:bg-muted/50">
+                    <td className="p-2 font-medium text-card-foreground">Total Ratio</td>
                   {Object.keys(tiketPerJenisKlienPerBulan).sort().map(month => {
                     // Denominator: total rows uploaded for this month
                     const totalClients = customerMonthRowCount.get(month) || 0;
@@ -2359,7 +2575,7 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
                     let uniqueClients = 0; complainNames.forEach(n => { if (activeNames.has(n)) uniqueClients += 1; });
                     const ratio = totalClients > 0 ? (uniqueClients / totalClients) * 100 : 0;
                     return (
-                      <td key={month} className="px-4 py-2 text-center font-mono">{ratio.toFixed(2)}%</td>
+                        <td key={month} className="text-center p-2 text-card-foreground">{ratio.toFixed(2)}%</td>
                     );
                   })}
                 </tr>

@@ -323,8 +323,16 @@ const KanbanBoard = () => {
 
   function TicketHistoryTable({ tickets }) {
     if (!Array.isArray(tickets) || tickets.length === 0) {
-      return <div className="text-gray-400 text-sm">No tickets in this period.</div>;
+      return (
+        <div className="text-center py-8">
+          <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-gray-100 dark:bg-zinc-800 flex items-center justify-center">
+            <FileTextIcon className="w-6 h-6 text-gray-400" />
+          </div>
+          <p className="text-gray-500 dark:text-gray-400 text-sm">No tickets found in this period.</p>
+        </div>
+      );
     }
+    
     // Group tickets by month-year
     const groups = {};
     tickets.forEach(t => {
@@ -334,53 +342,69 @@ const KanbanBoard = () => {
       if (!groups[key]) groups[key] = [];
       groups[key].push(t);
     });
+    
     // Sort group keys descending
     const sortedKeys = Object.keys(groups).sort((a, b) => Number(new Date(b + '-01')) - Number(new Date(a + '-01')));
     const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-    // Kolom: Open Date, Description, Root Cause, Solution, Handling Duration, Status
+    
     return (
-      <div className="overflow-x-auto">
+      <div className="space-y-6">
         {sortedKeys.map(key => {
           const [yyyy, mm] = key.split('-');
+          const monthLabel = `${monthNames[parseInt(mm, 10) - 1]} ${yyyy}`;
+          const monthTickets = groups[key].sort((a, b) => Number(new Date(a.openTime)) - Number(new Date(b.openTime)));
+          
           return (
-            <div key={key} className="mb-6">
-              <div className="font-semibold text-gray-700 dark:text-gray-200 mb-2">{monthNames[parseInt(mm, 10) - 1]} {yyyy}</div>
-              <table className="w-full text-xs border-collapse table-fixed">
-                <colgroup>
-                  <col style={{ width: '140px' }} />
-                  <col style={{ width: '220px' }} />
-                  <col style={{ width: '180px' }} />
-                  <col style={{ width: '180px' }} />
-                  <col style={{ width: '120px' }} />
-                  <col style={{ width: '90px' }} />
-                </colgroup>
-                <thead>
-                  <tr className="bg-gray-100 dark:bg-zinc-800">
-                    <th className="p-2 text-left font-semibold">Open Date</th>
-                    <th className="p-2 text-left font-semibold">Description</th>
-                    <th className="p-2 text-left font-semibold">Root Cause</th>
-                    <th className="p-2 text-left font-semibold">Solution</th>
-                    <th className="p-2 text-left font-semibold">Handling Duration</th>
-                    <th className="p-2 text-left font-semibold">Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {groups[key].sort((a, b) => Number(new Date(a.openTime)) - Number(new Date(b.openTime))).map(t => (
-                    <tr key={t.id} className="border-b border-gray-100 dark:border-zinc-800">
-                      <td className="p-2 whitespace-nowrap align-top">{formatDateTimeDDMMYYYY(t.openTime)}</td>
-                      <td className="p-2 whitespace-normal break-words align-top">{t.description}</td>
-                      <td className="p-2 whitespace-normal break-words align-top">{t.cause}</td>
-                      <td className="p-2 whitespace-normal break-words align-top">{t.handling}</td>
-                      <td className="p-2 whitespace-nowrap align-top">{t.handlingDuration?.formatted || '-'}</td>
-                      <td className="p-2 align-top">
-                        <span className={`px-2 py-1 rounded-full text-xs font-bold`}>
-                          <Badge variant={t.status === 'Closed' ? 'success' : t.status === 'Open' ? 'warning' : t.status === 'Escalated' ? 'danger' : 'default'}>{t.status}</Badge>
-                        </span>
-                      </td>
+            <div key={key} className="space-y-3">
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                <h4 className="text-lg font-semibold text-card-foreground">{monthLabel}</h4>
+                <span className="text-sm text-gray-500 dark:text-gray-400">({monthTickets.length} tickets)</span>
+              </div>
+              
+              <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-zinc-800">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="bg-gray-50 dark:bg-zinc-800 border-b border-gray-200 dark:border-zinc-700">
+                      <th className="px-4 py-3 text-left font-semibold text-gray-700 dark:text-gray-300">Open Date</th>
+                      <th className="px-4 py-3 text-left font-semibold text-gray-700 dark:text-gray-300">Description</th>
+                      <th className="px-4 py-3 text-left font-semibold text-gray-700 dark:text-gray-300">Root Cause</th>
+                      <th className="px-4 py-3 text-left font-semibold text-gray-700 dark:text-gray-300">Solution</th>
+                      <th className="px-4 py-3 text-left font-semibold text-gray-700 dark:text-gray-300">Duration</th>
+                      <th className="px-4 py-3 text-left font-semibold text-gray-700 dark:text-gray-300">Status</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200 dark:divide-zinc-700">
+                    {monthTickets.map((t, index) => (
+                      <tr key={t.id} className={`hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors ${index % 2 === 0 ? 'bg-white dark:bg-zinc-900' : 'bg-gray-50/50 dark:bg-zinc-800/50'}`}>
+                        <td className="px-4 py-3 whitespace-nowrap text-gray-900 dark:text-gray-100 font-medium">
+                          {formatDateTimeDDMMYYYY(t.openTime)}
+                        </td>
+                        <td className="px-4 py-3 text-gray-700 dark:text-gray-300 max-w-xs">
+                          <div className="line-clamp-2">{t.description || '-'}</div>
+                        </td>
+                        <td className="px-4 py-3 text-gray-700 dark:text-gray-300 max-w-xs">
+                          <div className="line-clamp-2">{t.cause || '-'}</div>
+                        </td>
+                        <td className="px-4 py-3 text-gray-700 dark:text-gray-300 max-w-xs">
+                          <div className="line-clamp-2">{t.handling || '-'}</div>
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap text-gray-700 dark:text-gray-300">
+                          {t.handlingDuration?.formatted || '-'}
+                        </td>
+                        <td className="px-4 py-3">
+                          <Badge 
+                            variant={t.status === 'Closed' ? 'success' : t.status === 'Open' ? 'warning' : t.status === 'Escalated' ? 'danger' : 'default'}
+                            className="text-xs font-semibold"
+                          >
+                            {t.status || 'Unknown'}
+                          </Badge>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           );
         })}
@@ -391,10 +415,21 @@ const KanbanBoard = () => {
   // Helper untuk historical ticket count sesuai periode filter
   function HistoricalTicketCount({ customer }) {
     const { startMonth, endMonth, selectedYear } = analytics;
-    if (!startMonth || !endMonth || !selectedYear) return <div className="text-gray-400 italic">Please select month and year to see historical count.</div>;
+    if (!startMonth || !endMonth || !selectedYear) {
+      return (
+        <div className="text-center py-6">
+          <div className="w-10 h-10 mx-auto mb-3 rounded-full bg-gray-100 dark:bg-zinc-800 flex items-center justify-center">
+            <TableChartIcon className="w-5 h-5 text-gray-400" />
+          </div>
+          <p className="text-gray-500 dark:text-gray-400 text-sm">Please select month and year to see historical analysis.</p>
+        </div>
+      );
+    }
+    
     const y = Number(selectedYear);
     const mStart = Number(startMonth) - 1;
     const mEnd = Number(endMonth) - 1;
+    
     // Buat array bulan-tahun dari periode filter
     const months = [];
     for (let m = mStart; m <= mEnd; m++) {
@@ -405,6 +440,7 @@ const KanbanBoard = () => {
         month: date.getMonth(),
       });
     }
+    
     // Hitung jumlah tiket customer per bulan
     const tickets = customer.fullTicketHistory || customer.allTickets || [];
     const ticketsPerMonth = months.map(({ year, month }) =>
@@ -414,23 +450,60 @@ const KanbanBoard = () => {
         return d.getFullYear() === year && d.getMonth() === month;
       })
     );
+    
     // Akumulasi
     const firstMonthCount = ticketsPerMonth[0]?.length || 0;
     const first3MonthsCount = ticketsPerMonth.slice(0, 3).reduce((acc, arr) => acc + arr.length, 0);
     const all6MonthsCount = ticketsPerMonth.reduce((acc, arr) => acc + arr.length, 0);
-    // Total tiket pada periode filter
     const totalTickets = ticketsPerMonth.reduce((acc, arr) => acc + arr.length, 0);
-    // Render
+    
     return (
-      <>
-        {months.map((m, i) => (
-          <div key={m.label}>{m.label}: <b>{ticketsPerMonth[i].length}</b> tickets</div>
-        ))}
-        <div className="mt-2">Bulan pertama: <b>{firstMonthCount}</b> tickets</div>
-        <div>3 bulan pertama: <b>{first3MonthsCount}</b> tickets</div>
-        <div>6 bulan: <b>{all6MonthsCount}</b> tickets</div>
-        <div className="mt-2 font-bold text-blue-700">Total tickets in this period: {totalTickets}</div>
-      </>
+      <div className="space-y-4">
+        {/* Monthly breakdown */}
+        <div>
+          <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">Monthly Breakdown</h4>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+            {months.map((m, i) => (
+              <div key={m.label} className="bg-gray-50 dark:bg-zinc-800 rounded-lg p-3 text-center">
+                <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">{m.label}</div>
+                <div className="text-lg font-bold text-blue-600 dark:text-blue-400">{ticketsPerMonth[i].length}</div>
+                <div className="text-xs text-gray-500 dark:text-gray-400">tickets</div>
+              </div>
+            ))}
+          </div>
+        </div>
+        
+        {/* Summary metrics */}
+        <div>
+          <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">Summary Metrics</h4>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3">
+              <div className="text-xs text-blue-600 dark:text-blue-400 mb-1">First Month</div>
+              <div className="text-lg font-bold text-blue-700 dark:text-blue-300">{firstMonthCount}</div>
+              <div className="text-xs text-blue-600 dark:text-blue-400">tickets</div>
+            </div>
+            <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-3">
+              <div className="text-xs text-green-600 dark:text-green-400 mb-1">First 3 Months</div>
+              <div className="text-lg font-bold text-green-700 dark:text-green-300">{first3MonthsCount}</div>
+              <div className="text-xs text-green-600 dark:text-green-400">tickets</div>
+            </div>
+            <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-3">
+              <div className="text-xs text-purple-600 dark:text-purple-400 mb-1">All Period</div>
+              <div className="text-lg font-bold text-purple-700 dark:text-purple-300">{all6MonthsCount}</div>
+              <div className="text-xs text-purple-600 dark:text-purple-400">tickets</div>
+            </div>
+          </div>
+        </div>
+        
+        {/* Total summary */}
+        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-lg p-4 border border-blue-200 dark:border-blue-800">
+          <div className="text-center">
+            <div className="text-sm text-blue-600 dark:text-blue-400 mb-1">Total Tickets in Selected Period</div>
+            <div className="text-2xl font-bold text-blue-700 dark:text-blue-300">{totalTickets}</div>
+            <div className="text-xs text-blue-600 dark:text-blue-400">tickets</div>
+          </div>
+        </div>
+      </div>
     );
   }
 
@@ -452,44 +525,74 @@ const KanbanBoard = () => {
     const lastTicket = tickets.slice().sort((a, b) => new Date(b.openTime).getTime() - new Date(a.openTime).getTime())[0];
     // Trend badge
     let trendBadge = null;
-                    if (customer.trend === 'Naik') trendBadge = <span className="ml-2 px-2 py-0.5 rounded-md bg-green-100 text-green-700 text-xs font-bold dark:bg-green-200 dark:text-green-900">Trend: Up</span>;
-                else if (customer.trend === 'Turun') trendBadge = <span className="ml-2 px-2 py-0.5 rounded-md bg-red-100 text-red-700 text-xs font-bold dark:bg-red-200 dark:text-red-900">Trend: Down</span>;
-                else if (customer.trend === 'Stabil') trendBadge = <span className="ml-2 px-2 py-0.5 rounded-md bg-gray-100 text-gray-700 text-xs font-bold dark:bg-gray-200 dark:text-gray-900">Trend: Stable</span>;
+    if (customer.trend === 'Naik') trendBadge = <span className="px-2 py-1 rounded-md bg-green-100 text-green-700 text-xs font-semibold dark:bg-green-200 dark:text-green-900">↑ Up</span>;
+    else if (customer.trend === 'Turun') trendBadge = <span className="px-2 py-1 rounded-md bg-red-100 text-red-700 text-xs font-semibold dark:bg-red-200 dark:text-red-900">↓ Down</span>;
+    else if (customer.trend === 'Stabil') trendBadge = <span className="px-2 py-1 rounded-md bg-gray-100 text-gray-700 text-xs font-semibold dark:bg-gray-200 dark:text-gray-900">→ Stable</span>;
 
     return (
       <TooltipProvider delayDuration={200}>
         <Tooltip>
           <TooltipTrigger asChild>
-      <div
-        className="bg-card text-card-foreground  rounded-2xl shadow-lg p-6 flex flex-col min-h-[200px] transition-all duration-300 min-w-0 overflow-hidden cursor-pointer hover:shadow-xl hover:scale-[1.02]"
-        onClick={() => setOpenDialogId(customer.id)}
-      >
-        <div className="flex items-center gap-4 mb-2">
-          <div className="w-12 h-12 min-w-12 min-h-12 rounded-xl flex items-center justify-center bg-blue-500 shadow-lg">
-            <GroupIcon className="text-white" style={{ fontSize: 28 }} />
-          </div>
-          <div className="flex-1">
-            <h3 className="text-lg md:text-xl font-bold text-card-foreground break-words whitespace-normal">{customer.name}</h3>
-          </div>
-          <Badge variant="info" className="ml-2">{customer.ticketCount} TICKETS</Badge>
-                {trendBadge}
-        </div>
-        <div className="flex gap-4 mb-2">
-          <Badge variant="success" className="mb-2">Closed: {closed} / {tickets.length} ({percentClosed}%)</Badge>
-        </div>
-        <div className="flex items-center gap-2 text-sm font-semibold text-card-foreground mb-1">
-          <HowToRegIcon className="text-blue-400" /> Top Agent: {topAgent}
-        </div>
-        <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-300">
-          <Badge variant="warning" className="mr-2">Top Issue</Badge> {topIssue}
-        </div>
-      </div>
+            <div
+              className="bg-white dark:bg-zinc-900 text-card-foreground rounded-xl shadow-sm border border-gray-200 dark:border-zinc-800 p-6 flex flex-col min-h-[240px] transition-all duration-300 min-w-0 overflow-hidden cursor-pointer hover:shadow-xl hover:scale-[1.02]"
+              onClick={() => setOpenDialogId(customer.id)}
+            >
+              {/* Header with customer info and badges */}
+              <div className="flex items-start justify-between mb-4">
+                <div className="flex items-center gap-3 flex-1 min-w-0">
+                  <div className="w-10 h-10 min-w-10 min-h-10 rounded-lg flex items-center justify-center bg-gradient-to-br from-blue-500 to-blue-600 shadow-sm">
+                    <GroupIcon className="text-white" style={{ fontSize: 20 }} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-base font-bold text-card-foreground leading-tight line-clamp-2">{customer.name}</h3>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">ID: {customer.customerId}</p>
+                  </div>
+                </div>
+                <div className="flex flex-col items-end gap-1 ml-2">
+                  <Badge variant="info" className="text-xs font-semibold px-2 py-1">{customer.ticketCount}</Badge>
+                  {trendBadge}
+                </div>
+              </div>
+
+              {/* Metrics section */}
+              <div className="space-y-3 mb-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-medium text-gray-600 dark:text-gray-400">Resolution Rate</span>
+                  <span className="text-sm font-bold text-green-600 dark:text-green-400">{percentClosed}%</span>
+                </div>
+                <div className="w-full bg-gray-200 dark:bg-zinc-700 rounded-full h-1.5">
+                  <div 
+                    className="bg-green-500 h-1.5 rounded-full transition-all duration-300" 
+                    style={{ width: `${percentClosed}%` }}
+                  ></div>
+                </div>
+                <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400">
+                  <span>Closed: {closed}</span>
+                  <span>Total: {tickets.length}</span>
+                </div>
+              </div>
+
+              {/* Additional info */}
+              <div className="space-y-2 mt-auto">
+                <div className="flex items-center gap-2 text-xs">
+                  <HowToRegIcon className="text-blue-500 w-3 h-3 flex-shrink-0" />
+                  <span className="text-gray-600 dark:text-gray-400">Top Agent:</span>
+                  <span className="font-medium text-card-foreground truncate">{topAgent}</span>
+                </div>
+                <div className="flex items-start gap-2 text-xs">
+                  <Badge variant="warning" className="text-xs flex-shrink-0 px-1.5 py-0.5">Issue</Badge>
+                  <span className="text-gray-600 dark:text-gray-400 line-clamp-2 leading-tight">{topIssue}</span>
+                </div>
+              </div>
+            </div>
           </TooltipTrigger>
-          <TooltipContent side="top" className="max-w-xs text-[13px]">
-            <div className="text-sm font-semibold mb-1 text-blue-900 dark:text-blue-200">Preview</div>
-            <div className="mb-1"><span className="font-bold text-gray-700 dark:text-gray-200">Top Issue:</span> {topIssue}</div>
-            <div className="mb-1"><span className="font-bold text-gray-700 dark:text-gray-200">Last Open Ticket:</span> {lastTicket ? `${formatDateTimeDDMMYYYY(lastTicket.openTime)} — ${lastTicket.description || '-'}` : '-'}</div>
-            <div><span className="font-bold text-gray-700 dark:text-gray-200">Risk Trend:</span> {customer.trend === 'Naik' ? 'Up' : customer.trend === 'Turun' ? 'Down' : 'Stable'}</div>
+          <TooltipContent side="top" className="max-w-xs text-sm">
+            <div className="font-semibold mb-2 text-blue-900 dark:text-blue-200">Customer Preview</div>
+            <div className="space-y-1 text-xs">
+              <div><span className="font-medium text-gray-700 dark:text-gray-200">Top Issue:</span> {topIssue}</div>
+              <div><span className="font-medium text-gray-700 dark:text-gray-200">Last Ticket:</span> {lastTicket ? `${formatDateTimeDDMMYYYY(lastTicket.openTime)}` : '-'}</div>
+              <div><span className="font-medium text-gray-700 dark:text-gray-200">Risk Trend:</span> {customer.trend === 'Naik' ? 'Up' : customer.trend === 'Turun' ? 'Down' : 'Stable'}</div>
+            </div>
           </TooltipContent>
         </Tooltip>
       </TooltipProvider>
@@ -1126,104 +1229,83 @@ const KanbanBoard = () => {
 
   return (
     <PageWrapper>
-
-      
-      <div className="flex justify-end mb-6">
-        <div className="scale-75 transform origin-right">
-          <TimeFilter
-            startMonth={startMonth}
-            setStartMonth={setStartMonth}
-            endMonth={endMonth}
-            setEndMonth={setEndMonth}
-            selectedYear={selectedYear}
-            setSelectedYear={setSelectedYear}
-            monthOptions={monthOptions}
-            allYearsInData={allYearsInData}
-          />
+      {/* Header Section with improved spacing and typography */}
+      <div className="mb-8">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-bold text-card-foreground mb-2">Customer Analytics</h1>
+            <p className="text-gray-600 dark:text-gray-400 text-base">Monitor customer ticket patterns and risk assessment</p>
+          </div>
+          <div className="flex justify-end">
+            <div className="scale-90 transform origin-right">
+              <TimeFilter
+                startMonth={startMonth}
+                setStartMonth={setStartMonth}
+                endMonth={endMonth}
+                setEndMonth={setEndMonth}
+                selectedYear={selectedYear}
+                setSelectedYear={setSelectedYear}
+                monthOptions={monthOptions}
+                allYearsInData={allYearsInData}
+              />
+            </div>
+          </div>
         </div>
       </div>
-      {/* Redesigned Summary Cards */}
-      <div className="w-full mb-6">
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
+
+      {/* Summary Cards with improved layout and typography */}
+      <div className="w-full mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
           {finalSummary.map((item) => {
             const riskInfo = item.key !== 'Total' ? riskCategories.find(rc => rc.label === normalizeRiskLabel(item.key)) : null;
-          const icon = {
-            Normal: <CheckCircleIcon className="w-7 h-7 text-white" />,
-            Persisten: <WarningAmberIcon className="w-7 h-7 text-white" />,
-            Kronis: <WhatshotIcon className="w-7 h-7 text-white" />,
-            Ekstrem: <SecurityIcon className="w-7 h-7 text-white" />,
-            Total: <GroupIcon className="w-7 h-7 text-white" />,
-          }[item.key];
+            const icon = {
+              Normal: <CheckCircleIcon className="w-6 h-6 text-white" />,
+              Persisten: <WarningAmberIcon className="w-6 h-6 text-white" />,
+              Kronis: <WhatshotIcon className="w-6 h-6 text-white" />,
+              Ekstrem: <SecurityIcon className="w-6 h-6 text-white" />,
+              Total: <GroupIcon className="w-6 h-6 text-white" />,
+            }[item.key];
 
-          const percent = totalCustomers > 0 ? ((item.count / totalCustomers) * 100).toFixed(1) : '0.0';
-          return (
+            const percent = totalCustomers > 0 ? ((item.count / totalCustomers) * 100).toFixed(1) : '0.0';
+            return (
               <SummaryCard
-              key={item.key}
+                key={item.key}
                 icon={icon}
-              title={item.label}
+                title={item.label}
                 value={
                   <>
-                    <div>{item.count}</div>
+                    <div className="text-2xl font-bold">{item.count}</div>
                     {item.key !== 'Total' && (
-                    <div className="text-sm font-semibold text-gray-500 mt-1">{percent}%</div>
+                      <div className="text-sm font-medium text-gray-500 mt-1">{percent}%</div>
                     )}
                   </>
                 }
                 description={riskInfo?.description || 'Total unique customers in the selected period.'}
-              iconBg={riskColors[item.key]?.iconBg || 'bg-gray-500'}
-              badgeColor={riskColors[item.key]?.badge || 'bg-blue-600'}
+                iconBg={riskColors[item.key]?.iconBg || 'bg-gray-500'}
+                badgeColor={riskColors[item.key]?.badge || 'bg-blue-600'}
                 badge={item.key !== 'Total' ? riskInfo?.badge : undefined}
-              className={`cursor-pointer transition-all duration-300 ${repClassFilter === item.key ? '' : ''}`}
-              onClick={() => setRepClassFilter(item.key)}
-              active={repClassFilter === item.key}
-            />
-          );
-        })}
-          {/* Donut Chart Card */}
-          <div className="rounded-2xl shadow-lg bg-card text-card-foreground  flex flex-col items-center justify-center p-4 min-h-[170px]">
+                className={`cursor-pointer transition-all duration-300 hover:shadow-lg ${repClassFilter === item.key ? 'shadow-lg' : ''}`}
+                onClick={() => setRepClassFilter(item.key)}
+                active={repClassFilter === item.key}
+              />
+            );
+          })}
+          {/* Donut Chart Card with improved sizing */}
+          <div className="rounded-xl shadow-lg bg-card text-card-foreground flex flex-col items-center justify-center p-6 min-h-[160px]">
+            <h3 className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-3">Risk Distribution</h3>
             <DonutChartSummary data={finalSummary} />
           </div>
         </div>
       </div>
 
-      {/* Risk filter button group */}
-      {/* HIDE risk filter button group
-      <div className="flex flex-wrap gap-2 mb-6">
-        {['Total', 'Normal', 'Persisten', 'Kronis', 'Ekstrem'].map((key) => {
-          const color = riskColors[key];
-          const count = repClassSummary.find(r => r.key === key)?.count || (key === 'Total' ? totalCustomers : 0);
-          const isActive = repClassFilter === key;
-          const icon = {
-            Total: <GroupIcon className="w-5 h-5" />,
-            Normal: <CheckCircleIcon className="w-5 h-5" />,
-            Persisten: <WarningAmberIcon className="w-5 h-5" />,
-            Kronis: <WhatshotIcon className="w-5 h-5" />,
-            Ekstrem: <SecurityIcon className="w-5 h-5" />,
-          }[key];
-          return (
-            <button
-              key={key}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-sm shadow-sm  transition-all duration-200
-                ${color.badge} text-white
-                ${isActive ? 'ring-2 ring-blue-500 scale-105' : 'hover:brightness-110'}
-              `}
-              onClick={() => setRepClassFilter(key)}
-            >
-              {icon}
-              <span className="uppercase tracking-wide">{key}</span>
-              <span className="ml-2 px-2 py-0.5 rounded-full bg-white/20 text-xs font-bold">{count}</span>
-            </button>
-          );
-        })}
-      </div> */}
-
-      <div className="flex-grow pr-4 -mr-4">
+      {/* Customer Cards Grid with improved layout */}
+      <div className="flex-grow">
         {filteredCustomers.length > 0 ? (
           filteredCustomers.length > 50 ? (
             <List
               height={800}
               itemCount={filteredCustomers.length}
-              itemSize={230}
+              itemSize={280}
               width={"100%"}
               className="mb-8"
             >
@@ -1231,8 +1313,8 @@ const KanbanBoard = () => {
                 const customer = filteredCustomers[index];
                 const ticketsInRange = customer.allTickets || [];
                 return (
-                  <div style={{ ...style, padding: 0 }}>
-                    <div className="mb-2">
+                  <div style={{ ...style, padding: '0 8px' }}>
+                    <div className="mb-4">
                       <CustomerCard key={customer.id} customer={customer} tickets={ticketsInRange} />
                     </div>
                   </div>
@@ -1240,28 +1322,31 @@ const KanbanBoard = () => {
               }}
             </List>
           ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8 mb-8">
-            {filteredCustomers.slice((page - 1) * pageSize, page * pageSize).map((customer) => {
-              const ticketsInRange = customer.allTickets || [];
-              return (
-                <CustomerCard key={customer.id} customer={customer} tickets={ticketsInRange} />
-              );
-            })}
-          </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 mb-8">
+              {filteredCustomers.slice((page - 1) * pageSize, page * pageSize).map((customer) => {
+                const ticketsInRange = customer.allTickets || [];
+                return (
+                  <CustomerCard key={customer.id} customer={customer} tickets={ticketsInRange} />
+                );
+              })}
+            </div>
           )
         ) : (
           <div className="text-center py-16">
-            <h3 className="text-lg font-semibold text-card-foreground">No Customers Found</h3>
-            <p className="text-sm text-gray-500">No customers match the current filter criteria.</p>
-      </div>
+            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gray-100 dark:bg-zinc-800 flex items-center justify-center">
+              <GroupIcon className="w-8 h-8 text-gray-400" />
+            </div>
+            <h3 className="text-xl font-semibold text-card-foreground mb-2">No Customers Found</h3>
+            <p className="text-gray-500 dark:text-gray-400">No customers match the current filter criteria.</p>
+          </div>
         )}
       </div>
 
-      {/* Single Dialog for Customer Details */}
+      {/* Customer Details Dialog with improved layout and typography */}
       <RadixDialog.Root open={!!openDialogId} onOpenChange={open => setOpenDialogId(open ? openDialogId : null)}>
         <RadixDialog.Portal>
-          <RadixDialog.Overlay className="fixed inset-0 bg-black/50 z-50" />
-          <RadixDialog.Content className="fixed right-0 top-0 h-full w-[99vw] md:w-[90vw] max-w-6xl bg-card text-card-foreground   shadow-2xl z-50 overflow-y-auto transition-all duration-300">
+          <RadixDialog.Overlay className="fixed inset-0 bg-black/50 z-50 backdrop-blur-sm" />
+          <RadixDialog.Content className="fixed right-0 top-0 h-full w-[99vw] md:w-[90vw] max-w-7xl bg-card text-card-foreground shadow-2xl z-50 overflow-y-auto transition-all duration-300">
             {selectedCustomer && (
               <>
                 {/* Accessibility: Hidden Title and Description */}
@@ -1271,41 +1356,86 @@ const KanbanBoard = () => {
                 <RadixDialog.Description className="sr-only">
                   Detailed information about customer {selectedCustomer.name} including ticket history, analytics, and insights.
                 </RadixDialog.Description>
-                {/* Header */}
-                <div className="flex items-center justify-between px-10 pt-8 pb-2 border-b border-blue-100 dark:border-zinc-800">
-                  <div className="text-lg font-bold text-card-foreground">{selectedCustomer.name}</div>
-                  <RadixDialog.Close asChild>
-                    <button className="text-blue-700 dark:text-blue-300 hover:text-red-500 text-4xl font-extrabold focus:outline-none transition-colors duration-150" aria-label="Close customer detail">&times;</button>
-                  </RadixDialog.Close>
+                
+                {/* Header with improved typography and spacing */}
+                <div className="flex items-center justify-between px-8 pt-8 pb-6 border-b border-gray-200 dark:border-zinc-800">
+                  <div>
+                    <h2 className="text-2xl font-bold text-card-foreground mb-1">{selectedCustomer.name}</h2>
+                    <p className="text-gray-600 dark:text-gray-400">Customer ID: {selectedCustomer.customerId}</p>
                   </div>
-                {/* Summary Grid */}
-                <div className="px-10 pt-6 pb-2">
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-6 mb-6">
-                    <div className="flex flex-col"><span className="text-xs text-gray-500 dark:text-gray-400">Total Tickets</span><span className="text-xl font-bold text-blue-900 dark:text-blue-300">{selectedCustomer.allTickets.length}</span></div>
-                    <div className="flex flex-col"><span className="text-xs text-gray-500 dark:text-gray-400">Closed</span><span className="text-xl font-bold text-blue-900 dark:text-blue-300">{selectedCustomer.allTickets.filter(t => t.status === 'Closed').length}</span></div>
-                    <div className="flex flex-col"><span className="text-xs text-gray-500 dark:text-gray-400">Avg Handling</span><span className="text-xl font-bold text-blue-900 dark:text-blue-300">{formatDurationDHM(selectedCustomer.allTickets.reduce((acc, t) => acc + (t.handlingDuration?.rawHours || 0), 0) / (selectedCustomer.allTickets.length || 1))}</span></div>
-                    <div className="flex flex-col"><span className="text-xs text-gray-500 dark:text-gray-400">Top Agent</span><span className="text-base font-semibold text-blue-800 dark:text-blue-300">{(() => { const agentCount = {}; selectedCustomer.allTickets.forEach(t => { if (t.openBy) agentCount[t.openBy] = (agentCount[t.openBy] || 0) + 1; }); return Object.entries(agentCount).sort((a, b) => Number(b[1]) - Number(a[1]))[0]?.[0] || '-'; })()}</span></div>
-                    <div className="flex flex-col"><span className="text-xs text-gray-500 dark:text-gray-400">Top Issue</span><span className="text-base font-semibold text-blue-800 dark:text-blue-300">{(() => { const issueCount = {}; selectedCustomer.allTickets.forEach(t => { if (t.description) issueCount[t.description] = (issueCount[t.description] || 0) + 1; }); return Object.entries(issueCount).sort((a, b) => Number(b[1]) - Number(a[1]))[0]?.[0] || '-'; })()}</span></div>
-                    <div className="flex flex-col"><span className="text-xs text-gray-500 dark:text-gray-400">Risk Trend</span><span className="text-base font-semibold text-blue-800 dark:text-blue-300">{selectedCustomer.repClass}</span></div>
+                  <RadixDialog.Close asChild>
+                    <button className="text-gray-400 hover:text-red-500 text-3xl font-light focus:outline-none transition-colors duration-150 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-zinc-800" aria-label="Close customer detail">&times;</button>
+                  </RadixDialog.Close>
+                </div>
+
+                {/* Summary Grid with improved layout */}
+                <div className="px-8 pt-8 pb-6">
+                  <h3 className="text-lg font-semibold text-card-foreground mb-4">Summary Metrics</h3>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-6 mb-8">
+                    <div className="bg-gray-50 dark:bg-zinc-800 rounded-lg p-4">
+                      <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Tickets</span>
+                      <div className="text-2xl font-bold text-blue-900 dark:text-blue-300 mt-1">{selectedCustomer.allTickets.length}</div>
+                    </div>
+                    <div className="bg-gray-50 dark:bg-zinc-800 rounded-lg p-4">
+                      <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Closed</span>
+                      <div className="text-2xl font-bold text-green-700 dark:text-green-300 mt-1">{selectedCustomer.allTickets.filter(t => t.status === 'Closed').length}</div>
+                    </div>
+                    <div className="bg-gray-50 dark:bg-zinc-800 rounded-lg p-4">
+                      <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Avg Handling</span>
+                      <div className="text-2xl font-bold text-blue-900 dark:text-blue-300 mt-1">{formatDurationDHM(selectedCustomer.allTickets.reduce((acc, t) => acc + (t.handlingDuration?.rawHours || 0), 0) / (selectedCustomer.allTickets.length || 1))}</div>
+                    </div>
+                    <div className="bg-gray-50 dark:bg-zinc-800 rounded-lg p-4">
+                      <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Top Agent</span>
+                      <div className="text-lg font-semibold text-blue-800 dark:text-blue-300 mt-1">{(() => { const agentCount = {}; selectedCustomer.allTickets.forEach(t => { if (t.openBy) agentCount[t.openBy] = (agentCount[t.openBy] || 0) + 1; }); return Object.entries(agentCount).sort((a, b) => Number(b[1]) - Number(a[1]))[0]?.[0] || '-'; })()}</div>
+                    </div>
+                    <div className="bg-gray-50 dark:bg-zinc-800 rounded-lg p-4">
+                      <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Top Issue</span>
+                      <div className="text-lg font-semibold text-blue-800 dark:text-blue-300 mt-1">{(() => { const issueCount = {}; selectedCustomer.allTickets.forEach(t => { if (t.description) issueCount[t.description] = (issueCount[t.description] || 0) + 1; }); return Object.entries(issueCount).sort((a, b) => Number(b[1]) - Number(a[1]))[0]?.[0] || '-'; })()}</div>
+                    </div>
+                    <div className="bg-gray-50 dark:bg-zinc-800 rounded-lg p-4">
+                      <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Risk Level</span>
+                      <div className="text-lg font-semibold text-blue-800 dark:text-blue-300 mt-1">{selectedCustomer.repClass}</div>
                     </div>
                   </div>
-                {/* Automated Insight Box */}
-                <div className="bg-card text-card-foreground  rounded-xl p-6 mb-6 shadow ">
-                  <div className="text-lg font-bold mb-2 text-card-foreground">Automated Insight</div>
-                  <div className="space-y-1">
-                    <div><Badge variant="info" className="mr-2">Problem</Badge> <span className="text-gray-700 dark:text-gray-200">{generateInsight(selectedCustomer.allTickets).masalah}</span></div>
-                    <div><Badge variant="warning" className="mr-2">Cause</Badge> <span className="text-gray-700 dark:text-gray-200">{generateInsight(selectedCustomer.allTickets).penyebab}</span></div>
-                    <div><Badge variant="info" className="mr-2">Category</Badge> <span className="text-gray-700 dark:text-gray-200">{generateInsight(selectedCustomer.allTickets).kategori}</span></div>
-                    <div><Badge variant="success" className="mr-2">Solution</Badge> <span className="text-gray-700 dark:text-gray-200">{generateInsight(selectedCustomer.allTickets).solusi}</span></div>
-                    <div><Badge variant="info" className="mr-2">Recommendation</Badge> <span className="text-gray-700 dark:text-gray-200 text-justify block">{generateInsight(selectedCustomer.allTickets).rekomendasi}</span></div>
+                </div>
+
+                {/* Automated Insight Box with improved layout */}
+                <div className="px-8 pb-6">
+                  <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-zinc-800 dark:to-zinc-700 rounded-xl p-6 shadow-sm">
+                    <h3 className="text-lg font-bold text-card-foreground mb-4 flex items-center gap-2">
+                      <FileTextIcon className="w-5 h-5 text-blue-600" />
+                      Automated Insight
+                    </h3>
+                    <div className="space-y-3">
+                      <div className="flex items-start gap-3">
+                        <Badge variant="info" className="mt-1 flex-shrink-0">Problem</Badge>
+                        <span className="text-gray-700 dark:text-gray-200">{generateInsight(selectedCustomer.allTickets).masalah}</span>
+                      </div>
+                      <div className="flex items-start gap-3">
+                        <Badge variant="warning" className="mt-1 flex-shrink-0">Cause</Badge>
+                        <span className="text-gray-700 dark:text-gray-200">{generateInsight(selectedCustomer.allTickets).penyebab}</span>
+                      </div>
+                      <div className="flex items-start gap-3">
+                        <Badge variant="info" className="mt-1 flex-shrink-0">Category</Badge>
+                        <span className="text-gray-700 dark:text-gray-200">{generateInsight(selectedCustomer.allTickets).kategori}</span>
+                      </div>
+                      <div className="flex items-start gap-3">
+                        <Badge variant="success" className="mt-1 flex-shrink-0">Solution</Badge>
+                        <span className="text-gray-700 dark:text-gray-200">{generateInsight(selectedCustomer.allTickets).solusi}</span>
+                      </div>
+                      <div className="flex items-start gap-3">
+                        <Badge variant="info" className="mt-1 flex-shrink-0">Recommendation</Badge>
+                        <span className="text-gray-700 dark:text-gray-200 text-justify">{generateInsight(selectedCustomer.allTickets).rekomendasi}</span>
+                      </div>
+                    </div>
                   </div>
                 </div>
-                {/* Mini Trend Chart (historis jumlah tiket bulanan) */}
-                <div className="px-10 pb-2">
-                  <div className="bg-card text-card-foreground   rounded-xl p-5 mb-6 shadow-sm">
-                    <div className="text-base font-bold text-blue-900 dark:text-blue-300 mb-3">Ticket History</div>
+
+                {/* Mini Trend Chart with improved layout */}
+                <div className="px-8 pb-6">
+                  <div className="bg-white dark:bg-zinc-900 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-zinc-800">
+                    <h3 className="text-lg font-bold text-card-foreground mb-4">Ticket History Trend</h3>
                     {(() => {
-                      // Ambil data historis bulanan untuk customer sesuai filter waktu
                       const history = (selectedCustomer.allTickets || []).reduce((acc, t) => {
                         if (!t.openTime) return acc;
                         const d = new Date(t.openTime);
@@ -1326,119 +1456,136 @@ const KanbanBoard = () => {
                           </div>
                         </div>
                       ) : (
-                        <div className="text-gray-400 text-center py-8">No ticket history data.</div>
+                        <div className="text-gray-400 text-center py-8">No ticket history data available.</div>
                       );
                     })()}
                   </div>
                 </div>
-                {/* Historical Count */}
-                <div className="px-10 pb-2">
-                  <div className="bg-card text-card-foreground   rounded-xl p-5 mb-6">
-                    <div className="text-base font-bold text-blue-900 dark:text-blue-300 mb-3">Ticket History</div>
-                      <HistoricalTicketCount customer={selectedCustomer} />
-                    </div>
+
+                {/* Historical Count with improved layout */}
+                <div className="px-8 pb-6">
+                  <div className="bg-white dark:bg-zinc-900 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-zinc-800">
+                    <h3 className="text-lg font-bold text-card-foreground mb-4">Historical Analysis</h3>
+                    <HistoricalTicketCount customer={selectedCustomer} />
                   </div>
-                {/* Ticket History */}
-                <div className="px-10 pb-2">
-                  <div className="text-lg font-bold text-blue-800 dark:text-blue-300 mb-2">Ticket History</div>
-                  <div className="bg-card text-card-foreground  rounded-xl p-5 shadow  text-base text-blue-900 dark:text-blue-300 min-w-[600px] w-full overflow-x-auto overflow-y-visible">
-                      <TicketHistoryTable tickets={selectedCustomer.allTickets} />
-                    </div>
+                </div>
+
+                {/* Ticket History Table with improved layout */}
+                <div className="px-8 pb-6">
+                  <h3 className="text-lg font-bold text-card-foreground mb-4">Detailed Ticket History</h3>
+                  <div className="bg-white dark:bg-zinc-900 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-zinc-800 overflow-x-auto">
+                    <TicketHistoryTable tickets={selectedCustomer.allTickets} />
                   </div>
-                {/* Export Actions */}
-                <div className="px-10 pb-8 flex justify-end gap-3">
-                  {/* PDF Export */}
-                  <PDFDownloadLink 
-                    document={<CustomerReportPDF customer={selectedCustomer} insight={generateInsight(selectedCustomer.allTickets)} tickets={selectedCustomer.allTickets} />} 
-                    fileName={`CustomerReport-${selectedCustomer.name.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`}
-                  >
-                    {({ loading, error }) => (
-                      <button 
-                        className="px-4 py-2 bg-blue-600 text-white rounded-lg font-bold shadow hover:bg-blue-700 transition-all flex items-center gap-2 disabled:opacity-50"
-                        disabled={loading}
-                        onClick={() => {
-                          if (error) {
-                            console.error('PDF generation error:', error);
-                            alert('Error generating PDF. Please try again.');
-                          }
-                        }}
-                      >
-                        <FileTextIcon />
-                        {loading ? 'Generating PDF...' : 'Download PDF'}
-                      </button>
-                    )}
-                  </PDFDownloadLink>
-                  
-                  {/* Excel Export */}
-                  <button 
-                    className="px-4 py-2 bg-green-600 text-white rounded-lg font-bold shadow hover:bg-green-700 transition-all flex items-center gap-2"
-                    onClick={async () => {
-                      try {
-                        const excelData = selectedCustomer.allTickets.map(ticket => ({
-                          'Ticket ID': ticket.ticketId || '-',
-                          'Customer': selectedCustomer.name,
-                          'Customer ID': selectedCustomer.customerId,
-                          'Description': ticket.description || '-',
-                          'Status': ticket.status || '-',
-                          'Open Time': ticket.openTime ? new Date(ticket.openTime).toLocaleString('id-ID') : '-',
-                          'Close Time': ticket.closeTime ? new Date(ticket.closeTime).toLocaleString('id-ID') : '-',
-                          'Handling Duration': ticket.handlingDuration?.formatted || '-',
-                          'Cause': ticket.cause || '-',
-                          'Handling': ticket.handling || '-'
-                        }));
-                        
-                        await exportToExcel(excelData, `CustomerReport-${selectedCustomer.name.replace(/[^a-zA-Z0-9]/g, '_')}`);
-                      } catch (error) {
-                        console.error('Excel export error:', error);
-                        alert('Error exporting Excel. Please try again.');
-                      }
-                    }}
-                  >
-                    <TableChartIcon />
-                    Export Excel
-                  </button>
-                  
-                  {/* CSV Export */}
-                  <button 
-                    className="px-4 py-2 bg-orange-600 text-white rounded-lg font-bold shadow hover:bg-orange-700 transition-all flex items-center gap-2"
-                    onClick={() => {
-                      try {
-                        const csvData = selectedCustomer.allTickets.map(ticket => ({
-                          'Ticket ID': ticket.ticketId || '-',
-                          'Customer': selectedCustomer.name,
-                          'Customer ID': selectedCustomer.customerId,
-                          'Description': ticket.description || '-',
-                          'Status': ticket.status || '-',
-                          'Open Time': ticket.openTime ? new Date(ticket.openTime).toLocaleString('id-ID') : '-',
-                          'Close Time': ticket.closeTime ? new Date(ticket.closeTime).toLocaleString('id-ID') : '-',
-                          'Handling Duration': ticket.handlingDuration?.formatted || '-',
-                          'Cause': ticket.cause || '-',
-                          'Handling': ticket.handling || '-'
-                        }));
-                        
-                        exportToCSV(csvData, `CustomerReport-${selectedCustomer.name.replace(/[^a-zA-Z0-9]/g, '_')}`);
-                      } catch (error) {
-                        console.error('CSV export error:', error);
-                        alert('Error exporting CSV. Please try again.');
-                      }
-                    }}
-                  >
-                    <TextSnippetIcon />
-                    Export CSV
-                  </button>
+                </div>
+
+                {/* Export Actions with improved layout */}
+                <div className="px-8 pb-8">
+                  <div className="flex flex-wrap justify-end gap-3">
+                    {/* PDF Export */}
+                    <PDFDownloadLink 
+                      document={<CustomerReportPDF customer={selectedCustomer} insight={generateInsight(selectedCustomer.allTickets)} tickets={selectedCustomer.allTickets} />} 
+                      fileName={`CustomerReport-${selectedCustomer.name.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`}
+                    >
+                      {({ loading, error }) => (
+                        <button 
+                          className="px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold shadow-lg hover:bg-blue-700 transition-all flex items-center gap-2 disabled:opacity-50"
+                          disabled={loading}
+                          onClick={() => {
+                            if (error) {
+                              console.error('PDF generation error:', error);
+                              alert('Error generating PDF. Please try again.');
+                            }
+                          }}
+                        >
+                          <FileTextIcon className="w-4 h-4" />
+                          {loading ? 'Generating PDF...' : 'Download PDF'}
+                        </button>
+                      )}
+                    </PDFDownloadLink>
+                    
+                    {/* Excel Export */}
+                    <button 
+                      className="px-6 py-3 bg-green-600 text-white rounded-lg font-semibold shadow-lg hover:bg-green-700 transition-all flex items-center gap-2"
+                      onClick={async () => {
+                        try {
+                          const excelData = selectedCustomer.allTickets.map(ticket => ({
+                            'Ticket ID': ticket.ticketId || '-',
+                            'Customer': selectedCustomer.name,
+                            'Customer ID': selectedCustomer.customerId,
+                            'Description': ticket.description || '-',
+                            'Status': ticket.status || '-',
+                            'Open Time': ticket.openTime ? new Date(ticket.openTime).toLocaleString('id-ID') : '-',
+                            'Close Time': ticket.closeTime ? new Date(ticket.closeTime).toLocaleString('id-ID') : '-',
+                            'Handling Duration': ticket.handlingDuration?.formatted || '-',
+                            'Cause': ticket.cause || '-',
+                            'Handling': ticket.handling || '-'
+                          }));
+                          
+                          await exportToExcel(excelData, `CustomerReport-${selectedCustomer.name.replace(/[^a-zA-Z0-9]/g, '_')}`);
+                        } catch (error) {
+                          console.error('Excel export error:', error);
+                          alert('Error exporting Excel. Please try again.');
+                        }
+                      }}
+                    >
+                      <TableChartIcon className="w-4 h-4" />
+                      Export Excel
+                    </button>
+                    
+                    {/* CSV Export */}
+                    <button 
+                      className="px-6 py-3 bg-orange-600 text-white rounded-lg font-semibold shadow-lg hover:bg-orange-700 transition-all flex items-center gap-2"
+                      onClick={() => {
+                        try {
+                          const csvData = selectedCustomer.allTickets.map(ticket => ({
+                            'Ticket ID': ticket.ticketId || '-',
+                            'Customer': selectedCustomer.name,
+                            'Customer ID': selectedCustomer.customerId,
+                            'Description': ticket.description || '-',
+                            'Status': ticket.status || '-',
+                            'Open Time': ticket.openTime ? new Date(ticket.openTime).toLocaleString('id-ID') : '-',
+                            'Close Time': ticket.closeTime ? new Date(ticket.closeTime).toLocaleString('id-ID') : '-',
+                            'Handling Duration': ticket.handlingDuration?.formatted || '-',
+                            'Cause': ticket.cause || '-',
+                            'Handling': ticket.handling || '-'
+                          }));
+                          
+                          exportToCSV(csvData, `CustomerReport-${selectedCustomer.name.replace(/[^a-zA-Z0-9]/g, '_')}`);
+                        } catch (error) {
+                          console.error('CSV export error:', error);
+                          alert('Error exporting CSV. Please try again.');
+                        }
+                      }}
+                    >
+                      <TextSnippetIcon className="w-4 h-4" />
+                      Export CSV
+                    </button>
                   </div>
+                </div>
               </>
             )}
           </RadixDialog.Content>
         </RadixDialog.Portal>
       </RadixDialog.Root>
 
-      {/* Pagination */}
+      {/* Pagination with improved styling */}
       {totalPages > 1 && (
-        <div className="flex justify-center items-center gap-4 mt-8">
-          <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} className="px-4 py-2 rounded-md bg-gray-200 dark:bg-zinc-700 disabled:opacity-50">&laquo; Prev</button>
-          <span>Page {page} of {totalPages}</span>
-          <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages} className="px-4 py-2 rounded-md bg-gray-200 dark:bg-zinc-700 disabled:opacity-50">Next &raquo;</button>
+        <div className="flex justify-center items-center gap-4 mt-8 mb-4">
+          <button 
+            onClick={() => setPage(p => Math.max(1, p - 1))} 
+            disabled={page === 1} 
+            className="px-4 py-2 rounded-lg bg-gray-100 dark:bg-zinc-800 text-gray-700 dark:text-gray-300 font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-200 dark:hover:bg-zinc-700 transition-colors"
+          >
+            &laquo; Previous
+          </button>
+          <span className="text-gray-600 dark:text-gray-400 font-medium">Page {page} of {totalPages}</span>
+          <button 
+            onClick={() => setPage(p => Math.min(totalPages, p + 1))} 
+            disabled={page === totalPages} 
+            className="px-4 py-2 rounded-lg bg-gray-100 dark:bg-zinc-800 text-gray-700 dark:text-gray-300 font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-200 dark:hover:bg-zinc-700 transition-colors"
+          >
+            Next &raquo;
+          </button>
         </div>
       )}
     </PageWrapper>
