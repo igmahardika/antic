@@ -10,42 +10,43 @@ import SummaryCard from './ui/SummaryCard';
 import { useLiveQuery } from 'dexie-react-hooks';
 import PageWrapper from './PageWrapper';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { FileSpreadsheet } from 'lucide-react';
+import { FileSpreadsheet, Search, Filter } from 'lucide-react';
+import { Badge } from './ui/badge';
 
 const PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
 
 const columns = [
-  { key: 'customerId', label: 'Customer ID' },
-  { key: 'name', label: 'Name' },
-  { key: 'category', label: 'Category' },
-  { key: 'description', label: 'Description' },
-  { key: 'cause', label: 'Cause' },
-  { key: 'handling', label: 'Handling' },
-  { key: 'openTime', label: 'Open Time', render: v => formatDateTimeDDMMYYYY(v) },
-  { key: 'closeTime', label: 'Close Time', render: v => formatDateTimeDDMMYYYY(v) },
-  { key: 'duration', label: 'Duration', render: (v, row) => row.duration?.formatted || '-' },
-  { key: 'closeHandling', label: 'Close Penanganan', render: v => formatDateTimeDDMMYYYY(v) },
-  { key: 'handlingDuration', label: 'Durasi Penanganan', render: (v, row) => row.handlingDuration?.formatted || '-' },
-  { key: 'handling1', label: 'Penanganan 1' },
-  { key: 'closeHandling1', label: 'Close Penanganan 1', render: v => formatDateTimeDDMMYYYY(v) },
-  { key: 'handlingDuration1', label: 'Durasi Penanganan 1', render: (v, row) => row.handlingDuration1?.formatted || '-' },
-  { key: 'handling2', label: 'Penanganan 2' },
-  { key: 'closeHandling2', label: 'Close Penanganan 2', render: v => formatDateTimeDDMMYYYY(v) },
-  { key: 'handlingDuration2', label: 'Durasi Penanganan 2', render: (v, row) => row.handlingDuration2?.formatted || '-' },
-  { key: 'handling3', label: 'Penanganan 3' },
-  { key: 'closeHandling3', label: 'Close Penanganan 3', render: v => formatDateTimeDDMMYYYY(v) },
-  { key: 'handlingDuration3', label: 'Durasi Penanganan 3', render: (v, row) => row.handlingDuration3?.formatted || '-' },
-  { key: 'handling4', label: 'Penanganan 4' },
-  { key: 'closeHandling4', label: 'Close Penanganan 4', render: v => formatDateTimeDDMMYYYY(v) },
-  { key: 'handlingDuration4', label: 'Durasi Penanganan 4', render: (v, row) => row.handlingDuration4?.formatted || '-' },
-  { key: 'handling5', label: 'Penanganan 5' },
-  { key: 'closeHandling5', label: 'Close Penanganan 5', render: v => formatDateTimeDDMMYYYY(v) },
-  { key: 'handlingDuration5', label: 'Durasi Penanganan 5', render: (v, row) => row.handlingDuration5?.formatted || '-' },
-  { key: 'openBy', label: 'Open By' },
-  { key: 'cabang', label: 'Cabang' },
-  { key: 'status', label: 'Status' },
-  { key: 'classification', label: 'Klasifikasi' },
-  { key: 'subClassification', label: 'Sub Klasifikasi' },
+  { key: 'customerId', label: 'Customer ID', width: '120px' },
+  { key: 'name', label: 'Name', width: '150px' },
+  { key: 'category', label: 'Category', width: '120px' },
+  { key: 'description', label: 'Description', width: '200px' },
+  { key: 'cause', label: 'Cause', width: '180px' },
+  { key: 'handling', label: 'Handling', width: '180px' },
+  { key: 'openTime', label: 'Open Time', width: '140px', render: (v: any) => v ? formatDateTimeDDMMYYYY(v) : '' },
+  { key: 'closeTime', label: 'Close Time', width: '140px', render: (v: any) => v ? formatDateTimeDDMMYYYY(v) : '' },
+  { key: 'duration', label: 'Duration', width: '120px', render: (_v: any, row: any) => row.duration?.formatted || '' },
+  { key: 'closeHandling', label: 'Close Penanganan', width: '140px', render: (v: any) => v ? formatDateTimeDDMMYYYY(v) : '' },
+  { key: 'handlingDuration', label: 'Durasi Penanganan', width: '140px', render: (_v: any, row: any) => row.handlingDuration?.formatted || '' },
+  { key: 'handling1', label: 'Penanganan 1', width: '180px' },
+  { key: 'closeHandling1', label: 'Close Penanganan 1', width: '140px', render: (v: any) => v ? formatDateTimeDDMMYYYY(v) : '' },
+  { key: 'handlingDuration1', label: 'Durasi Penanganan 1', width: '140px', render: (_v: any, row: any) => row.handlingDuration1?.formatted || '' },
+  { key: 'handling2', label: 'Penanganan 2', width: '180px' },
+  { key: 'closeHandling2', label: 'Close Penanganan 2', width: '140px', render: (v: any) => v ? formatDateTimeDDMMYYYY(v) : '' },
+  { key: 'handlingDuration2', label: 'Durasi Penanganan 2', width: '140px', render: (_v: any, row: any) => row.handlingDuration2?.formatted || '' },
+  { key: 'handling3', label: 'Penanganan 3', width: '180px' },
+  { key: 'closeHandling3', label: 'Close Penanganan 3', width: '140px', render: (v: any) => v ? formatDateTimeDDMMYYYY(v) : '' },
+  { key: 'handlingDuration3', label: 'Durasi Penanganan 3', width: '140px', render: (_v: any, row: any) => row.handlingDuration3?.formatted || '' },
+  { key: 'handling4', label: 'Penanganan 4', width: '180px' },
+  { key: 'closeHandling4', label: 'Close Penanganan 4', width: '140px', render: (v: any) => v ? formatDateTimeDDMMYYYY(v) : '' },
+  { key: 'handlingDuration4', label: 'Durasi Penanganan 4', width: '140px', render: (_v: any, row: any) => row.handlingDuration4?.formatted || '' },
+  { key: 'handling5', label: 'Penanganan 5', width: '180px' },
+  { key: 'closeHandling5', label: 'Close Penanganan 5', width: '140px', render: (v: any) => v ? formatDateTimeDDMMYYYY(v) : '' },
+  { key: 'handlingDuration5', label: 'Durasi Penanganan 5', width: '140px', render: (_v: any, row: any) => row.handlingDuration5?.formatted || '' },
+  { key: 'openBy', label: 'Open By', width: '120px' },
+  { key: 'cabang', label: 'Cabang', width: '100px' },
+  { key: 'status', label: 'Status', width: '100px' },
+  { key: 'classification', label: 'Klasifikasi', width: '120px' },
+  { key: 'subClassification', label: 'Sub Klasifikasi', width: '140px' },
 ];
 
 const GridView = ({ data: propsData }: { data?: ITicket[] }) => {
@@ -55,6 +56,7 @@ const GridView = ({ data: propsData }: { data?: ITicket[] }) => {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [validasiFilter, setValidasiFilter] = useState<'all' | 'valid' | 'invalid'>('all');
+  
   // Ambil semua customer dari IndexedDB
   const allCustomers = useLiveQuery(() => db.customers.toArray(), []);
   const customerNames = useMemo(() => new Set((allCustomers || []).map(c => (c.nama || '').trim().toLowerCase())), [allCustomers]);
@@ -69,13 +71,13 @@ const GridView = ({ data: propsData }: { data?: ITicket[] }) => {
     if (!data) return [];
     let result = data;
     if (search) {
-    const s = search.toLowerCase();
+      const s = search.toLowerCase();
       result = result.filter(row =>
-      columns.some(col => {
-        const val = row[col.key];
-        return val && String(val).toLowerCase().includes(s);
-      })
-    );
+        columns.some(col => {
+          const val = row[col.key];
+          return val && String(val).toLowerCase().includes(s);
+        })
+      );
     }
     // Filter hanya untuk tiket tahun 2025
     if (validasiFilter !== 'all' && customerNames.size > 0) {
@@ -94,99 +96,157 @@ const GridView = ({ data: propsData }: { data?: ITicket[] }) => {
 
   return (
     <PageWrapper>
-      <div className="space-y-6">
-
-
-        {/* Summary Cards - Enhanced UI */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-          <SummaryCard
-            icon={<ConfirmationNumberIcon className="w-5 h-5 text-white" />}
-            title="TOTAL TICKETS"
-            value={totalTicketsInDb ?? '-'}
-            description="Total recorded tickets (no filter applied)"
-            iconBg="bg-blue-700"
-          />
-          <SummaryCard
-            icon={<GroupIcon className="w-5 h-5 text-white" />}
-            title="UNIQUE CUSTOMERS"
-            value={allTicketsInDb ? new Set(allTicketsInDb.map(t => t.customerId)).size : 0}
-            description="Number of unique customers (no filter applied)"
-            iconBg="bg-green-600"
-          />
-          <SummaryCard
-            icon={<HowToRegIcon className="w-5 h-5 text-white" />}
-            title="UNIQUE AGENTS"
-            value={allTicketsInDb ? new Set(allTicketsInDb.map(t => t.openBy)).size : 0}
-            description="Number of unique agents handling tickets (no filter applied)"
-            iconBg="bg-purple-700"
-          />
+      {/* Header Section */}
+      <div className="mb-8">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-bold text-card-foreground mb-2">Ticket Data</h1>
+            <p className="text-gray-600 dark:text-gray-400 text-base">Comprehensive view of all ticket information and customer data</p>
+          </div>
         </div>
+      </div>
 
-        {/* Search and Filter Controls */}
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-              <div className="relative max-w-xs w-full">
-                <input
-                  type="text"
-                  className="form-input ps-10 px-3 py-2 rounded-md focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white w-full text-sm"
-                  placeholder="Quick search..."
-                  value={search}
-                  onChange={e => { setSearch(e.target.value); setPage(1); }}
-                />
-                <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                  <svg className="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>
-                </div>
+      {/* Summary Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+        <SummaryCard
+          icon={<ConfirmationNumberIcon className="w-6 h-6 text-white" />}
+          title="Total Tickets"
+          value={totalTicketsInDb ?? '-'}
+          description="Total recorded tickets in database"
+          iconBg="bg-blue-600"
+        />
+        <SummaryCard
+          icon={<GroupIcon className="w-6 h-6 text-white" />}
+          title="Unique Customers"
+          value={allTicketsInDb ? new Set(allTicketsInDb.map(t => t.customerId)).size : 0}
+          description="Number of unique customers"
+          iconBg="bg-green-600"
+        />
+        <SummaryCard
+          icon={<HowToRegIcon className="w-6 h-6 text-white" />}
+          title="Unique Agents"
+          value={allTicketsInDb ? new Set(allTicketsInDb.map(t => t.openBy)).size : 0}
+          description="Number of unique agents handling tickets"
+          iconBg="bg-purple-600"
+        />
+      </div>
+
+      {/* Search and Filter Controls */}
+      <Card className="mb-6 shadow-sm">
+        <CardContent className="p-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="relative max-w-md w-full">
+              <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                <Search className="h-4 w-4 text-gray-400" />
               </div>
-              <div className="flex items-center gap-2">
-                <span className="text-sm">Validasi Customer:</span>
-                <select value={validasiFilter} onChange={e => { setValidasiFilter(e.target.value as any); setPage(1); }} className="rounded px-2 py-1 text-sm">
-                  <option value="all">Semua</option>
-                  <option value="valid">Valid</option>
-                  <option value="invalid">Tidak Valid</option>
-                </select>
-              </div>
+              <input
+                type="text"
+                className="w-full pl-10 pr-4 py-2.5 text-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                placeholder="Search tickets, customers, descriptions..."
+                value={search}
+                onChange={e => { setSearch(e.target.value); setPage(1); }}
+              />
             </div>
-          </CardContent>
-        </Card>
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
+                <Filter className="h-4 w-4 text-gray-500" />
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Customer Validation:</span>
+              </div>
+              <select 
+                value={validasiFilter} 
+                onChange={e => { setValidasiFilter(e.target.value as any); setPage(1); }} 
+                className="px-3 py-2 text-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+              >
+                <option value="all">All Records</option>
+                <option value="valid">Valid Customers</option>
+                <option value="invalid">Invalid Customers</option>
+              </select>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
-        {/* Data Table */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <FileSpreadsheet className="w-5 h-5" />
-              Ticket Data
-            </CardTitle>
-            <CardDescription>
-              Showing {paged.length} of {filtered.length} tickets
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="overflow-x-auto">
+      {/* Data Table */}
+      <Card className="shadow-sm">
+        <CardHeader className="pb-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2 text-xl">
+                <FileSpreadsheet className="w-5 h-5 text-blue-600" />
+                Ticket Records
+              </CardTitle>
+              <CardDescription className="mt-1">
+                Showing {paged.length} of {filtered.length} tickets
+                                 {validasiFilter !== 'all' && (
+                   <Badge variant="info" className="ml-2">
+                     {validasiFilter === 'valid' ? 'Valid Customers Only' : 'Invalid Customers Only'}
+                   </Badge>
+                 )}
+              </CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+                <CardContent className="p-0">
+          <div className="w-full overflow-x-auto">
+            <div className="inline-block min-w-full align-middle">
+              <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
                 <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                  <thead className="bg-gray-50 dark:bg-gray-700">
+                  <thead className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-gray-800 dark:to-gray-700">
                     <tr>
                       {columns.map(col => (
-                        <th key={col.key} className="px-5 py-3 text-left text-xs font-bold text-gray-500 uppercase whitespace-nowrap">{col.label}</th>
+                        <th 
+                          key={col.key} 
+                          className="px-4 py-4 text-left text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider whitespace-nowrap border-r border-gray-200 dark:border-gray-600 last:border-r-0"
+                          style={{ width: col.width, minWidth: col.width }}
+                        >
+                          <div className="flex items-center gap-2">
+                            <span>{col.label}</span>
+                          </div>
+                        </th>
                       ))}
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                  <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
                     {paged.length === 0 ? (
-                      <tr><td colSpan={columns.length} className="text-center py-8 text-gray-400">No data found</td></tr>
+                      <tr>
+                        <td colSpan={columns.length} className="text-center py-12 text-gray-500 dark:text-gray-400">
+                          <div className="flex flex-col items-center gap-3">
+                            <div className="w-12 h-12 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center">
+                              <FileSpreadsheet className="w-6 h-6 text-gray-400" />
+                            </div>
+                            <div className="text-center">
+                              <p className="text-sm font-medium text-gray-900 dark:text-gray-100">No tickets found</p>
+                              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                {search ? 'Try adjusting your search criteria' : 'No data available'}
+                              </p>
+                            </div>
+                          </div>
+                        </td>
+                      </tr>
                     ) : (
                       paged.map((row, i) => {
                         const is2025 = row.openTime && row.openTime.startsWith('2025');
                         const isValid = customerNames.has((row.name || '').trim().toLowerCase());
                         return (
                           <tr key={i} className={
-                            (i % 2 === 0 ? 'bg-card text-card-foreground ' : 'bg-gray-50 dark:bg-gray-800') +
-                            (is2025 && !isValid ? ' bg-red-50 dark:bg-red-900/30' : '')
+                            i % 2 === 0 
+                              ? 'bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors duration-150' 
+                              : 'bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-150'
                           }>
                             {columns.map(col => (
-                              <td key={col.key} className="px-5 py-3 whitespace-pre-line text-sm text-card-foreground align-top">
-                                {col.render ? col.render(row[col.key], row) : row[col.key] || '-'}
+                              <td 
+                                key={col.key} 
+                                className="px-4 py-3 text-sm text-gray-900 dark:text-gray-100 align-top border-r border-gray-200 dark:border-gray-600 last:border-r-0"
+                                style={{ width: col.width, minWidth: col.width }}
+                              >
+                                                              <div className="whitespace-pre-line max-w-full overflow-hidden">
+                                {col.render ? col.render(row[col.key], row) : (row[col.key] || '')}
+                              </div>
+                                {is2025 && !isValid && col.key === 'name' && (
+                                  <Badge variant="danger" className="mt-1 text-xs">
+                                    Invalid Customer
+                                  </Badge>
+                                )}
                               </td>
                             ))}
                           </tr>
@@ -196,60 +256,69 @@ const GridView = ({ data: propsData }: { data?: ITicket[] }) => {
                   </tbody>
                 </table>
               </div>
+            </div>
+          </div>
 
-              {paged.length === 0 && (
-                <div className="text-center py-8 text-gray-500">
-                  No tickets found matching your criteria
-                </div>
-              )}
-
-              {/* Pagination */}
-              <div className="py-5 px-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm">Page Size:</span>
-                  <select value={pageSize} onChange={e => { setPageSize(Number(e.target.value)); setPage(1); }} className="rounded px-2 py-1 text-sm">
-                    {PAGE_SIZE_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}
-                  </select>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <button 
-                    onClick={() => setPage(1)} 
-                    disabled={page === 1} 
-                    className="text-gray-400 hover:text-blue-600 p-2 inline-flex items-center gap-2 font-medium rounded-md disabled:opacity-50 dark:text-gray-500 dark:hover:text-blue-400"
-                  >
-                    «
-                  </button>
-                  <button 
-                    onClick={() => setPage(p => Math.max(1, p - 1))} 
-                    disabled={page === 1} 
-                    className="text-gray-400 hover:text-blue-600 p-2 inline-flex items-center gap-2 font-medium rounded-md disabled:opacity-50 dark:text-gray-500 dark:hover:text-blue-400"
-                  >
-                    ‹
-                  </button>
-                  <span className="w-10 h-10 bg-blue-600 text-white p-2 inline-flex items-center justify-center text-sm font-medium rounded-full dark:bg-blue-500">
+          {/* Pagination */}
+          <div className="px-6 py-4 bg-gray-50 dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Page Size:</span>
+                <select 
+                  value={pageSize} 
+                  onChange={e => { setPageSize(Number(e.target.value)); setPage(1); }} 
+                  className="px-3 py-1.5 text-sm bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                >
+                  {PAGE_SIZE_OPTIONS.map(opt => <option key={opt} value={opt}>{opt} per page</option>)}
+                </select>
+              </div>
+              
+              <div className="flex items-center gap-2">
+                <button 
+                  onClick={() => setPage(1)} 
+                  disabled={page === 1} 
+                  className="p-2 text-gray-400 hover:text-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors rounded-md hover:bg-gray-100 dark:hover:bg-gray-700"
+                  title="First page"
+                >
+                  «
+                </button>
+                <button 
+                  onClick={() => setPage(p => Math.max(1, p - 1))} 
+                  disabled={page === 1} 
+                  className="p-2 text-gray-400 hover:text-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors rounded-md hover:bg-gray-100 dark:hover:bg-gray-700"
+                  title="Previous page"
+                >
+                  ‹
+                </button>
+                
+                <div className="flex items-center gap-1">
+                  <span className="px-3 py-1.5 bg-blue-600 text-white text-sm font-medium rounded-md">
                     {page}
                   </span>
-                  <button 
-                    onClick={() => setPage(p => Math.min(totalPages, p + 1))} 
-                    disabled={page === totalPages} 
-                    className="text-gray-400 hover:text-blue-600 p-2 inline-flex items-center gap-2 font-medium rounded-md disabled:opacity-50 dark:text-gray-500 dark:hover:text-blue-400"
-                  >
-                    ›
-                  </button>
-                  <button 
-                    onClick={() => setPage(totalPages)} 
-                    disabled={page === totalPages} 
-                    className="text-gray-400 hover:text-blue-600 p-2 inline-flex items-center gap-2 font-medium rounded-md disabled:opacity-50 dark:text-gray-500 dark:hover:text-blue-400"
-                  >
-                    »
-                  </button>
-                  <span className="text-sm">{`Page ${page} of ${totalPages}`}</span>
+                  <span className="text-sm text-gray-500 dark:text-gray-400">of {totalPages}</span>
                 </div>
+                
+                <button 
+                  onClick={() => setPage(p => Math.min(totalPages, p + 1))} 
+                  disabled={page === totalPages} 
+                  className="p-2 text-gray-400 hover:text-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors rounded-md hover:bg-gray-100 dark:hover:bg-gray-700"
+                  title="Next page"
+                >
+                  ›
+                </button>
+                <button 
+                  onClick={() => setPage(totalPages)} 
+                  disabled={page === totalPages} 
+                  className="p-2 text-gray-400 hover:text-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors rounded-md hover:bg-gray-100 dark:hover:bg-gray-700"
+                  title="Last page"
+                >
+                  »
+                </button>
               </div>
             </div>
-          </CardContent>
-        </Card>
-      </div>
+          </div>
+        </CardContent>
+      </Card>
     </PageWrapper>
   );
 };
