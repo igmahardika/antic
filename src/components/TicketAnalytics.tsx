@@ -2599,20 +2599,25 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
             <div className="flex items-center justify-between mb-6">
               <div>
                 <h2 className="text-xl font-bold text-card-foreground">Category Hotspot Analysis</h2>
-                <p className="text-sm text-muted-foreground mt-1">Analisis kategori berdasarkan impact score dan volume tiket</p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Analisis kategori berdasarkan <strong>Impact Score</strong> yang dihitung dari jumlah tiket × rata-rata durasi penyelesaian
+                </p>
               </div>
               <div className="flex items-center gap-4 text-xs text-muted-foreground">
                 <div className="flex items-center gap-1">
                   <div className="w-3 h-3 bg-gradient-to-r from-red-400 to-red-600 rounded"></div>
                   <span>High Impact</span>
+                  <span className="text-xs text-muted-foreground">(&gt;70% dari max score)</span>
                 </div>
                 <div className="flex items-center gap-1">
                   <div className="w-3 h-3 bg-gradient-to-r from-yellow-400 to-yellow-600 rounded"></div>
                   <span>Medium Impact</span>
+                  <span className="text-xs text-muted-foreground">(40-70% dari max score)</span>
                 </div>
                 <div className="flex items-center gap-1">
                   <div className="w-3 h-3 bg-gradient-to-r from-green-400 to-green-600 rounded"></div>
                   <span>Low Impact</span>
+                  <span className="text-xs text-muted-foreground">(&lt;40% dari max score)</span>
                 </div>
               </div>
             </div>
@@ -2710,10 +2715,12 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
                             <div>
                               <div className="text-xs text-muted-foreground">Avg Duration</div>
                               <div className="font-mono text-sm font-medium text-card-foreground">{item.avgDurationFormatted}</div>
+                              <div className="text-xs text-muted-foreground">Rata-rata waktu penyelesaian</div>
                             </div>
                             <div>
                               <div className="text-xs text-muted-foreground">Contribution</div>
                               <div className="text-sm font-medium text-card-foreground">{contrib.toFixed(1)}%</div>
+                              <div className="text-xs text-muted-foreground">% dari total tiket</div>
                             </div>
                             <div>
                               <div className="text-xs text-muted-foreground">Trend (MoM)</div>
@@ -2728,26 +2735,60 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
                                 ) : (
                                   <span className="text-xs text-gray-400">-</span>
                                 )}
-              </div>
-          </div>
+                              </div>
+                              <div className="text-xs text-muted-foreground">Month over Month</div>
+                            </div>
                             <div>
                               <div className="text-xs text-muted-foreground">Top Sub</div>
                               <div className="text-sm font-medium text-card-foreground truncate" title={item.topSubCategory}>
                                 {item.topSubCategory}
-        </div>
-                          </div>
+                              </div>
+                              <div className="text-xs text-muted-foreground">Sub-kategori terbanyak</div>
+                            </div>
                           </div>
                           
                           {/* Impact Score Bar */}
-                  <div>
+                          <div>
                             <div className="flex items-center justify-between text-xs text-muted-foreground mb-1">
-                              <span>Impact Score</span>
+                              <div className="flex items-center gap-2">
+                                <span>Impact Score</span>
+                                <div className="group relative">
+                                  <svg className="w-4 h-4 text-blue-500 cursor-help" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 3 3 0 100-6zm0 8a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
+                                  </svg>
+                                  <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 text-xs rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
+                                    <div className="font-semibold mb-1">Impact Score Formula:</div>
+                                    <div>Jumlah Tiket × Rata-rata Durasi</div>
+                                    <div className="text-blue-300 dark:text-blue-700 mt-1">
+                                      {item.count} × {item.avgDuration.toFixed(2)} jam = {computedImpact.toFixed(2)}
+                                    </div>
+                                    <div className="text-xs text-gray-300 dark:text-gray-600 mt-1">
+                                      Semakin tinggi score = Semakin banyak resources yang dikonsumsi
+                                    </div>
+                                    <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-zinc-900 dark:border-t-zinc-100"></div>
+                                  </div>
+                                </div>
+                              </div>
                               <span className="font-bold text-card-foreground">{computedImpact.toFixed(2)}</span>
-                        </div>
+                            </div>
                             <Progress 
                               value={(computedImpact / maxImpact) * 100}
                               className={`h-2 bg-gradient-to-r ${impactColor} transition-all duration-700`}
                             />
+                            <div className="flex items-center justify-between text-xs text-muted-foreground mt-1">
+                              <span className="text-xs">
+                                {item.count} tiket × {item.avgDuration.toFixed(2)} jam
+                              </span>
+                              <span className={`text-xs font-medium ${
+                                impactColor.includes('red') ? 'text-red-600 dark:text-red-400' :
+                                impactColor.includes('yellow') ? 'text-yellow-600 dark:text-yellow-400' :
+                                'text-green-600 dark:text-green-400'
+                              }`}>
+                                {impactColor.includes('red') ? 'High Impact' :
+                                 impactColor.includes('yellow') ? 'Medium Impact' :
+                                 'Low Impact'}
+                              </span>
+                            </div>
                           </div>
                         </div>
                       </div>
