@@ -1660,10 +1660,10 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
         {/* 3. Tickets by Client Type (2025) */}
         <Card className="bg-card text-card-foreground rounded-2xl shadow-lg">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <ShowChartIcon className="w-6 h-6 text-purple-600" /> Tickets by Client Type (2025)
+            <CardTitle className="flex items-center gap-2 text-base">
+              <ShowChartIcon className="w-5 h-5 text-purple-600" /> Tickets by Client Type (2025)
             </CardTitle>
-            <CardDescription>Ticket distribution by client categories</CardDescription>
+            <CardDescription className="text-xs">Monthly ticket distribution by client type</CardDescription>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
@@ -1776,10 +1776,10 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
                 {/* 4. Tickets by Client Category (2025) */}
         <Card className="bg-card text-card-foreground rounded-2xl shadow-lg">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <ShowChartIcon className="w-6 h-6 text-indigo-600" /> Tickets by Client Category (2025)
+            <CardTitle className="flex items-center gap-2 text-base">
+              <ShowChartIcon className="w-5 h-5 text-indigo-600" /> Tickets by Client Category (2025)
             </CardTitle>
-            <CardDescription>Ticket distribution by client categories</CardDescription>
+            <CardDescription className="text-xs">Monthly ticket distribution by client category</CardDescription>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
@@ -1888,10 +1888,10 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
                 {/* 5. Unique Complaining Clients by Type (2025) */}
         <Card className="bg-card text-card-foreground rounded-2xl shadow-lg">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <ShowChartIcon className="w-6 h-6 text-teal-600" /> Unique Complaining Clients by Type (2025)
+            <CardTitle className="flex items-center gap-2 text-base">
+              <ShowChartIcon className="w-5 h-5 text-teal-600" /> Unique Complaining Clients by Type (2025)
             </CardTitle>
-            <CardDescription>Number of unique clients with complaints by type</CardDescription>
+            <CardDescription className="text-xs">Number of unique clients with complaints by type</CardDescription>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
@@ -2005,7 +2005,7 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
         <Card className="bg-card text-card-foreground rounded-2xl shadow-lg">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <ShowChartIcon className="w-6 h-6 text-orange-600" /> Unique Complaining Clients by Category (2025)
+              <ShowChartIcon className="w-5 h-5 text-orange-600" /> Unique Complaining Clients by Category (2025)
             </CardTitle>
             <CardDescription>Number of unique clients with complaints by category</CardDescription>
           </CardHeader>
@@ -2137,10 +2137,10 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
         {/* 7. Complaint Penetration Ratio by Type (2025) */}
         <Card className="bg-card text-card-foreground rounded-2xl shadow-lg">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <ShowChartIcon className="w-6 h-6 text-red-600" /> Complaint Penetration Ratio by Type (2025)
+            <CardTitle className="flex items-center gap-2 text-base">
+              <ShowChartIcon className="w-5 h-5 text-red-600" /> Complaint Penetration Ratio by Type (2025)
             </CardTitle>
-            <CardDescription>Percentage of clients with complaints by client type</CardDescription>
+            <CardDescription className="text-xs">Complaint penetration ratio by client type</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="w-full h-[300px] min-w-0">
@@ -2247,13 +2247,13 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
         {/* 8. Complaint Penetration Ratio by Category (2025) */}
         <Card className="bg-card text-card-foreground rounded-2xl shadow-lg">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <ShowChartIcon className="w-6 h-6 text-pink-600" /> Complaint Penetration Ratio by Category (2025)
+            <CardTitle className="flex items-center gap-2 text-base">
+              <ShowChartIcon className="w-5 h-5 text-pink-600" /> Complaint Penetration Ratio by Category (2025)
             </CardTitle>
-            <CardDescription>Percentage of clients with complaints by client category</CardDescription>
+            <CardDescription className="text-xs">Complaint penetration ratio by client category</CardDescription>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={260}>
+            <ResponsiveContainer width="100%" height={300}>
               <AreaChart
                 data={(() => {
                   const months = Object.keys(tiketPerKategoriPerBulan).sort();
@@ -2351,10 +2351,10 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
         {/* Active Clients per Month (2025) */}
         <Card className="bg-card text-card-foreground rounded-2xl shadow-lg">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <ShowChartIcon className="w-6 h-6 text-cyan-600" /> Active Clients per Month (2025)
+            <CardTitle className="flex items-center gap-2 text-base">
+              <ShowChartIcon className="w-5 h-5 text-cyan-600" /> Active Clients per Month (2025)
             </CardTitle>
-            <CardDescription>Total active clients vs clients with complaints</CardDescription>
+            <CardDescription className="text-xs">Monthly active clients vs complaint clients</CardDescription>
           </CardHeader>
           <CardContent className="overflow-x-auto">
             <div className="w-full h-[300px] min-w-0">
@@ -2478,13 +2478,13 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
         {/* 9. Total Complaint Penetration Ratio (2025) */}
         <Card className="bg-card text-card-foreground rounded-2xl shadow-lg">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <ShowChartIcon className="w-6 h-6 text-emerald-600" /> Total Complaint Penetration Ratio (2025)
+            <CardTitle className="flex items-center gap-2 text-base">
+              <ShowChartIcon className="w-5 h-5 text-emerald-600" /> Total Complaint Penetration Ratio (2025)
             </CardTitle>
-            <CardDescription>Overall complaint penetration ratio across all client types</CardDescription>
+            <CardDescription className="text-xs">Overall complaint penetration ratio across all clients</CardDescription>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={260}>
+            <ResponsiveContainer width="100%" height={300}>
               <AreaChart
                 data={(() => {
                   const months = Object.keys(tiketPerJenisKlienPerBulan).sort();
