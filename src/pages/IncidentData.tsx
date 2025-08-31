@@ -774,47 +774,47 @@ export const IncidentData: React.FC = () => {
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div className="flex gap-2">
-            <Button onClick={() => setShowUpload(!showUpload)} variant="outline">
-              <Upload className="w-4 h-4 mr-2" />
+            <Button onClick={() => setShowUpload(!showUpload)} variant="outline" className="px-2 py-1 text-xs h-7">
+              <Upload className="w-2.5 h-2.5 mr-1" />
               Upload Data
             </Button>
-            <Button onClick={exportToCSV} variant="outline">
-              <Download className="w-4 h-4 mr-2" />
+            <Button onClick={exportToCSV} variant="outline" className="px-2 py-1 text-xs h-7">
+              <Download className="w-2.5 h-2.5 mr-1" />
               Export CSV
             </Button>
             {dbStats && dbStats.duplicateGroups > 0 && (
               <Button 
                 onClick={() => setShowCleanupConfirm(true)} 
                 variant="outline"
-                className="bg-yellow-600 hover:bg-yellow-700 text-white"
+                className="bg-yellow-600 hover:bg-yellow-700 text-white px-2 py-1 text-xs h-7"
               >
-                <AlertTriangle className="w-4 h-4 mr-2" />
+                <AlertTriangle className="w-2.5 h-2.5 mr-1" />
                 Clean Duplicates ({dbStats.duplicateGroups})
               </Button>
             )}
             <Button
               onClick={validateDatabase}
               variant="outline"
-              className="bg-green-600 hover:bg-green-700 text-white"
+              className="bg-green-600 hover:bg-green-700 text-white px-2 py-1 text-xs h-7"
             >
-              <Database className="w-4 h-4 mr-2" />
+              <Database className="w-2.5 h-2.5 mr-1" />
               Validate Database
             </Button>
             <Button
               onClick={handleRecalculateDurations}
               disabled={isRecalculating}
               variant="outline"
-              className="bg-blue-600 hover:bg-blue-700 text-white"
+              className="bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 text-xs h-7"
             >
-              <Calculator className="w-4 h-4 mr-2" />
+              <Calculator className="w-2.5 h-2.5 mr-1" />
               {isRecalculating ? 'Recalculating...' : 'Recalculate Durations'}
             </Button>
             <Button 
               onClick={() => setShowResetConfirm(true)} 
               variant="destructive"
-              className="bg-red-600 hover:bg-red-700 text-white"
+              className="bg-red-600 hover:bg-red-700 text-white px-2 py-1 text-xs h-7"
             >
-              <Trash2 className="w-4 h-4 mr-2" />
+              <Trash2 className="w-2.5 h-2.5 mr-1" />
               Reset Data
             </Button>
           </div>
