@@ -1,7 +1,7 @@
-import React, { createContext, useContext, useMemo, useState, useEffect } from 'react';
+import { createContext, useContext, useMemo, useState, useEffect } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { db, ITicket } from '@/lib/db';
-import { formatDurationDHM, analyzeKeywords, generateAnalysisConclusion } from '@/lib/utils';
+import { db } from '@/lib/db';
+import { formatDurationDHM } from '@/lib/utils';
 import { useAgentStore } from '@/store/agentStore';
 
 const AgentAnalyticsContext = createContext(null);
@@ -72,7 +72,7 @@ export const AgentAnalyticsProvider = ({ children }) => {
   let mostEfficientAgent = { name: 'N/A', avg: Infinity };
   let highestResolutionAgent = { name: 'N/A', rate: 0 };
   const agentAnalyticsData = Object.entries(agentPerformance).map(([agentName, data]) => {
-    const d = data as any;
+    const d = data as { durations: number[]; closed: number };
     const ticketCount = d.durations.length;
     if (ticketCount === 0) return null;
     const totalDuration = Array.isArray(d.durations) ? d.durations.map(Number).filter(v => !isNaN(v)).reduce((acc, curr) => acc + curr, 0) : 0;
@@ -177,7 +177,9 @@ export const AgentAnalyticsProvider = ({ children }) => {
         agentMonthlyPerformance[agentName] = {};
       }
       agentMonthlyPerformance[agentName][monthYear] = (agentMonthlyPerformance[agentName][monthYear] || 0) + 1;
-    } catch (e) {}
+    } catch {
+      // Ignore invalid dates
+    }
   });
   // Filter sortedMonths sesuai cutoffStart dan cutoffEnd
   const sortedMonths: string[] = Array.from(allMonths).map(String)
@@ -217,7 +219,9 @@ export const AgentAnalyticsProvider = ({ children }) => {
       if (!agentMonthlySLA[agentName]) agentMonthlySLA[agentName] = {};
       if (!agentMonthlySLA[agentName][monthYear]) agentMonthlySLA[agentName][monthYear] = [];
       agentMonthlySLA[agentName][monthYear].push(ticket.sla);
-    } catch (e) {}
+    } catch {
+      // Ignore invalid dates
+    }
   });
 
   // Hitung score bulanan per agent
@@ -250,8 +254,8 @@ export const AgentAnalyticsProvider = ({ children }) => {
       const [year, monthNum] = (month as string).split('-');
       return `${monthNum}/${year}`;
     }),
-    datasets: Object.entries(agentMonthlyPerformance).map(([agentName, monthlyData], index) => {
-      const md = monthlyData as any;
+    datasets: Object.entries(agentMonthlyPerformance).map(([agentName, monthlyData]) => {
+      const md = monthlyData as Record<string, number>;
       const color = '#3b82f6';
       return {
         label: agentName,
@@ -425,7 +429,7 @@ export const AgentAnalyticsProvider = ({ children }) => {
     } else {
       setAgentMetrics([]);
     }
-  }, [filteredTickets]);
+  }, [filteredTickets, setAgentMetrics]);
 
   return (
     <AgentAnalyticsContext.Provider value={value}>
