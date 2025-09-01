@@ -176,7 +176,7 @@ function AppLayout() {
                 <Route path="/kanban-board" element={<KanbanBoard />} />
                 <Route path="/ticket-analytics" element={<TicketAnalyticsProvider><TicketAnalytics /></TicketAnalyticsProvider>} />
                 <Route path="/upload" element={<UploadProcess onUploadComplete={() => {}} />} />
-                <Route path="/summary-dashboard" element={<SummaryDashboard />} />
+                <Route path="/summary-dashboard" element={<SummaryDashboard standalone={true} />} />
                 <Route path="/admin-rumus" element={<AdminRumus />} />
                 <Route path="/master-agent" element={<MasterDataAgent />} />
                 <Route path="/customer" element={<CustomerData />} />

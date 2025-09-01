@@ -645,7 +645,7 @@ const Dashboard = () => {
       {/* Gradient background layer */}
       <div className="fixed inset-0 -z-10 bg-gradient-to-br from-background via-background to-background" />
       {/* Tampilkan summary dashboard saja */}
-      <SummaryDashboard ticketAnalyticsData={ticketAnalyticsData} filteredTickets={gridData} />
+      <SummaryDashboard ticketAnalyticsData={ticketAnalyticsData} filteredTickets={gridData} standalone={false} />
     </PageWrapper>
   );
 };

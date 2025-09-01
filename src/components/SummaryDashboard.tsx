@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import SummaryCard from '@/components/ui/SummaryCard';
 import PageWrapper from '@/components/PageWrapper';
+import PageHeader from '@/components/ui/PageHeader';
 import { formatDurationDHM } from '@/lib/utils';
 
 // MUI Icons for consistency with project standards
@@ -25,7 +26,7 @@ import { db } from '@/lib/db';
 import { calculateIncidentStats, normalizeNCAL } from '@/utils/incidentUtils';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 
-const SummaryDashboard = ({ ticketAnalyticsData, filteredTickets }: any) => {
+const SummaryDashboard = ({ ticketAnalyticsData, filteredTickets, standalone = false }: any) => {
   // Get incident data for comprehensive dashboard
   const allIncidents = useLiveQuery(() => db.incidents.toArray(), []);
   
@@ -372,16 +373,15 @@ const SummaryDashboard = ({ ticketAnalyticsData, filteredTickets }: any) => {
     })).sort((a, b) => new Date(a.month).getTime() - new Date(b.month).getTime());
   }, [allIncidents]);
 
-  return (
-    <PageWrapper>
-      {/* Gradient background layer */}
-      <div className="fixed inset-0 -z-10 bg-gradient-to-br from-blue-100 via-white to-pink-100 dark:from-gray-900 dark:via-gray-950 dark:to-blue-900" />
-      <div className="space-y-6">
-
-
-        <div className="grid grid-cols-1 gap-8">
+    const content = (
+    <div className="space-y-6 lg:space-y-8">
+      {/* Custom Background Gradient */}
+      <div className="fixed inset-0 -z-10 bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-blue-900 dark:to-indigo-800" />
+      
+      <PageHeader title="Dashboard" description="Comprehensive overview of ticket and incident performance metrics" />
+      
       {/* KPI Row 1 - All Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-6">
         <SummaryCard
           icon={<FlashOnIcon className="w-5 h-5 text-white" />}
           iconBg="bg-indigo-500"
@@ -427,7 +427,7 @@ const SummaryDashboard = ({ ticketAnalyticsData, filteredTickets }: any) => {
       </div>
 
       {/* KPI Row 2 - All Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-6">
         <SummaryCard
           icon={<TimerIcon className="w-5 h-5 text-white" />}
           iconBg="bg-blue-500"
@@ -473,7 +473,7 @@ const SummaryDashboard = ({ ticketAnalyticsData, filteredTickets }: any) => {
       </div>
 
       {/* Charts Section */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Monthly Ticket Trends */}
         <Card className="p-2">
           <CardHeader className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 pb-1">
@@ -527,11 +527,29 @@ const SummaryDashboard = ({ ticketAnalyticsData, filteredTickets }: any) => {
                       />
                       <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
                       <RechartsTooltip 
-                        contentStyle={{
-                          backgroundColor: '#FFFFFF',
-                          border: '1px solid #E5E7EB',
-                          borderRadius: '8px',
-                          color: '#374151'
+                        content={({ active, payload, label }) => {
+                          if (active && payload && payload.length) {
+                            return (
+                              <div className="bg-white border border-gray-200 rounded-lg p-3 shadow-lg">
+                                <p className="font-semibold text-gray-900 mb-2">{label}</p>
+                                {payload.map((entry, index) => (
+                                  <div key={index} className="flex items-center gap-2 mb-1">
+                                    <div 
+                                      className="w-3 h-3 rounded-full" 
+                                      style={{ backgroundColor: entry.color }}
+                                    />
+                                    <span className="text-sm text-gray-600">
+                                      {entry.name}: 
+                                    </span>
+                                    <span className="text-sm font-semibold text-gray-900">
+                                      {entry.value?.toLocaleString()}
+                                    </span>
+                                  </div>
+                                ))}
+                              </div>
+                            );
+                          }
+                          return null;
                         }}
                       />
                       <RechartsLegend 
@@ -602,18 +620,18 @@ const SummaryDashboard = ({ ticketAnalyticsData, filteredTickets }: any) => {
                     content={({ active, payload, label }) => {
                       if (active && payload && payload.length) {
                         return (
-                          <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg p-3 shadow-lg">
-                            <p className="font-semibold text-gray-900 dark:text-gray-100 mb-2">{label}</p>
+                          <div className="bg-white border border-gray-200 rounded-lg p-3 shadow-lg">
+                            <p className="font-semibold text-gray-900 mb-2">{label}</p>
                             {payload.map((entry, index) => (
                               <div key={index} className="flex items-center gap-2 mb-1">
                                 <div 
                                   className="w-3 h-3 rounded-full" 
                                   style={{ backgroundColor: entry.color }}
                                 />
-                                <span className="text-sm text-gray-600 dark:text-gray-300">
+                                <span className="text-sm text-gray-600">
                                   {entry.name}: 
                                 </span>
-                                <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                                <span className="text-sm font-semibold text-gray-900">
                                   {entry.name === 'Resolution Rate %' 
                                     ? `${entry.value?.toFixed(1)}%` 
                                     : entry.value?.toLocaleString()}
@@ -665,7 +683,7 @@ const SummaryDashboard = ({ ticketAnalyticsData, filteredTickets }: any) => {
       </div>
 
       {/* Yearly Trends */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Yearly Ticket Trends */}
         <Card className="p-2">
           <CardHeader className="flex flex-col gap-1 pb-1">
@@ -706,11 +724,29 @@ const SummaryDashboard = ({ ticketAnalyticsData, filteredTickets }: any) => {
                   />
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
                   <RechartsTooltip 
-                    contentStyle={{
-                      backgroundColor: '#FFFFFF',
-                      border: '1px solid #E5E7EB',
-                      borderRadius: '8px',
-                      color: '#374151'
+                    content={({ active, payload, label }) => {
+                      if (active && payload && payload.length) {
+                        return (
+                          <div className="bg-white border border-gray-200 rounded-lg p-3 shadow-lg">
+                            <p className="font-semibold text-gray-900 mb-2">{label}</p>
+                            {payload.map((entry, index) => (
+                              <div key={index} className="flex items-center gap-2 mb-1">
+                                <div 
+                                  className="w-3 h-3 rounded-full" 
+                                  style={{ backgroundColor: entry.color }}
+                                />
+                                <span className="text-sm text-gray-600">
+                                  {entry.name}: 
+                                </span>
+                                <span className="text-sm font-semibold text-gray-900">
+                                  {entry.value?.toLocaleString()}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        );
+                      }
+                      return null;
                     }}
                   />
                   <RechartsLegend 
@@ -783,18 +819,18 @@ const SummaryDashboard = ({ ticketAnalyticsData, filteredTickets }: any) => {
                     content={({ active, payload, label }) => {
                       if (active && payload && payload.length) {
                         return (
-                          <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg p-3 shadow-lg">
-                            <p className="font-semibold text-gray-900 dark:text-gray-100 mb-2">{label}</p>
+                          <div className="bg-white border border-gray-200 rounded-lg p-3 shadow-lg">
+                            <p className="font-semibold text-gray-900 mb-2">{label}</p>
                             {payload.map((entry, index) => (
                               <div key={index} className="flex items-center gap-2 mb-1">
                                 <div 
                                   className="w-3 h-3 rounded-full" 
                                   style={{ backgroundColor: entry.color }}
                                 />
-                                <span className="text-sm text-gray-600 dark:text-gray-300">
+                                <span className="text-sm text-gray-600">
                                   {entry.name}: 
                                 </span>
-                                <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                                <span className="text-sm font-semibold text-gray-900">
                                   {entry.name === 'Compliance %' 
                                     ? `${entry.value?.toFixed(1)}%` 
                                     : entry.value?.toLocaleString()}
@@ -1028,10 +1064,14 @@ const SummaryDashboard = ({ ticketAnalyticsData, filteredTickets }: any) => {
           </div>
         </CardContent>
       </Card>
-        </div>
-      </div>
-    </PageWrapper>
+    </div>
   );
+
+  return standalone ? (
+    <PageWrapper>
+      {content}
+    </PageWrapper>
+  ) : content;
 };
 
 export default SummaryDashboard; 

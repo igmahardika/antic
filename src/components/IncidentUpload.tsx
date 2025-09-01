@@ -4,16 +4,19 @@ import * as XLSX from "xlsx";
 import { Incident } from "@/types/incident";
 import { mkId, generateBatchId, saveIncidentsChunked, parseDateSafe } from "@/utils/incidentUtils";
 import { fixAllMissingEndTime } from "@/utils/durationFixUtils";
+import { db } from "@/lib/db";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 import TableChartIcon from "@mui/icons-material/TableChart";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import CancelIcon from "@mui/icons-material/Cancel";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
-
+import DeleteIcon from "@mui/icons-material/Delete";
 import InfoIcon from "@mui/icons-material/Info";
 
 
@@ -255,6 +258,14 @@ export const IncidentUpload: React.FC = () => {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadResult, setUploadResult] = useState<UploadResult | null>(null);
   const [progress, setProgress] = useState(0);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteResult, setDeleteResult] = useState<{
+    found: number;
+    deleted: number;
+    errors: string[];
+    preview: Incident[];
+  } | null>(null);
+  const [parsedIncidents, setParsedIncidents] = useState<Incident[]>([]);
 
 
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
@@ -762,16 +773,19 @@ export const IncidentUpload: React.FC = () => {
         details: { successCount, failedCount, skippedRows, totalRowsInFile, totalRowsProcessed },
       });
 
-      setUploadResult({
-        success: successCount,
-        failed: failedCount,
-        errors,
-        preview: allRows.slice(0, 20),
-        uploadLog,
-        totalRowsProcessed,
-        totalRowsInFile,
-        skippedRows,
-      });
+              setUploadResult({
+          success: successCount,
+          failed: failedCount,
+          errors,
+          preview: allRows.slice(0, 20),
+          uploadLog,
+          totalRowsProcessed,
+          totalRowsInFile,
+          skippedRows,
+        });
+        
+        // Store parsed incidents for delete functionality
+        setParsedIncidents(allRows);
     } catch (error: any) {
       const errorMsg = `Upload failed: ${error?.message || error}`;
       setUploadResult({
@@ -788,6 +802,84 @@ export const IncidentUpload: React.FC = () => {
       setIsUploading(false);
     }
   }, []);
+
+  // ——————— Delete Function ———————
+  const handleDeleteByFile = useCallback(async () => {
+    if (parsedIncidents.length === 0) {
+      setDeleteResult({
+        found: 0,
+        deleted: 0,
+        errors: ["No incidents parsed from file to delete"],
+        preview: []
+      });
+      return;
+    }
+
+    setIsDeleting(true);
+    setProgress(0);
+    setDeleteResult(null);
+
+    try {
+      const errors: string[] = [];
+      let foundCount = 0;
+      let deletedCount = 0;
+      const foundIncidents: Incident[] = [];
+
+      // Process in chunks to avoid memory issues
+      const chunkSize = 100;
+      const totalChunks = Math.ceil(parsedIncidents.length / chunkSize);
+
+      for (let i = 0; i < parsedIncidents.length; i += chunkSize) {
+        const chunk = parsedIncidents.slice(i, i + chunkSize);
+        const chunkIndex = Math.floor(i / chunkSize) + 1;
+        
+        setProgress((chunkIndex / totalChunks) * 100);
+
+        for (const parsedIncident of chunk) {
+          try {
+            // Find incidents that match the noCase and startTime from the file
+            const matchingIncidents = await db.incidents
+              .where('noCase')
+              .equals(parsedIncident.noCase)
+              .and(incident => incident.startTime === parsedIncident.startTime)
+              .toArray();
+
+            if (matchingIncidents.length > 0) {
+              foundCount += matchingIncidents.length;
+              foundIncidents.push(...matchingIncidents);
+
+              // Delete the matching incidents
+              const idsToDelete = matchingIncidents.map(inc => inc.id);
+              await db.incidents.bulkDelete(idsToDelete);
+              deletedCount += matchingIncidents.length;
+            }
+          } catch (error: any) {
+            const errorMsg = `Error deleting incident ${parsedIncident.noCase}: ${error?.message || error}`;
+            errors.push(errorMsg);
+          }
+        }
+      }
+
+      setDeleteResult({
+        found: foundCount,
+        deleted: deletedCount,
+        errors,
+        preview: foundIncidents.slice(0, 20) // Show first 20 found incidents
+      });
+
+    } catch (error: any) {
+      const errorMsg = `Delete operation failed: ${error?.message || error}`;
+      setDeleteResult({
+        found: 0,
+        deleted: 0,
+        errors: [errorMsg],
+        preview: []
+      });
+    } finally {
+      setIsDeleting(false);
+      setProgress(0);
+    }
+  }, [parsedIncidents]);
 
   // ——————— UI (tetap sama dengan versi Anda, diringkas) ———————
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
@@ -807,10 +899,10 @@ export const IncidentUpload: React.FC = () => {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <TableChartIcon className="w-5 h-5" />
-            Upload Incident Data (Fixed)
+            Upload & Delete Incident Data
           </CardTitle>
           <CardDescription>
-            Excel dengan header bervariasi akan otomatis dipetakan. Tanggal dari Excel (serial) juga dideteksi.
+            Upload data baru atau hapus data berdasarkan file Excel yang diupload.
             <br />
             <span className="text-xs text-green-600 mt-1 block font-medium">
               ✅ Durasi vendor hanya mengurangi jeda yang overlap dengan window vendor.
@@ -818,24 +910,34 @@ export const IncidentUpload: React.FC = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            <div
-              {...getRootProps()}
-              className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${
-                isDragActive ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20" : " hover:border-gray-400 dark:hover:border-gray-500"
-              }`}
-            >
-              <input {...getInputProps()} />
-              <CloudUploadIcon className="w-12 h-12 mx-auto mb-4 text-gray-400" />
-              {isDragActive ? (
-                <p className="text-lg font-medium text-blue-600 dark:text-blue-400">Drop the Excel file here...</p>
-              ) : (
-                <div>
-                  <p className="text-lg font-medium text-card-foreground">Drag & drop an Excel file here, or click to select</p>
-                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">Supports .xlsx and .xls files</p>
-                </div>
-              )}
-            </div>
+          <Tabs defaultValue="upload" className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="upload">Upload Data</TabsTrigger>
+              <TabsTrigger value="delete">Delete Data</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="upload" className="space-y-4">
+              <div className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                Excel dengan header bervariasi akan otomatis dipetakan. Tanggal dari Excel (serial) juga dideteksi.
+              </div>
+              
+              <div
+                {...getRootProps()}
+                className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${
+                  isDragActive ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20" : " hover:border-gray-400 dark:hover:border-gray-500"
+                }`}
+              >
+                <input {...getInputProps()} />
+                <CloudUploadIcon className="w-12 h-12 mx-auto mb-4 text-gray-400" />
+                {isDragActive ? (
+                  <p className="text-lg font-medium text-blue-600 dark:text-blue-400">Drop the Excel file here...</p>
+                ) : (
+                  <div>
+                    <p className="text-lg font-medium text-card-foreground">Drag & drop an Excel file here, or click to select</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">Supports .xlsx and .xls files</p>
+                  </div>
+                )}
+              </div>
 
             {isUploading && (
               <div className="space-y-2">
@@ -952,7 +1054,137 @@ export const IncidentUpload: React.FC = () => {
                 )}
               </div>
             )}
-          </div>
+            </TabsContent>
+
+            <TabsContent value="delete" className="space-y-4">
+              <div className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                Hapus data berdasarkan file Excel yang diupload. Data akan dicocokkan berdasarkan No Case dan Start Time.
+              </div>
+
+              {parsedIncidents.length > 0 ? (
+                <div className="space-y-4">
+                  <Alert>
+                    <InfoIcon className="w-4 h-4" />
+                    <AlertDescription>
+                      <div className="space-y-2">
+                        <p className="font-medium">File Excel telah diparsing</p>
+                        <p className="text-sm">Ditemukan {parsedIncidents.length} incident dalam file. Klik tombol di bawah untuk menghapus data yang cocok dari database.</p>
+                        <p className="text-xs text-yellow-600 dark:text-yellow-400">
+                          ⚠️ Data akan dihapus berdasarkan No Case dan Start Time yang cocok dengan data di database.
+                        </p>
+                      </div>
+                    </AlertDescription>
+                  </Alert>
+
+                  <Button 
+                    onClick={handleDeleteByFile}
+                    disabled={isDeleting}
+                    variant="destructive"
+                    className="w-full"
+                  >
+                    {isDeleting ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                        Menghapus Data...
+                      </>
+                    ) : (
+                      <>
+                        <DeleteIcon className="w-4 h-4 mr-2" />
+                        Hapus Data dari Database
+                      </>
+                    )}
+                  </Button>
+
+                  {isDeleting && (
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span>Menghapus data...</span>
+                        <span>{progress.toFixed(0)}%</span>
+                      </div>
+                      <Progress value={progress} />
+                    </div>
+                  )}
+
+                  {deleteResult && (
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                        <div className="text-center p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg ring-1 ring-blue-200 dark:ring-blue-800">
+                          <div className="text-lg font-bold text-blue-600">{deleteResult.found}</div>
+                          <div className="text-sm text-blue-700 dark:text-blue-300">Ditemukan</div>
+                        </div>
+                        <div className="text-center p-3 bg-red-50 dark:bg-red-900/20 rounded-lg ring-1 ring-red-200 dark:ring-red-800">
+                          <div className="text-lg font-bold text-red-600">{deleteResult.deleted}</div>
+                          <div className="text-sm text-red-700 dark:text-red-300">Dihapus</div>
+                        </div>
+                        <div className="text-center p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg ring-1 ring-yellow-200 dark:ring-yellow-800">
+                          <div className="text-lg font-bold text-yellow-600">{deleteResult.errors.length}</div>
+                          <div className="text-sm text-yellow-700 dark:text-yellow-300">Error</div>
+                        </div>
+                      </div>
+
+                      {deleteResult.errors.length > 0 && (
+                        <Alert>
+                          <WarningAmberIcon className="w-4 h-4" />
+                          <AlertDescription>
+                            <div className="space-y-2">
+                              <p className="font-medium">Errors encountered:</p>
+                              <ul className="text-sm space-y-1">
+                                {deleteResult.errors.slice(0, 10).map((e, i) => (
+                                  <li key={i} className="text-red-600 dark:text-red-400">{e}</li>
+                                ))}
+                              </ul>
+                            </div>
+                          </AlertDescription>
+                        </Alert>
+                      )}
+
+                      {deleteResult.preview.length > 0 && (
+                        <div>
+                          <h4 className="font-medium mb-2">Data yang dihapus (first 20 rows):</h4>
+                          <div className="border rounded-lg overflow-hidden">
+                            <table className="w-full text-sm">
+                              <thead className="bg-gray-50 dark:bg-gray-800">
+                                <tr>
+                                  <th className="px-3 py-2 text-left">No Case</th>
+                                  <th className="px-3 py-2 text-left">Site</th>
+                                  <th className="px-3 py-2 text-left">Status</th>
+                                  <th className="px-3 py-2 text-left">Priority</th>
+                                  <th className="px-3 py-2 text-left">Start Time</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {deleteResult.preview.map((inc, i) => (
+                                  <tr key={i} className="border-t">
+                                    <td className="px-3 py-2">{inc.noCase}</td>
+                                    <td className="px-3 py-2">{inc.site}</td>
+                                    <td className="px-3 py-2">{inc.status}</td>
+                                    <td className="px-3 py-2">{inc.priority}</td>
+                                    <td className="px-3 py-2">
+                                      {inc.startTime ? new Date(inc.startTime).toLocaleString('id-ID') : '-'}
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="text-center p-8 border-2 border-dashed rounded-lg">
+                  <DeleteIcon className="w-12 h-12 mx-auto mb-4 text-gray-400" />
+                  <p className="text-lg font-medium text-gray-600 dark:text-gray-400">
+                    Upload file Excel terlebih dahulu di tab "Upload Data"
+                  </p>
+                  <p className="text-sm text-gray-500 dark:text-gray-500 mt-2">
+                    File akan diparsing dan dapat digunakan untuk menghapus data yang cocok
+                  </p>
+                </div>
+              )}
+            </TabsContent>
+          </Tabs>
         </CardContent>
       </Card>
     </div>
