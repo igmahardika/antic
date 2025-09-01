@@ -1,5 +1,4 @@
 import React from 'react';
-import { cn } from '@/lib/utils';
 
 // This standardized SummaryCard is based on the new design guidelines.
 // It enforces a consistent layout, typography, and spacing for all summary metrics.
@@ -34,7 +33,7 @@ const SummaryCard: React.FC<SummaryCardProps> = ({
   active = false,
 }) => (
   <div
-    className={`bg-card text-card-foreground rounded-2xl shadow-lg p-4 flex flex-col min-h-[140px] transition-all duration-300 min-w-0 overflow-hidden 
+    className={`bg-card text-card-foreground rounded-2xl shadow-lg p-2.5 flex flex-col min-h-[85px] transition-all duration-300 min-w-0 overflow-hidden 
       ${onClick ? 'cursor-pointer hover:shadow-xl hover:scale-[1.02]' : ''}
       ${active ? '' : ''}
       ${className}`}
@@ -43,11 +42,11 @@ const SummaryCard: React.FC<SummaryCardProps> = ({
     role={onClick ? 'button' : undefined}
     aria-pressed={active}
   >
-    <div className="flex items-center gap-3 mb-2">
+    <div className="flex items-center gap-2 mb-1">
       <div
-        className={`w-10 h-10 min-w-10 min-h-10 rounded-lg flex items-center justify-center ${iconBg} shadow-lg`}
+        className={`w-8 h-8 min-w-8 min-h-8 rounded-lg flex items-center justify-center ${iconBg} shadow-lg`}
       >
-        <span className="text-white" style={{ fontSize: 20 }}>{icon}</span>
+        <span className="text-white" style={{ fontSize: 16 }}>{icon}</span>
       </div>
       <div className="flex-1 flex items-center">
         <span className="text-[10px] sm:text-xs md:text-sm font-semibold uppercase tracking-wide break-words whitespace-normal">
@@ -62,7 +61,7 @@ const SummaryCard: React.FC<SummaryCardProps> = ({
         )}
       </div>
     </div>
-    <div className="flex items-end min-h-[32px]">
+    <div className="flex items-end min-h-[24px]">
       <span className={`font-extrabold tracking-tight break-words ${
         // Jika value adalah string (nama agent), gunakan font size yang lebih kecil
         typeof value === 'string' && value.length > 15 
@@ -81,7 +80,7 @@ const SummaryCard: React.FC<SummaryCardProps> = ({
         </span>
       )}
     </div>
-    <div className="text-[10px] sm:text-xs text-muted-foreground mt-1 break-words whitespace-normal">
+    <div className="text-[10px] sm:text-xs text-muted-foreground mt-0.5 break-words whitespace-normal">
       {description}
     </div>
   </div>
