@@ -5,7 +5,6 @@ import { calculateCustomDuration, calculateNetDuration, normalizeNCAL, safeMinut
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
   CardFooter,
@@ -30,6 +29,8 @@ import {
 } from 'recharts';
 
 import PageWrapper from '@/components/PageWrapper';
+import PageHeader from '@/components/ui/PageHeader';
+import { CardHeaderTitle, CardHeaderDescription } from '@/components/ui/CardTypography';
 // MUI icons
 import AssignmentIcon from '@mui/icons-material/Assignment';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
@@ -1004,10 +1005,7 @@ const IncidentAnalytics: React.FC = () => {
         <div className="space-y-6">
           {/* Header */}
           <div className="flex flex-col gap-4">
-            <div>
-              <h1 className="text-3xl font-bold text-card-foreground">Incident Analytics</h1>
-              <p className="text-muted-foreground">Comprehensive analysis of incident data and performance metrics</p>
-            </div>
+            <PageHeader title="Incident Analytics" description="Comprehensive analysis of incident data and performance metrics" />
             
             {/* Data Status Alert */}
             <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
@@ -1033,7 +1031,8 @@ const IncidentAnalytics: React.FC = () => {
 
   return (
     <PageWrapper>
-      <div className="space-y-6">
+      <div className="space-y-6 lg:space-y-8">
+        <PageHeader title="Incident Analytics" description="Comprehensive analysis of incident data and performance metrics" />
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-end gap-4">
           {/* Period Filter */}
@@ -1100,10 +1099,10 @@ const IncidentAnalytics: React.FC = () => {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-                              <TrackChangesIcon className="w-6 h-6 text-green-600" />
-              Key Insights
+              <TrackChangesIcon className="w-6 h-6 text-green-600" />
+              <CardHeaderTitle className="text-base md:text-lg">Key Insights</CardHeaderTitle>
             </CardTitle>
-                          <CardDescription className="text-muted-foreground">Critical findings from the selected period</CardDescription>
+            <CardHeaderDescription className="text-xs">Critical findings from the selected period</CardHeaderDescription>
           </CardHeader>
           <CardContent className="grid md:grid-cols-2 gap-4">
             {deep.insights.map((txt, idx) => (
@@ -1125,9 +1124,10 @@ const IncidentAnalytics: React.FC = () => {
           <Card className="bg-card text-card-foreground rounded-2xl shadow-lg">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <ShowChartIcon className="w-6 h-6 text-green-600" /> Monthly Duration Trends
+                <ShowChartIcon className="w-6 h-6 text-green-600" />
+                <CardHeaderTitle className="text-base md:text-lg">Monthly Duration Trends</CardHeaderTitle>
               </CardTitle>
-              <CardDescription>Average resolution time trends by NCAL level</CardDescription>
+              <CardHeaderDescription className="text-xs">Average resolution time trends by NCAL level</CardHeaderDescription>
             </CardHeader>
             <CardContent>
               {monthlyNCALDurationData.length > 0 ? (
@@ -1222,9 +1222,10 @@ const IncidentAnalytics: React.FC = () => {
           <Card className="bg-card text-card-foreground  rounded-2xl shadow-lg">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <ShowChartIcon className="w-6 h-6 text-blue-600" /> Monthly Incident Volume
+                <ShowChartIcon className="w-6 h-6 text-blue-600" />
+                <CardHeaderTitle className="text-base md:text-lg">Monthly Incident Volume</CardHeaderTitle>
               </CardTitle>
-              <CardDescription>Trend of incident count by NCAL level over time</CardDescription>
+              <CardHeaderDescription className="text-xs">Trend of incident count by NCAL level over time</CardHeaderDescription>
             </CardHeader>
             <CardContent>
               {monthlyNCALData.length > 0 ? (
@@ -1321,9 +1322,10 @@ const IncidentAnalytics: React.FC = () => {
           <Card className="bg-card text-card-foreground rounded-2xl shadow-lg">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <AssignmentIcon className="w-6 h-6 text-indigo-600" /> NCAL Performance vs Targets
+                <AssignmentIcon className="w-6 h-6 text-indigo-600" />
+                <CardHeaderTitle className="text-base md:text-lg">NCAL Performance vs Targets</CardHeaderTitle>
               </CardTitle>
-              <CardDescription className="text-muted-foreground">How each NCAL level performs against SLA targets</CardDescription>
+              <CardHeaderDescription className="text-xs">How each NCAL level performs against SLA targets</CardHeaderDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
@@ -1354,9 +1356,10 @@ const IncidentAnalytics: React.FC = () => {
           <Card className="bg-card text-card-foreground  rounded-2xl shadow-lg">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <HourglassEmptyIcon className="w-6 h-6 text-orange-600" /> Root Cause Analysis
+                <HourglassEmptyIcon className="w-6 h-6 text-orange-600" />
+                <CardHeaderTitle className="text-base md:text-lg">Root Cause Analysis</CardHeaderTitle>
               </CardTitle>
-              <CardDescription>Top contributors to SLA breaches by site and cause</CardDescription>
+              <CardHeaderDescription className="text-xs">Top contributors to SLA breaches by site and cause</CardHeaderDescription>
             </CardHeader>
             <CardContent className="grid md:grid-cols-2 gap-4">
               <div className="space-y-2">
@@ -1388,9 +1391,10 @@ const IncidentAnalytics: React.FC = () => {
           <Card className="bg-card text-card-foreground rounded-2xl">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <PieChartIconMUI className="w-6 h-6 text-purple-600" /> Priority Distribution
+                <PieChartIconMUI className="w-6 h-6 text-purple-600" />
+                <CardHeaderTitle className="text-base md:text-lg">Priority Distribution</CardHeaderTitle>
               </CardTitle>
-              <CardDescription>Comprehensive analysis of incidents by priority level with trends and metrics</CardDescription>
+              <CardHeaderDescription className="text-xs">Comprehensive analysis of incidents by priority level with trends and metrics</CardHeaderDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               {/* Priority Summary Cards */}
@@ -1494,9 +1498,10 @@ const IncidentAnalytics: React.FC = () => {
           <Card className="bg-card text-card-foreground rounded-2xl">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <WarningAmberIcon className="w-6 h-6 text-yellow-600" /> SLA Breach Analysis
+                <WarningAmberIcon className="w-6 h-6 text-yellow-600" />
+                <CardHeaderTitle className="text-base md:text-lg">SLA Breach Analysis</CardHeaderTitle>
               </CardTitle>
-              <CardDescription>Comprehensive analysis of SLA performance, breach patterns, and compliance metrics</CardDescription>
+              <CardHeaderDescription className="text-xs">Comprehensive analysis of SLA performance, breach patterns, and compliance metrics</CardHeaderDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               {/* SLA Performance Overview */}
@@ -1625,9 +1630,10 @@ const IncidentAnalytics: React.FC = () => {
           <Card className="bg-card text-card-foreground  rounded-2xl shadow-lg">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <TimelineIcon className="w-6 h-6 text-green-600" /> Weekly Incident Patterns
+                <TimelineIcon className="w-6 h-6 text-green-600" />
+                <CardHeaderTitle className="text-base md:text-lg">Weekly Incident Patterns</CardHeaderTitle>
               </CardTitle>
-              <CardDescription>Day-of-week distribution for incident volume</CardDescription>
+              <CardHeaderDescription className="text-xs">Day-of-week distribution for incident volume</CardHeaderDescription>
             </CardHeader>
             <CardContent>
               <ChartContainer config={{}}>
@@ -1645,9 +1651,10 @@ const IncidentAnalytics: React.FC = () => {
           <Card className="bg-card text-card-foreground  rounded-2xl shadow-lg">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <ShowChartIcon className="w-6 h-6 text-purple-600" /> Hourly Incident Patterns
+                <ShowChartIcon className="w-6 h-6 text-purple-600" />
+                <CardHeaderTitle className="text-base md:text-lg">Hourly Incident Patterns</CardHeaderTitle>
               </CardTitle>
-              <CardDescription>Time-of-day distribution for incident occurrence</CardDescription>
+              <CardHeaderDescription className="text-xs">Time-of-day distribution for incident occurrence</CardHeaderDescription>
             </CardHeader>
             <CardContent>
               <ChartContainer config={{}}>
@@ -1668,9 +1675,10 @@ const IncidentAnalytics: React.FC = () => {
           <Card className="bg-card text-card-foreground  rounded-2xl shadow-lg">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <ShowChartIcon className="w-6 h-6 text-blue-600" /> NCAL Duration Trends by Month
+                <ShowChartIcon className="w-6 h-6 text-blue-600" />
+                <CardHeaderTitle className="text-base md:text-lg">NCAL Duration Trends by Month</CardHeaderTitle>
               </CardTitle>
-              <CardDescription>Average net duration trends by NCAL level per month (duration minus pause time)</CardDescription>
+              <CardHeaderDescription className="text-xs">Average net duration trends by NCAL level per month (duration minus pause time)</CardHeaderDescription>
             </CardHeader>
             <CardContent>
               {monthlyDurationWithPauseData.length > 0 ? (
@@ -1765,9 +1773,10 @@ const IncidentAnalytics: React.FC = () => {
           <Card className="bg-card text-card-foreground rounded-2xl shadow-lg">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <HourglassEmptyIcon className="w-6 h-6 text-blue-600" /> Monthly Pause Duration
+                <HourglassEmptyIcon className="w-6 h-6 text-blue-600" />
+                <CardHeaderTitle className="text-base md:text-lg">Monthly Pause Duration</CardHeaderTitle>
               </CardTitle>
-              <CardDescription>Average pause duration per NCAL level by month</CardDescription>
+              <CardHeaderDescription className="text-xs">Average pause duration per NCAL level by month</CardHeaderDescription>
             </CardHeader>
             <CardContent>
               {monthlyPauseDurationData.length > 0 ? (

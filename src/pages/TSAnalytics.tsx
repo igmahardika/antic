@@ -3,7 +3,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '@/lib/db';
 // Menggunakan getWanedaDuration yang didefinisikan lokal untuk perhitungan yang lebih akurat
 import { formatDurationDHM } from '@/lib/utils';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -30,6 +30,8 @@ import {
 
 
 import PageWrapper from '@/components/PageWrapper';
+import PageHeader from '@/components/ui/PageHeader';
+import { CardHeaderTitle, CardHeaderDescription } from '@/components/ui/CardTypography';
 
 // MUI Icons for consistency with project standards
 import BarChartIcon from '@mui/icons-material/BarChart';
@@ -1016,10 +1018,7 @@ const TSAnalytics: React.FC = () => {
         <div className="space-y-6">
           {/* Header */}
           <div className="flex flex-col gap-4">
-            <div>
-              <h1 className="text-3xl font-bold text-card-foreground">Technical Support Analytics</h1>
-              <p className="text-muted-foreground">Comprehensive analysis of technical support performance and vendor management</p>
-            </div>
+            <PageHeader title="Technical Support Analytics" description="Comprehensive analysis of technical support performance and vendor management" />
             
             {/* Data Status Alert */}
             <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
@@ -1045,7 +1044,8 @@ const TSAnalytics: React.FC = () => {
 
   return (
     <PageWrapper>
-      <div className="space-y-6">
+      <div className="space-y-6 lg:space-y-8">
+        <PageHeader title="Technical Support Analytics" description="Comprehensive analysis of technical support performance and vendor management" />
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-end gap-4">
           {/* Period Filter */}
@@ -1112,11 +1112,11 @@ const TSAnalytics: React.FC = () => {
             <CardHeader className="flex flex-col gap-1 pb-1">
               <CardTitle className="flex items-center gap-2">
                 <InsightsIcon className="w-6 h-6 text-indigo-600" />
-                Key Insights
+                <CardHeaderTitle className="text-base md:text-lg">Key Insights</CardHeaderTitle>
               </CardTitle>
-              <CardDescription className="text-sm text-muted-foreground">
+              <CardHeaderDescription className="text-xs">
                 Automatically generated highlights from recent performance
-              </CardDescription>
+              </CardHeaderDescription>
             </CardHeader>
             <CardContent className="p-6">
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -1143,14 +1143,14 @@ const TSAnalytics: React.FC = () => {
             <CardHeader className="flex flex-col gap-1 pb-1">
               <CardTitle className="flex items-center gap-2">
                 <BusinessIcon className="w-6 h-6 text-blue-600" />
-                Vendor Performance
+                <CardHeaderTitle className="text-base md:text-lg">Vendor Performance</CardHeaderTitle>
                 <Badge className="bg-blue-600 text-white text-xs px-2 py-0.5 rounded-md w-fit font-semibold">
                   SLA 4H
                 </Badge>
               </CardTitle>
-              <CardDescription className="text-sm text-muted-foreground">
+              <CardHeaderDescription className="text-xs">
                 Waneda & Lintas Fiber performance metrics
-              </CardDescription>
+              </CardHeaderDescription>
             </CardHeader>
             <CardContent className="p-6">
               <div className="space-y-4">
@@ -1208,14 +1208,14 @@ const TSAnalytics: React.FC = () => {
             <CardHeader className="flex flex-col gap-1 pb-1">
               <CardTitle className="flex items-center gap-2">
                 <EngineeringIcon className="w-6 h-6 text-green-600" />
-                Internal TS Performance
+                <CardHeaderTitle className="text-base md:text-lg">Internal TS Performance</CardHeaderTitle>
                 <Badge className="bg-green-600 text-white text-xs px-2 py-0.5 rounded-md w-fit font-semibold">
                   NCAL Targets
                 </Badge>
               </CardTitle>
-              <CardDescription className="text-sm text-muted-foreground">
+              <CardHeaderDescription className="text-xs">
                 Internal Technical Support team performance
-              </CardDescription>
+              </CardHeaderDescription>
             </CardHeader>
             <CardContent className="p-6">
               <div className="space-y-4">
@@ -1274,14 +1274,14 @@ const TSAnalytics: React.FC = () => {
             <CardHeader className="flex flex-col gap-1 pb-1">
               <CardTitle className="flex items-center gap-2">
                 <AssessmentIcon className="w-6 h-6 text-blue-600" />
-                Vendor NCAL Compliance
+                <CardHeaderTitle className="text-base md:text-lg">Vendor NCAL Compliance</CardHeaderTitle>
                 <Badge className="bg-blue-600 text-white text-xs px-2 py-0.5 rounded-md w-fit font-semibold">
                   SLA Focus
                 </Badge>
               </CardTitle>
-              <CardDescription className="text-sm text-muted-foreground">
+              <CardHeaderDescription className="text-xs">
                 Vendor performance against NCAL levels
-              </CardDescription>
+              </CardHeaderDescription>
             </CardHeader>
             <CardContent className="p-6">
               <div className="space-y-4">
@@ -1325,14 +1325,14 @@ const TSAnalytics: React.FC = () => {
             <CardHeader className="flex flex-col gap-1 pb-1">
               <CardTitle className="flex items-center gap-2">
                 <AssessmentIcon className="w-6 h-6 text-green-600" />
-                Internal NCAL Compliance
+                <CardHeaderTitle className="text-base md:text-lg">Internal NCAL Compliance</CardHeaderTitle>
                 <Badge className="bg-green-600 text-white text-xs px-2 py-0.5 rounded-md w-fit font-semibold">
                   Target Focus
                 </Badge>
               </CardTitle>
-              <CardDescription className="text-sm text-muted-foreground">
+              <CardHeaderDescription className="text-xs">
                 Internal TS performance against NCAL targets
-              </CardDescription>
+              </CardHeaderDescription>
             </CardHeader>
             <CardContent className="p-6">
               <div className="space-y-4">
@@ -1380,14 +1380,14 @@ const TSAnalytics: React.FC = () => {
             <CardHeader className="flex flex-col gap-1 pb-1">
               <CardTitle className="flex items-center gap-2">
                 <TrendingDownIcon className="w-6 h-6 text-purple-600" />
-                Vendor Redaman Analysis
+                <CardHeaderTitle className="text-base md:text-lg">Vendor Redaman Analysis</CardHeaderTitle>
                 <Badge className="bg-purple-600 text-white text-xs px-2 py-0.5 rounded-md w-fit font-semibold">
                   Δ ≥ +1 dBm
                 </Badge>
               </CardTitle>
-              <CardDescription className="text-sm text-muted-foreground">
+              <CardHeaderDescription className="text-xs">
                 Signal attenuation analysis for vendor incidents
-              </CardDescription>
+              </CardHeaderDescription>
             </CardHeader>
             <CardContent className="p-6">
               <div className="space-y-4">
@@ -1430,14 +1430,14 @@ const TSAnalytics: React.FC = () => {
             <CardHeader className="flex flex-col gap-1 pb-1">
               <CardTitle className="flex items-center gap-2">
                 <BarChartIcon className="w-6 h-6 text-zinc-600" />
-                Workload Distribution
+                <CardHeaderTitle className="text-base md:text-lg">Workload Distribution</CardHeaderTitle>
                 <Badge className="bg-zinc-600 text-white text-xs px-2 py-0.5 rounded-md w-fit font-semibold">
                   By Month
                 </Badge>
               </CardTitle>
-              <CardDescription className="text-sm text-muted-foreground">
+              <CardHeaderDescription className="text-xs">
                 Incident distribution across vendor and internal teams
-              </CardDescription>
+              </CardHeaderDescription>
             </CardHeader>
             <CardContent className="p-6">
               <div className="space-y-4">
@@ -1501,14 +1501,14 @@ const TSAnalytics: React.FC = () => {
           <CardHeader className="flex flex-col gap-1 pb-1">
             <CardTitle className="flex items-center gap-2">
               <BusinessIcon className="w-6 h-6 text-blue-700" />
-              Waneda Monthly Recap
+              <CardHeaderTitle className="text-base md:text-lg">Waneda Monthly Recap</CardHeaderTitle>
               <Badge className="bg-blue-700 text-white text-xs px-2 py-0.5 rounded-md w-fit font-semibold">
                 Vendor Focus
               </Badge>
             </CardTitle>
-            <CardDescription className="text-sm text-muted-foreground">
+            <CardHeaderDescription className="text-xs">
               Detailed monthly metrics and payment analysis for Waneda
-            </CardDescription>
+            </CardHeaderDescription>
           </CardHeader>
           <CardContent className="p-6">
             {/* Charts section */}

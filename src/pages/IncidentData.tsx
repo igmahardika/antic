@@ -5,12 +5,14 @@ import { queryIncidents, cleanDuplicateIncidents, getDatabaseStats, validateAndR
 import { IncidentUpload } from '@/components/IncidentUpload';
 import { db } from '@/lib/db';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/components/ui/use-toast';
 import SummaryCard from '@/components/ui/SummaryCard';
 import PageWrapper from '@/components/PageWrapper';
+import PageHeader from '@/components/ui/PageHeader';
+import { CardHeaderTitle, CardHeaderDescription } from '@/components/ui/CardTypography';
 import { 
   Search, 
   Filter, 
@@ -770,7 +772,8 @@ export const IncidentData: React.FC = () => {
 
   return (
     <PageWrapper>
-      <div className="space-y-6">
+      <div className="space-y-6 lg:space-y-8">
+        <PageHeader title="Incident Data" description="Upload and manage incident records" />
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div className="flex gap-2">
@@ -860,7 +863,7 @@ export const IncidentData: React.FC = () => {
       </div>
 
       {/* NCAL Category Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
         <SummaryCard
           title="BLUE NCAL"
           value={getNCALCount(allDataSummary.ncalCounts, 'Blue')}
@@ -900,7 +903,7 @@ export const IncidentData: React.FC = () => {
 
       {/* Database Status Information */}
       {dbStats && (
-        <div className="bg-gray-50 dark:bg-gray-900/20 rounded-lg p-4 mb-4">
+        <div className="bg-gray-50 dark:bg-gray-900/20 rounded-lg p-4">
           <div className="flex items-center gap-2 mb-2">
             <Database className="w-4 h-4 text-muted-foreground" />
             <span className="text-sm font-medium text-card-foreground">Database Status</span>
@@ -920,7 +923,7 @@ export const IncidentData: React.FC = () => {
 
       {/* Filter Status Information */}
       {filter.dateFrom || filter.status || filter.priority || filter.site || filter.search ? (
-        <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 mb-4">
+        <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4">
           <div className="flex items-center gap-2 mb-2">
             <Filter className="w-4 h-4 text-blue-600 dark:text-blue-400" />
             <span className="text-sm font-medium text-blue-800 dark:text-blue-200">Active Filters</span>
@@ -1210,11 +1213,11 @@ export const IncidentData: React.FC = () => {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <FileSpreadsheet className="w-5 h-5" />
-            Incident Data
+            <CardHeaderTitle className="text-base md:text-lg">Incident Data</CardHeaderTitle>
           </CardTitle>
-          <CardDescription>
+          <CardHeaderDescription className="text-xs">
             Showing {incidents.length} of {total} incidents
-          </CardDescription>
+          </CardHeaderDescription>
         </CardHeader>
         <CardContent>
           {isLoading ? (

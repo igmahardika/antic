@@ -71,7 +71,7 @@ const CustomerData: React.FC = () => {
             skipEmptyLines: true,
             complete: async (results) => {
             const dataBulan: { [bulan: string]: any[] } = {};
-            let valid = true;
+            const valid = true;
             
             // For CSV, we treat the entire file as one sheet
             const json: any[] = results.data as any[];

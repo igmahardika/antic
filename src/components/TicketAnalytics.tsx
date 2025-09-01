@@ -22,6 +22,7 @@ import TrackChangesIcon from '@mui/icons-material/TrackChanges';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Legend as RechartsLegend, Tooltip as RechartsTooltip, BarChart, Bar } from 'recharts';
 import PageWrapper from './PageWrapper';
+import { CardHeaderTitle, CardHeaderDescription } from '@/components/ui/CardTypography';
 import { PDFDownloadLink, Document, Page, Text, View } from '@react-pdf/renderer';
 import { ChartContainer, ChartTooltip } from "@/components/ui/chart";
 import { Badge } from './ui/badge';
@@ -1493,10 +1494,11 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
         {/* 1. Tickets per Month */}
         <Card className="bg-card text-card-foreground rounded-2xl shadow-lg">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <ShowChartIcon className="w-5 h-5 text-green-600" /> Tickets per Month
+            <CardTitle className="flex items-center gap-2">
+              <ShowChartIcon className="w-5 h-5 text-green-600" />
+              <CardHeaderTitle className="text-base md:text-lg">Tickets per Month</CardHeaderTitle>
             </CardTitle>
-            <CardDescription className="text-xs">Monthly ticket volume trends</CardDescription>
+            <CardHeaderDescription className="text-xs">Monthly ticket volume trends</CardHeaderDescription>
           </CardHeader>
           <CardContent className="pt-2 h-auto flex flex-col gap-4 min-w-0">
             <div className="w-full h-[300px] min-w-0">
@@ -1571,10 +1573,11 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
         {/* 2. Agent Tickets per Shift */}
         <Card className="bg-card text-card-foreground rounded-2xl shadow-lg">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <ShowChartIcon className="w-5 h-5 text-blue-600" /> Agent Tickets per Shift
+            <CardTitle className="flex items-center gap-2">
+              <ShowChartIcon className="w-5 h-5 text-blue-600" />
+              <CardHeaderTitle className="text-base md:text-lg">Agent Tickets per Shift</CardHeaderTitle>
             </CardTitle>
-            <CardDescription className="text-xs">Ticket distribution across different shifts</CardDescription>
+            <CardHeaderDescription className="text-xs">Ticket distribution across different shifts</CardHeaderDescription>
           </CardHeader>
           <CardContent className="pt-2 h-auto flex flex-col gap-4 min-w-0">
             <div className="w-full h-[300px] min-w-0">
@@ -1660,10 +1663,11 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
         {/* 3. Tickets by Client Type (2025) */}
         <Card className="bg-card text-card-foreground rounded-2xl shadow-lg">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <ShowChartIcon className="w-5 h-5 text-purple-600" /> Tickets by Client Type (2025)
+            <CardTitle className="flex items-center gap-2">
+              <ShowChartIcon className="w-5 h-5 text-purple-600" />
+              <CardHeaderTitle className="text-base md:text-lg">Tickets by Client Type (2025)</CardHeaderTitle>
             </CardTitle>
-            <CardDescription className="text-xs">Monthly ticket distribution by client type</CardDescription>
+            <CardHeaderDescription className="text-xs">Monthly ticket distribution by client type</CardHeaderDescription>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>

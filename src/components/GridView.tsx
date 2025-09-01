@@ -9,7 +9,8 @@ import HowToRegIcon from '@mui/icons-material/HowToReg';
 import SummaryCard from './ui/SummaryCard';
 import { useLiveQuery } from 'dexie-react-hooks';
 import PageWrapper from './PageWrapper';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { CardHeaderTitle, CardHeaderDescription } from '@/components/ui/CardTypography';
 import { FileSpreadsheet, Search, Filter } from 'lucide-react';
 import { Badge } from './ui/badge';
 
@@ -171,18 +172,18 @@ const GridView = ({ data: propsData }: { data?: ITicket[] }) => {
         <CardHeader className="pb-4">
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle className="flex items-center gap-2 text-xl">
+              <CardTitle className="flex items-center gap-2">
                 <FileSpreadsheet className="w-5 h-5 text-blue-600" />
-                Ticket Records
+                <CardHeaderTitle className="text-base md:text-lg">Ticket Records</CardHeaderTitle>
               </CardTitle>
-              <CardDescription className="mt-1">
+              <CardHeaderDescription className="text-xs mt-1">
                 Showing {paged.length} of {filtered.length} tickets
                                  {validasiFilter !== 'all' && (
                    <Badge variant="info" className="ml-2">
                      {validasiFilter === 'valid' ? 'Valid Customers Only' : 'Invalid Customers Only'}
                    </Badge>
                  )}
-              </CardDescription>
+              </CardHeaderDescription>
             </div>
           </div>
         </CardHeader>

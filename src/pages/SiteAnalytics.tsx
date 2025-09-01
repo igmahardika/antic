@@ -3,7 +3,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '@/lib/db';
 import { normalizeNCAL } from '@/utils/incidentUtils';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import SummaryCard from '@/components/ui/SummaryCard';
@@ -19,6 +19,8 @@ import {
   ResponsiveContainer
 } from 'recharts';
 import PageWrapper from '@/components/PageWrapper';
+import PageHeader from '@/components/ui/PageHeader';
+import { CardHeaderTitle, CardHeaderDescription } from '@/components/ui/CardTypography';
 
 // MUI Icons for consistency with project standards
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
@@ -441,10 +443,7 @@ export const SiteAnalytics: React.FC = () => {
         <div className="space-y-6">
           {/* Header */}
           <div className="flex flex-col gap-4">
-            <div>
-              <h1 className="text-3xl font-bold text-card-foreground">Site Analytics</h1>
-              <p className="text-muted-foreground">Comprehensive analysis of site performance and risk assessment</p>
-            </div>
+            <PageHeader title="Site Analytics" description="Comprehensive analysis of site performance and risk assessment" />
             
             {/* Data Status Alert */}
             <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
@@ -470,7 +469,8 @@ export const SiteAnalytics: React.FC = () => {
 
   return (
     <PageWrapper>
-      <div className="space-y-6">
+      <div className="space-y-6 lg:space-y-8">
+        <PageHeader title="Site Analytics" description="Comprehensive analysis of site performance and risk assessment" />
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-end gap-4">
           {/* Period Filter */}
@@ -541,13 +541,13 @@ export const SiteAnalytics: React.FC = () => {
           {/* Top Affected Sites */}
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="flex items-center gap-2 text-lg font-extrabold">
+              <CardTitle className="flex items-center gap-2">
                 <ErrorOutlineIcon className="w-5 h-5 text-red-600" />
-                Top Affected Sites
+                <CardHeaderTitle className="text-base md:text-lg">Top Affected Sites</CardHeaderTitle>
               </CardTitle>
-                          <CardDescription className="text-muted-foreground">
-              Sites ranked by incident frequency, resolution time, and impact severity
-            </CardDescription>
+              <CardHeaderDescription className="text-xs">
+                Sites ranked by incident frequency, resolution time, and impact severity
+              </CardHeaderDescription>
             <div className="mt-2 p-3 bg-red-50 dark:bg-red-900/20 rounded-lg ">
               <div className="text-xs font-medium text-red-800 dark:text-red-200 mb-1">Ranking Criteria:</div>
               <div className="text-xs text-red-700 dark:text-red-300">
@@ -641,13 +641,13 @@ export const SiteAnalytics: React.FC = () => {
         {/* Site Risk Assessment */}
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="flex items-center gap-2 text-lg font-extrabold">
+              <CardTitle className="flex items-center gap-2">
                 <WarningAmberIcon className="w-5 h-5 text-yellow-600" />
-                Site Risk Assessment
+                <CardHeaderTitle className="text-base md:text-lg">Site Risk Assessment</CardHeaderTitle>
               </CardTitle>
-                          <CardDescription className="text-muted-foreground">
-              Risk score calculated from incident frequency, duration, and resolution patterns
-            </CardDescription>
+              <CardHeaderDescription className="text-xs">
+                Risk score calculated from incident frequency, duration, and resolution patterns
+              </CardHeaderDescription>
                             <div className="mt-2 p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
               <div className="text-xs font-medium text-yellow-800 dark:text-yellow-200 mb-1">Risk Score Formula:</div>
               <div className="text-xs text-yellow-700 dark:text-yellow-300">
@@ -751,12 +751,12 @@ export const SiteAnalytics: React.FC = () => {
         {/* Site Performance Overview */}
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-lg font-extrabold">
+            <CardTitle className="flex items-center gap-2">
               <AssessmentIcon className="w-5 h-5 text-indigo-600" />
-              Site Performance Overview
-              </CardTitle>
-            <CardDescription className="text-muted-foreground">Comprehensive site reliability and performance metrics</CardDescription>
-            </CardHeader>
+              <CardHeaderTitle className="text-base md:text-lg">Site Performance Overview</CardHeaderTitle>
+            </CardTitle>
+            <CardHeaderDescription className="text-xs">Comprehensive site reliability and performance metrics</CardHeaderDescription>
+          </CardHeader>
             <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               {/* Reliability Rate */}
@@ -836,12 +836,12 @@ export const SiteAnalytics: React.FC = () => {
         {/* NCAL Performance & Compliance Analysis */}
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-lg font-extrabold">
+            <CardTitle className="flex items-center gap-2">
               <TrackChangesIcon className="w-5 h-5 text-purple-600" />
-              NCAL Performance & Compliance Analysis
-              </CardTitle>
-            <CardDescription className="text-muted-foreground">Comprehensive NCAL target compliance and performance metrics by severity levels</CardDescription>
-            </CardHeader>
+              <CardHeaderTitle className="text-base md:text-lg">NCAL Performance & Compliance Analysis</CardHeaderTitle>
+            </CardTitle>
+            <CardHeaderDescription className="text-xs">Comprehensive NCAL target compliance and performance metrics by severity levels</CardHeaderDescription>
+          </CardHeader>
             <CardContent>
             {/* Summary Stats */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
@@ -951,13 +951,13 @@ export const SiteAnalytics: React.FC = () => {
           {/* Site Incident Volume Trend */}
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="flex items-center gap-2 text-lg font-extrabold">
+              <CardTitle className="flex items-center gap-2">
                 <TimelineIcon className="w-5 h-5 text-blue-600" />
-                Site Incident Volume Trend
+                <CardHeaderTitle className="text-base md:text-lg">Site Incident Volume Trend</CardHeaderTitle>
               </CardTitle>
-              <CardDescription className="text-muted-foreground">
+              <CardHeaderDescription className="text-xs">
                 Monthly incident volume trends by top sites
-              </CardDescription>
+              </CardHeaderDescription>
             </CardHeader>
                           <CardContent>
                 <div className="w-full h-[260px]">
@@ -1030,13 +1030,13 @@ export const SiteAnalytics: React.FC = () => {
           {/* Site Performance Trend */}
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="flex items-center gap-2 text-lg font-extrabold">
+              <CardTitle className="flex items-center gap-2">
                 <TrackChangesIcon className="w-5 h-5 text-green-600" />
-                Site Performance Trend
+                <CardHeaderTitle className="text-base md:text-lg">Site Performance Trend</CardHeaderTitle>
               </CardTitle>
-              <CardDescription className="text-muted-foreground">
+              <CardHeaderDescription className="text-xs">
                 Average resolution time trends by top sites
-              </CardDescription>
+              </CardHeaderDescription>
             </CardHeader>
                           <CardContent>
                 <div className="w-full h-[260px]">

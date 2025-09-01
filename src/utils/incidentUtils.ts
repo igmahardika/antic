@@ -323,7 +323,7 @@ export async function saveIncidentsChunked(rows: Incident[], chunkSize = 2000) {
   console.log(`[saveIncidentsChunked] Starting to save ${rows.length} incidents in chunks of ${chunkSize}`);
   
   let totalSaved = 0;
-  let totalChunks = Math.ceil(rows.length / chunkSize);
+  const totalChunks = Math.ceil(rows.length / chunkSize);
   
   for (let i = 0; i < rows.length; i += chunkSize) {
     const chunkIndex = Math.floor(i / chunkSize) + 1;
@@ -493,7 +493,7 @@ export async function cleanDuplicateIncidents(): Promise<{ removed: number; rema
     grouped.get(key)!.push(incident);
   });
   
-  let duplicatesToRemove: string[] = [];
+  const duplicatesToRemove: string[] = [];
   
   grouped.forEach((incidents, key) => {
     if (incidents.length > 1) {
@@ -570,7 +570,7 @@ export async function validateAndRepairDatabase(): Promise<{
     const incidentsToDelete: string[] = [];
     
     for (const incident of allIncidents) {
-      let isValid = true;
+      const isValid = true;
       let needsUpdate = false;
       
       // Check required fields
