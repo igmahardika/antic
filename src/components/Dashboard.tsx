@@ -12,7 +12,7 @@ import { useAgentStore } from '@/store/agentStore';
 // Dropdown/avatar imports removed (unused)
 
 import UploadProcess from './UploadProcess';
-import GridView from './GridView';
+import GridViewComponent from './GridView';
 import KanbanBoard from './KanbanBoard';
 import TicketAnalytics from './TicketAnalytics';
 import AgentAnalytics from './AgentAnalytics';
@@ -29,7 +29,7 @@ import UsersIcon from '@mui/icons-material/People';
 
 const allTabs = [
   { name: 'Dashboard', component: SummaryDashboard, icon: BarChartIcon },
-  { name: 'Data Grid', component: GridView, icon: GridViewIcon },
+  { name: 'Data Grid', component: GridViewComponent, icon: GridViewIcon },
   { name: 'Customer Analytics', component: KanbanBoard, icon: GroupIcon },
   { name: 'Ticket Analytics', component: TicketAnalytics, icon: BarChartIcon },
   { name: 'Agent Analytics', component: AgentAnalytics, icon: UserCheckIcon },
