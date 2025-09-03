@@ -22,3 +22,51 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Security and Environment Files
+.env
+.env.*
+*.env
+production.env
+env.production
+.env.local
+.env.development
+.env.test
+
+# Database and SQL files with sensitive data
+*.sql
+!schema.sql
+!migrations/*.sql
+
+# Scripts with sensitive data
+*.sh
+*.js
+*.cjs
+*.mjs
+!vite.config.*
+!postcss.config.*
+!tailwind.config.*
+!eslint.config.*
+!tsconfig.*.json
+
+# Backup files
+*.backup*
+*.bak
+*.old
+
+# Hash and password generation files
+*password*
+*hash*
+*generate*
+
+# Test files with sensitive data
+test-*.js
+test-*.cjs
+test-*.mjs
+test-*.sql
+
+# Deployment and configuration files with secrets
+deploy-*.sh
+ecosystem.config.js
+nginx-*.conf
+*.service
