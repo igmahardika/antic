@@ -14,8 +14,14 @@ export default defineConfig(({ mode }) => {
         "@": path.resolve(__dirname, "./src"),
       },
     },
+    base: mode === 'production' ? '/' : '/',
     build: {
+      outDir: 'dist',
+      assetsDir: 'assets',
+      sourcemap: false,
+      minify: 'terser',
       rollupOptions: {
+        external: ['puppeteer'],
         output: {
           manualChunks: {
             vendor: ['react', 'react-dom'],
@@ -26,11 +32,24 @@ export default defineConfig(({ mode }) => {
           }
         }
       },
-      chunkSizeWarningLimit: 1000
+      chunkSizeWarningLimit: 1000,
+      terserOptions: {
+        compress: {
+          drop_console: mode === 'production',
+          drop_debugger: mode === 'production',
+        },
+      }
     },
     server: {
       port: 3000,
       host: true
+    },
+    preview: {
+      port: 3000,
+      host: true
+    },
+    define: {
+      global: 'globalThis',
     }
   }
 })

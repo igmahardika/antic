@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HMS Login Helper</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-right: 10px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 20px;
+        }
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 20px;
+        }
+        .token-display {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 20px;
+            word-break: break-all;
+            font-family: monospace;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔐 HMS Login Helper</h1>
+        <p>Use this helper to log in and access the Admin Panel with proper authentication.</p>
+        
+        <div class="form-group">
+            <label for="username">Username:</label>
+            <input type="text" id="username" value="admin" readonly>
+        </div>
+        
+        <div class="form-group">
+            <label for="password">Password:</label>
+            <input type="password" id="password" value="Kin6ArthUr" readonly>
+        </div>
+        
+        <button onclick="login()">Login</button>
+        <button onclick="goToAdminPanel()">Go to Admin Panel</button>
+        <button onclick="clearAuth()">Clear Auth & Logout</button>
+        
+        <div id="message"></div>
+        <div id="tokenInfo" style="display: none;"></div>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'https://api.hms.nexa.net.id';
+        
+        async function login() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const messageDiv = document.getElementById('message');
+            const tokenInfoDiv = document.getElementById('tokenInfo');
+            
+            try {
+                messageDiv.innerHTML = '<div class="success">Logging in...</div>';
+                
+                const response = await fetch(`${API_BASE_URL}/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ username, password }),
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok && data.success) {
+                    // Store authentication data
+                    localStorage.setItem('auth_token', data.token);
+                    localStorage.setItem('user', JSON.stringify(data.user));
+                    localStorage.setItem('session_id', data.sessionId);
+                    
+                    messageDiv.innerHTML = '<div class="success">✅ Login successful! You can now access the Admin Panel.</div>';
+                    
+                    // Show token info
+                    tokenInfoDiv.innerHTML = `
+                        <h3>Authentication Successful!</h3>
+                        <p><strong>User:</strong> ${data.user.username} (${data.user.role})</p>
+                        <p><strong>Token:</strong></p>
+                        <div class="token-display">${data.token}</div>
+                        <p><strong>Session ID:</strong> ${data.sessionId}</p>
+                    `;
+                    tokenInfoDiv.style.display = 'block';
+                    
+                } else {
+                    messageDiv.innerHTML = `<div class="error">❌ Login failed: ${data.error || 'Unknown error'}</div>`;
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+                messageDiv.innerHTML = '<div class="error">❌ Connection error. Please check your internet connection.</div>';
+            }
+        }
+        
+        function goToAdminPanel() {
+            const token = localStorage.getItem('auth_token');
+            if (token) {
+                // Redirect to admin panel
+                window.location.href = 'https://hms.nexa.net.id/admin';
+            } else {
+                document.getElementById('message').innerHTML = '<div class="error">❌ Please login first!</div>';
+            }
+        }
+        
+        function clearAuth() {
+            localStorage.removeItem('auth_token');
+            localStorage.removeItem('user');
+            localStorage.removeItem('session_id');
+            document.getElementById('message').innerHTML = '<div class="success">✅ Authentication cleared. You are now logged out.</div>';
+            document.getElementById('tokenInfo').style.display = 'none';
+        }
+        
+        // Check if already logged in
+        window.onload = function() {
+            const token = localStorage.getItem('auth_token');
+            if (token) {
+                document.getElementById('message').innerHTML = '<div class="success">✅ You are already logged in!</div>';
+                const user = JSON.parse(localStorage.getItem('user') || '{}');
+                document.getElementById('tokenInfo').innerHTML = `
+                    <h3>Already Authenticated!</h3>
+                    <p><strong>User:</strong> ${user.username || 'Unknown'} (${user.role || 'Unknown'})</p>
+                    <p><strong>Token:</strong></p>
+                    <div class="token-display">${token}</div>
+                `;
+                document.getElementById('tokenInfo').style.display = 'block';
+            }
+        };
+    </script>
+</body>
+</html>
+

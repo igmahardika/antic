@@ -117,6 +117,22 @@ const AdminPanel: React.FC = () => {
     e.preventDefault();
     if (editUserIdx === null) return;
     
+    // Client-side username validation
+    const usernameRegex = /^[a-zA-Z0-9_-]{3,50}$/;
+    if (!usernameRegex.test(editUsername)) {
+      setError('Username must be 3-50 characters, alphanumeric with _ or - only');
+      return;
+    }
+    
+    // Client-side password validation (if password is provided)
+    if (editPassword && editPassword.trim()) {
+      const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,128}$/;
+      if (!passwordRegex.test(editPassword)) {
+        setError('Password must be 8+ characters with uppercase, lowercase, number, and special character (@$!%*?&)');
+        return;
+      }
+    }
+    
     setError('');
     
     try {

@@ -43,38 +43,24 @@ function AppLayout() {
 
   const hour = new Date().getHours();
   const isBusyHour = hour >= 8 && hour <= 17;
-  useAgentMetricsPolling('/api/agent-metrics', isBusyHour);
+  // useAgentMetricsPolling('/api/agent-metrics', isBusyHour); // Temporarily disabled
 
   // Check if login page
   const isLoginPage = location.pathname === '/login';
 
-  // Auto-redirect from login page to dashboard
-  React.useEffect(() => {
-    if (location.pathname === '/login') {
-      window.history.replaceState({}, '', '/summary-dashboard');
-    }
-  }, [location.pathname]);
-
-  // Set up default user when no authentication exists
+  // Check authentication and redirect to login if not authenticated
   React.useEffect(() => {
     const authToken = localStorage.getItem('auth_token');
     const user = localStorage.getItem('user');
     
-    if (!authToken || !user) {
-      // Set up default user for disabled login
-      const defaultUser = {
-        id: 1,
-        username: 'admin',
-        role: 'super admin',
-        created_at: new Date().toISOString(),
-        is_active: true
-      };
-      
-      localStorage.setItem('auth_token', 'mock-token-disabled-login');
-      localStorage.setItem('user', JSON.stringify(defaultUser));
-      localStorage.setItem('session_id', 'mock-session-disabled-login');
+    // If not authenticated and not on login page, redirect to login
+    if ((!authToken || !user) && location.pathname !== '/login') {
+      // Only redirect if trying to access protected routes
+      if (location.pathname === '/admin' || location.pathname.startsWith('/admin')) {
+        window.location.href = '/login';
+      }
     }
-  }, []);
+  }, [location.pathname]);
 
   return (
     <div className="relative min-h-screen">
@@ -125,7 +111,7 @@ function AppLayout() {
                         try {
                           const authToken = localStorage.getItem('auth_token');
                           if (authToken) {
-                            await fetch('http://localhost:3001/logout', {
+                            await fetch(`${import.meta.env.VITE_API_URL || 'https://api.hms.nexa.net.id'}/logout`, {
                               method: 'POST',
                               headers: {
                                 'Authorization': `Bearer ${authToken}`,
@@ -139,7 +125,7 @@ function AppLayout() {
                           localStorage.removeItem('auth_token');
                           localStorage.removeItem('user');
                           localStorage.removeItem('session_id');
-                          window.location.href = '/summary-dashboard';
+                          window.location.href = '/login';
                         }
                       }} 
                       className="cursor-pointer text-red-500 focus:bg-red-50 focus:text-red-600 dark:focus:bg-red-900/50 dark:focus:text-red-400 font-semibold"

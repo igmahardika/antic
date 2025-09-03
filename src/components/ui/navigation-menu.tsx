@@ -398,7 +398,7 @@ export function SidebarNav({ onCollapseChange }: {
               try {
                 const authToken = localStorage.getItem('auth_token');
                 if (authToken) {
-                  await fetch('http://localhost:3001/logout', {
+                  await fetch('https://api.hms.nexa.net.id/logout', {
                     method: 'POST',
                     headers: {
                       'Authorization': `Bearer ${authToken}`,
@@ -412,9 +412,7 @@ export function SidebarNav({ onCollapseChange }: {
                 localStorage.removeItem('auth_token');
                 localStorage.removeItem('user');
                 localStorage.removeItem('session_id');
-                // DISABLED: Login redirect - Login page is disabled
-                // window.location.href = '/login';
-                window.location.href = '/summary-dashboard';
+                window.location.href = '/login';
               }
             }} className="cursor-pointer text-red-500 focus:bg-red-50 focus:text-red-600 dark:focus:bg-red-900/50 dark:focus:text-red-400 font-semibold">
               <LogoutIcon className="mr-2 h-3.5 w-3.5" />

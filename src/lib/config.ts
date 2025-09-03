@@ -2,7 +2,7 @@
  * Global config — membaca Vite env
  *
  *  • VITE_API_URL → production (contoh: https://api.hms.nexa.net.id)
- *  • fallback dev → http://localhost:3001
+ *  • fallback dev → http://api.hms.nexa.net.id
  *  • fallback prod tanpa env → /api   (akan diproxy Nginx)
  */
 
@@ -10,7 +10,7 @@
 
 const envBase =
   import.meta.env.VITE_API_URL ||
-  (import.meta.env.DEV ? 'http://localhost:3001' : '/api');
+  (import.meta.env.DEV ? 'http://api.hms.nexa.net.id' : '/api');
 
 export const API_CONFIG = {
   baseURL: envBase.replace(/\/$/, ''), // hilangkan trailing slash
@@ -47,11 +47,10 @@ export const apiRequest = async (endpoint: string, options: RequestInit = {}) =>
   const res = await fetch(url, cfg);
 
   if (res.status === 401) {
-    // DISABLED: Authentication redirect - Login page is disabled
-    // localStorage.clear();
-    // window.location.href = '/login';
-    // throw new Error('Unauthenticated');
-    console.warn('Authentication required but login is disabled');
+    // Clear authentication data and redirect to login
+    localStorage.clear();
+    window.location.href = '/login';
+    throw new Error('Unauthenticated');
   }
 
   const data = await res.json().catch(() => ({}));

@@ -3,7 +3,7 @@ import Papa from 'papaparse';
 // PDF Export using Backend API (Server-side)
 export const generatePDFWithAPI = async (customerData: any, ticketsData: any[], insightData: any) => {
   try {
-    const response = await fetch('http://localhost:3001/api/generate-pdf', {
+    const response = await fetch('http://api.hms.nexa.net.id/api/generate-pdf', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

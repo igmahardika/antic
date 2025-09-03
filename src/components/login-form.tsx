@@ -29,8 +29,8 @@ export function LoginForm({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!loading && recaptchaToken) {
-      onLogin(username, password, recaptchaToken);
+    if (!loading) {
+      onLogin(username, password, recaptchaToken || "disabled");
     }
   };
 
@@ -73,21 +73,21 @@ export function LoginForm({
           />
         </div>
         
-        {/* reCAPTCHA */}
-        <div className="flex justify-center">
+        {/* reCAPTCHA - TEMPORARILY DISABLED */}
+        {/* <div className="flex justify-center">
           <ReCAPTCHA
             ref={recaptchaRef}
             sitekey={import.meta.env.VITE_RECAPTCHA_SITE_KEY || "6LdKl5srAAAAADEfB7jR18ACypr-lNbKI6cscDY0"}
             onChange={handleRecaptchaChange}
             theme="light"
           />
-        </div>
+        </div> */}
         
         {error && <div className="text-red-500 text-center font-semibold text-sm -mt-2">{error}</div>}
         <Button
           type="submit"
           className="w-full mt-2 bg-[#5B7CFA] hover:bg-[#4666d8] text-white font-bold rounded-xl py-3 text-base tracking-wide uppercase shadow-none focus:ring-2 focus:ring-blue-400 focus:outline-none"
-          disabled={loading || !recaptchaToken}
+          disabled={loading}
         >
           {loading ? "Loading..." : "Login"}
         </Button>

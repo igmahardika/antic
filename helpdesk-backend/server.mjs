@@ -192,12 +192,12 @@ app.post('/login',
     try {
       const { username, password, recaptchaToken } = req.body;
       
-      // Verify reCAPTCHA first
-      const recaptchaResult = await verifyRecaptcha(recaptchaToken);
-      if (!recaptchaResult.success) {
-        auditLogger('LOGIN_FAILED_RECAPTCHA', req, { username, error: recaptchaResult.error });
-        return res.status(400).json({ error: 'reCAPTCHA verification failed' });
-      }
+      // Verify reCAPTCHA first - TEMPORARILY DISABLED
+      // const recaptchaResult = await verifyRecaptcha(recaptchaToken);
+      // if (!recaptchaResult.success) {
+      //   auditLogger('LOGIN_FAILED_RECAPTCHA', req, { username, error: recaptchaResult.error });
+      //   return res.status(400).json({ error: 'reCAPTCHA verification failed' });
+      // }
       
       auditLogger('LOGIN_ATTEMPT', req, { username });
 

@@ -1,0 +1,42 @@
+[Unit]
+Description=HMS Nexa Backend Service
+Documentation=https://github.com/igmahardika/helpdesk-management-system
+After=network.target
+Wants=network.target
+
+[Service]
+Type=simple
+User=www-data
+Group=www-data
+WorkingDirectory=/home/nexa-api-hms/htdocs/api.hms.nexa.net.id
+ExecStart=/usr/bin/node server.mjs
+ExecReload=/bin/kill -HUP $MAINPID
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=hms-backend
+KillMode=mixed
+KillSignal=SIGTERM
+TimeoutStopSec=30
+
+# Environment
+Environment=NODE_ENV=production
+Environment=PORT=3001
+
+# Security settings
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/home/nexa-api-hms/htdocs/api.hms.nexa.net.id
+ReadWritePaths=/tmp
+ReadWritePaths=/var/log
+
+# Resource limits
+LimitNOFILE=4096
+LimitNPROC=4096
+
+[Install]
+WantedBy=multi-user.target
+
