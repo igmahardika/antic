@@ -8,6 +8,8 @@ export interface Ticket {
   WaktuOpen: Date | string;
   WaktuCloseTicket?: Date | string;
   ClosePenanganan?: Date | string;
+  closeHandling?: Date | string; // Added for ART calculation
+  closeHandling1?: Date | string; // Added for FRT calculation
   Penanganan2?: string;
   OpenBy: string;
   status?: string;
@@ -35,14 +37,20 @@ export function sanitizeTickets(tickets: Ticket[]): Ticket[] {
     if (isNaN(open.getTime())) return false;
     if (t.WaktuCloseTicket && isNaN(new Date(t.WaktuCloseTicket).getTime())) return false;
     if (t.ClosePenanganan && isNaN(new Date(t.ClosePenanganan).getTime())) return false;
+    if (t.closeHandling && isNaN(new Date(t.closeHandling).getTime())) return false;
+    if (t.closeHandling1 && isNaN(new Date(t.closeHandling1).getTime())) return false;
     if (t.WaktuCloseTicket && new Date(t.WaktuCloseTicket).getTime() < open.getTime()) return false;
     if (t.ClosePenanganan && new Date(t.ClosePenanganan).getTime() < open.getTime()) return false;
+    if (t.closeHandling && new Date(t.closeHandling).getTime() < open.getTime()) return false;
+    if (t.closeHandling1 && new Date(t.closeHandling1).getTime() < open.getTime()) return false;
     return true;
   }).map(t => ({
     ...t,
     WaktuOpen: new Date(t.WaktuOpen),
     WaktuCloseTicket: t.WaktuCloseTicket ? new Date(t.WaktuCloseTicket) : undefined,
     ClosePenanganan: t.ClosePenanganan ? new Date(t.ClosePenanganan) : undefined,
+    closeHandling: t.closeHandling ? new Date(t.closeHandling) : undefined,
+    closeHandling1: t.closeHandling1 ? new Date(t.closeHandling1) : undefined,
   }));
 }
 
@@ -131,22 +139,26 @@ export function calcMetrics(agentTickets: Ticket[]): AgentMetric {
   let frtSum = 0, artSum = 0, frtCount = 0, artCount = 0, fcrCount = 0, slaCount = 0;
   agentTickets.forEach(t => {
     const open = t.WaktuOpen instanceof Date ? t.WaktuOpen : new Date(t.WaktuOpen);
-    const close = t.WaktuCloseTicket ? (t.WaktuCloseTicket instanceof Date ? t.WaktuCloseTicket : new Date(t.WaktuCloseTicket)) : undefined;
-    const closePen = t.ClosePenanganan ? (t.ClosePenanganan instanceof Date ? t.ClosePenanganan : new Date(t.ClosePenanganan)) : undefined;
-    // FRT: ClosePenanganan - WaktuOpen (minutes)
-    if (closePen && open && closePen.getTime() >= open.getTime()) {
-      frtSum += (closePen.getTime() - open.getTime()) / 60000;
+    
+    // FRT: closeHandling1 - WaktuOpen (minutes) - First Response Time
+    const closePen1 = t.closeHandling1 ? (t.closeHandling1 instanceof Date ? t.closeHandling1 : new Date(t.closeHandling1)) : undefined;
+    if (closePen1 && open && closePen1.getTime() >= open.getTime()) {
+      frtSum += (closePen1.getTime() - open.getTime()) / 60000;
       frtCount++;
     }
-    // ART: WaktuCloseTicket - WaktuOpen (minutes)
-    if (close && open && close.getTime() >= open.getTime()) {
-      artSum += (close.getTime() - open.getTime()) / 60000;
+    
+    // ART: closeHandling - WaktuOpen (minutes) - Average Resolution Time
+    const closeHandling = t.closeHandling ? (t.closeHandling instanceof Date ? t.closeHandling : new Date(t.closeHandling)) : undefined;
+    if (closeHandling && open && closeHandling.getTime() >= open.getTime()) {
+      artSum += (closeHandling.getTime() - open.getTime()) / 60000;
       artCount++;
     }
+    
     // FCR: only 1 handling step (Penanganan2 is empty/null/undefined)
     if (!t.Penanganan2) fcrCount++;
-    // SLA: ART <= 1440 min (24 hours)
-    if (close && open && (close.getTime() - open.getTime()) / 60000 <= 1440) slaCount++;
+    
+    // SLA: ART <= 1440 min (24 hours) - based on closeHandling
+    if (closeHandling && open && closeHandling.getTime() >= open.getTime() && (closeHandling.getTime() - open.getTime()) / 60000 <= 1440) slaCount++;
   });
   const frt = frtCount ? frtSum / frtCount : 0;
   const art = artCount ? artSum / artCount : 0;
@@ -164,7 +176,7 @@ export function calcMetrics(agentTickets: Ticket[]): AgentMetric {
  */
 export function scoreAgent(m: Pick<AgentMetric, 'frt'|'art'|'fcr'|'sla'|'vol'|'backlog'>): number {
   // Normalization bounds (can be tuned)
-  const frtNorm = m.frt <= 0 ? 100 : Math.max(0, Math.min(100, (60 / m.frt) * 100)); // Target FRT 60 minutes
+  const frtNorm = m.frt <= 0 ? 100 : Math.max(0, Math.min(100, (120 / m.frt) * 100)); // Target FRT 120 minutes (updated from 60)
   const artNorm = m.art <= 0 ? 100 : Math.max(0, Math.min(100, (1440 / m.art) * 100)); // Target ART 1440 minutes (24 hours)
   const fcrNorm = Math.max(0, Math.min(100, m.fcr));
   const slaNorm = Math.max(0, Math.min(100, m.sla));

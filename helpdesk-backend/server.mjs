@@ -70,6 +70,14 @@ const verifyRecaptcha = async (token) => {
   }
 };
 
+// Duration validation function - consistent with frontend logic
+const validateDuration = (duration) => {
+  if (!duration || typeof duration !== 'object') return 0;
+  const rawHours = duration.rawHours || 0;
+  // Return 0 for invalid durations (negative or > 24 hours)
+  return rawHours >= 0 && rawHours <= 24 ? rawHours : 0;
+};
+
 // -----------------------------------------------------------------------------
 // 2. Middleware – Security, CORS, body-parser, session
 // -----------------------------------------------------------------------------
@@ -735,33 +743,33 @@ app.post('/api/tickets/bulk', authenticateToken, async (req, res) => {
       ticket.handling,
       ticket.openTime,
       ticket.closeTime,
-      ticket.duration?.rawHours || 0,
+      validateDuration(ticket.duration), // Validasi durasi total
       ticket.duration?.formatted || '',
       ticket.closeHandling,
-      ticket.handlingDuration?.rawHours || 0,
+      validateDuration(ticket.handlingDuration), // Validasi ART
       ticket.handlingDuration?.formatted || '',
       ticket.classification,
       ticket.subClassification,
       ticket.status || 'open',
       ticket.handling1,
       ticket.closeHandling1,
-      ticket.handlingDuration1?.rawHours || 0,
+      validateDuration(ticket.handlingDuration1), // Validasi FRT
       ticket.handlingDuration1?.formatted || '',
       ticket.handling2,
       ticket.closeHandling2,
-      ticket.handlingDuration2?.rawHours || 0,
+      validateDuration(ticket.handlingDuration2),
       ticket.handlingDuration2?.formatted || '',
       ticket.handling3,
       ticket.closeHandling3,
-      ticket.handlingDuration3?.rawHours || 0,
+      validateDuration(ticket.handlingDuration3),
       ticket.handlingDuration3?.formatted || '',
       ticket.handling4,
       ticket.closeHandling4,
-      ticket.handlingDuration4?.rawHours || 0,
+      validateDuration(ticket.handlingDuration4),
       ticket.handlingDuration4?.formatted || '',
       ticket.handling5,
       ticket.closeHandling5,
-      ticket.handlingDuration5?.rawHours || 0,
+      validateDuration(ticket.handlingDuration5),
       ticket.handlingDuration5?.formatted || '',
       ticket.openBy,
       ticket.cabang,
@@ -1010,33 +1018,33 @@ app.post('/api/migration/tickets/bulk',
         ticket.handling,
         ticket.openTime,
         ticket.closeTime,
-        ticket.duration,
+        validateDuration({ rawHours: ticket.duration }), // Validasi durasi total
         ticket.duration ? `${ticket.duration}h` : null,
         ticket.closeHandling,
-        ticket.handlingDuration,
+        validateDuration({ rawHours: ticket.handlingDuration }), // Validasi ART
         ticket.handlingDuration ? `${ticket.handlingDuration}h` : null,
         ticket.classification,
         ticket.subClassification,
         ticket.status,
         ticket.handling1,
         ticket.closeHandling1,
-        ticket.handlingDuration1,
+        validateDuration({ rawHours: ticket.handlingDuration1 }), // Validasi FRT
         ticket.handlingDuration1 ? `${ticket.handlingDuration1}h` : null,
         ticket.handling2,
         ticket.closeHandling2,
-        ticket.handlingDuration2,
+        validateDuration({ rawHours: ticket.handlingDuration2 }),
         ticket.handlingDuration2 ? `${ticket.handlingDuration2}h` : null,
         ticket.handling3,
         ticket.closeHandling3,
-        ticket.handlingDuration3,
+        validateDuration({ rawHours: ticket.handlingDuration3 }),
         ticket.handlingDuration3 ? `${ticket.handlingDuration3}h` : null,
         ticket.handling4,
         ticket.closeHandling4,
-        ticket.handlingDuration4,
+        validateDuration({ rawHours: ticket.handlingDuration4 }),
         ticket.handlingDuration4 ? `${ticket.handlingDuration4}h` : null,
         ticket.handling5,
         ticket.closeHandling5,
-        ticket.handlingDuration5,
+        validateDuration({ rawHours: ticket.handlingDuration5 }),
         ticket.handlingDuration5 ? `${ticket.handlingDuration5}h` : null,
         ticket.openBy,
         ticket.cabang,

@@ -19,8 +19,6 @@ function mapTicketFieldsForAgentKpi(ticket) {
   const WaktuOpen = ticket['OPEN TIME'] || ticket.openTime;
   const WaktuCloseTicket = ticket['CLOSE TIME'] || ticket.closeTime;
   const ClosePenanganan =
-    ticket['CLOSE PENANGANAN'] ||
-    ticket.closeHandling ||
     ticket['CLOSE PENANGANAN 1'] ||
     ticket.closeHandling1;
   const Penanganan2 =
@@ -35,6 +33,8 @@ function mapTicketFieldsForAgentKpi(ticket) {
     WaktuOpen,
     WaktuCloseTicket,
     ClosePenanganan,
+    closeHandling: ticket['CLOSE PENANGANAN'] || ticket.closeHandling,
+    closeHandling1: ticket['CLOSE PENANGANAN 1'] || ticket.closeHandling1,
     Penanganan2,
     OpenBy,
     status,
@@ -73,21 +73,26 @@ function computeAgentMetrics(tickets) {
     ticketsArr.forEach(t => {
       const open = t.WaktuOpen instanceof Date ? t.WaktuOpen : new Date(t.WaktuOpen);
       const close = t.WaktuCloseTicket ? (t.WaktuCloseTicket instanceof Date ? t.WaktuCloseTicket : new Date(t.WaktuCloseTicket)) : undefined;
-      const closePen = t.ClosePenanganan ? (t.ClosePenanganan instanceof Date ? t.ClosePenanganan : new Date(t.ClosePenanganan)) : undefined;
-      // FRT: ClosePenanganan - WaktuOpen (minutes)
-      if (closePen && open && closePen.getTime() >= open.getTime()) {
-        frtSum += (closePen.getTime() - open.getTime()) / 60000;
+      
+      // FRT: closeHandling1 - WaktuOpen (minutes) - First Response Time
+      const closePen1 = t.closeHandling1 ? (t.closeHandling1 instanceof Date ? t.closeHandling1 : new Date(t.closeHandling1)) : undefined;
+      if (closePen1 && open && closePen1.getTime() >= open.getTime()) {
+        frtSum += (closePen1.getTime() - open.getTime()) / 60000;
         frtCount++;
       }
-      // ART: WaktuCloseTicket - WaktuOpen (minutes)
-      if (close && open && close.getTime() >= open.getTime()) {
-        artSum += (close.getTime() - open.getTime()) / 60000;
+      
+      // ART: closeHandling - WaktuOpen (minutes) - Average Resolution Time
+      const closeHandling = t.closeHandling ? (t.closeHandling instanceof Date ? t.closeHandling : new Date(t.closeHandling)) : undefined;
+      if (closeHandling && open && closeHandling.getTime() >= open.getTime()) {
+        artSum += (closeHandling.getTime() - open.getTime()) / 60000;
         artCount++;
       }
+      
       // FCR: hanya 1 penanganan (Penanganan2 kosong/null)
       if (!t.Penanganan2) fcrCount++;
-      // SLA: ART <= 1440 min (24 jam)
-      if (close && open && (close.getTime() - open.getTime()) / 60000 <= 1440) slaCount++;
+      
+      // SLA: ART <= 1440 min (24 jam) - based on closeHandling
+      if (closeHandling && open && closeHandling.getTime() >= open.getTime() && (closeHandling.getTime() - open.getTime()) / 60000 <= 1440) slaCount++;
     });
     const frt = frtCount ? frtSum / frtCount : 0;
     const art = artCount ? artSum / artCount : 0;
@@ -95,8 +100,8 @@ function computeAgentMetrics(tickets) {
     const sla = vol ? (slaCount / vol) * 100 : 0;
     // Score & rank
     const score = (function scoreAgent(m) {
-      const frtNorm = m.frt <= 0 ? 100 : Math.max(0, 100 - Math.min(100, m.frt / 4));
-      const artNorm = m.art <= 0 ? 100 : Math.max(0, 100 - Math.min(100, m.art / 4));
+      const frtNorm = m.frt <= 0 ? 100 : Math.max(0, Math.min(100, (120 / m.frt) * 100)); // Target FRT 120 minutes
+      const artNorm = m.art <= 0 ? 100 : Math.max(0, Math.min(100, (1440 / m.art) * 100)); // Target ART 1440 minutes
       const fcrNorm = Math.max(0, Math.min(100, m.fcr));
       const slaNorm = Math.max(0, Math.min(100, m.sla));
       const volNorm = Math.max(0, Math.min(100, (m.vol / 100) * 100));

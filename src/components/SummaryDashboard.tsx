@@ -115,11 +115,11 @@ const SummaryDashboard = ({ ticketAnalyticsData, filteredTickets, standalone = f
     
     const closedRate = total > 0 ? ((closed / total) * 100).toFixed(1) + '%' : '0%';
     
-    // SLA: close within 24h (1440 minutes)
+    // SLA: close within 24h (1440 minutes) - based on closeHandling
     const slaClosed = (filteredTickets || []).filter((t: any) => {
-      if (!t.openTime || !t.closeTime) return false;
+      if (!t.openTime || !t.closeHandling) return false;
       const d1 = new Date(t.openTime); 
-      const d2 = new Date(t.closeTime);
+      const d2 = new Date(t.closeHandling);
       if (isNaN(d1.getTime()) || isNaN(d2.getTime())) return false;
       const diffMin = Math.abs(d2.getTime() - d1.getTime()) / 60000;
       return diffMin <= 1440;
@@ -130,18 +130,18 @@ const SummaryDashboard = ({ ticketAnalyticsData, filteredTickets, standalone = f
     const frtVals: number[] = [];
     const artVals: number[] = [];
     (filteredTickets || []).forEach((t: any) => {
-      // FRT: ClosePenanganan - WaktuOpen
-      if (t.openTime && t.closeHandling) {
+      // FRT: closeHandling1 - WaktuOpen (First Response Time)
+      if (t.openTime && t.closeHandling1) {
         const a = new Date(t.openTime); 
-        const b = new Date(t.closeHandling);
+        const b = new Date(t.closeHandling1);
         if (!isNaN(a.getTime()) && !isNaN(b.getTime()) && b.getTime() >= a.getTime()) {
           frtVals.push((b.getTime() - a.getTime()) / 60000);
         }
       }
-      // ART: WaktuCloseTicket - WaktuOpen
-      if (t.openTime && t.closeTime) {
+      // ART: closeHandling - WaktuOpen (Average Resolution Time)
+      if (t.openTime && t.closeHandling) {
         const a = new Date(t.openTime); 
-        const b = new Date(t.closeTime);
+        const b = new Date(t.closeHandling);
         if (!isNaN(a.getTime()) && !isNaN(b.getTime()) && b.getTime() >= a.getTime()) {
           artVals.push((b.getTime() - a.getTime()) / 60000);
         }
@@ -275,7 +275,7 @@ const SummaryDashboard = ({ ticketAnalyticsData, filteredTickets, standalone = f
     function calculateAgentScore(agent: any, maxTicket: number) {
       const fcrScore = normalizePositive(agent.fcr, 75) * 0.3;
       const slaScore = normalizePositive(agent.sla, 85) * 0.25;
-      const frtScore = normalizeNegative(agent.frt, 60) * 0.15; // Target 60 minutes
+      const frtScore = normalizeNegative(agent.frt, 120) * 0.15; // Target 120 minutes (updated from 60)
       const artScore = normalizeNegative(agent.art, 1440) * 0.15; // Target 1440 minutes
       const backlogScore = scoreBacklog(agent.backlog) * 0.05;
       const ticketScore = scoreTicket(agent.vol, maxTicket) * 0.10;
@@ -977,7 +977,7 @@ const SummaryDashboard = ({ ticketAnalyticsData, filteredTickets, standalone = f
                     <div className={`text-xs font-bold leading-tight ${
                       i < 3 
                         ? 'text-white' 
-                        : row.frtAvg <= 60 ? 'text-green-600' : row.frtAvg <= 120 ? 'text-amber-600' : 'text-red-600'
+                        : row.frtAvg <= 120 ? 'text-green-600' : row.frtAvg <= 240 ? 'text-amber-600' : 'text-red-600'
                     }`}>
                       {formatDurationDHM(row.frtAvg / 60)}
                     </div>

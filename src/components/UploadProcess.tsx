@@ -567,7 +567,10 @@ function parseExcelDate(value: any): string | undefined {
       const startDate = new Date(start);
       const endDate = new Date(end);
       if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) return 0;
-      return Math.abs(endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60);
+      // Return 0 for negative durations (data invalid) instead of using Math.abs()
+      const diffMs = endDate.getTime() - startDate.getTime();
+      const diffHours = diffMs / (1000 * 60 * 60);
+      return diffHours >= 0 ? diffHours : 0;
   };
   
 const processAndAnalyzeData = (rawData: any[]): { tickets: ITicket[], errorRows: IErrorLog[] } => {

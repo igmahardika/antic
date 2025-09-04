@@ -374,15 +374,15 @@ const AgentAnalytics = () => {
       });
       const fcrRate = totalTickets > 0 ? (fcrTickets.length / totalTickets) * 100 : 0;
       
-      // SLA calculation
+      // SLA calculation - using closeHandling
       const slaCompliant = filteredTickets.filter(t => {
-        if (!t.openTime || !t.closeTime) return false;
+        if (!t.openTime || !t.closeHandling) return false;
         const openDate = new Date(t.openTime);
-        const closeDate = new Date(t.closeTime);
-        if (isNaN(openDate.getTime()) || isNaN(closeDate.getTime())) return false;
-        if (closeDate <= openDate) return false;
+        const handlingDate = new Date(t.closeHandling);
+        if (isNaN(openDate.getTime()) || isNaN(handlingDate.getTime())) return false;
+        if (handlingDate <= openDate) return false;
         
-        const diffMin = (closeDate.getTime() - openDate.getTime()) / 60000;
+        const diffMin = (handlingDate.getTime() - openDate.getTime()) / 60000;
         return diffMin <= 1440 && diffMin > 0;
       }).length;
       const slaRate = totalTickets > 0 ? (slaCompliant / totalTickets) * 100 : 0;
@@ -805,8 +805,8 @@ const AgentAnalytics = () => {
   function calculateAgentScore(agent: any, maxTicket: number) {
     const fcrScore = normalizePositive(agent.fcr, 75) * 0.3;
     const slaScore = normalizePositive(agent.sla, 85) * 0.25;
-    // Update FRT target to 60 minutes (1 hour)
-    const frtScore = normalizeNegative(agent.frtMinutes, 60) * 0.15;
+    // Update FRT target to 120 minutes (2 hours)
+    const frtScore = normalizeNegative(agent.frtMinutes, 120) * 0.15;
     // Update ART target to 1440 minutes (24 hours)
     const artScore = normalizeNegative(agent.artMinutes, 1440) * 0.15;
     const backlogScore = scoreBacklog(agent.backlog) * 0.05;
@@ -828,7 +828,7 @@ const AgentAnalytics = () => {
     const score = Math.round(calculateAgentScore(agentObj, maxTicket));
     // Insight otomatis (bisa disesuaikan)
     let insight = '';
-    if (agentObj.frtMinutes > 15) insight = 'Avg FRT di atas target.';
+    if (agentObj.frtMinutes > 120) insight = 'Avg FRT di atas target.';
     if (agentObj.sla < 85) insight = 'SLA di bawah target.';
     return { ...m, score, insight };
   });
@@ -1791,13 +1791,13 @@ const AgentAnalytics = () => {
                        const fcrRate = totalTickets > 0 ? (fcrTickets.length / totalTickets) * 100 : 0;
                        
                        const slaCompliant = agentTickets.filter(t => {
-                         if (!t.openTime || !t.closeTime) return false;
+                         if (!t.openTime || !t.closeHandling) return false;
                          const openDate = new Date(t.openTime);
-                         const closeDate = new Date(t.closeTime);
-                         if (isNaN(openDate.getTime()) || isNaN(closeDate.getTime())) return false;
-                         if (closeDate <= openDate) return false;
+                         const handlingDate = new Date(t.closeHandling);
+                         if (isNaN(openDate.getTime()) || isNaN(handlingDate.getTime())) return false;
+                         if (handlingDate <= openDate) return false;
                          
-                         const diffMin = (closeDate.getTime() - openDate.getTime()) / 60000;
+                         const diffMin = (handlingDate.getTime() - openDate.getTime()) / 60000;
                          return diffMin <= 1440 && diffMin > 0;
                        }).length;
                        const slaRate = totalTickets > 0 ? (slaCompliant / totalTickets) * 100 : 0;
@@ -2085,22 +2085,40 @@ const AgentAnalytics = () => {
                       });
                       const fcrRate = totalTickets > 0 ? (fcrTickets.length / totalTickets) * 100 : 0;
                       
-                      // Calculate SLA compliance with validation
+                      // Calculate SLA compliance with validation - using closeHandling
                       const slaCompliant = agentTickets.filter(t => {
-                        if (!t.openTime || !t.closeTime) return false;
+                        if (!t.openTime || !t.closeHandling) return false;
                         const openDate = new Date(t.openTime);
-                        const closeDate = new Date(t.closeTime);
-                        if (isNaN(openDate.getTime()) || isNaN(closeDate.getTime())) return false;
-                        if (closeDate <= openDate) return false; // Invalid time range
+                        const handlingDate = new Date(t.closeHandling);
+                        if (isNaN(openDate.getTime()) || isNaN(handlingDate.getTime())) return false;
+                        if (handlingDate <= openDate) return false; // Invalid time range
                         
-                        const diffMin = (closeDate.getTime() - openDate.getTime()) / 60000;
+                        const diffMin = (handlingDate.getTime() - openDate.getTime()) / 60000;
                         return diffMin <= 1440 && diffMin > 0; // 24 hours max, must be positive
                       }).length;
                       
                       const slaRate = totalTickets > 0 ? (slaCompliant / totalTickets) * 100 : 0;
                       
-                      // Calculate FRT (First Response Time) with validation
+                      // Calculate FRT (First Response Time) with validation - using closeHandling1
                       const frtValues = agentTickets
+                        .filter(t => {
+                          if (!t.openTime || !t.closeHandling1) return false;
+                          const openDate = new Date(t.openTime);
+                          const handlingDate = new Date(t.closeHandling1);
+                          return !isNaN(openDate.getTime()) && !isNaN(handlingDate.getTime()) && handlingDate > openDate;
+                        })
+                        .map(t => {
+                          const open = new Date(t.openTime);
+                          const handling = new Date(t.closeHandling1);
+                          return (handling.getTime() - open.getTime()) / 60000;
+                        })
+                        .filter(t => t > 0 && t < 10080); // Filter out unreasonable values
+                      
+                      const avgFRT = frtValues.length > 0 ? 
+                        frtValues.reduce((sum, val) => sum + val, 0) / frtValues.length : 0;
+                      
+                      // Calculate ART (Average Resolution Time) with validation - using closeHandling
+                      const artValues = agentTickets
                         .filter(t => {
                           if (!t.openTime || !t.closeHandling) return false;
                           const openDate = new Date(t.openTime);
@@ -2111,24 +2129,6 @@ const AgentAnalytics = () => {
                           const open = new Date(t.openTime);
                           const handling = new Date(t.closeHandling);
                           return (handling.getTime() - open.getTime()) / 60000;
-                        })
-                        .filter(t => t > 0 && t < 10080); // Filter out unreasonable values
-                      
-                      const avgFRT = frtValues.length > 0 ? 
-                        frtValues.reduce((sum, val) => sum + val, 0) / frtValues.length : 0;
-                      
-                      // Calculate ART (Average Resolution Time) with validation
-                      const artValues = agentTickets
-                        .filter(t => {
-                          if (!t.openTime || !t.closeTime) return false;
-                          const openDate = new Date(t.openTime);
-                          const closeDate = new Date(t.closeTime);
-                          return !isNaN(openDate.getTime()) && !isNaN(closeDate.getTime()) && closeDate > openDate;
-                        })
-                        .map(t => {
-                          const open = new Date(t.openTime);
-                          const close = new Date(t.closeTime);
-                          return (close.getTime() - open.getTime()) / 60000;
                         })
                         .filter(t => t > 0 && t < 10080); // Filter out unreasonable values
                       
@@ -2404,15 +2404,15 @@ const AgentAnalytics = () => {
                       });
                       const fcrRate = totalTickets > 0 ? (fcrTickets.length / totalTickets) * 100 : 0;
                       
-                      // SLA calculation
+                      // SLA calculation - using closeHandling
                       const slaCompliant = agentTickets.filter(t => {
-                        if (!t.openTime || !t.closeTime) return false;
+                        if (!t.openTime || !t.closeHandling) return false;
                         const openDate = new Date(t.openTime);
-                        const closeDate = new Date(t.closeTime);
-                        if (isNaN(openDate.getTime()) || isNaN(closeDate.getTime())) return false;
-                        if (closeDate <= openDate) return false;
+                        const handlingDate = new Date(t.closeHandling);
+                        if (isNaN(openDate.getTime()) || isNaN(handlingDate.getTime())) return false;
+                        if (handlingDate <= openDate) return false;
                         
-                        const diffMin = (closeDate.getTime() - openDate.getTime()) / 60000;
+                        const diffMin = (handlingDate.getTime() - openDate.getTime()) / 60000;
                         return diffMin <= 1440 && diffMin > 0;
                       }).length;
                       const slaRate = totalTickets > 0 ? (slaCompliant / totalTickets) * 100 : 0;
@@ -2816,13 +2816,13 @@ const AgentAnalytics = () => {
                       const fcrRate = totalTickets > 0 ? (fcrTickets.length / totalTickets) * 100 : 0;
                       
                       const slaCompliant = agentTickets.filter(t => {
-                        if (!t.openTime || !t.closeTime) return false;
+                        if (!t.openTime || !t.closeHandling) return false;
                         const openDate = new Date(t.openTime);
-                        const closeDate = new Date(t.closeTime);
-                        if (isNaN(openDate.getTime()) || isNaN(closeDate.getTime())) return false;
-                        if (closeDate <= openDate) return false;
+                        const handlingDate = new Date(t.closeHandling);
+                        if (isNaN(openDate.getTime()) || isNaN(handlingDate.getTime())) return false;
+                        if (handlingDate <= openDate) return false;
                         
-                        const diffMin = (closeDate.getTime() - openDate.getTime()) / 60000;
+                        const diffMin = (handlingDate.getTime() - openDate.getTime()) / 60000;
                         return diffMin <= 1440 && diffMin > 0;
                       }).length;
                       const slaRate = totalTickets > 0 ? (slaCompliant / totalTickets) * 100 : 0;
@@ -3053,15 +3053,15 @@ const AgentAnalytics = () => {
                                     return status.includes('close') || status.includes('closed');
                                   }).length;
                                   
-                                  // Calculate SLA compliance with validation
+                                  // Calculate SLA compliance with validation - using closeHandling
                                   const slaCompliant = agentTickets.filter(t => {
-                                    if (!t.openTime || !t.closeTime) return false;
+                                    if (!t.openTime || !t.closeHandling) return false;
                                     const openDate = new Date(t.openTime);
-                                    const closeDate = new Date(t.closeTime);
-                                    if (isNaN(openDate.getTime()) || isNaN(closeDate.getTime())) return false;
-                                    if (closeDate <= openDate) return false; // Invalid time range
+                                    const handlingDate = new Date(t.closeHandling);
+                                    if (isNaN(openDate.getTime()) || isNaN(handlingDate.getTime())) return false;
+                                    if (handlingDate <= openDate) return false; // Invalid time range
                                     
-                                    const diffMin = (closeDate.getTime() - openDate.getTime()) / 60000;
+                                    const diffMin = (handlingDate.getTime() - openDate.getTime()) / 60000;
                                     return diffMin <= 1440 && diffMin > 0; // 24 hours max, must be positive
                                   }).length;
                                   
