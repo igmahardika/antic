@@ -1235,7 +1235,7 @@ const AgentAnalytics = () => {
                             return '#ef4444'; // Red
                           })()
                         }}>
-                          {agent.score || 0}%
+                          {agent.score || 0}
                         </span>
                       </div>
                       
@@ -1243,7 +1243,7 @@ const AgentAnalytics = () => {
                         <div 
                           className="h-full rounded-full transition-all duration-300"
                           style={{
-                            width: `${agent.score || 0}%`,
+                            width: `${Math.min(agent.score || 0, 100)}%`,
                             backgroundColor: (() => {
                               const score = agent.score || 0;
                               if (score >= 75) {
