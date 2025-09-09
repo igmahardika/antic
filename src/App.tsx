@@ -26,6 +26,7 @@ import { IncidentData } from './pages/IncidentData';
 import IncidentAnalytics from './pages/IncidentAnalytics';
 import TSAnalytics from './pages/TSAnalytics';
 import SiteAnalytics from './pages/SiteAnalytics';
+import EscalationPage from './pages/EscalationPage';
 
 // New sidebar imports
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
@@ -154,6 +155,7 @@ function AppLayout() {
                 <Route path="/incident/analytics" element={<IncidentAnalytics />} />
                 <Route path="/incident/ts-analytics" element={<TSAnalytics />} />
                 <Route path="/incident/site-analytics" element={<SiteAnalytics />} />
+                <Route path="/escalation" element={<EscalationPage />} />
                 <Route path="/documentation/upload" element={<UploadProcess onUploadComplete={() => {}} />} />
                 <Route path="/documentation/admin-rumus" element={<AdminRumus />} />
                 {/* Path lama tetap untuk fallback/compatibility */}

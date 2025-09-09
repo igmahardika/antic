@@ -30,6 +30,7 @@ import ScienceIcon from '@mui/icons-material/Science';
 import ConfirmationNumberIcon from '@mui/icons-material/ConfirmationNumber';
 import StorageIcon from '@mui/icons-material/Storage';
 import MenuBookIcon from '@mui/icons-material/MenuBook';
+import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 // LogoutIcon removed - not used
 
 export default function AppSidebar() {
@@ -93,6 +94,11 @@ export default function AppSidebar() {
           icon: <GroupIcon sx={{ fontSize: 16 }} />,
         },
       ],
+    },
+    {
+      name: 'Escalation',
+      path: '/escalation',
+      icon: <TrendingUpIcon sx={{ fontSize: 16 }} />,
     },
     {
       name: 'Master Data',
