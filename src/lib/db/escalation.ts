@@ -14,6 +14,11 @@ class EscalationDB extends Dexie {
       escalationHistory: 'id, escalationId, field, updatedAt, action'
     });
     
+    this.version(3).stores({
+      escalations: 'id, status, code, customerId, createdAt, updatedAt',
+      escalationHistory: 'id, escalationId, field, updatedAt, action, updatedBy'
+    });
+    
     // Handle database upgrade conflicts
     this.on('versionchange', () => {
       this.close();

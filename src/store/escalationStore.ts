@@ -10,8 +10,8 @@ interface State {
 
 interface Actions {
   load: () => Promise<void>;
-  add: (payload: Omit<Escalation, 'id'|'status'|'createdAt'|'updatedAt'> & { status?: EscalationStatus }) => Promise<void>;
-  update: (id: string, patch: Partial<Escalation>) => Promise<void>;
+  add: (payload: Omit<Escalation, 'id'|'status'|'createdAt'|'updatedAt'> & { status?: EscalationStatus }) => Promise<string>;
+  update: (id: string, patch: Partial<Escalation>, skipHistory?: boolean) => Promise<void>;
   close: (id: string) => Promise<void>;
   getHistory: (escalationId: string) => Promise<EscalationHistory[]>;
   addHistory: (escalationId: string, field: string, oldValue: string, newValue: string, action: 'created' | 'updated' | 'closed') => Promise<void>;
@@ -42,13 +42,27 @@ export const useEscalationStore = create<State & Actions>((set, get) => ({
       // Add creation history
       await get().addHistory(row.id, 'escalation', '', 'created', 'created');
       set({ rows: [...get().rows, row] });
+      
+      // Dispatch custom event for real-time updates
+      window.dispatchEvent(new CustomEvent('escalationDataChanged', { 
+        detail: { action: 'add', data: row } 
+      }));
+      
+      return row.id; // Return the escalation ID
     } catch (error) {
       console.warn('Failed to add to IndexedDB, using localStorage fallback:', error);
       const rows = [...get().rows, row];
       set({ rows }); lsSet(rows);
+      
+      // Dispatch custom event for real-time updates
+      window.dispatchEvent(new CustomEvent('escalationDataChanged', { 
+        detail: { action: 'add', data: row } 
+      }));
+      
+      return row.id; // Return the escalation ID
     }
   },
-  update: async (id, patch) => {
+  update: async (id, patch, skipHistory = false) => {
     const currentRow = get().rows.find(r => r.id === id);
     if (!currentRow) return;
 
@@ -58,17 +72,29 @@ export const useEscalationStore = create<State & Actions>((set, get) => ({
     try {
       await escalationDB.escalations.update(id, { ...patch, updatedAt: now });
       
-      // Track changes in history
-      const user = JSON.parse(localStorage.getItem('user') || '{"username":"System"}');
-      for (const [field, newValue] of Object.entries(patch)) {
-        if (field !== 'updatedAt' && currentRow[field as keyof Escalation] !== newValue) {
-          await get().addHistory(id, field, String(currentRow[field as keyof Escalation] || ''), String(newValue), 'updated');
+      // Track changes in history only if not skipped
+      if (!skipHistory) {
+        const user = JSON.parse(localStorage.getItem('user') || '{"username":"System"}');
+        for (const [field, newValue] of Object.entries(patch)) {
+          if (field !== 'updatedAt' && currentRow[field as keyof Escalation] !== newValue) {
+            await get().addHistory(id, field, String(currentRow[field as keyof Escalation] || ''), String(newValue), 'updated');
+          }
         }
       }
       
       set({ rows });
+      
+      // Dispatch custom event for real-time updates
+      window.dispatchEvent(new CustomEvent('escalationDataChanged', { 
+        detail: { action: 'update', data: { id, ...patch } } 
+      }));
     } catch {
       set({ rows }); lsSet(rows);
+      
+      // Dispatch custom event for real-time updates
+      window.dispatchEvent(new CustomEvent('escalationDataChanged', { 
+        detail: { action: 'update', data: { id, ...patch } } 
+      }));
     }
   },
   close: async (id) => {
@@ -83,19 +109,37 @@ export const useEscalationStore = create<State & Actions>((set, get) => ({
       // Add close history
       await get().addHistory(id, 'status', 'active', 'closed', 'closed');
       set({ rows });
+      
+      // Dispatch custom event for real-time updates
+      window.dispatchEvent(new CustomEvent('escalationDataChanged', { 
+        detail: { action: 'close', data: { id } } 
+      }));
     } catch {
       set({ rows }); lsSet(rows);
+      
+      // Dispatch custom event for real-time updates
+      window.dispatchEvent(new CustomEvent('escalationDataChanged', { 
+        detail: { action: 'close', data: { id } } 
+      }));
     }
   },
   getHistory: async (escalationId) => {
     try {
-      return await escalationDB.escalationHistory
+      console.log('Getting history for escalation:', escalationId);
+      const history = await escalationDB.escalationHistory
         .where('escalationId')
         .equals(escalationId)
-        .orderBy('updatedAt')
-        .reverse()
         .toArray();
-    } catch {
+      
+      // Sort by updatedAt in descending order (newest first)
+      const sortedHistory = history.sort((a, b) => 
+        new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+      );
+      
+      console.log('Retrieved history:', sortedHistory);
+      return sortedHistory;
+    } catch (error) {
+      console.error('Error getting history:', error);
       return [];
     }
   },
@@ -114,8 +158,11 @@ export const useEscalationStore = create<State & Actions>((set, get) => ({
       action
     };
 
+    console.log('Adding history entry:', historyEntry);
+
     try {
       await escalationDB.escalationHistory.add(historyEntry);
+      console.log('History entry added successfully');
     } catch (error) {
       console.error('Failed to add history:', error);
     }

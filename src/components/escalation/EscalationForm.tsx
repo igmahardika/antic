@@ -9,8 +9,15 @@ import { fetchCustomers } from '@/utils/customerSource';
 
 const CODES: EscalationCode[] = ['CODE-OS','CODE-AS','CODE-BS','CODE-DCS','CODE-EOS','CODE-IPC'];
 
-export default function EscalationForm() {
+interface EscalationFormProps {
+  onSuccess?: () => void;
+  escalation?: any; // For edit mode
+}
+
+export default function EscalationForm({ onSuccess, escalation }: EscalationFormProps) {
   const add = useEscalationStore(s => s.add);
+  const update = useEscalationStore(s => s.update);
+  const isEditMode = !!escalation;
   const [customers, setCustomers] = useState<{id:string;name:string}[]>([]);
   const [customerId, setCustomerId] = useState('');
   const [problem, setProblem] = useState('');
@@ -20,13 +27,68 @@ export default function EscalationForm() {
 
   useEffect(() => { fetchCustomers().then(setCustomers); }, []);
 
+  // Populate form with existing data in edit mode
+  useEffect(() => {
+    if (escalation) {
+      setCustomerId(escalation.customerId || '');
+      setProblem(escalation.problem || '');
+      setAction(escalation.action || '');
+      setRecommendation(escalation.recommendation || '');
+      setCode(escalation.code || 'CODE-OS');
+    }
+  }, [escalation]);
+
   const selectedName = customers.find(c=>c.id===customerId)?.name || '';
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if(!customerId || !problem.trim()) return;
-    await add({ customerId, customerName: selectedName, problem, action, recommendation, code });
-    setProblem(''); setAction(''); setRecommendation('');
+    
+    if (isEditMode && escalation) {
+      // Update existing escalation
+      await update(escalation.id, { 
+        customerId, 
+        customerName: selectedName, 
+        problem, 
+        action, 
+        recommendation, 
+        code 
+      });
+    } else {
+      // Create the escalation entry
+      const escalationId = await add({ customerId, customerName: selectedName, problem, action, recommendation, code });
+    
+    // Create history entry as a list format for the first row
+    const { addHistory } = useEscalationStore.getState();
+    const now = new Date().toISOString();
+    const user = JSON.parse(localStorage.getItem('user') || '{"username":"System"}');
+    
+    // Create a list-formatted history entry
+    const listEntry = {
+      id: `list-${Date.now()}`,
+      escalationId: escalationId,
+      field: 'initial_list',
+      oldValue: '',
+      newValue: JSON.stringify({
+        problem: problem,
+        action: action,
+        recommendation: recommendation,
+        format: 'list'
+      }),
+      updatedBy: user.username || 'System',
+      updatedAt: now,
+      action: 'created' as const
+    };
+    
+      // Add the list-formatted history entry
+      await addHistory(escalationId, 'initial_list', '', listEntry.newValue, 'created');
+    }
+    
+    if (!isEditMode) {
+      setProblem(''); setAction(''); setRecommendation('');
+      setCustomerId(''); // Reset customer selection
+    }
+    onSuccess?.(); // Call success callback
   };
 
   return (
@@ -69,7 +131,7 @@ export default function EscalationForm() {
       </div>
 
       <div className="pt-2">
-        <Button type="submit">Simpan</Button>
+        <Button type="submit">{isEditMode ? 'Update Escalation' : 'Simpan'}</Button>
       </div>
     </form>
   );
