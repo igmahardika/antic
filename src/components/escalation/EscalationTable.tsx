@@ -12,6 +12,16 @@ import { useEscalationStore } from '@/store/escalationStore';
 import type { Escalation, EscalationHistory } from '@/types/escalation';
 import { formatDateTimeDDMMYYYY } from '@/lib/utils';
 import { Clock, User, Edit, CheckCircle, XCircle, Save } from 'lucide-react';
+import { CodeBadgeClasses, EscalationCode } from '@/utils/escalation';
+
+const CODES: EscalationCode[] = [
+  EscalationCode.OS,
+  EscalationCode.AS,
+  EscalationCode.BS,
+  EscalationCode.DCS,
+  EscalationCode.EOS,
+  EscalationCode.IPC
+];
 
 // Utility function to calculate active duration
 const calculateActiveDuration = (createdAt: string) => {
@@ -52,22 +62,24 @@ export default function EscalationTable({ mode }: { mode: 'active'|'closed' }) {
             <tr>
               {mode === 'active' ? (
                 <>
-                  <th className="p-2 text-left">Customer</th>
-                  <th className="p-2 text-left">Problem</th>
-                  <th className="p-2 text-left">Created</th>
-                  <th className="p-2 text-left">Durasi Active</th>
-                  <th className="p-2 text-left">Action</th>
+                  <th className="p-2 text-left w-20">No</th>
+                  <th className="p-2 text-left w-40">Code</th>
+                  <th className="p-2 text-left w-48">Customer</th>
+                  <th className="p-2 text-left w-64">Problem</th>
+                  <th className="p-2 text-left w-24">Created</th>
+                  <th className="p-2 text-left w-32">Durasi Active</th>
+                  <th className="p-2 text-left w-32">Action</th>
                 </>
               ) : (
                 <>
-                  <th className="p-2 text-left">Customer</th>
-                  <th className="p-2 text-left">Problem</th>
-                  <th className="p-2 text-left">Action</th>
-                  <th className="p-2 text-left">Rekomendasi</th>
-                  <th className="p-2 text-left">Code</th>
-                  <th className="p-2 text-left">Created</th>
-                  <th className="p-2 text-left">Updated</th>
-                  <th className="p-2 text-left">Action</th>
+                  <th className="p-2 text-left w-48">Customer</th>
+                  <th className="p-2 text-left w-64">Problem</th>
+                  <th className="p-2 text-left w-64">Action</th>
+                  <th className="p-2 text-left w-64">Rekomendasi</th>
+                  <th className="p-2 text-left w-32">Code</th>
+                  <th className="p-2 text-left w-24">Created</th>
+                  <th className="p-2 text-left w-24">Updated</th>
+                  <th className="p-2 text-left w-32">Action</th>
                 </>
               )}
             </tr>
@@ -75,7 +87,7 @@ export default function EscalationTable({ mode }: { mode: 'active'|'closed' }) {
           <tbody>
             {data.map(row => <Row key={row.id} row={row} onUpdate={update} onClose={close} mode={mode} />)}
             {data.length===0 && (
-              <tr><td className="p-3" colSpan={mode === 'active' ? 5 : 8}>Tidak ada data</td></tr>
+              <tr><td className="p-3" colSpan={mode === 'active' ? 7 : 8}>Tidak ada data</td></tr>
             )}
           </tbody>
         </table>
@@ -94,9 +106,10 @@ function Row({ row, onUpdate, onClose, mode }: {
   const [updateOpen, setUpdateOpen] = useState(false);
   const [history, setHistory] = useState<EscalationHistory[]>([]);
   const [loading, setLoading] = useState(false);
-  const [problem, setProblem] = useState(row.problem);
-  const [action, setAction] = useState(row.action);
+  const [problem, setProblem] = useState('');
+  const [action, setAction] = useState('');
   const [noteInternal, setNoteInternal] = useState('');
+  const [code, setCode] = useState<EscalationCode>(row.code as EscalationCode);
 
   const loadHistory = async () => {
     if (!row) return;
@@ -106,7 +119,15 @@ function Row({ row, onUpdate, onClose, mode }: {
       const historyData = await getHistory(row.id);
       console.log('History data loaded:', historyData);
       console.log('History data length:', historyData.length);
-      setHistory(historyData);
+      
+      // Sort history by updatedAt in ascending order (oldest first, newest at bottom)
+      const sortedHistory = historyData.sort((a, b) => {
+        const dateA = new Date(a.updatedAt).getTime();
+        const dateB = new Date(b.updatedAt).getTime();
+        return dateA - dateB; // Oldest first
+      });
+      
+      setHistory(sortedHistory);
     } catch (error) {
       console.error('Failed to load history:', error);
     } finally {
@@ -120,11 +141,11 @@ function Row({ row, onUpdate, onClose, mode }: {
       return;
     }
     
-    console.log('Saving update:', { problem, action, noteInternal });
+    console.log('Saving update:', { problem, action, noteInternal, code });
     
     try {
-      // Update only problem and action fields (skip automatic history creation)
-      await onUpdate(row.id, { problem, action }, true);
+      // Update problem, action, and code fields (skip automatic history creation)
+      await onUpdate(row.id, { problem, action, code }, true);
       console.log('Update completed');
       
       // Create a single combined history entry for problem and action only
@@ -141,6 +162,7 @@ function Row({ row, onUpdate, onClose, mode }: {
         newValue: JSON.stringify({
           problem: problem,
           action: action,
+          code: code,
           noteInternal: noteInternal || '',
           format: 'update'
         }),
@@ -211,8 +233,16 @@ function Row({ row, onUpdate, onClose, mode }: {
       <tr className="border-t hover:bg-muted/50">
         {mode === 'active' ? (
           <>
-            <td className="p-2">{row.customerName}</td>
-            <td className="p-2 max-w-xs truncate">{row.problem}</td>
+            <td className="p-2 text-center text-sm font-medium text-gray-600">
+              {row.caseNumber || '-'}
+            </td>
+            <td className="p-2">
+              <Badge className={`text-xs font-medium ${CodeBadgeClasses[row.code as EscalationCode] || 'bg-gray-100 text-gray-800 border-gray-200'}`}>
+                {row.code}
+              </Badge>
+            </td>
+            <td className="p-2 font-medium">{row.customerName}</td>
+            <td className="p-2 max-w-xs text-gray-700 whitespace-pre-wrap break-words">{row.problem}</td>
             <td className="p-2 text-xs text-muted-foreground">{new Date(row.createdAt).toLocaleDateString()}</td>
             <td className="p-2 text-xs text-muted-foreground">
               <div className="flex items-center gap-1">
@@ -240,12 +270,14 @@ function Row({ row, onUpdate, onClose, mode }: {
           </>
         ) : (
           <>
-            <td className="p-2">{row.customerName}</td>
-            <td className="p-2 max-w-xs truncate">{row.problem}</td>
-            <td className="p-2 max-w-xs truncate">{row.action}</td>
-            <td className="p-2 max-w-xs truncate">{row.recommendation}</td>
+            <td className="p-2 font-medium">{row.customerName}</td>
+            <td className="p-2 max-w-xs text-gray-700 whitespace-pre-wrap break-words">{row.problem}</td>
+            <td className="p-2 max-w-xs text-gray-700 whitespace-pre-wrap break-words">{row.action}</td>
+            <td className="p-2 max-w-xs text-gray-700 whitespace-pre-wrap break-words">{row.recommendation}</td>
             <td className="p-2">
-              <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">{row.code}</span>
+              <Badge className={`text-xs font-medium ${CodeBadgeClasses[row.code as EscalationCode] || 'bg-gray-100 text-gray-800 border-gray-200'}`}>
+                {row.code}
+              </Badge>
             </td>
             <td className="p-2 text-xs text-muted-foreground">{new Date(row.createdAt).toLocaleDateString()}</td>
             <td className="p-2 text-xs text-muted-foreground">{new Date(row.updatedAt).toLocaleDateString()}</td>
@@ -290,7 +322,7 @@ function Row({ row, onUpdate, onClose, mode }: {
                 <h3 className="text-lg font-semibold mb-4 text-gray-800">Data Eskalasi</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Nomor Eskalasi</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Nomor Case</label>
                     <div className="p-3 bg-gray-50 border rounded-md text-sm font-mono">{row.id}</div>
                   </div>
                   <div>
@@ -299,7 +331,11 @@ function Row({ row, onUpdate, onClose, mode }: {
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Code</label>
-                    <div className="p-3 bg-gray-50 border rounded-md text-sm">{row.code}</div>
+                    <div className="p-3 bg-gray-50 border rounded-md text-sm">
+                      <Badge className={`text-xs font-medium ${CodeBadgeClasses[row.code as EscalationCode] || 'bg-gray-100 text-gray-800 border-gray-200'}`}>
+                        {row.code}
+                      </Badge>
+                    </div>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
@@ -340,17 +376,53 @@ function Row({ row, onUpdate, onClose, mode }: {
                     <table className="w-full text-sm">
                       <thead className="bg-gray-50">
                         <tr>
-                          <th className="px-4 py-3 text-left font-medium text-gray-700">#</th>
-                          <th className="px-4 py-3 text-left font-medium text-gray-700">Penyebab</th>
-                          <th className="px-4 py-3 text-left font-medium text-gray-700">Penanganan</th>
-                          <th className="px-4 py-3 text-left font-medium text-gray-700">Note Internal</th>
-                          <th className="px-4 py-3 text-left font-medium text-gray-700">Waktu</th>
-                          <th className="px-4 py-3 text-left font-medium text-gray-700">Author</th>
+                          <th className="px-4 py-3 text-left font-medium text-gray-700 w-12">#</th>
+                          <th className="px-4 py-3 text-left font-medium text-gray-700 w-32">Code</th>
+                          <th className="px-4 py-3 text-left font-medium text-gray-700 w-64">Penyebab</th>
+                          <th className="px-4 py-3 text-left font-medium text-gray-700 w-64">Penanganan</th>
+                          <th className="px-4 py-3 text-left font-medium text-gray-700 w-48">Note Internal</th>
+                          <th className="px-4 py-3 text-left font-medium text-gray-700 w-32">Waktu</th>
+                          <th className="px-4 py-3 text-left font-medium text-gray-700 w-24">Author</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-200">
-                        {history.map((item, index) => {
+                        {history
+                          .filter(item => !(item.action === 'created' && item.field !== 'initial_list'))
+                          .map((item, index) => {
                           console.log('Rendering history item:', item);
+                          
+                          // Function to get the code that was active at this specific time
+                          const getCodeAtTime = (item: EscalationHistory) => {
+                            // Find the most recent code change before or at this item's time
+                            const codeChanges = history
+                              .filter(h => h.field === 'code' || h.field === 'problem_action_update')
+                              .filter(h => new Date(h.updatedAt) <= new Date(item.updatedAt))
+                              .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+                            
+                            // Check if there's a code change in problem_action_update
+                            const latestUpdate = codeChanges.find(h => h.field === 'problem_action_update');
+                            if (latestUpdate) {
+                              try {
+                                const updateData = JSON.parse(latestUpdate.newValue);
+                                if (updateData.code) {
+                                  return updateData.code;
+                                }
+                              } catch (error) {
+                                console.error('Error parsing update data for code:', error);
+                              }
+                            }
+                            
+                            // Check for direct code changes
+                            const latestCodeChange = codeChanges.find(h => h.field === 'code');
+                            if (latestCodeChange) {
+                              return latestCodeChange.newValue;
+                            }
+                            
+                            // Default to current row code
+                            return row.code;
+                          };
+                          
+                          const currentCode = getCodeAtTime(item);
                           
                           // Show initial list format (from form submission)
                           if (item.field === 'initial_list') {
@@ -360,28 +432,33 @@ function Row({ row, onUpdate, onClose, mode }: {
                                 <tr key={item.id} className="hover:bg-gray-50 bg-blue-50">
                                   <td className="px-4 py-3 text-center font-semibold">{index + 1}</td>
                                   <td className="px-4 py-3 max-w-xs">
+                                    <Badge className={`text-xs font-medium ${CodeBadgeClasses[currentCode as EscalationCode] || 'bg-gray-100 text-gray-800 border-gray-200'}`}>
+                                      {currentCode}
+                                    </Badge>
+                                  </td>
+                                  <td className="px-4 py-3">
                                     <div className="space-y-1">
                                       {listData.problem && (
-                                        <div className="text-sm">
-                                          <span className="font-medium">Problem:</span> {listData.problem}
+                                        <div className="text-sm whitespace-pre-wrap break-words">
+                                          {listData.problem}
                                         </div>
                                       )}
                                     </div>
                                   </td>
-                                  <td className="px-4 py-3 max-w-xs">
+                                  <td className="px-4 py-3">
                                     <div className="space-y-1">
                                       {listData.action && (
-                                        <div className="text-sm">
-                                          <span className="font-medium">Action:</span> {listData.action}
+                                        <div className="text-sm whitespace-pre-wrap break-words">
+                                          {listData.action}
                                         </div>
                                       )}
                                     </div>
                                   </td>
-                                  <td className="px-4 py-3 max-w-xs">
+                                  <td className="px-4 py-3">
                                     <div className="space-y-1">
                                       {listData.recommendation && (
-                                        <div className="text-sm">
-                                          <span className="font-medium">Rekomendasi:</span> {listData.recommendation}
+                                        <div className="text-sm whitespace-pre-wrap break-words">
+                                          {listData.recommendation}
                                         </div>
                                       )}
                                     </div>
@@ -404,28 +481,33 @@ function Row({ row, onUpdate, onClose, mode }: {
                                 <tr key={item.id} className="hover:bg-gray-50 bg-green-50">
                                   <td className="px-4 py-3 text-center">{index + 1}</td>
                                   <td className="px-4 py-3 max-w-xs">
+                                    <Badge className={`text-xs font-medium ${CodeBadgeClasses[currentCode as EscalationCode] || 'bg-gray-100 text-gray-800 border-gray-200'}`}>
+                                      {currentCode}
+                                    </Badge>
+                                  </td>
+                                  <td className="px-4 py-3">
                                     <div className="space-y-1">
                                       {updateData.problem && (
-                                        <div className="text-sm">
-                                          <span className="font-medium">Problem:</span> {updateData.problem}
+                                        <div className="text-sm whitespace-pre-wrap break-words">
+                                          {updateData.problem}
                                         </div>
                                       )}
                                     </div>
                                   </td>
-                                  <td className="px-4 py-3 max-w-xs">
+                                  <td className="px-4 py-3">
                                     <div className="space-y-1">
                                       {updateData.action && (
-                                        <div className="text-sm">
-                                          <span className="font-medium">Action:</span> {updateData.action}
+                                        <div className="text-sm whitespace-pre-wrap break-words">
+                                          {updateData.action}
                                         </div>
                                       )}
                                     </div>
                                   </td>
-                                  <td className="px-4 py-3 max-w-xs">
+                                  <td className="px-4 py-3">
                                     <div className="space-y-1">
                                       {updateData.noteInternal && (
-                                        <div className="text-sm">
-                                          <span className="font-medium">Note Internal:</span> {updateData.noteInternal}
+                                        <div className="text-sm whitespace-pre-wrap break-words">
+                                          {updateData.noteInternal}
                                         </div>
                                       )}
                                     </div>
@@ -448,13 +530,24 @@ function Row({ row, onUpdate, onClose, mode }: {
                                 <tr key={item.id} className="hover:bg-gray-50">
                                   <td className="px-4 py-3 text-center">{index + 1}</td>
                                   <td className="px-4 py-3 max-w-xs">
-                                    {combinedData.problem || '-'}
+                                    <Badge className={`text-xs font-medium ${CodeBadgeClasses[currentCode as EscalationCode] || 'bg-gray-100 text-gray-800 border-gray-200'}`}>
+                                      {currentCode}
+                                    </Badge>
                                   </td>
-                                  <td className="px-4 py-3 max-w-xs">
-                                    {combinedData.action || '-'}
+                                  <td className="px-4 py-3">
+                                    <div className="whitespace-pre-wrap break-words">
+                                      {combinedData.problem || '-'}
+                                    </div>
                                   </td>
-                                  <td className="px-4 py-3 max-w-xs">
-                                    {combinedData.noteInternal || '-'}
+                                  <td className="px-4 py-3">
+                                    <div className="whitespace-pre-wrap break-words">
+                                      {combinedData.action || '-'}
+                                    </div>
+                                  </td>
+                                  <td className="px-4 py-3">
+                                    <div className="whitespace-pre-wrap break-words">
+                                      {combinedData.noteInternal || '-'}
+                                    </div>
                                   </td>
                                   <td className="px-4 py-3">{formatDateTimeDDMMYYYY(item.updatedAt)}</td>
                                   <td className="px-4 py-3 text-sm">{item.updatedBy}</td>
@@ -472,10 +565,17 @@ function Row({ row, onUpdate, onClose, mode }: {
                               <tr key={item.id} className="hover:bg-gray-50">
                                 <td className="px-4 py-3 text-center">{index + 1}</td>
                                 <td className="px-4 py-3 max-w-xs">
-                                  {item.newValue}
+                                  <Badge className={`text-xs font-medium ${CodeBadgeClasses[currentCode as EscalationCode] || 'bg-gray-100 text-gray-800 border-gray-200'}`}>
+                                    {currentCode}
+                                  </Badge>
                                 </td>
-                                <td className="px-4 py-3 max-w-xs">-</td>
-                                <td className="px-4 py-3 max-w-xs">-</td>
+                                <td className="px-4 py-3">
+                                  <div className="whitespace-pre-wrap break-words">
+                                    {item.newValue}
+                                  </div>
+                                </td>
+                                <td className="px-4 py-3">-</td>
+                                <td className="px-4 py-3">-</td>
                                 <td className="px-4 py-3">{formatDateTimeDDMMYYYY(item.updatedAt)}</td>
                                 <td className="px-4 py-3 text-sm">{item.updatedBy}</td>
                               </tr>
@@ -486,11 +586,18 @@ function Row({ row, onUpdate, onClose, mode }: {
                             return (
                               <tr key={item.id} className="hover:bg-gray-50">
                                 <td className="px-4 py-3 text-center">{index + 1}</td>
-                                <td className="px-4 py-3 max-w-xs">-</td>
                                 <td className="px-4 py-3 max-w-xs">
-                                  {item.newValue}
+                                  <Badge className={`text-xs font-medium ${CodeBadgeClasses[currentCode as EscalationCode] || 'bg-gray-100 text-gray-800 border-gray-200'}`}>
+                                    {currentCode}
+                                  </Badge>
                                 </td>
-                                <td className="px-4 py-3 max-w-xs">-</td>
+                                <td className="px-4 py-3">-</td>
+                                <td className="px-4 py-3">
+                                  <div className="whitespace-pre-wrap break-words">
+                                    {item.newValue}
+                                  </div>
+                                </td>
+                                <td className="px-4 py-3">-</td>
                                 <td className="px-4 py-3">{formatDateTimeDDMMYYYY(item.updatedAt)}</td>
                                 <td className="px-4 py-3 text-sm">{item.updatedBy}</td>
                               </tr>
@@ -501,23 +608,18 @@ function Row({ row, onUpdate, onClose, mode }: {
                             return (
                               <tr key={item.id} className="hover:bg-gray-50">
                                 <td className="px-4 py-3 text-center">{index + 1}</td>
-                                <td className="px-4 py-3 max-w-xs">-</td>
-                                <td className="px-4 py-3 max-w-xs">-</td>
-                                <td className="px-4 py-3 max-w-xs">{item.newValue}</td>
-                                <td className="px-4 py-3">{formatDateTimeDDMMYYYY(item.updatedAt)}</td>
-                                <td className="px-4 py-3 text-sm">{item.updatedBy}</td>
-                              </tr>
-                            );
-                          }
-                          
-                          // Show creation entries
-                          if (item.action === 'created') {
-                            return (
-                              <tr key={item.id} className="hover:bg-gray-50">
-                                <td className="px-4 py-3 text-center">{index + 1}</td>
-                                <td className="px-4 py-3 max-w-xs">Eskalasi dibuat</td>
-                                <td className="px-4 py-3 max-w-xs">Eskalasi dibuat</td>
-                                <td className="px-4 py-3 max-w-xs">-</td>
+                                <td className="px-4 py-3 max-w-xs">
+                                  <Badge className={`text-xs font-medium ${CodeBadgeClasses[currentCode as EscalationCode] || 'bg-gray-100 text-gray-800 border-gray-200'}`}>
+                                    {currentCode}
+                                  </Badge>
+                                </td>
+                                <td className="px-4 py-3">-</td>
+                                <td className="px-4 py-3">-</td>
+                                <td className="px-4 py-3">
+                                  <div className="whitespace-pre-wrap break-words">
+                                    {item.newValue}
+                                  </div>
+                                </td>
                                 <td className="px-4 py-3">{formatDateTimeDDMMYYYY(item.updatedAt)}</td>
                                 <td className="px-4 py-3 text-sm">{item.updatedBy}</td>
                               </tr>
@@ -561,23 +663,37 @@ function Row({ row, onUpdate, onClose, mode }: {
                       className="min-h-[100px]"
                     />
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Tanggal, Waktu Penanganan</label>
-                    <div className="flex gap-2">
-                      <Input 
-                        type="date" 
-                        value={new Date().toISOString().split('T')[0]}
-                        className="flex-1"
-                        readOnly
-                      />
-                      <Input 
-                        type="time" 
-                        value={new Date().toTimeString().slice(0, 5)}
-                        className="flex-1"
-                        readOnly
-                      />
-                      <div className="px-3 py-2 bg-gray-50 border rounded-md text-sm flex items-center">
-                        WIB
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Code Eskalasi</label>
+                      <select 
+                        value={code} 
+                        onChange={(e) => setCode(e.target.value as EscalationCode)}
+                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                      >
+                        {CODES.map(cd => (
+                          <option key={cd} value={cd}>{cd}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Tanggal, Waktu Penanganan</label>
+                      <div className="flex gap-2">
+                        <Input 
+                          type="date" 
+                          value={new Date().toISOString().split('T')[0]}
+                          className="flex-1"
+                          readOnly
+                        />
+                        <Input 
+                          type="time" 
+                          value={new Date().toTimeString().slice(0, 5)}
+                          className="flex-1"
+                          readOnly
+                        />
+                        <div className="px-3 py-2 bg-gray-50 border rounded-md text-sm flex items-center">
+                          WIB
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -585,27 +701,6 @@ function Row({ row, onUpdate, onClose, mode }: {
 
                 {/* Right Column */}
                 <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Code</label>
-                    <Input 
-                      value={`${row.code} | Kode untuk ${row.customerName}`}
-                      readOnly
-                      className="bg-gray-50"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Request Visit</label>
-                    <div className="flex gap-4 mt-2">
-                      <label className="flex items-center">
-                        <input type="radio" name="visit" value="no" defaultChecked className="mr-2" />
-                        <span className="text-sm">Tidak</span>
-                      </label>
-                      <label className="flex items-center">
-                        <input type="radio" name="visit" value="yes" className="mr-2" />
-                        <span className="text-sm">Ya</span>
-                      </label>
-                    </div>
-                  </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Note Internal</label>
                     <Textarea 

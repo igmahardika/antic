@@ -1,11 +1,19 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import { useMemo, useState, useEffect, useCallback } from 'react';
 import { useEscalationStore } from '@/store/escalationStore';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Clock, User, AlertTriangle, Edit, Eye, RefreshCw, TrendingUp } from 'lucide-react';
+import { Clock, AlertTriangle, Edit, Eye, RefreshCw, TrendingUp } from 'lucide-react';
 import { formatDateTimeDDMMYYYY } from '@/lib/utils';
-import type { EscalationCode } from '@/types/escalation';
+import { 
+  EscalationCode, 
+  EscalationStatus, 
+  computePriority, 
+  humanizeActiveDuration,
+  CodeHeaderClasses,
+  type Escalation,
+  type Priority
+} from '@/utils/escalation';
 import PageWrapper from '@/components/PageWrapper';
 import PageHeader from '@/components/ui/PageHeader';
 import { CardHeaderTitle, CardHeaderDescription } from '@/components/ui/CardTypography';
@@ -19,197 +27,89 @@ import {
 } from '@/components/ui/shadcn-io/kanban';
 import EscalationEditPopup from '@/components/escalation/EscalationEditPopup';
 import EscalationViewPopup from '@/components/escalation/EscalationViewPopup';
+import { toast } from 'sonner';
 
-// Utility function to calculate active duration
-const calculateActiveDuration = (createdAt: string) => {
-  const created = new Date(createdAt);
-  const now = new Date();
-  const diffMs = now.getTime() - created.getTime();
-  
-  const days = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-  const hours = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-  const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
-  
-  if (days > 0) {
-    return `${days} hari ${hours} jam`;
-  } else if (hours > 0) {
-    return `${hours} jam ${minutes} menit`;
-  } else {
-    return `${minutes} menit`;
-  }
+// Enhanced escalation type with materialized data
+type EscalationWithMetadata = Escalation & {
+  priority: Priority;
+  durationText: string;
 };
-
-// Get color for escalation code
-const getCodeColor = (code: EscalationCode) => {
-  const colors = {
-    'CODE-OS': 'bg-red-100 text-red-800 border-red-200',
-    'CODE-AS': 'bg-orange-100 text-orange-800 border-orange-200',
-    'CODE-BS': 'bg-yellow-100 text-yellow-800 border-yellow-200',
-    'CODE-DCS': 'bg-blue-100 text-blue-800 border-blue-200',
-    'CODE-EOS': 'bg-purple-100 text-purple-800 border-purple-200',
-    'CODE-IPC': 'bg-green-100 text-green-800 border-green-200',
-  };
-  return colors[code] || 'bg-gray-100 text-gray-800 border-gray-200';
-};
-
-// Utility function to get header color for each code
-const getHeaderColor = (code: string) => {
-  const colorMap: { [key: string]: string } = {
-    'CODE-OS': 'bg-blue-500',
-    'CODE-AS': 'bg-green-500', 
-    'CODE-BS': 'bg-yellow-500',
-    'CODE-DCS': 'bg-purple-500',
-    'CODE-EOS': 'bg-red-500',
-    'CODE-IPC': 'bg-indigo-500'
-  };
-  return colorMap[code] || 'bg-gray-500';
-};
-
-// Utility function to get header text color
-const getHeaderTextColor = (code: string) => {
-  return 'text-white';
-};
-
-// Get priority level based on duration
-const getPriorityLevel = (createdAt: string) => {
-  const created = new Date(createdAt);
-  const now = new Date();
-  const diffHours = (now.getTime() - created.getTime()) / (1000 * 60 * 60);
-  
-  if (diffHours > 72) return 'critical';
-  if (diffHours > 24) return 'high';
-  if (diffHours > 8) return 'medium';
-  return 'low';
-};
-
-// Get priority color
-const getPriorityColor = (priority: string) => {
-  const colors = {
-    critical: 'bg-red-500',
-    high: 'bg-orange-500',
-    medium: 'bg-yellow-500',
-    low: 'bg-green-500',
-  };
-  return colors[priority as keyof typeof colors] || 'bg-gray-500';
-};
-
-interface EscalationCardProps {
-  escalation: any;
-  onEdit: (id: string) => void;
-  onView: (id: string) => void;
-}
-
-function EscalationCard({ escalation, onEdit, onView }: EscalationCardProps) {
-  const priority = getPriorityLevel(escalation.createdAt);
-  const priorityColor = getPriorityColor(priority);
-  const codeColor = getCodeColor(escalation.code);
-
-  return (
-    <Card className="mb-3 hover:shadow-md transition-shadow cursor-pointer border-l-4" 
-          style={{ borderLeftColor: priorityColor === 'bg-red-500' ? '#ef4444' : 
-                                 priorityColor === 'bg-orange-500' ? '#f97316' :
-                                 priorityColor === 'bg-yellow-500' ? '#eab308' : '#22c55e' }}>
-      <CardHeader className="pb-2">
-        <div className="flex items-start justify-between">
-          <div className="flex-1">
-            <div className="flex items-center gap-2 mb-2">
-              <Badge className={`${codeColor} text-xs font-medium`}>
-                {escalation.code}
-              </Badge>
-              <div className={`w-2 h-2 rounded-full ${priorityColor}`}></div>
-            </div>
-            <CardTitle className="text-sm font-medium text-gray-900 line-clamp-2">
-              {escalation.customerName}
-            </CardTitle>
-          </div>
-        </div>
-      </CardHeader>
-      
-      <CardContent className="pt-0">
-        <div className="space-y-3">
-          {/* Problem */}
-          <div>
-            <p className="text-xs text-gray-600 line-clamp-3">
-              {escalation.problem}
-            </p>
-          </div>
-          
-          {/* Duration */}
-          <div className="flex items-center gap-1 text-xs text-gray-500">
-            <Clock className="h-3 w-3" />
-            <span>{calculateActiveDuration(escalation.createdAt)}</span>
-          </div>
-          
-          {/* Created Date */}
-          <div className="text-xs text-gray-500">
-            Created: {formatDateTimeDDMMYYYY(escalation.createdAt)}
-          </div>
-          
-          {/* Action Buttons */}
-          <div className="flex gap-1 pt-2">
-            <Button 
-              size="sm" 
-              variant="outline" 
-              className="flex-1 text-xs h-7"
-              onClick={() => onView(escalation.id)}
-            >
-              <Eye className="h-3 w-3 mr-1" />
-              View
-            </Button>
-            <Button 
-              size="sm" 
-              variant="default" 
-              className="flex-1 text-xs h-7"
-              onClick={() => onEdit(escalation.id)}
-            >
-              <Edit className="h-3 w-3 mr-1" />
-              Edit
-            </Button>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
 
 export default function IncidentBoardPage() {
-  const { rows, load } = useEscalationStore();
-  const [isLoading, setIsLoading] = useState(false);
+  const { rows, load, loading } = useEscalationStore();
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
+  const [lastError, setLastError] = useState<string | null>(null);
   const [editEscalationOpen, setEditEscalationOpen] = useState(false);
   const [viewEscalationOpen, setViewEscalationOpen] = useState(false);
-  const [selectedEscalation, setSelectedEscalation] = useState<any>(null);
+  const [selectedEscalation, setSelectedEscalation] = useState<EscalationWithMetadata | null>(null);
 
-  // Debug state changes
+  // Load data on component mount with error handling
   useEffect(() => {
-    console.log('=== STATE DEBUG ===');
-    console.log('editEscalationOpen:', editEscalationOpen);
-    console.log('viewEscalationOpen:', viewEscalationOpen);
-    console.log('selectedEscalation:', selectedEscalation);
-    console.log('==================');
-  }, [editEscalationOpen, viewEscalationOpen, selectedEscalation]);
-  
-  // Load data on component mount
-  useEffect(() => {
-    load();
+    const loadData = async () => {
+      try {
+        setLastError(null);
+        await load();
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Failed to load escalation data';
+        setLastError(errorMessage);
+        toast.error(errorMessage);
+        if (process.env.NODE_ENV !== 'production') {
+          console.error('Error loading escalation data:', error);
+        }
+      }
+    };
+    loadData();
   }, [load]);
 
-  // Auto-refresh data every 30 seconds to ensure real-time updates
+  // Auto-refresh with Page Visibility API support
   useEffect(() => {
-    const interval = setInterval(() => {
-      load().then(() => {
-        setLastUpdated(new Date());
-      });
-    }, 30000); // 30 seconds
+    let timer: number | undefined;
 
-    return () => clearInterval(interval);
+    const tick = async () => {
+      try {
+        await load();
+        setLastUpdated(new Date());
+        setLastError(null);
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Failed to refresh data';
+        setLastError(errorMessage);
+        if (process.env.NODE_ENV !== 'production') {
+          console.error('Error refreshing escalation data:', error);
+        }
+      } finally {
+        // Schedule next tick only if tab is active
+        if (!document.hidden) {
+          timer = window.setTimeout(tick, 30000);
+        }
+      }
+    };
+
+    const onVisibilityChange = () => {
+      if (!document.hidden) {
+        // Resume immediately when tab becomes active
+        tick();
+      } else if (timer) {
+        clearTimeout(timer);
+      }
+    };
+
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    tick();
+
+    return () => {
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+      if (timer) clearTimeout(timer);
+    };
   }, [load]);
 
   // Listen for storage changes (when data is updated from other tabs/pages)
   useEffect(() => {
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === 'escalations' && e.newValue) {
-        console.log('Storage change detected, refreshing data...');
+        if (process.env.NODE_ENV !== 'production') {
+          console.log('Storage change detected, refreshing data...');
+        }
         load().then(() => {
           setLastUpdated(new Date());
         });
@@ -223,7 +123,9 @@ export default function IncidentBoardPage() {
   // Listen for custom escalation data changes
   useEffect(() => {
     const handleEscalationChange = (e: CustomEvent) => {
-      console.log('Escalation data changed:', e.detail);
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('Escalation data changed:', e.detail);
+      }
       load().then(() => {
         setLastUpdated(new Date());
       });
@@ -234,25 +136,19 @@ export default function IncidentBoardPage() {
   }, [load]);
 
   
-  // Filter only active escalations
-  const activeEscalations = useMemo(() => 
-    rows.filter(r => r.status === 'active'), 
-    [rows]
-  );
-
-  // Group escalations by code
-  const groupedEscalations = useMemo(() => {
-    const groups: { [key: string]: any[] } = {};
-    
-    activeEscalations.forEach(escalation => {
-      if (!groups[escalation.code]) {
-        groups[escalation.code] = [];
-      }
-      groups[escalation.code].push(escalation);
-    });
-    
-    return groups;
-  }, [activeEscalations]);
+  // Materialize active escalations with computed properties
+  const activeEscalations = useMemo(() => {
+    return rows
+      .filter(r => r.status === EscalationStatus.Active)
+      .map(r => {
+        const priority = computePriority(r.createdAt);
+        return {
+          ...r,
+          priority,
+          durationText: humanizeActiveDuration(r.createdAt),
+        };
+      });
+  }, [rows]);
 
   // Transform escalations for Kanban
   const kanbanData = useMemo(() => {
@@ -264,92 +160,77 @@ export default function IncidentBoardPage() {
     }));
   }, [activeEscalations]);
 
-  // Debug: Log data changes
-  useEffect(() => {
-    console.log('=== INCIDENT BOARD DEBUG ===');
-    console.log('Total rows:', rows.length);
-    console.log('Active escalations:', activeEscalations.length, 'items');
-    console.log('Active escalations data:', activeEscalations);
-    console.log('Kanban data:', kanbanData.length, 'items');
-    console.log('Kanban data structure:', kanbanData);
-    console.log('===========================');
-  }, [activeEscalations, kanbanData, rows]);
-
 
   // Kanban columns
   const kanbanColumns = useMemo(() => [
-    { id: 'CODE-OS', name: 'CODE-OS' },
-    { id: 'CODE-AS', name: 'CODE-AS' },
-    { id: 'CODE-BS', name: 'CODE-BS' },
-    { id: 'CODE-DCS', name: 'CODE-DCS' },
-    { id: 'CODE-EOS', name: 'CODE-EOS' },
-    { id: 'CODE-IPC', name: 'CODE-IPC' }
+    { id: EscalationCode.OS, name: EscalationCode.OS },
+    { id: EscalationCode.AS, name: EscalationCode.AS },
+    { id: EscalationCode.BS, name: EscalationCode.BS },
+    { id: EscalationCode.DCS, name: EscalationCode.DCS },
+    { id: EscalationCode.EOS, name: EscalationCode.EOS },
+    { id: EscalationCode.IPC, name: EscalationCode.IPC }
   ], []);
 
-  // Define column order
-  const columnOrder: EscalationCode[] = ['CODE-OS', 'CODE-AS', 'CODE-BS', 'CODE-DCS', 'CODE-EOS', 'CODE-IPC'];
 
-  // Calculate statistics
-  const totalActive = activeEscalations.length;
-  const criticalCount = activeEscalations.filter(e => getPriorityLevel(e.createdAt) === 'critical').length;
-  const highCount = activeEscalations.filter(e => getPriorityLevel(e.createdAt) === 'high').length;
-  const avgDuration = activeEscalations.length > 0 ? 
-    Math.round(activeEscalations.reduce((acc, e) => {
-      const hours = (new Date().getTime() - new Date(e.createdAt).getTime()) / (1000 * 60 * 60);
-      return acc + hours;
-    }, 0) / activeEscalations.length) : 0;
+  // Calculate statistics with memoization
+  const { totalActive, criticalCount, highCount, avgDuration } = useMemo(() => {
+    const total = activeEscalations.length;
+    const critical = activeEscalations.filter(e => e.priority === 'critical').length;
+    const high = activeEscalations.filter(e => e.priority === 'high').length;
+    const avg = total > 0 ? 
+      Math.round(activeEscalations.reduce((acc, e) => {
+        const hours = (new Date().getTime() - new Date(e.createdAt).getTime()) / (1000 * 60 * 60);
+        return acc + hours;
+      }, 0) / total) : 0;
 
-  const handleEdit = (id: string) => {
-    console.log('=== HANDLE EDIT ===');
-    console.log('Edit button clicked for escalation:', id);
-    console.log('Active escalations:', activeEscalations);
+    return { totalActive: total, criticalCount: critical, highCount: high, avgDuration: avg };
+  }, [activeEscalations]);
+
+  const handleEdit = useCallback((id: string) => {
     const escalation = activeEscalations.find(e => e.id === id);
-    console.log('Found escalation:', escalation);
     if (escalation) {
-      console.log('Setting selected escalation:', escalation);
       setSelectedEscalation(escalation);
-      console.log('Setting edit dialog open to true');
       setEditEscalationOpen(true);
-      console.log('Edit dialog should be opened now');
     } else {
-      console.log('No escalation found with id:', id);
+      toast.error('Escalation not found');
     }
-    console.log('==================');
-  };
+  }, [activeEscalations]);
 
-  const handleEditSuccess = () => {
+  const handleEditSuccess = useCallback(() => {
     setEditEscalationOpen(false);
     setSelectedEscalation(null);
     setLastUpdated(new Date());
-  };
+    toast.success('Escalation updated successfully');
+  }, []);
 
-  const handleView = (id: string) => {
-    console.log('=== HANDLE VIEW ===');
-    console.log('View button clicked for escalation:', id);
-    console.log('Active escalations:', activeEscalations);
+  const handleView = useCallback((id: string) => {
     const escalation = activeEscalations.find(e => e.id === id);
-    console.log('Found escalation:', escalation);
     if (escalation) {
-      console.log('Setting selected escalation:', escalation);
       setSelectedEscalation(escalation);
-      console.log('Setting view dialog open to true');
       setViewEscalationOpen(true);
-      console.log('View dialog should be opened now');
     } else {
-      console.log('No escalation found with id:', id);
+      toast.error('Escalation not found');
     }
-    console.log('==================');
-  };
+  }, [activeEscalations]);
 
-  const handleRefresh = async () => {
-    setIsLoading(true);
+  const handleRefresh = useCallback(async () => {
+    setIsRefreshing(true);
     try {
+      setLastError(null);
       await load();
       setLastUpdated(new Date());
+      toast.success('Data refreshed successfully');
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to refresh data';
+      setLastError(errorMessage);
+      toast.error(errorMessage);
+      if (process.env.NODE_ENV !== 'production') {
+        console.error('Error refreshing escalation data:', error);
+      }
     } finally {
-      setIsLoading(false);
+      setIsRefreshing(false);
     }
-  };
+  }, [load]);
 
   return (
     <PageWrapper>
@@ -364,19 +245,25 @@ export default function IncidentBoardPage() {
           <div className="flex items-center gap-4">
             <Button 
               onClick={handleRefresh} 
-              disabled={isLoading}
+              disabled={isRefreshing || loading}
               variant="outline" 
               className="px-2 py-1 text-xs h-7"
+              aria-label="Refresh escalation data"
             >
-              <RefreshCw className={`w-2.5 h-2.5 mr-1 ${isLoading ? 'animate-spin' : ''}`} />
-              {isLoading ? 'Refreshing...' : 'Refresh'}
+              <RefreshCw className={`w-2.5 h-2.5 mr-1 ${isRefreshing ? 'animate-spin' : ''}`} />
+              {isRefreshing ? 'Refreshing...' : 'Refresh'}
             </Button>
             <div className="text-xs text-muted-foreground">
               Last updated: {lastUpdated.toLocaleTimeString()}
             </div>
+            {lastError && (
+              <div className="text-xs text-red-600 bg-red-50 px-2 py-1 rounded">
+                Error: {lastError}
+              </div>
+            )}
           </div>
           <div className="text-xs text-muted-foreground">
-            Auto-refresh every 30s
+            Auto-refresh every 30s (paused when tab inactive)
           </div>
         </div>
 
@@ -434,7 +321,7 @@ export default function IncidentBoardPage() {
                 {(column) => (
                   <KanbanBoard id={column.id} className="min-h-[400px] w-full">
                     <KanbanHeader>
-                      <div className={`flex items-center justify-between p-3 rounded-t-md ${getHeaderColor(column.id)} ${getHeaderTextColor(column.id)}`}>
+                      <div className={`flex items-center justify-between p-3 rounded-t-md ${CodeHeaderClasses[column.id as EscalationCode]}`}>
                         <span className="font-semibold text-sm">{column.name}</span>
                         <Badge variant="secondary" className="text-xs bg-white/20 text-white border-white/30">
                           {kanbanData.filter(item => item.column === column.id).length}
@@ -442,14 +329,13 @@ export default function IncidentBoardPage() {
                       </div>
                     </KanbanHeader>
                     <KanbanCards id={column.id}>
-                      {(item) => {
-                        console.log('Rendering KanbanCard for item:', item);
+                      {(item: { id: string; name: string; column: string; escalation: EscalationWithMetadata }) => {
                         return (
-                        <KanbanCard key={item.id} id={item.id} name={item.name}>
+                        <KanbanCard key={item.id} id={item.id} name={item.name} column={item.column}>
                           <div className="space-y-2">
                             <div className="flex items-center justify-between">
                               <span className="font-medium text-sm truncate">{item.escalation.customerName}</span>
-                              <Badge variant="outline" className="text-xs shrink-0">
+                              <Badge variant="secondary" className="text-xs shrink-0">
                                 {item.escalation.code}
                               </Badge>
                             </div>
@@ -458,7 +344,7 @@ export default function IncidentBoardPage() {
                             </p>
                             <div className="flex items-center justify-between text-xs text-muted-foreground">
                               <span className="truncate">{formatDateTimeDDMMYYYY(item.escalation.createdAt)}</span>
-                              <span className="shrink-0">{calculateActiveDuration(item.escalation.createdAt)}</span>
+                              <span className="shrink-0">{item.escalation.durationText}</span>
                             </div>
                             <div className="flex gap-1 pt-1">
                               <Button
@@ -468,10 +354,9 @@ export default function IncidentBoardPage() {
                                 onClick={(e) => {
                                   e.preventDefault();
                                   e.stopPropagation();
-                                  console.log('VIEW BUTTON CLICKED!', item.escalation.id);
-                                  alert('View button clicked for: ' + item.escalation.customerName);
                                   handleView(item.escalation.id);
                                 }}
+                                aria-label={`View escalation for ${item.escalation.customerName}`}
                               >
                                 <Eye className="w-3 h-3 mr-1" />
                                 View
@@ -483,10 +368,9 @@ export default function IncidentBoardPage() {
                                 onClick={(e) => {
                                   e.preventDefault();
                                   e.stopPropagation();
-                                  console.log('EDIT BUTTON CLICKED!', item.escalation.id);
-                                  alert('Edit button clicked for: ' + item.escalation.customerName);
                                   handleEdit(item.escalation.id);
                                 }}
+                                aria-label={`Edit escalation for ${item.escalation.customerName}`}
                               >
                                 <Edit className="w-3 h-3 mr-1" />
                                 Edit
@@ -504,46 +388,13 @@ export default function IncidentBoardPage() {
           </CardContent>
         </Card>
 
-        {/* Edit Escalation Dialog */}
-        {editEscalationOpen && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white p-6 rounded-lg max-w-2xl w-full mx-4">
-              <h2 className="text-xl font-bold mb-4">Edit Escalation</h2>
-              <p>Selected Escalation: {selectedEscalation?.customerName}</p>
-              <p>ID: {selectedEscalation?.id}</p>
-              <button 
-                onClick={() => setEditEscalationOpen(false)}
-                className="mt-4 px-4 py-2 bg-green-500 text-white rounded"
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        )}
-
+        {/* Single Dialog System - No Duplicate Overlays */}
         <EscalationEditPopup
           escalation={selectedEscalation}
           isOpen={editEscalationOpen}
           onClose={() => setEditEscalationOpen(false)}
           onSuccess={handleEditSuccess}
         />
-
-        {/* View Escalation Dialog */}
-        {viewEscalationOpen && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white p-6 rounded-lg max-w-2xl w-full mx-4">
-              <h2 className="text-xl font-bold mb-4">View Escalation</h2>
-              <p>Selected Escalation: {selectedEscalation?.customerName}</p>
-              <p>ID: {selectedEscalation?.id}</p>
-              <button 
-                onClick={() => setViewEscalationOpen(false)}
-                className="mt-4 px-4 py-2 bg-blue-500 text-white rounded"
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        )}
 
         <EscalationViewPopup
           escalation={selectedEscalation}

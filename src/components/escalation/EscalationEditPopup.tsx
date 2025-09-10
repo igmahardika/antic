@@ -101,16 +101,12 @@ export default function EscalationEditPopup({
             <h3 className="text-lg font-semibold mb-4 text-gray-800">Data Eskalasi</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Nomor Eskalasi</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Nomor Case</label>
                 <div className="p-3 bg-gray-50 border rounded-md text-sm font-mono">{escalation.id}</div>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Customer</label>
                 <div className="p-3 bg-gray-50 border rounded-md text-sm">{escalation.customerName}</div>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Code</label>
-                <div className="p-3 bg-gray-50 border rounded-md text-sm">{escalation.code}</div>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
@@ -172,7 +168,7 @@ export default function EscalationEditPopup({
                                 <div className="space-y-1">
                                   {listData.problem && (
                                     <div className="text-sm">
-                                      <span className="font-medium">Problem:</span> {listData.problem}
+                                      {listData.problem}
                                     </div>
                                   )}
                                 </div>
@@ -181,7 +177,7 @@ export default function EscalationEditPopup({
                                 <div className="space-y-1">
                                   {listData.action && (
                                     <div className="text-sm">
-                                      <span className="font-medium">Action:</span> {listData.action}
+                                      {listData.action}
                                     </div>
                                   )}
                                 </div>
@@ -210,7 +206,7 @@ export default function EscalationEditPopup({
                                 <div className="space-y-1">
                                   {combinedData.problem && (
                                     <div className="text-sm">
-                                      <span className="font-medium">Problem:</span> {combinedData.problem}
+                                      {combinedData.problem}
                                     </div>
                                   )}
                                 </div>
@@ -219,7 +215,7 @@ export default function EscalationEditPopup({
                                 <div className="space-y-1">
                                   {combinedData.action && (
                                     <div className="text-sm">
-                                      <span className="font-medium">Action:</span> {combinedData.action}
+                                      {combinedData.action}
                                     </div>
                                   )}
                                 </div>

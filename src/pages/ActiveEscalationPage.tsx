@@ -1,8 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
-import { Badge } from '@/components/ui/badge';
 import { Plus, Clock, AlertTriangle, CheckCircle, TrendingUp } from 'lucide-react';
 import EscalationForm from '@/components/escalation/EscalationForm';
 import EscalationTable from '@/components/escalation/EscalationTable';
@@ -62,11 +61,6 @@ export default function ActiveEscalationPage() {
       }, 0) / activeEscalations.length)
     : 0;
 
-  // Group by escalation code
-  const codeStats = activeEscalations.reduce((acc, escalation) => {
-    acc[escalation.code] = (acc[escalation.code] || 0) + 1;
-    return acc;
-  }, {} as Record<string, number>);
 
   return (
     <PageWrapper>
@@ -129,28 +123,6 @@ export default function ActiveEscalationPage() {
           />
         </div>
 
-        {/* Escalation Code Statistics */}
-        {Object.keys(codeStats).length > 0 && (
-          <Card>
-            <CardHeader>
-              <CardHeaderTitle>Escalation Code Distribution</CardHeaderTitle>
-              <CardHeaderDescription>
-                Active escalations grouped by code
-              </CardHeaderDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-                {Object.entries(codeStats).map(([code, count]) => (
-                  <div key={code} className="text-center p-3 bg-gray-50 rounded-lg">
-                    <Badge variant="outline" className="mb-2">{code}</Badge>
-                    <div className="text-2xl font-bold text-gray-900">{count}</div>
-                    <div className="text-sm text-gray-500">active</div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
 
         {/* Main Data Table */}
         <Card>

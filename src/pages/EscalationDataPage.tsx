@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -9,44 +9,98 @@ import PageWrapper from '@/components/PageWrapper';
 import PageHeader from '@/components/ui/PageHeader';
 import { CardHeaderTitle, CardHeaderDescription } from '@/components/ui/CardTypography';
 import SummaryCard from '@/components/ui/SummaryCard';
+import { 
+  EscalationStatus, 
+  EscalationCode, 
+  getCodeColor, 
+  exportEscalationsToCSV,
+  type Escalation 
+} from '@/utils/escalation';
+import { toast } from 'sonner';
 
 export default function EscalationDataPage() {
-  const { load, rows } = useEscalationStore();
-  const [isLoading, setIsLoading] = useState(false);
+  const { load, rows, loading } = useEscalationStore();
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [lastError, setLastError] = useState<string | null>(null);
 
   useEffect(() => {
-    load();
+    const loadData = async () => {
+      try {
+        setLastError(null);
+        await load();
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Failed to load escalation data';
+        setLastError(errorMessage);
+        toast.error(errorMessage);
+        if (process.env.NODE_ENV !== 'production') {
+          console.error('Error loading escalation data:', error);
+        }
+      }
+    };
+    loadData();
   }, [load]);
 
-  const activeEscalations = rows.filter(row => row.status === 'active');
-  const closedEscalations = rows.filter(row => row.status === 'closed');
-  const totalEscalations = rows.length;
+  // Memoized calculations to prevent unnecessary re-renders
+  const { activeEscalations, closedEscalations, totalEscalations, activeCount, closedCount, resolutionRate, codeStats } = useMemo(() => {
+    const active = rows.filter(row => row.status === EscalationStatus.Active);
+    const closed = rows.filter(row => row.status === EscalationStatus.Closed);
+    const total = rows.length;
+    const activeCount = active.length;
+    const closedCount = closed.length;
+    const resolutionRate = total > 0 ? Math.round((closedCount / total) * 100) : 0;
 
-  // Calculate statistics
-  const activeCount = activeEscalations.length;
-  const closedCount = closedEscalations.length;
-  const resolutionRate = totalEscalations > 0 ? Math.round((closedCount / totalEscalations) * 100) : 0;
+    // Group by escalation code with proper typing
+    const codeStats = closed.reduce((acc, escalation) => {
+      acc[escalation.code] = (acc[escalation.code] || 0) + 1;
+      return acc;
+    }, {} as Record<EscalationCode, number>);
 
+    return {
+      activeEscalations: active,
+      closedEscalations: closed,
+      totalEscalations: total,
+      activeCount,
+      closedCount,
+      resolutionRate,
+      codeStats
+    };
+  }, [rows]);
 
-  // Group by escalation code
-  const codeStats = closedEscalations.reduce((acc, escalation) => {
-    acc[escalation.code] = (acc[escalation.code] || 0) + 1;
-    return acc;
-  }, {} as Record<string, number>);
-
-  const handleRefresh = async () => {
-    setIsLoading(true);
+  const handleRefresh = useCallback(async () => {
+    setIsRefreshing(true);
     try {
+      setLastError(null);
       await load();
+      toast.success('Data refreshed successfully');
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to refresh data';
+      setLastError(errorMessage);
+      toast.error(errorMessage);
+      if (process.env.NODE_ENV !== 'production') {
+        console.error('Error refreshing escalation data:', error);
+      }
     } finally {
-      setIsLoading(false);
+      setIsRefreshing(false);
     }
-  };
+  }, [load]);
 
-  const handleExport = () => {
-    // TODO: Implement CSV export
-    console.log('Exporting escalation data...');
-  };
+  const handleExport = useCallback(() => {
+    try {
+      if (closedEscalations.length === 0) {
+        toast.warning('No closed escalations to export');
+        return;
+      }
+      
+      exportEscalationsToCSV(closedEscalations, `escalations_closed_${new Date().toISOString().slice(0,10)}.csv`);
+      toast.success(`Exported ${closedEscalations.length} closed escalations`);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to export data';
+      toast.error(errorMessage);
+      if (process.env.NODE_ENV !== 'production') {
+        console.error('Error exporting escalation data:', error);
+      }
+    }
+  }, [closedEscalations]);
 
   return (
     <PageWrapper>
@@ -61,22 +115,30 @@ export default function EscalationDataPage() {
           <div className="flex gap-2">
             <Button 
               onClick={handleRefresh} 
-              disabled={isLoading}
+              disabled={isRefreshing || loading}
               variant="outline" 
               className="px-2 py-1 text-xs h-7"
+              aria-label="Refresh escalation data"
             >
-              <RefreshCw className={`w-2.5 h-2.5 mr-1 ${isLoading ? 'animate-spin' : ''}`} />
-              {isLoading ? 'Refreshing...' : 'Refresh'}
+              <RefreshCw className={`w-2.5 h-2.5 mr-1 ${isRefreshing ? 'animate-spin' : ''}`} />
+              {isRefreshing ? 'Refreshing...' : 'Refresh'}
             </Button>
             <Button 
               onClick={handleExport} 
+              disabled={closedEscalations.length === 0}
               variant="outline" 
               className="px-2 py-1 text-xs h-7"
+              aria-label="Export closed escalations to CSV"
             >
               <Download className="w-2.5 h-2.5 mr-1" />
               Export CSV
             </Button>
           </div>
+          {lastError && (
+            <div className="text-xs text-red-600 bg-red-50 px-2 py-1 rounded">
+              Error: {lastError}
+            </div>
+          )}
         </div>
 
         {/* Summary Cards */}
@@ -145,25 +207,15 @@ export default function EscalationDataPage() {
                   {Object.entries(codeStats)
                     .sort(([,a], [,b]) => b - a) // Sort by count descending
                     .map(([code, count]) => {
-                      const percentage = Math.round((count / closedCount) * 100);
-                      const getCodeColor = (code: string) => {
-                        const colors: { [key: string]: string } = {
-                          'CODE-OS': 'bg-red-500',
-                          'CODE-AS': 'bg-orange-500',
-                          'CODE-BS': 'bg-yellow-500',
-                          'CODE-DCS': 'bg-blue-500',
-                          'CODE-EOS': 'bg-purple-500',
-                          'CODE-IPC': 'bg-green-500',
-                        };
-                        return colors[code] || 'bg-gray-500';
-                      };
+                      const percentage = closedCount > 0 ? Math.round((count / closedCount) * 100) : 0;
+                      const codeColor = getCodeColor(code as EscalationCode);
 
                       return (
                         <div key={code} className="group relative overflow-hidden bg-white border border-gray-200 rounded-lg hover:shadow-md transition-all duration-200 hover:border-gray-300">
                           <div className="p-4">
                             <div className="flex items-center justify-between mb-3">
                               <div className="flex items-center gap-2">
-                                <div className={`w-3 h-3 rounded-full ${getCodeColor(code)}`}></div>
+                                <div className={`w-3 h-3 rounded-full ${codeColor}`}></div>
                                 <span className="font-medium text-gray-900 text-sm">{code}</span>
                               </div>
                               <Badge variant="outline" className="text-xs">
@@ -180,7 +232,7 @@ export default function EscalationDataPage() {
                               {/* Progress Bar */}
                               <div className="w-full bg-gray-200 rounded-full h-2">
                                 <div 
-                                  className={`h-2 rounded-full ${getCodeColor(code)} transition-all duration-300`}
+                                  className={`h-2 rounded-full ${codeColor} transition-all duration-300`}
                                   style={{ width: `${percentage}%` }}
                                 ></div>
                               </div>

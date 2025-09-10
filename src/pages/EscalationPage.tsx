@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -7,43 +7,74 @@ import { Plus } from 'lucide-react';
 import EscalationForm from '@/components/escalation/EscalationForm';
 import EscalationTable from '@/components/escalation/EscalationTable';
 import { useEscalationStore } from '@/store/escalationStore';
+import { EscalationStatus } from '@/utils/escalation';
+import { toast } from 'sonner';
 
 export default function EscalationPage() {
   const { load, rows, loading } = useEscalationStore();
   const [formOpen, setFormOpen] = useState(false);
+  const [lastError, setLastError] = useState<string | null>(null);
 
   useEffect(() => {
-    load();
+    const loadData = async () => {
+      try {
+        setLastError(null);
+        await load();
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Failed to load escalation data';
+        setLastError(errorMessage);
+        toast.error(errorMessage);
+        if (process.env.NODE_ENV !== 'production') {
+          console.error('Error loading escalation data:', error);
+        }
+      }
+    };
+    loadData();
   }, [load]);
 
-  const activeCount = rows.filter(r => r.status === 'active').length;
-  const closedCount = rows.filter(r => r.status === 'closed').length;
+  // Memoized calculations to prevent unnecessary re-renders
+  const { activeCount, closedCount } = useMemo(() => {
+    const active = rows.filter(r => r.status === EscalationStatus.Active).length;
+    const closed = rows.filter(r => r.status === EscalationStatus.Closed).length;
+    return { activeCount: active, closedCount: closed };
+  }, [rows]);
+
+  const handleFormSuccess = useCallback(() => {
+    setFormOpen(false);
+    toast.success('Escalation created successfully');
+  }, []);
 
   return (
     <div className="container mx-auto p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Escalation Management</h1>
-          <p className="text-muted-foreground">Kelola eskalasi tiket dan masalah customer</p>
+          <p className="text-muted-foreground">Manage ticket escalations and customer issues</p>
         </div>
         <Dialog open={formOpen} onOpenChange={setFormOpen}>
           <DialogTrigger asChild>
-            <Button>
+            <Button aria-label="Add new escalation">
               <Plus className="w-4 h-4 mr-2" />
-              Tambah Escalation
+              Add Escalation
             </Button>
           </DialogTrigger>
           <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>Tambah Escalation Baru</DialogTitle>
+              <DialogTitle>Add New Escalation</DialogTitle>
               <DialogDescription>
-                Buat eskalasi baru untuk customer yang mengalami kendala
+                Create a new escalation for customers experiencing issues
               </DialogDescription>
             </DialogHeader>
-            <EscalationForm />
+            <EscalationForm onSuccess={handleFormSuccess} />
           </DialogContent>
         </Dialog>
       </div>
+
+      {lastError && (
+        <div className="text-sm text-red-600 bg-red-50 px-3 py-2 rounded border border-red-200">
+          Error: {lastError}
+        </div>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Card>
@@ -54,7 +85,7 @@ export default function EscalationPage() {
           <CardContent>
             <div className="text-2xl font-bold">{activeCount}</div>
             <p className="text-xs text-muted-foreground">
-              Eskalasi yang sedang berlangsung
+              Currently active escalations
             </p>
           </CardContent>
         </Card>
@@ -67,7 +98,7 @@ export default function EscalationPage() {
           <CardContent>
             <div className="text-2xl font-bold">{closedCount}</div>
             <p className="text-xs text-muted-foreground">
-              Eskalasi yang sudah selesai
+              Successfully resolved escalations
             </p>
           </CardContent>
         </Card>
@@ -88,13 +119,16 @@ export default function EscalationPage() {
             <CardHeader>
               <CardTitle>Active Escalations</CardTitle>
               <CardDescription>
-                Daftar eskalasi yang sedang berlangsung dan memerlukan perhatian
+                List of ongoing escalations that require attention
               </CardDescription>
             </CardHeader>
             <CardContent>
               {loading ? (
                 <div className="flex items-center justify-center py-8">
-                  <div className="text-muted-foreground">Loading...</div>
+                  <div className="animate-pulse">
+                    <div className="h-4 bg-gray-200 rounded w-32 mb-2"></div>
+                    <div className="h-3 bg-gray-200 rounded w-24"></div>
+                  </div>
                 </div>
               ) : (
                 <EscalationTable mode="active" />
@@ -108,13 +142,16 @@ export default function EscalationPage() {
             <CardHeader>
               <CardTitle>Closed Escalations</CardTitle>
               <CardDescription>
-                Daftar eskalasi yang sudah selesai dan ditutup
+                List of completed and resolved escalations
               </CardDescription>
             </CardHeader>
             <CardContent>
               {loading ? (
                 <div className="flex items-center justify-center py-8">
-                  <div className="text-muted-foreground">Loading...</div>
+                  <div className="animate-pulse">
+                    <div className="h-4 bg-gray-200 rounded w-32 mb-2"></div>
+                    <div className="h-3 bg-gray-200 rounded w-24"></div>
+                  </div>
                 </div>
               ) : (
                 <EscalationTable mode="closed" />

@@ -1,13 +1,21 @@
 import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { SearchableSelect } from '@/components/ui/searchable-select';
 import { useEscalationStore } from '@/store/escalationStore';
-import type { EscalationCode } from '@/types/escalation';
+import { EscalationCode } from '@/utils/escalation';
 import { fetchCustomers } from '@/utils/customerSource';
 
-const CODES: EscalationCode[] = ['CODE-OS','CODE-AS','CODE-BS','CODE-DCS','CODE-EOS','CODE-IPC'];
+const CODES: EscalationCode[] = [
+  EscalationCode.OS,
+  EscalationCode.AS,
+  EscalationCode.BS,
+  EscalationCode.DCS,
+  EscalationCode.EOS,
+  EscalationCode.IPC
+];
 
 interface EscalationFormProps {
   onSuccess?: () => void;
@@ -19,22 +27,24 @@ export default function EscalationForm({ onSuccess, escalation }: EscalationForm
   const update = useEscalationStore(s => s.update);
   const isEditMode = !!escalation;
   const [customers, setCustomers] = useState<{id:string;name:string}[]>([]);
+  const [caseNumber, setCaseNumber] = useState('');
   const [customerId, setCustomerId] = useState('');
   const [problem, setProblem] = useState('');
   const [action, setAction] = useState('');
   const [recommendation, setRecommendation] = useState('');
-  const [code, setCode] = useState<EscalationCode>('CODE-OS');
+  const [code, setCode] = useState<EscalationCode>(EscalationCode.OS);
 
   useEffect(() => { fetchCustomers().then(setCustomers); }, []);
 
   // Populate form with existing data in edit mode
   useEffect(() => {
     if (escalation) {
+      setCaseNumber(escalation.caseNumber || '');
       setCustomerId(escalation.customerId || '');
       setProblem(escalation.problem || '');
       setAction(escalation.action || '');
       setRecommendation(escalation.recommendation || '');
-      setCode(escalation.code || 'CODE-OS');
+      setCode(escalation.code || EscalationCode.OS);
     }
   }, [escalation]);
 
@@ -47,6 +57,7 @@ export default function EscalationForm({ onSuccess, escalation }: EscalationForm
     if (isEditMode && escalation) {
       // Update existing escalation
       await update(escalation.id, { 
+        caseNumber,
         customerId, 
         customerName: selectedName, 
         problem, 
@@ -56,14 +67,14 @@ export default function EscalationForm({ onSuccess, escalation }: EscalationForm
       });
     } else {
       // Create the escalation entry
-      const escalationId = await add({ customerId, customerName: selectedName, problem, action, recommendation, code });
+      const escalationId = await add({ caseNumber, customerId, customerName: selectedName, problem, action, recommendation, code });
     
     // Create history entry as a list format for the first row
     const { addHistory } = useEscalationStore.getState();
     const now = new Date().toISOString();
     const user = JSON.parse(localStorage.getItem('user') || '{"username":"System"}');
     
-    // Create a list-formatted history entry
+    // Create a list-formatted history entry as the primary first entry
     const listEntry = {
       id: `list-${Date.now()}`,
       escalationId: escalationId,
@@ -73,6 +84,7 @@ export default function EscalationForm({ onSuccess, escalation }: EscalationForm
         problem: problem,
         action: action,
         recommendation: recommendation,
+        code: code,
         format: 'list'
       }),
       updatedBy: user.username || 'System',
@@ -80,12 +92,12 @@ export default function EscalationForm({ onSuccess, escalation }: EscalationForm
       action: 'created' as const
     };
     
-      // Add the list-formatted history entry
+      // Add the list-formatted history entry as the primary entry
       await addHistory(escalationId, 'initial_list', '', listEntry.newValue, 'created');
     }
     
     if (!isEditMode) {
-      setProblem(''); setAction(''); setRecommendation('');
+      setCaseNumber(''); setProblem(''); setAction(''); setRecommendation('');
       setCustomerId(''); // Reset customer selection
     }
     onSuccess?.(); // Call success callback
@@ -93,7 +105,15 @@ export default function EscalationForm({ onSuccess, escalation }: EscalationForm
 
   return (
     <form onSubmit={onSubmit} className="space-y-4">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div>
+          <Label>Nomor Case</Label>
+          <Input 
+            value={caseNumber} 
+            onChange={(e) => setCaseNumber(e.target.value)} 
+            placeholder="Masukkan nomor case"
+          />
+        </div>
         <div>
           <Label>Customer</Label>
           <SearchableSelect

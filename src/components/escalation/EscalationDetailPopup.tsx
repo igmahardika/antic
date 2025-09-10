@@ -104,12 +104,6 @@ export default function EscalationDetailPopup({ escalation, isOpen, onClose }: E
                     <label className="text-sm font-medium text-muted-foreground">Customer</label>
                     <p className="text-sm">{escalation.customerName}</p>
                   </div>
-                  <div>
-                    <label className="text-sm font-medium text-muted-foreground">Code</label>
-                    <Badge variant="outline" className="mt-1">
-                      {escalation.code}
-                    </Badge>
-                  </div>
                 </div>
 
                 <div>
