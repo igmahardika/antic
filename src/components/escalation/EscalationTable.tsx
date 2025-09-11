@@ -325,7 +325,7 @@ function Row({ row, onUpdate, onClose, onDelete, mode }: {
               {row.caseNumber || '-'}
             </td>
             <td className="p-2">
-              <Badge className={`text-xs font-medium ${CodeBadgeClasses[row.code as EscalationCode] || 'bg-gray-100 text-gray-800 border-gray-200'}`}>
+              <Badge className={`text-xs font-medium ${CodeBadgeClasses[row.code as EscalationCode] || 'bg-muted text-muted-foreground border-border'}`}>
                 {row.code}
               </Badge>
             </td>
@@ -363,7 +363,7 @@ function Row({ row, onUpdate, onClose, onDelete, mode }: {
             <td className="p-2 max-w-xs text-foreground whitespace-pre-wrap break-words">{row.action}</td>
             <td className="p-2 max-w-xs text-foreground whitespace-pre-wrap break-words">{row.recommendation}</td>
             <td className="p-2">
-              <Badge className={`text-xs font-medium ${CodeBadgeClasses[row.code as EscalationCode] || 'bg-gray-100 text-gray-800 border-gray-200'}`}>
+              <Badge className={`text-xs font-medium ${CodeBadgeClasses[row.code as EscalationCode] || 'bg-muted text-muted-foreground border-border'}`}>
                 {row.code}
               </Badge>
             </td>
@@ -432,7 +432,7 @@ function Row({ row, onUpdate, onClose, onDelete, mode }: {
                   <div>
                     <label className="block text-sm font-medium text-muted-foreground mb-1">Code</label>
                     <div className="p-3 bg-muted rounded-md text-sm">
-                      <Badge className={`text-xs font-medium ${CodeBadgeClasses[row.code as EscalationCode] || 'bg-gray-100 text-gray-800 border-gray-200'}`}>
+                      <Badge className={`text-xs font-medium ${CodeBadgeClasses[row.code as EscalationCode] || 'bg-muted text-muted-foreground border-border'}`}>
                         {row.code}
                       </Badge>
                     </div>
@@ -485,7 +485,7 @@ function Row({ row, onUpdate, onClose, onDelete, mode }: {
                           <th className="px-4 py-3 text-left font-medium text-muted-foreground w-24">Author</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-gray-200">
+                      <tbody className="divide-y divide-border">
                         {history
                           .filter(item => !(item.action === 'created' && item.field !== 'initial_list'))
                           .map((item, index) => {
@@ -529,10 +529,10 @@ function Row({ row, onUpdate, onClose, onDelete, mode }: {
                             try {
                               const listData = JSON.parse(item.newValue);
                               return (
-                                <tr key={item.id} className="hover:bg-gray-50 bg-blue-50">
+                                <tr key={item.id} className="hover:bg-muted/50 bg-blue-50 dark:bg-blue-950/20">
                                   <td className="px-4 py-3 text-center font-semibold">{index + 1}</td>
                                   <td className="px-4 py-3 max-w-xs">
-                                    <Badge className={`text-xs font-medium ${CodeBadgeClasses[currentCode as EscalationCode] || 'bg-gray-100 text-gray-800 border-gray-200'}`}>
+                                    <Badge className={`text-xs font-medium ${CodeBadgeClasses[currentCode as EscalationCode] || 'bg-muted text-muted-foreground border-border'}`}>
                                       {currentCode}
                                     </Badge>
                                   </td>
@@ -578,10 +578,10 @@ function Row({ row, onUpdate, onClose, onDelete, mode }: {
                             try {
                               const updateData = JSON.parse(item.newValue);
                               return (
-                                <tr key={item.id} className="hover:bg-gray-50 bg-green-50">
+                                <tr key={item.id} className="hover:bg-muted/50 bg-green-50 dark:bg-green-950/20">
                                   <td className="px-4 py-3 text-center">{index + 1}</td>
                                   <td className="px-4 py-3 max-w-xs">
-                                    <Badge className={`text-xs font-medium ${CodeBadgeClasses[currentCode as EscalationCode] || 'bg-gray-100 text-gray-800 border-gray-200'}`}>
+                                    <Badge className={`text-xs font-medium ${CodeBadgeClasses[currentCode as EscalationCode] || 'bg-muted text-muted-foreground border-border'}`}>
                                       {currentCode}
                                     </Badge>
                                   </td>
@@ -627,10 +627,10 @@ function Row({ row, onUpdate, onClose, onDelete, mode }: {
                             try {
                               const combinedData = JSON.parse(item.newValue);
                               return (
-                                <tr key={item.id} className="hover:bg-gray-50">
+                                <tr key={item.id} className="hover:bg-muted/50">
                                   <td className="px-4 py-3 text-center">{index + 1}</td>
                                   <td className="px-4 py-3 max-w-xs">
-                                    <Badge className={`text-xs font-medium ${CodeBadgeClasses[currentCode as EscalationCode] || 'bg-gray-100 text-gray-800 border-gray-200'}`}>
+                                    <Badge className={`text-xs font-medium ${CodeBadgeClasses[currentCode as EscalationCode] || 'bg-muted text-muted-foreground border-border'}`}>
                                       {currentCode}
                                     </Badge>
                                   </td>
@@ -665,7 +665,7 @@ function Row({ row, onUpdate, onClose, onDelete, mode }: {
                               <tr key={item.id} className="hover:bg-gray-50">
                                 <td className="px-4 py-3 text-center">{index + 1}</td>
                                 <td className="px-4 py-3 max-w-xs">
-                                  <Badge className={`text-xs font-medium ${CodeBadgeClasses[currentCode as EscalationCode] || 'bg-gray-100 text-gray-800 border-gray-200'}`}>
+                                  <Badge className={`text-xs font-medium ${CodeBadgeClasses[currentCode as EscalationCode] || 'bg-muted text-muted-foreground border-border'}`}>
                                     {currentCode}
                                   </Badge>
                                 </td>
@@ -687,7 +687,7 @@ function Row({ row, onUpdate, onClose, onDelete, mode }: {
                               <tr key={item.id} className="hover:bg-gray-50">
                                 <td className="px-4 py-3 text-center">{index + 1}</td>
                                 <td className="px-4 py-3 max-w-xs">
-                                  <Badge className={`text-xs font-medium ${CodeBadgeClasses[currentCode as EscalationCode] || 'bg-gray-100 text-gray-800 border-gray-200'}`}>
+                                  <Badge className={`text-xs font-medium ${CodeBadgeClasses[currentCode as EscalationCode] || 'bg-muted text-muted-foreground border-border'}`}>
                                     {currentCode}
                                   </Badge>
                                 </td>
@@ -709,7 +709,7 @@ function Row({ row, onUpdate, onClose, onDelete, mode }: {
                               <tr key={item.id} className="hover:bg-gray-50">
                                 <td className="px-4 py-3 text-center">{index + 1}</td>
                                 <td className="px-4 py-3 max-w-xs">
-                                  <Badge className={`text-xs font-medium ${CodeBadgeClasses[currentCode as EscalationCode] || 'bg-gray-100 text-gray-800 border-gray-200'}`}>
+                                  <Badge className={`text-xs font-medium ${CodeBadgeClasses[currentCode as EscalationCode] || 'bg-muted text-muted-foreground border-border'}`}>
                                     {currentCode}
                                   </Badge>
                                 </td>
@@ -733,9 +733,9 @@ function Row({ row, onUpdate, onClose, onDelete, mode }: {
                   </div>
                 ) : (
                   <div className="text-center py-8">
-                    <Clock className="h-12 w-12 text-gray-400 mx-auto mb-3" />
-                    <p className="text-gray-500">Belum ada history penanganan</p>
-                    <p className="text-sm text-gray-400 mt-1">History akan muncul setelah ada update</p>
+                    <Clock className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
+                    <p className="text-muted-foreground">Belum ada history penanganan</p>
+                    <p className="text-sm text-muted-foreground/70 mt-1">History akan muncul setelah ada update</p>
                   </div>
                 )}
               </div>
@@ -791,7 +791,7 @@ function Row({ row, onUpdate, onClose, onDelete, mode }: {
                           className="flex-1"
                           readOnly
                         />
-                        <div className="px-3 py-2 bg-gray-50 border rounded-md text-sm flex items-center">
+                        <div className="px-3 py-2 bg-muted rounded-md text-sm flex items-center">
                           WIB
                         </div>
                       </div>
