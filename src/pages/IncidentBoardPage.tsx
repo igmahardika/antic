@@ -3,7 +3,7 @@ import { useEscalationStore } from '@/store/escalationStore';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Clock, AlertTriangle, Edit, Eye, RefreshCw, TrendingUp } from 'lucide-react';
+import { Clock, AlertTriangle, RefreshCw, TrendingUp } from 'lucide-react';
 import { formatDateTimeDDMMYYYY } from '@/lib/utils';
 import { 
   EscalationCode, 
@@ -26,7 +26,6 @@ import {
   KanbanCard 
 } from '@/components/ui/shadcn-io/kanban';
 import EscalationEditPopup from '@/components/escalation/EscalationEditPopup';
-import EscalationViewPopup from '@/components/escalation/EscalationViewPopup';
 import { toast } from 'sonner';
 
 // Enhanced escalation type with materialized data
@@ -41,7 +40,6 @@ export default function IncidentBoardPage() {
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
   const [lastError, setLastError] = useState<string | null>(null);
   const [editEscalationOpen, setEditEscalationOpen] = useState(false);
-  const [viewEscalationOpen, setViewEscalationOpen] = useState(false);
   const [selectedEscalation, setSelectedEscalation] = useState<EscalationWithMetadata | null>(null);
 
   // Load data on component mount with error handling
@@ -197,22 +195,21 @@ export default function IncidentBoardPage() {
     }
   }, [activeEscalations]);
 
-  const handleEditSuccess = useCallback(() => {
+  const handleEditSuccess = useCallback(async () => {
     setEditEscalationOpen(false);
     setSelectedEscalation(null);
     setLastUpdated(new Date());
-    toast.success('Escalation updated successfully');
-  }, []);
-
-  const handleView = useCallback((id: string) => {
-    const escalation = activeEscalations.find(e => e.id === id);
-    if (escalation) {
-      setSelectedEscalation(escalation);
-      setViewEscalationOpen(true);
-    } else {
-      toast.error('Escalation not found');
+    
+    // Reload data to reflect changes
+    try {
+      await load();
+      toast.success('Escalation updated successfully');
+    } catch (error) {
+      console.error('Error reloading data after update:', error);
+      toast.error('Update successful but failed to refresh data');
     }
-  }, [activeEscalations]);
+  }, [load]);
+
 
   const handleRefresh = useCallback(async () => {
     setIsRefreshing(true);
@@ -309,7 +306,7 @@ export default function IncidentBoardPage() {
             </CardHeaderDescription>
           </CardHeader>
           <CardContent className="overflow-x-auto">
-            <div className="w-full min-w-[800px]">
+            <div className="w-full min-w-[1200px]">
               <KanbanProvider
                 columns={kanbanColumns}
                 data={kanbanData}
@@ -332,51 +329,33 @@ export default function IncidentBoardPage() {
                     <KanbanCards id={column.id}>
                       {(item: { id: string; name: string; column: string; escalation: EscalationWithMetadata }) => {
                         return (
-                        <KanbanCard key={item.id} id={item.id} name={item.name} column={item.column}>
-                          <div className="space-y-2">
-                            <div className="flex items-center justify-between">
-                              <span className="font-medium text-sm truncate">{item.escalation.customerName}</span>
+                        <KanbanCard 
+                          key={item.id} 
+                          id={item.id} 
+                          name={item.name} 
+                          column={item.column}
+                          className="cursor-pointer hover:shadow-md transition-shadow duration-200"
+                          onClick={() => handleEdit(item.escalation.id)}
+                        >
+                          <div className="space-y-2 w-full">
+                            <div className="flex items-start justify-between gap-2">
+                              <span className="font-medium text-sm break-words flex-1 min-w-0">{item.escalation.customerName}</span>
                               <Badge variant="secondary" className="text-xs shrink-0">
                                 {item.escalation.code}
                               </Badge>
                             </div>
-                            <p className="text-xs text-muted-foreground line-clamp-2">
+                            <p className="text-xs text-muted-foreground break-words whitespace-pre-wrap line-clamp-3">
                               {item.escalation.problem}
                             </p>
-                            <div className="flex items-center justify-between text-xs text-muted-foreground">
-                              <span className="truncate">{formatDateTimeDDMMYYYY(item.escalation.createdAt)}</span>
+                            <div className="flex items-center justify-between text-xs text-muted-foreground gap-2">
+                              <span className="truncate flex-1 min-w-0">{formatDateTimeDDMMYYYY(item.escalation.createdAt)}</span>
                               <span className="shrink-0">{item.escalation.durationText}</span>
                             </div>
-                            <div className="flex gap-1 pt-1">
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                className="h-6 px-2 text-xs flex-1 hover:bg-blue-50 dark:hover:bg-blue-950"
-                                onClick={(e) => {
-                                  e.preventDefault();
-                                  e.stopPropagation();
-                                  handleView(item.escalation.id);
-                                }}
-                                aria-label={`View escalation for ${item.escalation.customerName}`}
-                              >
-                                <Eye className="w-3 h-3 mr-1" />
-                                View
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                className="h-6 px-2 text-xs flex-1 hover:bg-green-50 dark:hover:bg-green-950"
-                                onClick={(e) => {
-                                  e.preventDefault();
-                                  e.stopPropagation();
-                                  handleEdit(item.escalation.id);
-                                }}
-                                aria-label={`Edit escalation for ${item.escalation.customerName}`}
-                              >
-                                <Edit className="w-3 h-3 mr-1" />
-                                Edit
-                              </Button>
-                            </div>
+                            {item.escalation.action && (
+                              <div className="text-xs text-muted-foreground break-words whitespace-pre-wrap line-clamp-2">
+                                <span className="font-medium">Action:</span> {item.escalation.action}
+                              </div>
+                            )}
                           </div>
                         </KanbanCard>
                         );
@@ -397,11 +376,6 @@ export default function IncidentBoardPage() {
           onSuccess={handleEditSuccess}
         />
 
-        <EscalationViewPopup
-          escalation={selectedEscalation}
-          isOpen={viewEscalationOpen}
-          onClose={() => setViewEscalationOpen(false)}
-        />
 
       </div>
     </PageWrapper>
