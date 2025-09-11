@@ -119,13 +119,11 @@ export const KanbanCard = <T extends KanbanItemProps = KanbanItemProps>({
   };
 
   const handleClick = (e: React.MouseEvent) => {
-    console.log('KanbanCard handleClick called, isDragging:', isDragging, 'onClick:', !!onClick);
     // Prevent click if dragging
     if (isDragging) return;
     
     // Handle click event
     if (onClick) {
-      console.log('Calling onClick function');
       e.preventDefault();
       e.stopPropagation();
       onClick();

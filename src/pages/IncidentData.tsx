@@ -1270,26 +1270,9 @@ export const IncidentData: React.FC = () => {
                               if (incident.startTime && incident.endTime) {
                                 const calculatedDuration = calculateDuration(incident.startTime, incident.endTime);
                                 
-                                // Debug: Log untuk memastikan perhitungan berjalan
-                                console.log(`🔍 Duration Debug for ${incident.noCase}:`, {
-                                  startTime: incident.startTime,
-                                  endTime: incident.endTime,
-                                  calculatedDuration: calculatedDuration,
-                                  formattedDuration: formatDuration(calculatedDuration),
-                                  oldDurationMin: incident.durationMin
-                                });
                                 
                                 // Validasi durasi - hanya tolak durasi yang bermasalah seperti 07:14:19, 13:34:30, 05:14:28
                                 const isProblematic = isProblematicDuration(calculatedDuration);
-                                
-                                // Debug: Log detail validasi
-                                console.log(`🔍 Duration Validation for ${incident.noCase}:`, {
-                                  calculatedDuration,
-                                  isProblematic,
-                                  isValid: calculatedDuration > 0 && !isProblematic,
-                                  reason: calculatedDuration <= 0 ? 'Zero/Negative' : 
-                                          isProblematic ? 'Problematic Data' : 'Valid'
-                                });
                                 
                                 if (calculatedDuration > 0 && !isProblematic) {
                                   displayValue = (
@@ -1314,11 +1297,6 @@ export const IncidentData: React.FC = () => {
                                 }
                               } else {
                                 // Jika tidak ada start/end time, tampilkan '-'
-                                console.log(`⚠️ No start/end time for ${incident.noCase}:`, {
-                                  startTime: incident.startTime,
-                                  endTime: incident.endTime,
-                                  oldDurationMin: incident.durationMin
-                                });
                                 displayValue = (
                                   <div className="text-xs font-mono font-medium text-gray-500 dark:text-gray-400">
                                     -
@@ -1333,16 +1311,6 @@ export const IncidentData: React.FC = () => {
                                 // Validasi durasi - hanya tolak durasi yang bermasalah seperti 07:14:19, 13:34:30, 05:14:28
                                 const isProblematic = isProblematicDuration(calculatedDuration);
                                 
-                                // Debug: Log detail validasi vendor
-                                console.log(`🔍 Vendor Duration Validation for ${incident.noCase}:`, {
-                                  startEscalationVendor: incident.startEscalationVendor,
-                                  endTime: incident.endTime,
-                                  calculatedDuration,
-                                  isProblematic,
-                                  isValid: calculatedDuration > 0 && !isProblematic,
-                                  reason: calculatedDuration <= 0 ? 'Zero/Negative' : 
-                                          isProblematic ? 'Problematic Data' : 'Valid'
-                                });
                                 
                                 if (calculatedDuration > 0 && !isProblematic) {
                                   displayValue = (
@@ -1367,12 +1335,6 @@ export const IncidentData: React.FC = () => {
                                 }
                               } else {
                                 // Jika tidak ada start escalation vendor atau end time, tampilkan '-'
-                                console.log(`⚠️ No vendor escalation data for ${incident.noCase}:`, {
-                                  startEscalationVendor: incident.startEscalationVendor,
-                                  endTime: incident.endTime,
-                                  hasStartEscalation: !!incident.startEscalationVendor,
-                                  hasEndTime: !!incident.endTime
-                                });
                                 
                                 displayValue = (
                                   <div className="text-xs font-mono font-medium text-gray-500 dark:text-gray-400"
