@@ -10,7 +10,8 @@ export enum EscalationCode {
   BS = 'CODE-BS', 
   DCS = 'CODE-DCS', 
   EOS = 'CODE-EOS', 
-  IPC = 'CODE-IPC' 
+  IPC = 'CODE-IPC',
+  M = 'CODE-M'
 }
 
 export type Escalation = {
@@ -68,6 +69,7 @@ export const CodeBadgeClasses: Record<EscalationCode, string> = {
   [EscalationCode.DCS]: 'bg-blue-500 text-white border-blue-500',
   [EscalationCode.EOS]: 'bg-purple-500 text-white border-purple-500',
   [EscalationCode.IPC]: 'bg-green-500 text-white border-green-500',
+  [EscalationCode.M]: 'bg-pink-500 text-white border-pink-500',
 };
 
 export const CodeHeaderClasses: Record<EscalationCode, string> = {
@@ -77,6 +79,7 @@ export const CodeHeaderClasses: Record<EscalationCode, string> = {
   [EscalationCode.DCS]: 'bg-purple-500 text-white',
   [EscalationCode.EOS]: 'bg-red-500 text-white',
   [EscalationCode.IPC]: 'bg-indigo-500 text-white',
+  [EscalationCode.M]: 'bg-pink-500 text-white',
 };
 
 export const PriorityDotClasses: Record<Priority, string> = {
@@ -102,6 +105,7 @@ export function getCodeColor(code: EscalationCode): string {
     [EscalationCode.DCS]: 'bg-blue-500',
     [EscalationCode.EOS]: 'bg-purple-500',
     [EscalationCode.IPC]: 'bg-green-500',
+    [EscalationCode.M]: 'bg-pink-500',
   };
   return colors[code] || 'bg-gray-500';
 }

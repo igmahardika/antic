@@ -21,7 +21,8 @@ const CODES: EscalationCode[] = [
   EscalationCode.BS,
   EscalationCode.DCS,
   EscalationCode.EOS,
-  EscalationCode.IPC
+  EscalationCode.IPC,
+  EscalationCode.M
 ];
 
 // Utility function to calculate active duration

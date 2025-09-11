@@ -51,7 +51,8 @@ export default function EscalationDataPage() {
       EscalationCode.BS,
       EscalationCode.DCS,
       EscalationCode.EOS,
-      EscalationCode.IPC
+      EscalationCode.IPC,
+      EscalationCode.M
     ];
 
     // Group by escalation code with proper typing, including unused codes
