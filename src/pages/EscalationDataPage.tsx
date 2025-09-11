@@ -154,7 +154,7 @@ export default function EscalationDataPage() {
             <CardContent>
               <div className="space-y-4">
                 {/* Code Statistics Grid */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-6">
+                <div className="grid grid-cols-7 gap-2">
                   {Object.entries(codeStats)
                     .sort(([,a], [,b]) => b - a) // Sort by count descending
                     .map(([code, count]) => {
@@ -162,30 +162,30 @@ export default function EscalationDataPage() {
                       const codeColor = getCodeColor(code as EscalationCode);
 
                       return (
-                        <div key={code} className="bg-card text-card-foreground rounded-2xl shadow-lg p-3 flex flex-col min-h-[110px] transition-all duration-300 min-w-0 overflow-hidden">
-                          <div className="flex items-center gap-2 mb-1.5">
-                            <div className={`w-9 h-9 min-w-9 min-h-9 rounded-lg flex items-center justify-center ${codeColor} shadow-lg`}>
-                              <div className="w-4 h-4 rounded-full bg-white"></div>
+                        <div key={code} className="bg-card text-card-foreground rounded-xl shadow-md p-2 flex flex-col min-h-[70px] transition-all duration-300 min-w-0 overflow-hidden">
+                          <div className="flex items-center gap-1 mb-1">
+                            <div className={`w-5 h-5 min-w-5 min-h-5 rounded-md flex items-center justify-center ${codeColor} shadow-sm`}>
+                              <div className="w-2 h-2 rounded-full bg-white"></div>
                             </div>
                             <div className="flex-1 flex items-center">
-                              <span className="text-[10px] sm:text-xs md:text-sm font-semibold uppercase tracking-wide break-words whitespace-normal">
+                              <span className="text-[8px] font-semibold uppercase tracking-wide break-words whitespace-normal">
                                 {code}
                               </span>
-                              <span className="ml-2 px-2 py-0.5 rounded-md text-xs font-bold text-white bg-blue-500">
+                              <span className="ml-1 px-1 py-0.5 rounded text-[7px] font-bold text-white bg-blue-500">
                                 {percentage}%
                               </span>
                             </div>
                           </div>
-                          <div className="flex items-end min-h-[28px]">
-                            <span className="text-lg md:text-xl lg:text-2xl font-mono font-extrabold tracking-tight break-words">
+                          <div className="flex items-end min-h-[16px]">
+                            <span className="text-sm font-mono font-extrabold tracking-tight break-words">
                               {count}
                             </span>
-                            <span className="text-sm md:text-base font-semibold text-muted-foreground ml-1 mb-0.5 align-bottom">
+                            <span className="text-[8px] font-semibold text-muted-foreground ml-1 mb-0.5 align-bottom">
                               resolved
                             </span>
                           </div>
-                          <div className="text-[10px] sm:text-xs text-muted-foreground mt-0.5 break-words whitespace-normal">
-                            Escalation code statistics
+                          <div className="text-[6px] text-muted-foreground mt-0.5 break-words whitespace-normal">
+                            Statistics
                           </div>
                         </div>
                       );
