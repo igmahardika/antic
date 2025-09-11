@@ -117,14 +117,7 @@ export default function EscalationTable({ mode }: { mode: 'active'|'closed' }) {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Semua Tahun</SelectItem>
-                {Array.from({ length: 10 }, (_, i) => {
-                  const year = 2025 - i;
-                  return (
-                    <SelectItem key={year} value={year.toString()}>
-                      {year}
-                    </SelectItem>
-                  );
-                })}
+                <SelectItem value="2025">2025</SelectItem>
               </SelectContent>
             </Select>
           </>
