@@ -334,10 +334,16 @@ export default function IncidentBoardPage() {
                           id={item.id} 
                           name={item.name} 
                           column={item.column}
-                          className="cursor-pointer hover:shadow-md transition-shadow duration-200"
-                          onClick={() => handleEdit(item.escalation.id)}
+                          className="hover:shadow-md transition-shadow duration-200"
                         >
-                          <div className="space-y-2 w-full">
+                          <div 
+                            className="space-y-2 w-full cursor-pointer"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              handleEdit(item.escalation.id);
+                            }}
+                          >
                             <div className="flex items-start justify-between gap-2">
                               <span className="font-medium text-sm break-words flex-1 min-w-0">{item.escalation.customerName}</span>
                               <Badge variant="secondary" className="text-xs shrink-0">
