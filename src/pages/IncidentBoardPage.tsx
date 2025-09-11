@@ -168,7 +168,8 @@ export default function IncidentBoardPage() {
     { id: EscalationCode.BS, name: EscalationCode.BS },
     { id: EscalationCode.DCS, name: EscalationCode.DCS },
     { id: EscalationCode.EOS, name: EscalationCode.EOS },
-    { id: EscalationCode.IPC, name: EscalationCode.IPC }
+    { id: EscalationCode.IPC, name: EscalationCode.IPC },
+    { id: EscalationCode.M, name: EscalationCode.M }
   ], []);
 
 
