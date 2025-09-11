@@ -144,7 +144,7 @@ export default function EscalationDataPage() {
             <CardContent>
               <div className="space-y-4">
                 {/* Code Statistics Grid */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-6">
                   {Object.entries(codeStats)
                     .sort(([,a], [,b]) => b - a) // Sort by count descending
                     .map(([code, count]) => {
@@ -152,45 +152,40 @@ export default function EscalationDataPage() {
                       const codeColor = getCodeColor(code as EscalationCode);
 
                       return (
-                        <div key={code} className="group relative overflow-hidden bg-white border border-gray-200 rounded-lg hover:shadow-md transition-all duration-200 hover:border-gray-300">
-                          <div className="p-3">
-                            <div className="flex items-center justify-between mb-2">
-                              <div className="flex items-center gap-1.5">
-                                <div className={`w-2.5 h-2.5 rounded-full ${codeColor}`}></div>
-                                <span className="font-medium text-gray-900 text-xs">{code}</span>
-                              </div>
-                              <Badge variant="outline" className="text-xs px-1.5 py-0.5">
-                                {percentage}%
-                              </Badge>
+                        <div key={code} className="bg-card text-card-foreground rounded-2xl shadow-lg p-3 flex flex-col min-h-[110px] transition-all duration-300 min-w-0 overflow-hidden">
+                          <div className="flex items-center gap-2 mb-1.5">
+                            <div className={`w-9 h-9 min-w-9 min-h-9 rounded-lg flex items-center justify-center ${codeColor} shadow-lg`}>
+                              <div className="w-4 h-4 rounded-full bg-white"></div>
                             </div>
-                            
-                            <div className="space-y-1.5">
-                              <div className="flex items-baseline gap-1">
-                                <span className="text-lg font-bold text-gray-900">{count}</span>
-                                <span className="text-xs text-gray-500">resolved</span>
-                              </div>
-                              
-                              {/* Progress Bar */}
-                              <div className="w-full bg-gray-200 rounded-full h-1.5">
-                                <div 
-                                  className={`h-1.5 rounded-full ${codeColor} transition-all duration-300`}
-                                  style={{ width: `${percentage}%` }}
-                                ></div>
-                              </div>
+                            <div className="flex-1 flex items-center">
+                              <span className="text-[10px] sm:text-xs md:text-sm font-semibold uppercase tracking-wide break-words whitespace-normal">
+                                {code}
+                              </span>
+                              <span className="ml-2 px-2 py-0.5 rounded-md text-xs font-bold text-white bg-blue-500">
+                                {percentage}%
+                              </span>
                             </div>
                           </div>
-                          
-                          {/* Hover Effect */}
-                          <div className="absolute inset-0 bg-gradient-to-r from-transparent to-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none"></div>
+                          <div className="flex items-end min-h-[28px]">
+                            <span className="text-lg md:text-xl lg:text-2xl font-mono font-extrabold tracking-tight break-words">
+                              {count}
+                            </span>
+                            <span className="text-sm md:text-base font-semibold text-muted-foreground ml-1 mb-0.5 align-bottom">
+                              resolved
+                            </span>
+                          </div>
+                          <div className="text-[10px] sm:text-xs text-muted-foreground mt-0.5 break-words whitespace-normal">
+                            Escalation code statistics
+                          </div>
                         </div>
                       );
                     })}
                 </div>
 
                 {/* Additional Info */}
-                <div className="mt-3 p-2 bg-gray-50 rounded-lg border border-gray-200">
-                  <div className="flex items-center gap-2 text-xs text-gray-600">
-                    <AlertTriangle className="h-3 w-3" />
+                <div className="mt-4 p-3 bg-muted/50 rounded-lg border">
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <AlertTriangle className="h-4 w-4" />
                     <span>
                       {Object.keys(codeStats).length} different escalation codes have been resolved
                     </span>
