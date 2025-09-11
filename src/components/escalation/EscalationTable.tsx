@@ -48,8 +48,8 @@ const calculateActiveDuration = (createdAt: string) => {
 export default function EscalationTable({ mode }: { mode: 'active'|'closed' }) {
   const { rows, update, close, delete: deleteEscalation } = useEscalationStore();
   const [q, setQ] = useState('');
-  const [selectedMonth, setSelectedMonth] = useState('');
-  const [selectedYear, setSelectedYear] = useState('');
+  const [selectedMonth, setSelectedMonth] = useState('all');
+  const [selectedYear, setSelectedYear] = useState('all');
   
   const data = useMemo(() => {
     let filtered = rows.filter(r => r.status === mode);
@@ -64,14 +64,14 @@ export default function EscalationTable({ mode }: { mode: 'active'|'closed' }) {
     }
     
     // Month and year filter (only for closed escalations)
-    if (mode === 'closed' && (selectedMonth || selectedYear)) {
+    if (mode === 'closed' && (selectedMonth !== 'all' || selectedYear !== 'all')) {
       filtered = filtered.filter(r => {
         const date = new Date(r.updatedAt || r.createdAt);
         const month = date.getMonth() + 1; // getMonth() returns 0-11, so add 1
         const year = date.getFullYear();
         
-        const monthMatch = !selectedMonth || month.toString() === selectedMonth;
-        const yearMatch = !selectedYear || year.toString() === selectedYear;
+        const monthMatch = selectedMonth === 'all' || month.toString() === selectedMonth;
+        const yearMatch = selectedYear === 'all' || year.toString() === selectedYear;
         
         return monthMatch && yearMatch;
       });
@@ -96,7 +96,7 @@ export default function EscalationTable({ mode }: { mode: 'active'|'closed' }) {
                 <SelectValue placeholder="Bulan" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Semua Bulan</SelectItem>
+                <SelectItem value="all">Semua Bulan</SelectItem>
                 <SelectItem value="1">Januari</SelectItem>
                 <SelectItem value="2">Februari</SelectItem>
                 <SelectItem value="3">Maret</SelectItem>
@@ -116,7 +116,7 @@ export default function EscalationTable({ mode }: { mode: 'active'|'closed' }) {
                 <SelectValue placeholder="Tahun" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Semua Tahun</SelectItem>
+                <SelectItem value="all">Semua Tahun</SelectItem>
                 {Array.from({ length: 10 }, (_, i) => {
                   const year = new Date().getFullYear() - i;
                   return (
