@@ -44,9 +44,19 @@ export default function EscalationDataPage() {
     const closed = rows.filter(row => row.status === EscalationStatus.Closed);
     const closedCount = closed.length;
 
-    // Group by escalation code with proper typing
-    const codeStats = closed.reduce((acc, escalation) => {
-      acc[escalation.code] = (acc[escalation.code] || 0) + 1;
+    // Initialize all possible escalation codes with 0 count
+    const allCodes = [
+      EscalationCode.OS,
+      EscalationCode.AS,
+      EscalationCode.BS,
+      EscalationCode.DCS,
+      EscalationCode.EOS,
+      EscalationCode.IPC
+    ];
+
+    // Group by escalation code with proper typing, including unused codes
+    const codeStats = allCodes.reduce((acc, code) => {
+      acc[code] = closed.filter(escalation => escalation.code === code).length;
       return acc;
     }, {} as Record<EscalationCode, number>);
 
@@ -133,8 +143,7 @@ export default function EscalationDataPage() {
         </div>
 
         {/* Escalation Code Statistics */}
-        {Object.keys(codeStats).length > 0 && (
-          <Card>
+        <Card>
             <CardHeader>
               <CardHeaderTitle>Escalation Summary</CardHeaderTitle>
               <CardHeaderDescription>
@@ -187,14 +196,13 @@ export default function EscalationDataPage() {
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <AlertTriangle className="h-4 w-4" />
                     <span>
-                      {Object.keys(codeStats).length} different escalation codes have been resolved
+                      {Object.values(codeStats).filter(count => count > 0).length} of {Object.keys(codeStats).length} escalation codes have been resolved
                     </span>
                   </div>
                 </div>
               </div>
             </CardContent>
           </Card>
-        )}
 
         {/* Main Data Table */}
         <Card>
