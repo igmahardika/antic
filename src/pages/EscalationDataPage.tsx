@@ -2,7 +2,7 @@ import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Download, RefreshCw, CheckCircle, AlertTriangle } from 'lucide-react';
+import { Download, RefreshCw, AlertTriangle } from 'lucide-react';
 import EscalationTable from '@/components/escalation/EscalationTable';
 import { useEscalationStore } from '@/store/escalationStore';
 import PageWrapper from '@/components/PageWrapper';
@@ -136,30 +136,13 @@ export default function EscalationDataPage() {
         {Object.keys(codeStats).length > 0 && (
           <Card>
             <CardHeader>
-              <CardHeaderTitle>Closed Escalations by Code</CardHeaderTitle>
+              <CardHeaderTitle>Escalation Summary</CardHeaderTitle>
               <CardHeaderDescription>
-                Distribution of resolved escalations by code
+                Summary of closed escalations by code type
               </CardHeaderDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {/* Summary Row */}
-                <div className="flex items-center justify-between p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-100">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-blue-100 rounded-lg">
-                      <CheckCircle className="h-5 w-5 text-blue-600" />
-                    </div>
-                    <div>
-                      <h3 className="font-semibold text-gray-900">Total Resolved</h3>
-                      <p className="text-sm text-gray-600">All escalation codes combined</p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-2xl font-bold text-blue-600">{closedCount}</div>
-                    <div className="text-sm text-gray-500">escalations</div>
-                  </div>
-                </div>
-
                 {/* Code Statistics Grid */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3">
                   {Object.entries(codeStats)
