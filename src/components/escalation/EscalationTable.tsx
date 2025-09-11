@@ -118,7 +118,7 @@ export default function EscalationTable({ mode }: { mode: 'active'|'closed' }) {
               <SelectContent>
                 <SelectItem value="all">Semua Tahun</SelectItem>
                 {Array.from({ length: 10 }, (_, i) => {
-                  const year = new Date().getFullYear() - i;
+                  const year = 2025 - i;
                   return (
                     <SelectItem key={year} value={year.toString()}>
                       {year}
