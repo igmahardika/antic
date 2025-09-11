@@ -66,7 +66,7 @@ export default function EscalationTable({ mode }: { mode: 'active'|'closed' }) {
     // Month and year filter (only for closed escalations)
     if (mode === 'closed' && (selectedMonth !== 'all' || selectedYear !== 'all')) {
       filtered = filtered.filter(r => {
-        const date = new Date(r.updatedAt || r.createdAt);
+        const date = new Date(r.createdAt);
         const month = date.getMonth() + 1; // getMonth() returns 0-11, so add 1
         const year = date.getFullYear();
         
