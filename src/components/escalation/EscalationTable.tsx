@@ -123,7 +123,7 @@ export default function EscalationTable({ mode }: { mode: 'active'|'closed' }) {
           </>
         )}
       </div>
-      <div className="overflow-x-auto rounded-xl border">
+      <div className="overflow-x-auto rounded-xl">
         <table className="w-full text-sm">
           <thead className="bg-muted">
             <tr>
@@ -318,7 +318,7 @@ function Row({ row, onUpdate, onClose, onDelete, mode }: {
 
   return (
     <>
-      <tr className="border-t hover:bg-muted/50">
+      <tr className="hover:bg-muted/50">
         {mode === 'active' ? (
           <>
             <td className="p-2 text-center text-sm font-medium text-gray-600">
@@ -418,20 +418,20 @@ function Row({ row, onUpdate, onClose, onDelete, mode }: {
 
             <div className="space-y-6">
               {/* Data Eskalasi Section */}
-              <div className="bg-white border rounded-lg p-6">
+              <div className="bg-white rounded-lg p-6">
                 <h3 className="text-lg font-semibold mb-4 text-gray-800">Data Eskalasi</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Nomor Case</label>
-                    <div className="p-3 bg-gray-50 border rounded-md text-sm font-mono">{row.id}</div>
+                    <div className="p-3 bg-gray-50 rounded-md text-sm font-mono">{row.id}</div>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Customer</label>
-                    <div className="p-3 bg-gray-50 border rounded-md text-sm">{row.customerName}</div>
+                    <div className="p-3 bg-gray-50 rounded-md text-sm">{row.customerName}</div>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Code</label>
-                    <div className="p-3 bg-gray-50 border rounded-md text-sm">
+                    <div className="p-3 bg-gray-50 rounded-md text-sm">
                       <Badge className={`text-xs font-medium ${CodeBadgeClasses[row.code as EscalationCode] || 'bg-gray-100 text-gray-800 border-gray-200'}`}>
                         {row.code}
                       </Badge>
@@ -446,11 +446,11 @@ function Row({ row, onUpdate, onClose, onDelete, mode }: {
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Tanggal, Waktu Open</label>
-                    <div className="p-3 bg-gray-50 border rounded-md text-sm font-mono">{formatDateTimeDDMMYYYYHHMMSS(row.createdAt)}</div>
+                    <div className="p-3 bg-gray-50 rounded-md text-sm font-mono">{formatDateTimeDDMMYYYYHHMMSS(row.createdAt)}</div>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Tanggal, Waktu Close</label>
-                    <div className="p-3 bg-gray-50 border rounded-md text-sm">
+                    <div className="p-3 bg-gray-50 rounded-md text-sm">
                       {row.status === 'closed' ? <span className="font-mono">{formatDateTimeDDMMYYYYHHMMSS(row.updatedAt)}</span> : 'Status masih open'}
                     </div>
                   </div>
@@ -815,7 +815,7 @@ function Row({ row, onUpdate, onClose, onDelete, mode }: {
               )}
 
               {/* Action Buttons */}
-              <div className="flex justify-end gap-3 pt-4 border-t">
+              <div className="flex justify-end gap-3 pt-4">
                 <Button variant="outline" onClick={() => setUpdateOpen(false)} className="flex items-center gap-2">
                   <XCircle className="h-4 w-4" />
                   {mode === 'closed' ? 'Tutup' : 'Batal'}
