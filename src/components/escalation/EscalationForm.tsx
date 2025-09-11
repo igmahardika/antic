@@ -35,7 +35,9 @@ export default function EscalationForm({ onSuccess, escalation }: EscalationForm
   const [recommendation, setRecommendation] = useState('');
   const [code, setCode] = useState<EscalationCode>(EscalationCode.OS);
 
-  useEffect(() => { fetchCustomers().then(setCustomers); }, []);
+  useEffect(() => { 
+    fetchCustomers().then(setCustomers);
+  }, []);
 
   // Populate form with existing data in edit mode
   useEffect(() => {
