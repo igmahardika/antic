@@ -203,7 +203,7 @@ export default function EscalationDataPage() {
                 </div>
 
                 {/* Code Statistics Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3">
                   {Object.entries(codeStats)
                     .sort(([,a], [,b]) => b - a) // Sort by count descending
                     .map(([code, count]) => {
@@ -212,27 +212,27 @@ export default function EscalationDataPage() {
 
                       return (
                         <div key={code} className="group relative overflow-hidden bg-white border border-gray-200 rounded-lg hover:shadow-md transition-all duration-200 hover:border-gray-300">
-                          <div className="p-4">
-                            <div className="flex items-center justify-between mb-3">
-                              <div className="flex items-center gap-2">
-                                <div className={`w-3 h-3 rounded-full ${codeColor}`}></div>
-                                <span className="font-medium text-gray-900 text-sm">{code}</span>
+                          <div className="p-3">
+                            <div className="flex items-center justify-between mb-2">
+                              <div className="flex items-center gap-1.5">
+                                <div className={`w-2.5 h-2.5 rounded-full ${codeColor}`}></div>
+                                <span className="font-medium text-gray-900 text-xs">{code}</span>
                               </div>
-                              <Badge variant="outline" className="text-xs">
+                              <Badge variant="outline" className="text-xs px-1.5 py-0.5">
                                 {percentage}%
                               </Badge>
                             </div>
                             
-                            <div className="space-y-2">
-                              <div className="flex items-baseline gap-2">
-                                <span className="text-2xl font-bold text-gray-900">{count}</span>
-                                <span className="text-sm text-gray-500">resolved</span>
+                            <div className="space-y-1.5">
+                              <div className="flex items-baseline gap-1">
+                                <span className="text-lg font-bold text-gray-900">{count}</span>
+                                <span className="text-xs text-gray-500">resolved</span>
                               </div>
                               
                               {/* Progress Bar */}
-                              <div className="w-full bg-gray-200 rounded-full h-2">
+                              <div className="w-full bg-gray-200 rounded-full h-1.5">
                                 <div 
-                                  className={`h-2 rounded-full ${codeColor} transition-all duration-300`}
+                                  className={`h-1.5 rounded-full ${codeColor} transition-all duration-300`}
                                   style={{ width: `${percentage}%` }}
                                 ></div>
                               </div>
@@ -247,9 +247,9 @@ export default function EscalationDataPage() {
                 </div>
 
                 {/* Additional Info */}
-                <div className="mt-4 p-3 bg-gray-50 rounded-lg border border-gray-200">
-                  <div className="flex items-center gap-2 text-sm text-gray-600">
-                    <AlertTriangle className="h-4 w-4" />
+                <div className="mt-3 p-2 bg-gray-50 rounded-lg border border-gray-200">
+                  <div className="flex items-center gap-2 text-xs text-gray-600">
+                    <AlertTriangle className="h-3 w-3" />
                     <span>
                       {Object.keys(codeStats).length} different escalation codes have been resolved
                     </span>
