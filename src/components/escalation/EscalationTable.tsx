@@ -11,7 +11,7 @@ import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useEscalationStore } from '@/store/escalationStore';
 import type { Escalation, EscalationHistory } from '@/types/escalation';
-import { formatDateTimeDDMMYYYY } from '@/lib/utils';
+import { formatDateTimeDDMMYYYYHHMMSS, calculateDurationHHMMSS } from '@/lib/utils';
 import { Clock, User, Edit, CheckCircle, XCircle, Save, Trash2 } from 'lucide-react';
 import { CodeBadgeClasses, EscalationCode } from '@/utils/escalation';
 import { toast } from 'sonner';
@@ -144,8 +144,9 @@ export default function EscalationTable({ mode }: { mode: 'active'|'closed' }) {
                   <th className="p-2 text-left w-64">Action</th>
                   <th className="p-2 text-left w-64">Rekomendasi</th>
                   <th className="p-2 text-left w-32">Code</th>
-                  <th className="p-2 text-left w-24">Created</th>
-                  <th className="p-2 text-left w-24">Updated</th>
+                  <th className="p-2 text-left w-32">Created</th>
+                  <th className="p-2 text-left w-32">Updated</th>
+                  <th className="p-2 text-left w-24">Duration</th>
                   <th className="p-2 text-left w-32">Action</th>
                 </>
               )}
@@ -154,7 +155,7 @@ export default function EscalationTable({ mode }: { mode: 'active'|'closed' }) {
           <tbody>
             {data.map(row => <Row key={row.id} row={row} onUpdate={update} onClose={close} onDelete={deleteEscalation} mode={mode} />)}
             {data.length===0 && (
-              <tr><td className="p-3" colSpan={mode === 'active' ? 7 : 8}>Tidak ada data</td></tr>
+              <tr><td className="p-3" colSpan={mode === 'active' ? 7 : 9}>Tidak ada data</td></tr>
             )}
           </tbody>
         </table>
@@ -330,7 +331,7 @@ function Row({ row, onUpdate, onClose, onDelete, mode }: {
             </td>
             <td className="p-2 font-medium">{row.customerName}</td>
             <td className="p-2 max-w-xs text-gray-700 whitespace-pre-wrap break-words">{row.problem}</td>
-            <td className="p-2 text-xs text-muted-foreground">{new Date(row.createdAt).toLocaleDateString()}</td>
+            <td className="p-2 text-xs text-muted-foreground font-mono">{formatDateTimeDDMMYYYYHHMMSS(row.createdAt)}</td>
             <td className="p-2 text-xs text-muted-foreground">
               <div className="flex items-center gap-1">
                 <Clock className="h-3 w-3 text-orange-500" />
@@ -366,8 +367,9 @@ function Row({ row, onUpdate, onClose, onDelete, mode }: {
                 {row.code}
               </Badge>
             </td>
-            <td className="p-2 text-xs text-muted-foreground">{new Date(row.createdAt).toLocaleDateString()}</td>
-            <td className="p-2 text-xs text-muted-foreground">{new Date(row.updatedAt).toLocaleDateString()}</td>
+            <td className="p-2 text-xs text-muted-foreground font-mono">{formatDateTimeDDMMYYYYHHMMSS(row.createdAt)}</td>
+            <td className="p-2 text-xs text-muted-foreground font-mono">{formatDateTimeDDMMYYYYHHMMSS(row.updatedAt)}</td>
+            <td className="p-2 text-xs text-muted-foreground font-mono">{calculateDurationHHMMSS(row.createdAt, row.updatedAt)}</td>
             <td className="p-2">
               <div className="flex gap-1">
                 <Button 

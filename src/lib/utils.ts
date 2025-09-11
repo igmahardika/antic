@@ -83,3 +83,47 @@ export function formatDateTimeDDMMYYYY(isoString?: string): string {
     return 'Invalid Date';
   }
 }
+
+// Helper untuk format ISO date string menjadi DD/MM/YYYY HH:MM:SS
+export function formatDateTimeDDMMYYYYHHMMSS(isoString?: string): string {
+  if (!isoString) return 'N/A';
+  try {
+    const date = new Date(isoString);
+    if (isNaN(date.getTime())) return 'Invalid Date';
+
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0'); // Month is 0-indexed
+    const year = date.getFullYear();
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    const seconds = String(date.getSeconds()).padStart(2, '0');
+
+    return `${day}/${month}/${year} ${hours}:${minutes}:${seconds}`;
+  } catch (error) {
+    return 'Invalid Date';
+  }
+}
+
+// Helper untuk menghitung durasi antara dua tanggal dalam format HH:MM:SS
+export function calculateDurationHHMMSS(startDate: string, endDate: string): string {
+  if (!startDate || !endDate) return '00:00:00';
+  try {
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    
+    if (isNaN(start.getTime()) || isNaN(end.getTime())) return '00:00:00';
+    
+    const diffMs = end.getTime() - start.getTime();
+    if (diffMs < 0) return '00:00:00';
+    
+    const totalSeconds = Math.floor(diffMs / 1000);
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+    
+    const pad = (num: number) => num.toString().padStart(2, '0');
+    return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
+  } catch (error) {
+    return '00:00:00';
+  }
+}
