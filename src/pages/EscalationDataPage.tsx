@@ -2,13 +2,12 @@ import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Download, RefreshCw, CheckCircle, Clock, AlertTriangle, TrendingUp } from 'lucide-react';
+import { Download, RefreshCw, CheckCircle, AlertTriangle } from 'lucide-react';
 import EscalationTable from '@/components/escalation/EscalationTable';
 import { useEscalationStore } from '@/store/escalationStore';
 import PageWrapper from '@/components/PageWrapper';
 import PageHeader from '@/components/ui/PageHeader';
 import { CardHeaderTitle, CardHeaderDescription } from '@/components/ui/CardTypography';
-import SummaryCard from '@/components/ui/SummaryCard';
 import { 
   EscalationStatus, 
   EscalationCode, 
@@ -41,13 +40,9 @@ export default function EscalationDataPage() {
   }, [load]);
 
   // Memoized calculations to prevent unnecessary re-renders
-  const { activeEscalations, closedEscalations, totalEscalations, activeCount, closedCount, resolutionRate, codeStats } = useMemo(() => {
-    const active = rows.filter(row => row.status === EscalationStatus.Active);
+  const { closedEscalations, closedCount, codeStats } = useMemo(() => {
     const closed = rows.filter(row => row.status === EscalationStatus.Closed);
-    const total = rows.length;
-    const activeCount = active.length;
     const closedCount = closed.length;
-    const resolutionRate = total > 0 ? Math.round((closedCount / total) * 100) : 0;
 
     // Group by escalation code with proper typing
     const codeStats = closed.reduce((acc, escalation) => {
@@ -56,12 +51,8 @@ export default function EscalationDataPage() {
     }, {} as Record<EscalationCode, number>);
 
     return {
-      activeEscalations: active,
       closedEscalations: closed,
-      totalEscalations: total,
-      activeCount,
       closedCount,
-      resolutionRate,
       codeStats
     };
   }, [rows]);
@@ -140,39 +131,6 @@ export default function EscalationDataPage() {
             </div>
           )}
         </div>
-
-        {/* Summary Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <SummaryCard
-            title="Total Escalations"
-            value={totalEscalations}
-            description="All escalations"
-            icon={<AlertTriangle className="h-4 w-4" />}
-            iconBg="bg-blue-500"
-          />
-          <SummaryCard
-            title="Active Escalations"
-            value={activeCount}
-            description="Currently active"
-            icon={<Clock className="h-4 w-4" />}
-            iconBg="bg-yellow-500"
-          />
-          <SummaryCard
-            title="Closed Escalations"
-            value={closedCount}
-            description="Successfully resolved"
-            icon={<CheckCircle className="h-4 w-4" />}
-            iconBg="bg-green-500"
-          />
-          <SummaryCard
-            title="Resolution Rate"
-            value={`${resolutionRate}%`}
-            description="Success rate"
-            icon={<TrendingUp className="h-4 w-4" />}
-            iconBg="bg-purple-500"
-          />
-        </div>
-
 
         {/* Escalation Code Statistics */}
         {Object.keys(codeStats).length > 0 && (
