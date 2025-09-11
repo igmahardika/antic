@@ -11,8 +11,9 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { useEscalationStore } from '@/store/escalationStore';
 import type { Escalation, EscalationHistory } from '@/types/escalation';
 import { formatDateTimeDDMMYYYY } from '@/lib/utils';
-import { Clock, User, Edit, CheckCircle, XCircle, Save } from 'lucide-react';
+import { Clock, User, Edit, CheckCircle, XCircle, Save, Trash2 } from 'lucide-react';
 import { CodeBadgeClasses, EscalationCode } from '@/utils/escalation';
+import { toast } from 'sonner';
 
 const CODES: EscalationCode[] = [
   EscalationCode.OS,
@@ -43,7 +44,7 @@ const calculateActiveDuration = (createdAt: string) => {
 };
 
 export default function EscalationTable({ mode }: { mode: 'active'|'closed' }) {
-  const { rows, update, close } = useEscalationStore();
+  const { rows, update, close, delete: deleteEscalation } = useEscalationStore();
   const [q, setQ] = useState('');
   const data = useMemo(() => rows.filter(r => r.status===mode && (
     r.customerName.toLowerCase().includes(q.toLowerCase()) ||
@@ -85,7 +86,7 @@ export default function EscalationTable({ mode }: { mode: 'active'|'closed' }) {
             </tr>
           </thead>
           <tbody>
-            {data.map(row => <Row key={row.id} row={row} onUpdate={update} onClose={close} mode={mode} />)}
+            {data.map(row => <Row key={row.id} row={row} onUpdate={update} onClose={close} onDelete={deleteEscalation} mode={mode} />)}
             {data.length===0 && (
               <tr><td className="p-3" colSpan={mode === 'active' ? 7 : 8}>Tidak ada data</td></tr>
             )}
@@ -96,10 +97,11 @@ export default function EscalationTable({ mode }: { mode: 'active'|'closed' }) {
   );
 }
 
-function Row({ row, onUpdate, onClose, mode }: { 
+function Row({ row, onUpdate, onClose, onDelete, mode }: { 
   row: Escalation; 
   onUpdate: (id: string, patch: Partial<Escalation>) => Promise<void>;
   onClose: (id: string) => Promise<void>;
+  onDelete: (id: string) => Promise<void>;
   mode: 'active'|'closed';
 }) {
   const { getHistory } = useEscalationStore();
@@ -110,6 +112,10 @@ function Row({ row, onUpdate, onClose, mode }: {
   const [action, setAction] = useState('');
   const [noteInternal, setNoteInternal] = useState('');
   const [code, setCode] = useState<EscalationCode>(row.code as EscalationCode);
+
+  // Get current user role
+  const user = JSON.parse(localStorage.getItem('user') || '{"role":"user"}');
+  const isSuperAdmin = user.role === 'super admin';
 
   const loadHistory = async () => {
     if (!row) return;
@@ -189,6 +195,21 @@ function Row({ row, onUpdate, onClose, mode }: {
 
   const handleClose = async () => {
     await onClose(row.id);
+  };
+
+  const handleDelete = async () => {
+    if (!confirm('Are you sure you want to delete this escalation? This action cannot be undone.')) {
+      return;
+    }
+    
+    try {
+      await onDelete(row.id);
+      toast.success('Escalation deleted successfully');
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to delete escalation';
+      toast.error(errorMessage);
+      console.error('Error deleting escalation:', error);
+    }
   };
 
   const getStatusIcon = (status: string) => {
@@ -295,6 +316,17 @@ function Row({ row, onUpdate, onClose, mode }: {
                   <CheckCircle className="h-3 w-3" />
                   Detail
                 </Button>
+                {isSuperAdmin && (
+                  <Button 
+                    size="sm" 
+                    variant="destructive" 
+                    onClick={handleDelete}
+                    className="flex items-center gap-1"
+                  >
+                    <Trash2 className="h-3 w-3" />
+                    Delete
+                  </Button>
+                )}
               </div>
             </td>
           </>

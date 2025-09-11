@@ -13,6 +13,7 @@ interface Actions {
   add: (payload: Omit<Escalation, 'id'|'status'|'createdAt'|'updatedAt'> & { status?: EscalationStatus }) => Promise<string>;
   update: (id: string, patch: Partial<Escalation>, skipHistory?: boolean) => Promise<void>;
   close: (id: string) => Promise<void>;
+  delete: (id: string) => Promise<void>;
   getHistory: (escalationId: string) => Promise<EscalationHistory[]>;
   addHistory: (escalationId: string, field: string, oldValue: string, newValue: string, action: 'created' | 'updated' | 'closed') => Promise<void>;
 }
@@ -120,6 +121,37 @@ export const useEscalationStore = create<State & Actions>((set, get) => ({
       // Dispatch custom event for real-time updates
       window.dispatchEvent(new CustomEvent('escalationDataChanged', { 
         detail: { action: 'close', data: { id } } 
+      }));
+    }
+  },
+  delete: async (id) => {
+    const currentRow = get().rows.find(r => r.id === id);
+    if (!currentRow) return;
+
+    // Only allow deletion of closed escalations
+    if (currentRow.status !== 'closed') {
+      throw new Error('Only closed escalations can be deleted');
+    }
+
+    const rows = get().rows.filter(r => r.id !== id);
+    
+    try {
+      await escalationDB.escalations.delete(id);
+      // Also delete related history
+      await escalationDB.escalationHistory.where('escalationId').equals(id).delete();
+      set({ rows });
+      
+      // Dispatch custom event for real-time updates
+      window.dispatchEvent(new CustomEvent('escalationDataChanged', { 
+        detail: { action: 'delete', data: { id } } 
+      }));
+    } catch {
+      set({ rows }); 
+      lsSet(rows);
+      
+      // Dispatch custom event for real-time updates
+      window.dispatchEvent(new CustomEvent('escalationDataChanged', { 
+        detail: { action: 'delete', data: { id } } 
       }));
     }
   },
