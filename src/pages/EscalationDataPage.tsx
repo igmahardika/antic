@@ -156,7 +156,7 @@ export default function EscalationDataPage() {
                 {/* Code Statistics Grid */}
                 <div className="grid grid-cols-7 gap-2">
                   {Object.entries(codeStats)
-                    .sort(([,a], [,b]) => b - a) // Sort by count descending
+                    .sort(([a], [b]) => a.localeCompare(b)) // Sort alphabetically by code
                     .map(([code, count]) => {
                       const percentage = closedCount > 0 ? Math.round((count / closedCount) * 100) : 0;
                       const codeColor = getCodeColor(code as EscalationCode);
