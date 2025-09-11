@@ -188,10 +188,7 @@ function Row({ row, onUpdate, onClose, onDelete, mode }: {
     if (!row) return;
     setLoading(true);
     try {
-      console.log('Loading history for escalation:', row.id);
       const historyData = await getHistory(row.id);
-      console.log('History data loaded:', historyData);
-      console.log('History data length:', historyData.length);
       
       // Sort history by updatedAt in ascending order (oldest first, newest at bottom)
       const sortedHistory = historyData.sort((a, b) => {
@@ -214,12 +211,9 @@ function Row({ row, onUpdate, onClose, onDelete, mode }: {
       return;
     }
     
-    console.log('Saving update:', { problem, action, noteInternal, code });
-    
     try {
       // Update problem, action, and code fields (skip automatic history creation)
       await onUpdate(row.id, { problem, action, code }, true);
-      console.log('Update completed');
       
       // Create a single combined history entry for problem and action only
       const { addHistory } = useEscalationStore.getState();
@@ -246,11 +240,9 @@ function Row({ row, onUpdate, onClose, onDelete, mode }: {
       
       // Add the combined entry to history
       await addHistory(row.id, 'problem_action_update', '', combinedEntry.newValue, 'updated');
-      console.log('Combined history entry added');
       
       // Reload history immediately
       await loadHistory();
-      console.log('History reloaded, current history:', history);
       
       setNoteInternal(''); // Clear note internal after save
       setUpdateOpen(false);
@@ -489,7 +481,6 @@ function Row({ row, onUpdate, onClose, onDelete, mode }: {
                         {history
                           .filter(item => !(item.action === 'created' && item.field !== 'initial_list'))
                           .map((item, index) => {
-                          console.log('Rendering history item:', item);
                           
                           // Function to get the code that was active at this specific time
                           const getCodeAtTime = (item: EscalationHistory) => {
