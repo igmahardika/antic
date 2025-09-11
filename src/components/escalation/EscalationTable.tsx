@@ -286,7 +286,7 @@ function Row({ row, onUpdate, onClose, onDelete, mode }: {
       case 'closed':
         return <CheckCircle className="h-4 w-4 text-green-500" />;
       default:
-        return <XCircle className="h-4 w-4 text-gray-500" />;
+        return <XCircle className="h-4 w-4 text-muted-foreground" />;
     }
   };
 
@@ -299,7 +299,7 @@ function Row({ row, onUpdate, onClose, onDelete, mode }: {
       case 'closed':
         return <XCircle className="h-4 w-4 text-red-500" />;
       default:
-        return <Edit className="h-4 w-4 text-gray-500" />;
+        return <Edit className="h-4 w-4 text-muted-foreground" />;
     }
   };
 
@@ -321,7 +321,7 @@ function Row({ row, onUpdate, onClose, onDelete, mode }: {
       <tr className="hover:bg-muted/50">
         {mode === 'active' ? (
           <>
-            <td className="p-2 text-center text-sm font-medium text-gray-600">
+            <td className="p-2 text-center text-sm font-medium text-muted-foreground">
               {row.caseNumber || '-'}
             </td>
             <td className="p-2">
@@ -330,7 +330,7 @@ function Row({ row, onUpdate, onClose, onDelete, mode }: {
               </Badge>
             </td>
             <td className="p-2 font-medium">{row.customerName}</td>
-            <td className="p-2 max-w-xs text-gray-700 whitespace-pre-wrap break-words">{row.problem}</td>
+            <td className="p-2 max-w-xs text-foreground whitespace-pre-wrap break-words">{row.problem}</td>
             <td className="p-2 text-xs text-muted-foreground font-mono">{formatDateTimeDDMMYYYYHHMMSS(row.createdAt)}</td>
             <td className="p-2 text-xs text-muted-foreground">
               <div className="flex items-center gap-1">
@@ -359,9 +359,9 @@ function Row({ row, onUpdate, onClose, onDelete, mode }: {
         ) : (
           <>
             <td className="p-2 font-medium">{row.customerName}</td>
-            <td className="p-2 max-w-xs text-gray-700 whitespace-pre-wrap break-words">{row.problem}</td>
-            <td className="p-2 max-w-xs text-gray-700 whitespace-pre-wrap break-words">{row.action}</td>
-            <td className="p-2 max-w-xs text-gray-700 whitespace-pre-wrap break-words">{row.recommendation}</td>
+            <td className="p-2 max-w-xs text-foreground whitespace-pre-wrap break-words">{row.problem}</td>
+            <td className="p-2 max-w-xs text-foreground whitespace-pre-wrap break-words">{row.action}</td>
+            <td className="p-2 max-w-xs text-foreground whitespace-pre-wrap break-words">{row.recommendation}</td>
             <td className="p-2">
               <Badge className={`text-xs font-medium ${CodeBadgeClasses[row.code as EscalationCode] || 'bg-gray-100 text-gray-800 border-gray-200'}`}>
                 {row.code}
@@ -418,52 +418,52 @@ function Row({ row, onUpdate, onClose, onDelete, mode }: {
 
             <div className="space-y-6">
               {/* Data Eskalasi Section */}
-              <div className="bg-white rounded-lg p-6">
-                <h3 className="text-lg font-semibold mb-4 text-gray-800">Data Eskalasi</h3>
+              <div className="bg-card rounded-lg p-6">
+                <h3 className="text-lg font-semibold mb-4 text-card-foreground">Data Eskalasi</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Nomor Case</label>
-                    <div className="p-3 bg-gray-50 rounded-md text-sm font-mono">{row.id}</div>
+                    <label className="block text-sm font-medium text-muted-foreground mb-1">Nomor Case</label>
+                    <div className="p-3 bg-muted rounded-md text-sm font-mono">{row.id}</div>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Customer</label>
-                    <div className="p-3 bg-gray-50 rounded-md text-sm">{row.customerName}</div>
+                    <label className="block text-sm font-medium text-muted-foreground mb-1">Customer</label>
+                    <div className="p-3 bg-muted rounded-md text-sm">{row.customerName}</div>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Code</label>
-                    <div className="p-3 bg-gray-50 rounded-md text-sm">
+                    <label className="block text-sm font-medium text-muted-foreground mb-1">Code</label>
+                    <div className="p-3 bg-muted rounded-md text-sm">
                       <Badge className={`text-xs font-medium ${CodeBadgeClasses[row.code as EscalationCode] || 'bg-gray-100 text-gray-800 border-gray-200'}`}>
                         {row.code}
                       </Badge>
                     </div>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
-                    <div className="flex items-center gap-2 p-3 bg-gray-50 border rounded-md">
+                    <label className="block text-sm font-medium text-muted-foreground mb-1">Status</label>
+                    <div className="flex items-center gap-2 p-3 bg-muted rounded-md">
                       {getStatusIcon(row.status)}
                       <span className="text-sm">{row.status === 'active' ? 'Active' : 'Closed'}</span>
                     </div>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Tanggal, Waktu Open</label>
-                    <div className="p-3 bg-gray-50 rounded-md text-sm font-mono">{formatDateTimeDDMMYYYYHHMMSS(row.createdAt)}</div>
+                    <label className="block text-sm font-medium text-muted-foreground mb-1">Tanggal, Waktu Open</label>
+                    <div className="p-3 bg-muted rounded-md text-sm font-mono">{formatDateTimeDDMMYYYYHHMMSS(row.createdAt)}</div>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Tanggal, Waktu Close</label>
-                    <div className="p-3 bg-gray-50 rounded-md text-sm">
+                    <label className="block text-sm font-medium text-muted-foreground mb-1">Tanggal, Waktu Close</label>
+                    <div className="p-3 bg-muted rounded-md text-sm">
                       {row.status === 'closed' ? <span className="font-mono">{formatDateTimeDDMMYYYYHHMMSS(row.updatedAt)}</span> : 'Status masih open'}
                     </div>
                   </div>
                 </div>
                 <div className="mt-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Deskripsi Problem</label>
-                  <div className="p-3 bg-gray-50 border rounded-md text-sm min-h-[60px]">{row.problem}</div>
+                  <label className="block text-sm font-medium text-muted-foreground mb-1">Deskripsi Problem</label>
+                  <div className="p-3 bg-muted rounded-md text-sm min-h-[60px]">{row.problem}</div>
                 </div>
               </div>
 
               {/* Penyebab / Penanganan Section */}
-              <div className="bg-white border rounded-lg p-6">
-                <h3 className="text-lg font-semibold mb-4 text-gray-800">Penyebab / Penanganan</h3>
+              <div className="bg-card rounded-lg p-6">
+                <h3 className="text-lg font-semibold mb-4 text-card-foreground">Penyebab / Penanganan</h3>
                 {loading ? (
                   <div className="flex items-center justify-center py-8">
                     <div className="text-center">
@@ -474,15 +474,15 @@ function Row({ row, onUpdate, onClose, onDelete, mode }: {
                 ) : history.length > 0 ? (
                   <div className="overflow-x-auto">
                     <table className="w-full text-sm">
-                      <thead className="bg-gray-50">
+                      <thead className="bg-muted">
                         <tr>
-                          <th className="px-4 py-3 text-left font-medium text-gray-700 w-12">#</th>
-                          <th className="px-4 py-3 text-left font-medium text-gray-700 w-32">Code</th>
-                          <th className="px-4 py-3 text-left font-medium text-gray-700 w-64">Penyebab</th>
-                          <th className="px-4 py-3 text-left font-medium text-gray-700 w-64">Penanganan</th>
-                          <th className="px-4 py-3 text-left font-medium text-gray-700 w-48">Note Internal</th>
-                          <th className="px-4 py-3 text-left font-medium text-gray-700 w-32">Waktu</th>
-                          <th className="px-4 py-3 text-left font-medium text-gray-700 w-24">Author</th>
+                          <th className="px-4 py-3 text-left font-medium text-muted-foreground w-12">#</th>
+                          <th className="px-4 py-3 text-left font-medium text-muted-foreground w-32">Code</th>
+                          <th className="px-4 py-3 text-left font-medium text-muted-foreground w-64">Penyebab</th>
+                          <th className="px-4 py-3 text-left font-medium text-muted-foreground w-64">Penanganan</th>
+                          <th className="px-4 py-3 text-left font-medium text-muted-foreground w-48">Note Internal</th>
+                          <th className="px-4 py-3 text-left font-medium text-muted-foreground w-32">Waktu</th>
+                          <th className="px-4 py-3 text-left font-medium text-muted-foreground w-24">Author</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-200">
@@ -746,7 +746,7 @@ function Row({ row, onUpdate, onClose, onDelete, mode }: {
                 {/* Left Column */}
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Penyebab *</label>
+                    <label className="block text-sm font-medium text-muted-foreground mb-1">Penyebab *</label>
                     <Textarea 
                       value={problem} 
                       onChange={(e)=>setProblem(e.target.value)} 
@@ -755,7 +755,7 @@ function Row({ row, onUpdate, onClose, onDelete, mode }: {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Penanganan *</label>
+                    <label className="block text-sm font-medium text-muted-foreground mb-1">Penanganan *</label>
                     <Textarea 
                       value={action} 
                       onChange={(e)=>setAction(e.target.value)} 
@@ -765,7 +765,7 @@ function Row({ row, onUpdate, onClose, onDelete, mode }: {
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Code Eskalasi</label>
+                      <label className="block text-sm font-medium text-muted-foreground mb-1">Code Eskalasi</label>
                       <select 
                         value={code} 
                         onChange={(e) => setCode(e.target.value as EscalationCode)}
@@ -777,7 +777,7 @@ function Row({ row, onUpdate, onClose, onDelete, mode }: {
                       </select>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Tanggal, Waktu Penanganan</label>
+                      <label className="block text-sm font-medium text-muted-foreground mb-1">Tanggal, Waktu Penanganan</label>
                       <div className="flex gap-2">
                         <Input 
                           type="date" 
@@ -802,7 +802,7 @@ function Row({ row, onUpdate, onClose, onDelete, mode }: {
                 {/* Right Column */}
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Note Internal</label>
+                    <label className="block text-sm font-medium text-muted-foreground mb-1">Note Internal</label>
                     <Textarea 
                       value={noteInternal}
                       onChange={(e) => setNoteInternal(e.target.value)}

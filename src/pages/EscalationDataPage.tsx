@@ -137,7 +137,7 @@ export default function EscalationDataPage() {
             </Button>
           </div>
           {lastError && (
-            <div className="text-xs text-red-600 bg-red-50 px-2 py-1 rounded">
+            <div className="text-xs text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950 px-2 py-1 rounded">
               Error: {lastError}
             </div>
           )}

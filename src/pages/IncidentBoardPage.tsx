@@ -257,7 +257,7 @@ export default function IncidentBoardPage() {
               Last updated: {lastUpdated.toLocaleTimeString()}
             </div>
             {lastError && (
-              <div className="text-xs text-red-600 bg-red-50 px-2 py-1 rounded">
+              <div className="text-xs text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950 px-2 py-1 rounded">
                 Error: {lastError}
               </div>
             )}
@@ -350,7 +350,7 @@ export default function IncidentBoardPage() {
                               <Button
                                 size="sm"
                                 variant="ghost"
-                                className="h-6 px-2 text-xs flex-1 hover:bg-blue-50"
+                                className="h-6 px-2 text-xs flex-1 hover:bg-blue-50 dark:hover:bg-blue-950"
                                 onClick={(e) => {
                                   e.preventDefault();
                                   e.stopPropagation();
@@ -364,7 +364,7 @@ export default function IncidentBoardPage() {
                               <Button
                                 size="sm"
                                 variant="ghost"
-                                className="h-6 px-2 text-xs flex-1 hover:bg-green-50"
+                                className="h-6 px-2 text-xs flex-1 hover:bg-green-50 dark:hover:bg-green-950"
                                 onClick={(e) => {
                                   e.preventDefault();
                                   e.stopPropagation();
