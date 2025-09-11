@@ -91,6 +91,7 @@ export const KanbanBoard = ({ id, children, className }: KanbanBoardProps) => {
 export type KanbanCardProps<T extends KanbanItemProps = KanbanItemProps> = T & {
   children?: ReactNode;
   className?: string;
+  onClick?: () => void;
 };
 
 export const KanbanCard = <T extends KanbanItemProps = KanbanItemProps>({
@@ -98,6 +99,7 @@ export const KanbanCard = <T extends KanbanItemProps = KanbanItemProps>({
   name,
   children,
   className,
+  onClick,
 }: KanbanCardProps<T>) => {
   const {
     attributes,
@@ -116,15 +118,31 @@ export const KanbanCard = <T extends KanbanItemProps = KanbanItemProps>({
     transform: CSS.Transform.toString(transform),
   };
 
+  const handleClick = (e: React.MouseEvent) => {
+    // Prevent click if dragging
+    if (isDragging) return;
+    
+    // Handle click event
+    if (onClick) {
+      e.preventDefault();
+      e.stopPropagation();
+      onClick();
+    }
+  };
+
   return (
     <>
-      <div style={style} {...listeners} {...attributes} ref={setNodeRef}>
+      <div style={style} ref={setNodeRef}>
         <Card
           className={cn(
             'cursor-grab gap-4 rounded-md p-3 shadow-sm',
             isDragging && 'pointer-events-none cursor-grabbing opacity-30',
+            onClick && !isDragging && 'cursor-pointer',
             className
           )}
+          onClick={handleClick}
+          {...attributes}
+          {...listeners}
         >
           {children ?? <p className="m-0 font-medium text-sm">{name}</p>}
         </Card>
@@ -135,8 +153,10 @@ export const KanbanCard = <T extends KanbanItemProps = KanbanItemProps>({
             className={cn(
               'cursor-grab gap-4 rounded-md p-3 shadow-sm ring-2 ring-primary',
               isDragging && 'cursor-grabbing',
+              onClick && !isDragging && 'cursor-pointer',
               className
             )}
+            onClick={handleClick}
           >
             {children ?? <p className="m-0 font-medium text-sm">{name}</p>}
           </Card>
