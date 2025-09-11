@@ -151,6 +151,7 @@ function AppLayout() {
                 <Route path="/ticket/kanban-board" element={<KanbanBoard />} />
                 <Route path="/ticket/ticket-analytics" element={<TicketAnalyticsProvider><TicketAnalytics /></TicketAnalyticsProvider>} />
                 <Route path="/ticket/agent-analytics" element={<AgentAnalyticsProvider><AgentAnalytics /></AgentAnalyticsProvider>} />
+                <Route path="/ticket/upload" element={<UploadProcess onUploadComplete={() => {}} />} />
                 <Route path="/masterdata/data-agent" element={<MasterDataAgent />} />
                 <Route path="/masterdata/data-customer" element={<CustomerData />} />
                 {/* Incident Management Routes */}
@@ -162,7 +163,6 @@ function AppLayout() {
                 <Route path="/escalation/active-escalation" element={<ActiveEscalationPage />} />
                 <Route path="/escalation/escalation-data" element={<EscalationDataPage />} />
                 <Route path="/escalation/incident-board" element={<IncidentBoardPage />} />
-                <Route path="/documentation/upload" element={<UploadProcess onUploadComplete={() => {}} />} />
                 <Route path="/documentation/admin-rumus" element={<AdminRumus />} />
                 {/* Path lama tetap untuk fallback/compatibility */}
                 <Route path="/agent-analytics" element={<ErrorBoundary><AgentAnalyticsProvider><AgentAnalytics /></AgentAnalyticsProvider></ErrorBoundary>} />

@@ -67,6 +67,11 @@ export default function AppSidebar() {
           path: '/ticket/agent-analytics',
           icon: <PersonCheckIcon sx={{ fontSize: 16 }} />,
         },
+        {
+          name: 'Upload Data',
+          path: '/ticket/upload',
+          icon: <CloudUploadIcon sx={{ fontSize: 16 }} />,
+        },
       ],
     },
     {
@@ -140,11 +145,6 @@ export default function AppSidebar() {
       path: '/documentation',
       icon: <MenuBookIcon sx={{ fontSize: 16 }} />,
       children: [
-        {
-          name: 'Upload Data',
-          path: '/documentation/upload',
-          icon: <CloudUploadIcon sx={{ fontSize: 16 }} />,
-        },
         {
           name: 'Formulas',
           path: '/documentation/admin-rumus',
