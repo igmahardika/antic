@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -47,16 +48,87 @@ const calculateActiveDuration = (createdAt: string) => {
 export default function EscalationTable({ mode }: { mode: 'active'|'closed' }) {
   const { rows, update, close, delete: deleteEscalation } = useEscalationStore();
   const [q, setQ] = useState('');
-  const data = useMemo(() => rows.filter(r => r.status===mode && (
-    r.customerName.toLowerCase().includes(q.toLowerCase()) ||
-    r.code.toLowerCase().includes(q.toLowerCase()) ||
-    r.problem.toLowerCase().includes(q.toLowerCase())
-  )), [rows, mode, q]);
+  const [selectedMonth, setSelectedMonth] = useState('');
+  const [selectedYear, setSelectedYear] = useState('');
+  
+  const data = useMemo(() => {
+    let filtered = rows.filter(r => r.status === mode);
+    
+    // Text search filter
+    if (q) {
+      filtered = filtered.filter(r => 
+        r.customerName.toLowerCase().includes(q.toLowerCase()) ||
+        r.code.toLowerCase().includes(q.toLowerCase()) ||
+        r.problem.toLowerCase().includes(q.toLowerCase())
+      );
+    }
+    
+    // Month and year filter (only for closed escalations)
+    if (mode === 'closed' && (selectedMonth || selectedYear)) {
+      filtered = filtered.filter(r => {
+        const date = new Date(r.updatedAt || r.createdAt);
+        const month = date.getMonth() + 1; // getMonth() returns 0-11, so add 1
+        const year = date.getFullYear();
+        
+        const monthMatch = !selectedMonth || month.toString() === selectedMonth;
+        const yearMatch = !selectedYear || year.toString() === selectedYear;
+        
+        return monthMatch && yearMatch;
+      });
+    }
+    
+    return filtered;
+  }, [rows, mode, q, selectedMonth, selectedYear]);
 
   return (
     <div className="space-y-3">
-      <div className="flex items-center gap-2">
-        <Input placeholder="Cari (customer/kode/problem)" value={q} onChange={(e)=>setQ(e.target.value)} />
+      <div className="flex items-center gap-2 flex-wrap">
+        <Input 
+          placeholder="Cari (customer/kode/problem)" 
+          value={q} 
+          onChange={(e)=>setQ(e.target.value)} 
+          className="flex-1 min-w-[200px]"
+        />
+        {mode === 'closed' && (
+          <>
+            <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+              <SelectTrigger className="w-[120px]">
+                <SelectValue placeholder="Bulan" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">Semua Bulan</SelectItem>
+                <SelectItem value="1">Januari</SelectItem>
+                <SelectItem value="2">Februari</SelectItem>
+                <SelectItem value="3">Maret</SelectItem>
+                <SelectItem value="4">April</SelectItem>
+                <SelectItem value="5">Mei</SelectItem>
+                <SelectItem value="6">Juni</SelectItem>
+                <SelectItem value="7">Juli</SelectItem>
+                <SelectItem value="8">Agustus</SelectItem>
+                <SelectItem value="9">September</SelectItem>
+                <SelectItem value="10">Oktober</SelectItem>
+                <SelectItem value="11">November</SelectItem>
+                <SelectItem value="12">Desember</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={selectedYear} onValueChange={setSelectedYear}>
+              <SelectTrigger className="w-[100px]">
+                <SelectValue placeholder="Tahun" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">Semua Tahun</SelectItem>
+                {Array.from({ length: 10 }, (_, i) => {
+                  const year = new Date().getFullYear() - i;
+                  return (
+                    <SelectItem key={year} value={year.toString()}>
+                      {year}
+                    </SelectItem>
+                  );
+                })}
+              </SelectContent>
+            </Select>
+          </>
+        )}
       </div>
       <div className="overflow-x-auto rounded-xl border">
         <table className="w-full text-sm">
