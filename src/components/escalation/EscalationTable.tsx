@@ -446,12 +446,12 @@ function Row({ row, onUpdate, onClose, onDelete, mode }: {
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Tanggal, Waktu Open</label>
-                    <div className="p-3 bg-gray-50 border rounded-md text-sm">{formatDateTimeDDMMYYYY(row.createdAt)}</div>
+                    <div className="p-3 bg-gray-50 border rounded-md text-sm font-mono">{formatDateTimeDDMMYYYYHHMMSS(row.createdAt)}</div>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Tanggal, Waktu Close</label>
                     <div className="p-3 bg-gray-50 border rounded-md text-sm">
-                      {row.status === 'closed' ? formatDateTimeDDMMYYYY(row.updatedAt) : 'Status masih open'}
+                      {row.status === 'closed' ? <span className="font-mono">{formatDateTimeDDMMYYYYHHMMSS(row.updatedAt)}</span> : 'Status masih open'}
                     </div>
                   </div>
                 </div>
@@ -563,7 +563,7 @@ function Row({ row, onUpdate, onClose, onDelete, mode }: {
                                       )}
                                     </div>
                                   </td>
-                                  <td className="px-4 py-3">{formatDateTimeDDMMYYYY(item.updatedAt)}</td>
+                                  <td className="px-4 py-3 font-mono">{formatDateTimeDDMMYYYYHHMMSS(item.updatedAt)}</td>
                                   <td className="px-4 py-3 text-sm">{item.updatedBy}</td>
                                 </tr>
                               );
@@ -612,7 +612,7 @@ function Row({ row, onUpdate, onClose, onDelete, mode }: {
                                       )}
                                     </div>
                                   </td>
-                                  <td className="px-4 py-3">{formatDateTimeDDMMYYYY(item.updatedAt)}</td>
+                                  <td className="px-4 py-3 font-mono">{formatDateTimeDDMMYYYYHHMMSS(item.updatedAt)}</td>
                                   <td className="px-4 py-3 text-sm">{item.updatedBy}</td>
                                 </tr>
                               );
@@ -649,7 +649,7 @@ function Row({ row, onUpdate, onClose, onDelete, mode }: {
                                       {combinedData.noteInternal || '-'}
                                     </div>
                                   </td>
-                                  <td className="px-4 py-3">{formatDateTimeDDMMYYYY(item.updatedAt)}</td>
+                                  <td className="px-4 py-3 font-mono">{formatDateTimeDDMMYYYYHHMMSS(item.updatedAt)}</td>
                                   <td className="px-4 py-3 text-sm">{item.updatedBy}</td>
                                 </tr>
                               );
@@ -676,7 +676,7 @@ function Row({ row, onUpdate, onClose, onDelete, mode }: {
                                 </td>
                                 <td className="px-4 py-3">-</td>
                                 <td className="px-4 py-3">-</td>
-                                <td className="px-4 py-3">{formatDateTimeDDMMYYYY(item.updatedAt)}</td>
+                                <td className="px-4 py-3 font-mono">{formatDateTimeDDMMYYYYHHMMSS(item.updatedAt)}</td>
                                 <td className="px-4 py-3 text-sm">{item.updatedBy}</td>
                               </tr>
                             );
@@ -698,7 +698,7 @@ function Row({ row, onUpdate, onClose, onDelete, mode }: {
                                   </div>
                                 </td>
                                 <td className="px-4 py-3">-</td>
-                                <td className="px-4 py-3">{formatDateTimeDDMMYYYY(item.updatedAt)}</td>
+                                <td className="px-4 py-3 font-mono">{formatDateTimeDDMMYYYYHHMMSS(item.updatedAt)}</td>
                                 <td className="px-4 py-3 text-sm">{item.updatedBy}</td>
                               </tr>
                             );
@@ -720,7 +720,7 @@ function Row({ row, onUpdate, onClose, onDelete, mode }: {
                                     {item.newValue}
                                   </div>
                                 </td>
-                                <td className="px-4 py-3">{formatDateTimeDDMMYYYY(item.updatedAt)}</td>
+                                <td className="px-4 py-3 font-mono">{formatDateTimeDDMMYYYYHHMMSS(item.updatedAt)}</td>
                                 <td className="px-4 py-3 text-sm">{item.updatedBy}</td>
                               </tr>
                             );
