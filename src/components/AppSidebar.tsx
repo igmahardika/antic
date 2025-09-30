@@ -102,28 +102,7 @@ export default function AppSidebar() {
         },
       ],
     },
-    {
-      name: 'Escalation',
-      path: '/escalation',
-      icon: <TrendingUpIcon sx={{ fontSize: 16 }} />,
-      children: [
-        {
-          name: 'Escalation Card',
-          path: '/escalation/escalation-card',
-          icon: <DashboardIcon sx={{ fontSize: 16 }} />,
-        },
-        {
-          name: 'Escalation Data',
-          path: '/escalation/escalation-data',
-          icon: <TableChartIcon sx={{ fontSize: 16 }} />,
-        },
-        {
-          name: 'Briefing',
-          path: '/escalation/briefing',
-          icon: <MessageIcon sx={{ fontSize: 16 }} />,
-        },
-      ],
-    },
+    // Escalation menus removed as requested
     {
       name: 'Master Data',
       path: '/masterdata',
