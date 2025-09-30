@@ -15,7 +15,7 @@ import TicketAnalytics from './components/TicketAnalytics';
 import UploadProcess from './components/UploadProcess';
 import SummaryDashboard from './components/SummaryDashboard';
 import { AnalyticsProvider } from './components/AnalyticsContext';
-import { useAgentMetricsPolling } from './hooks/useAgentMetricsPolling';
+// import { useAgentMetricsPolling } from './hooks/useAgentMetricsPolling'; // Temporarily disabled
 import ErrorBoundary from './components/ErrorBoundary';
 import { AgentAnalyticsProvider } from './components/AgentAnalyticsContext';
 import { TicketAnalyticsProvider } from './components/TicketAnalyticsContext';
@@ -26,10 +26,9 @@ import { IncidentData } from './pages/IncidentData';
 import IncidentAnalytics from './pages/IncidentAnalytics';
 import TSAnalytics from './pages/TSAnalytics';
 import SiteAnalytics from './pages/SiteAnalytics';
-import EscalationPage from './pages/EscalationPage';
-import ActiveEscalationPage from './pages/ActiveEscalationPage';
 import EscalationDataPage from './pages/EscalationDataPage';
-import IncidentBoardPage from './pages/IncidentBoardPage';
+import BriefingPage from './pages/BriefingPage';
+import EscalationCardPage from './pages/EscalationCardPage';
 
 // New sidebar imports
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
@@ -45,8 +44,8 @@ function AppLayout() {
   const location = useLocation();
   const user = JSON.parse(localStorage.getItem('user') || '{}');
 
-  const hour = new Date().getHours();
-  const isBusyHour = hour >= 8 && hour <= 17;
+  // const hour = new Date().getHours();
+  // const isBusyHour = hour >= 8 && hour <= 17;
   // useAgentMetricsPolling('/api/agent-metrics', isBusyHour); // Temporarily disabled
 
   // Check if login page
@@ -159,10 +158,10 @@ function AppLayout() {
                 <Route path="/incident/analytics" element={<IncidentAnalytics />} />
                 <Route path="/incident/ts-analytics" element={<TSAnalytics />} />
                 <Route path="/incident/site-analytics" element={<SiteAnalytics />} />
-                <Route path="/escalation" element={<EscalationPage />} />
-                <Route path="/escalation/active-escalation" element={<ActiveEscalationPage />} />
+                <Route path="/escalation" element={<EscalationCardPage />} />
+                <Route path="/escalation/escalation-card" element={<EscalationCardPage />} />
                 <Route path="/escalation/escalation-data" element={<EscalationDataPage />} />
-                <Route path="/escalation/incident-board" element={<IncidentBoardPage />} />
+                <Route path="/escalation/briefing" element={<BriefingPage />} />
                 <Route path="/documentation/admin-rumus" element={<AdminRumus />} />
                 {/* Path lama tetap untuk fallback/compatibility */}
                 <Route path="/agent-analytics" element={<ErrorBoundary><AgentAnalyticsProvider><AgentAnalytics /></AgentAnalyticsProvider></ErrorBoundary>} />

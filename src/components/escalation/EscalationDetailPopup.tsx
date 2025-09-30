@@ -7,6 +7,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { useEscalationStore } from '@/store/escalationStore';
 import type { Escalation, EscalationHistory } from '@/types/escalation';
 import { formatDateTimeDDMMYYYY } from '@/lib/utils';
+import { getOriginalProblemFromHistory } from '@/utils/escalationHelpers';
 import { Clock, User, Edit, CheckCircle, XCircle } from 'lucide-react';
 
 interface EscalationDetailPopupProps {
@@ -118,7 +119,12 @@ export default function EscalationDetailPopup({ escalation, isOpen, onClose }: E
 
                 <div>
                   <label className="text-sm font-medium text-muted-foreground">Problem</label>
-                  <p className="text-sm mt-1 p-3 bg-muted rounded-md">{escalation.problem}</p>
+                  <p className="text-sm mt-1 p-3 bg-muted rounded-md">
+                    {getOriginalProblemFromHistory(history, escalation.problem)}
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    * Menampilkan deskripsi problem asli dari baris pertama penyebab di history
+                  </p>
                 </div>
 
                 <div>

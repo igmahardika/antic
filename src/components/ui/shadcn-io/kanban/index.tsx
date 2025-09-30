@@ -77,7 +77,7 @@ export const KanbanBoard = ({ id, children, className }: KanbanBoardProps) => {
   return (
     <div
       className={cn(
-        'flex size-full min-h-40 flex-col divide-y overflow-hidden rounded-md border bg-secondary text-xs shadow-sm ring-2 transition-all',
+        'flex size-full min-h-40 flex-col divide-y overflow-visible rounded-md border bg-secondary text-xs shadow-sm ring-2 transition-all',
         isOver ? 'ring-primary' : 'ring-transparent',
         className
       )}
@@ -91,7 +91,6 @@ export const KanbanBoard = ({ id, children, className }: KanbanBoardProps) => {
 export type KanbanCardProps<T extends KanbanItemProps = KanbanItemProps> = T & {
   children?: ReactNode;
   className?: string;
-  onClick?: () => void;
 };
 
 export const KanbanCard = <T extends KanbanItemProps = KanbanItemProps>({
@@ -99,7 +98,6 @@ export const KanbanCard = <T extends KanbanItemProps = KanbanItemProps>({
   name,
   children,
   className,
-  onClick,
 }: KanbanCardProps<T>) => {
   const {
     attributes,
@@ -118,32 +116,22 @@ export const KanbanCard = <T extends KanbanItemProps = KanbanItemProps>({
     transform: CSS.Transform.toString(transform),
   };
 
-  const handleClick = (e: React.MouseEvent) => {
-    // Prevent click if dragging
-    if (isDragging) return;
-    
-    // Handle click event
-    if (onClick) {
-      e.preventDefault();
-      e.stopPropagation();
-      onClick();
-    }
-  };
-
   return (
     <>
-      <div style={style} ref={setNodeRef}>
+      <div style={style} {...attributes} ref={setNodeRef} className="w-full">
         <Card
           className={cn(
-            'cursor-grab gap-4 rounded-md p-3 shadow-sm',
+            'gap-4 rounded-md p-3 shadow-sm relative overflow-visible min-w-0 w-full box-border',
             isDragging && 'pointer-events-none cursor-grabbing opacity-30',
-            onClick && !isDragging && 'cursor-pointer',
             className
           )}
-          onClick={handleClick}
-          {...attributes}
-          {...listeners}
         >
+          {/* Drag handle area - only top portion */}
+          <div 
+            {...listeners}
+            className="absolute top-0 left-0 right-0 h-6 cursor-grab hover:bg-gray-100 rounded-t-md opacity-0 hover:opacity-100 transition-opacity"
+            title="Drag to move"
+          />
           {children ?? <p className="m-0 font-medium text-sm">{name}</p>}
         </Card>
       </div>
@@ -151,13 +139,17 @@ export const KanbanCard = <T extends KanbanItemProps = KanbanItemProps>({
         <t.In>
           <Card
             className={cn(
-              'cursor-grab gap-4 rounded-md p-3 shadow-sm ring-2 ring-primary',
+              'gap-4 rounded-md p-3 shadow-sm ring-2 ring-primary relative overflow-visible min-w-0 w-full box-border',
               isDragging && 'cursor-grabbing',
-              onClick && !isDragging && 'cursor-pointer',
               className
             )}
-            onClick={handleClick}
           >
+            {/* Drag handle area - only top portion */}
+            <div 
+              {...listeners}
+              className="absolute top-0 left-0 right-0 h-6 cursor-grab hover:bg-gray-100 rounded-t-md opacity-0 hover:opacity-100 transition-opacity"
+              title="Drag to move"
+            />
             {children ?? <p className="m-0 font-medium text-sm">{name}</p>}
           </Card>
         </t.In>
@@ -182,7 +174,7 @@ export const KanbanCards = <T extends KanbanItemProps = KanbanItemProps>({
   const items = filteredData.map((item) => item.id);
 
   return (
-    <ScrollArea className="overflow-hidden">
+    <ScrollArea className="overflow-visible">
       <SortableContext items={items}>
         <div
           className={cn('flex flex-grow flex-col gap-2 p-2', className)}

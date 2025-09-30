@@ -34,6 +34,10 @@ export default function EscalationForm({ onSuccess, escalation }: EscalationForm
   const [action, setAction] = useState('');
   const [recommendation, setRecommendation] = useState('');
   const [code, setCode] = useState<EscalationCode>(EscalationCode.OS);
+  const [assignee, setAssignee] = useState('');
+  const [labels, setLabels] = useState<string[]>([]);
+  const [priority, setPriority] = useState<'high'|'medium'|'low'|''>('');
+  const [dueDate, setDueDate] = useState<string>('');
 
   useEffect(() => { 
     fetchCustomers().then(setCustomers);
@@ -48,6 +52,10 @@ export default function EscalationForm({ onSuccess, escalation }: EscalationForm
       setAction(escalation.action || '');
       setRecommendation(escalation.recommendation || '');
       setCode(escalation.code || EscalationCode.OS);
+      setAssignee(escalation.assignee || '');
+      setLabels(escalation.tags || []);
+      setDueDate(escalation.dueDate || '');
+      setPriority((escalation.priority as any) || '');
     }
   }, [escalation]);
 
@@ -66,11 +74,14 @@ export default function EscalationForm({ onSuccess, escalation }: EscalationForm
         problem, 
         action, 
         recommendation, 
-        code 
+        code,
+        assignee,
+        tags: labels,
+        dueDate
       });
     } else {
       // Create the escalation entry
-      const escalationId = await add({ caseNumber, customerId, customerName: selectedName, problem, action, recommendation, code });
+      const escalationId = await add({ caseNumber, customerId, customerName: selectedName, problem, action, recommendation, code, assignee, tags: labels, dueDate, priority: priority || undefined });
     
     // Create history entry as a list format for the first row
     const { addHistory } = useEscalationStore.getState();
@@ -102,6 +113,7 @@ export default function EscalationForm({ onSuccess, escalation }: EscalationForm
     if (!isEditMode) {
       setCaseNumber(''); setProblem(''); setAction(''); setRecommendation('');
       setCustomerId(''); // Reset customer selection
+      setAssignee(''); setLabels([]); setDueDate(''); setPriority('');
     }
     onSuccess?.(); // Call success callback
   };
@@ -138,6 +150,38 @@ export default function EscalationForm({ onSuccess, escalation }: EscalationForm
             ))}
           </select>
         </div>
+        <div>
+          <Label>Assignee</Label>
+          <Input 
+            value={assignee} 
+            onChange={(e) => setAssignee(e.target.value)} 
+            placeholder="Nama penanggung jawab"
+          />
+        </div>
+        <div>
+          <Label>Due Date</Label>
+          <Input 
+            type="date"
+            value={dueDate ? new Date(dueDate).toISOString().slice(0,10) : ''}
+            onChange={(e) => {
+              const d = new Date(e.target.value);
+              setDueDate(isNaN(d.getTime()) ? '' : d.toISOString());
+            }} 
+          />
+        </div>
+        <div>
+          <Label>Priority</Label>
+          <select 
+            value={priority}
+            onChange={(e) => setPriority(e.target.value as any)}
+            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+          >
+            <option value="">Default (auto)</option>
+            <option value="high">High</option>
+            <option value="medium">Medium</option>
+            <option value="low">Low</option>
+          </select>
+        </div>
       </div>
 
       <div>
@@ -151,6 +195,26 @@ export default function EscalationForm({ onSuccess, escalation }: EscalationForm
       <div>
         <Label>Rekomendasi</Label>
         <Textarea value={recommendation} onChange={(e)=>setRecommendation(e.target.value)} placeholder="Rekomendasi penanganan"/>
+      </div>
+      <div>
+        <Label>Labels (Code)</Label>
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+          {CODES.map(cd => {
+            const checked = labels.includes(cd);
+            return (
+              <label key={cd} className="flex items-center gap-2 text-sm p-2 border rounded">
+                <input 
+                  type="checkbox"
+                  checked={checked}
+                  onChange={(e) => {
+                    setLabels(prev => e.target.checked ? [...prev, cd] : prev.filter(x => x !== cd));
+                  }}
+                />
+                <span>{cd}</span>
+              </label>
+            );
+          })}
+        </div>
       </div>
 
       <div className="pt-2">

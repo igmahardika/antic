@@ -32,6 +32,7 @@ import StorageIcon from '@mui/icons-material/Storage';
 import MenuBookIcon from '@mui/icons-material/MenuBook';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import DashboardIcon from '@mui/icons-material/Dashboard';
+import MessageIcon from '@mui/icons-material/Message';
 // LogoutIcon removed - not used
 
 export default function AppSidebar() {
@@ -107,9 +108,9 @@ export default function AppSidebar() {
       icon: <TrendingUpIcon sx={{ fontSize: 16 }} />,
       children: [
         {
-          name: 'Active Escalation',
-          path: '/escalation/active-escalation',
-          icon: <WarningIcon sx={{ fontSize: 16 }} />,
+          name: 'Escalation Card',
+          path: '/escalation/escalation-card',
+          icon: <DashboardIcon sx={{ fontSize: 16 }} />,
         },
         {
           name: 'Escalation Data',
@@ -117,9 +118,9 @@ export default function AppSidebar() {
           icon: <TableChartIcon sx={{ fontSize: 16 }} />,
         },
         {
-          name: 'Incident Board',
-          path: '/escalation/incident-board',
-          icon: <DashboardIcon sx={{ fontSize: 16 }} />,
+          name: 'Briefing',
+          path: '/escalation/briefing',
+          icon: <MessageIcon sx={{ fontSize: 16 }} />,
         },
       ],
     },

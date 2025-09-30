@@ -27,14 +27,12 @@ export function SearchableSelect({
 
   // Filter options based on search term
   useEffect(() => {
-    console.log('SearchableSelect: options changed:', options.length, 'options');
     if (searchTerm.trim() === '') {
       setFilteredOptions(options);
     } else {
       const filtered = options.filter(option =>
         option.name.toLowerCase().includes(searchTerm.toLowerCase())
       );
-      console.log('SearchableSelect: filtered options:', filtered.length, 'for term:', searchTerm);
       setFilteredOptions(filtered);
     }
   }, [searchTerm, options]);

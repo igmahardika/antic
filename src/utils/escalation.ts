@@ -23,6 +23,14 @@ export type Escalation = {
   action: string;
   recommendation: string;
   code: EscalationCode;
+  // Optional fields used by Escalation Card UI (parity with card features)
+  assignee?: string;
+  tags?: string[];
+  dueDate?: string; // ISO
+  priority?: Priority; // Optional manual priority (High/Medium/Low)
+  category?: 'technical' | 'billing' | 'support' | 'security';
+  escalationLevel?: number; // 1..3
+  kanbanStatus?: 'new' | 'assigned' | 'in-progress' | 'resolved' | 'closed';
   status: EscalationStatus;
   createdAt: string; // ISO
   updatedAt: string; // ISO
