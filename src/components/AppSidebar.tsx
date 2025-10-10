@@ -34,9 +34,7 @@ import ScienceIcon from "@mui/icons-material/Science";
 import ConfirmationNumberIcon from "@mui/icons-material/ConfirmationNumber";
 import StorageIcon from "@mui/icons-material/Storage";
 import MenuBookIcon from "@mui/icons-material/MenuBook";
-import TrendingUpIcon from "@mui/icons-material/TrendingUp";
-import DashboardIcon from "@mui/icons-material/Dashboard";
-import MessageIcon from "@mui/icons-material/Message";
+import BusinessIcon from "@mui/icons-material/Business";
 // LogoutIcon removed - not used
 
 export default function AppSidebar() {
@@ -121,6 +119,11 @@ export default function AppSidebar() {
 					name: "Customer Data",
 					path: "/masterdata/data-customer",
 					icon: <GroupIcon sx={{ fontSize: 16 }} />,
+				},
+				{
+					name: "Vendor Data",
+					path: "/vendor-data",
+					icon: <BusinessIcon sx={{ fontSize: 16 }} />,
 				},
 			],
 		},

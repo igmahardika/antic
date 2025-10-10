@@ -61,12 +61,25 @@ export interface ICustomer {
 	kategori: string;
 }
 
+export interface IVendor {
+	id?: number;
+	name: string;
+	description?: string;
+	contactPerson?: string;
+	email?: string;
+	phone?: string;
+	isActive: boolean;
+	createdAt?: Date;
+	updatedAt?: Date;
+}
+
 export class TicketDB extends Dexie {
 	tickets!: Table<ITicket>;
 	users!: Table<IUser, number>;
 	menuPermissions!: Table<IMenuPermission, number>;
 	customers!: Table<ICustomer, string>;
 	incidents!: Table<Incident, string>; // pk = id
+	vendors!: Table<IVendor, number>;
 
 	constructor() {
 		super("InsightTicketDatabase");
@@ -99,6 +112,18 @@ export class TicketDB extends Dexie {
         startTime, status, priority, site,
         klasifikasiGangguan, level, ncal, noCase
       `,
+		});
+		this.version(6).stores({
+			tickets: "id, openTime, name, uploadTimestamp, cabang",
+			users: "++id, username, role",
+			menuPermissions: "++id, role",
+			customers: "id, nama, jenisKlien, layanan, kategori",
+			incidents: `
+        id,
+        startTime, status, priority, site,
+        klasifikasiGangguan, level, ncal, noCase
+      `,
+			vendors: "++id, name, isActive, createdAt, updatedAt",
 		});
 	}
 }

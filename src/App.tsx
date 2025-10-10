@@ -19,6 +19,7 @@ import AdminRumusTemp from "./pages/AdminRumus-temp";
 import MasterDataAgent from "./components/MasterDataAgent";
 import CustomerData from "./pages/CustomerData";
 import { IncidentData } from "./pages/IncidentData";
+import VendorData from "./pages/VendorData";
 
 // Lazy load heavy components
 const AgentAnalytics = lazyPage(
@@ -252,6 +253,7 @@ function AppLayout() {
 								<Route path="/admin-rumus-temp" element={<AdminRumusTemp />} />
 								<Route path="/master-agent" element={<MasterDataAgent />} />
 								<Route path="/customer" element={<CustomerData />} />
+								<Route path="/vendor-data" element={<VendorData />} />
 								<Route path="*" element={<NotFound />} />
 							</Routes>
 						</div>

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "@/lib/db";
+import { initializeDefaultVendors } from "@/utils/initVendors";
 // Menggunakan getWanedaDuration yang didefinisikan lokal untuk perhitungan yang lebih akurat
 import { formatDurationDHM } from "@/lib/utils";
 import {
@@ -159,6 +160,10 @@ const TSAnalytics: React.FC = () => {
 		"3m" | "6m" | "1y" | "all"
 	>("6m");
 	const [selectedVendor, setSelectedVendor] = useState<string>("all");
+	const [selectedVendorForAnalytics, setSelectedVendorForAnalytics] = useState<string>("waneda");
+	const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
+	const [newVendorName, setNewVendorName] = useState<string>("");
+	const [showAddVendor, setShowAddVendor] = useState<boolean>(false);
 
 	// Get all incidents with robust database connection
 	const allIncidents = useLiveQuery(async () => {
@@ -195,6 +200,100 @@ const TSAnalytics: React.FC = () => {
 		}
 	}, []); // Empty dependency array to ensure stable reference
 
+	// Get registered vendors from database
+	const registeredVendors = useLiveQuery(async () => {
+		try {
+			console.log("🔍 TSAnalytics: Starting vendor loading...");
+			
+			// First, check if vendors table exists and has data
+			const allVendors = await db.vendors.toArray();
+			console.log("🔍 TSAnalytics: All vendors in database:", allVendors);
+			logger.info("🔍 TSAnalytics: All vendors in database:", allVendors);
+			
+			// If no vendors exist, initialize default ones
+			if (allVendors.length === 0) {
+				console.log("🔧 TSAnalytics: No vendors found, initializing default vendors...");
+				logger.info("🔧 TSAnalytics: No vendors found, initializing default vendors...");
+				await initializeDefaultVendors();
+			}
+			
+			const vendors = await db.vendors.where('isActive').equals(1).toArray();
+			console.log("✅ TSAnalytics: Loaded", vendors.length, "active vendors from database");
+			console.log("📋 TSAnalytics: Vendor details:", vendors);
+			logger.info("✅ TSAnalytics: Loaded", vendors.length, "active vendors from database");
+			logger.info("📋 TSAnalytics: Vendor details:", vendors);
+			
+			return vendors;
+		} catch (error) {
+			console.error("❌ TSAnalytics: Failed to load vendors from database:", error);
+			logger.error("❌ TSAnalytics: Failed to load vendors from database:", error);
+			return [];
+		}
+	}, []);
+
+	// Helper function to categorize TS based on registered vendors
+	const categorizeTS = (
+		ts: string | null | undefined,
+	): "vendor" | "internal" => {
+		if (!ts) return "internal";
+		
+		// If no registered vendors yet, use fallback logic
+		if (!registeredVendors || registeredVendors.length === 0) {
+			const tsLower = ts.toLowerCase();
+			
+			// Known vendor patterns (fallback)
+			const vendorPatterns = [
+				"waneda",
+				"lintas", 
+				"fiber",
+				"vendor",
+				"external",
+				"outsource",
+				"contractor",
+				"third party",
+				"3rd party"
+			];
+			
+			// Check if TS contains any vendor pattern
+			const isVendor = vendorPatterns.some(pattern => tsLower.includes(pattern));
+			
+			// Additional check: if TS is not a common internal team name
+			const internalPatterns = [
+				"internal",
+				"team",
+				"staff",
+				"employee",
+				"nexa",
+				"company"
+			];
+			
+			const isInternal = internalPatterns.some(pattern => tsLower.includes(pattern));
+			
+			// If it's explicitly internal, return internal
+			if (isInternal) return "internal";
+			
+			// If it matches vendor patterns, return vendor
+			if (isVendor) return "vendor";
+			
+			// Default: treat as internal for safety
+			return "internal";
+		}
+		
+		// Check if TS matches any registered vendor name
+		const tsLower = ts.toLowerCase();
+		const isRegisteredVendor = registeredVendors.some(vendor => 
+			vendor.name.toLowerCase() === tsLower ||
+			tsLower.includes(vendor.name.toLowerCase()) ||
+			vendor.name.toLowerCase().includes(tsLower)
+		);
+		
+		// If it matches a registered vendor, return vendor
+		if (isRegisteredVendor) return "vendor";
+		
+		// Otherwise, treat as internal
+		return "internal";
+	};
+
 	// Debug: Log when allIncidents changes
 	useEffect(() => {
 		logger.info("🔍 TSAnalytics Debug:");
@@ -210,28 +309,118 @@ const TSAnalytics: React.FC = () => {
 			logger.info("Sites found:", [
 				...new Set(allIncidents.map((i) => i.site)),
 			]);
+			
+			// Debug vendor detection
+			const allTS = [...new Set(allIncidents.map((i) => i.ts).filter(Boolean))];
+			logger.info("All unique TS values:", allTS);
+			
+			const vendorTS = allTS.filter(ts => categorizeTS(ts) === "vendor");
+			logger.info("Detected vendor TS:", vendorTS);
+			
+			const internalTS = allTS.filter(ts => categorizeTS(ts) === "internal");
+			logger.info("Detected internal TS:", internalTS);
+			
+			if (registeredVendors && registeredVendors.length > 0) {
+				logger.info("Using registered vendors for categorization");
+			} else {
+				logger.info("Using fallback vendor detection (no registered vendors)");
+			}
 		} else {
 			logger.info("⚠️ No incidents found in database");
 			logger.info(
 				"💡 Please upload incident data first via Incident Data page",
 			);
 		}
+	}, [allIncidents, registeredVendors]);
+
+	// Helper function to get available vendors
+	const getAvailableVendors = useMemo(() => {
+		if (!registeredVendors) return [];
+		
+		// Return only registered active vendors
+		return registeredVendors.map(vendor => vendor.name).sort();
+	}, [registeredVendors]);
+
+	// Debug: Log available vendors
+	useEffect(() => {
+		console.log("🔍 TSAnalytics Debug - Vendor Status:");
+		console.log("📊 registeredVendors:", registeredVendors);
+		console.log("📊 registeredVendors length:", registeredVendors?.length || 0);
+		console.log("📊 getAvailableVendors:", getAvailableVendors);
+		console.log("📊 getAvailableVendors length:", getAvailableVendors.length);
+		
+		logger.info("🔍 TSAnalytics Debug - Vendor Status:");
+		logger.info("📊 registeredVendors:", registeredVendors);
+		logger.info("📊 registeredVendors length:", registeredVendors?.length || 0);
+		logger.info("📊 getAvailableVendors:", getAvailableVendors);
+		logger.info("📊 getAvailableVendors length:", getAvailableVendors.length);
+		
+		if (getAvailableVendors.length > 0) {
+			console.log("✅ Available vendors for selection:", getAvailableVendors);
+			logger.info("✅ Available vendors for selection:", getAvailableVendors);
+		} else {
+			console.warn("⚠️ No vendors available for selection");
+			logger.warn("⚠️ No vendors available for selection");
+		}
+		
+		if (registeredVendors && registeredVendors.length > 0) {
+			console.log("✅ Registered vendors from database:", registeredVendors.map(v => v.name));
+			logger.info("✅ Registered vendors from database:", registeredVendors.map(v => v.name));
+		} else {
+			console.warn("⚠️ No registered vendors found in database");
+			logger.warn("⚠️ No registered vendors found in database");
+		}
+	}, [getAvailableVendors, registeredVendors]);
+
+	// Helper function to get available years
+	const getAvailableYears = useMemo(() => {
+		if (!allIncidents) return [];
+		const years = new Set<number>();
+		allIncidents.forEach((incident) => {
+			if (incident.startTime) {
+				const year = new Date(incident.startTime).getFullYear();
+				years.add(year);
+			}
+		});
+		return Array.from(years).sort((a, b) => b - a); // Most recent first
 	}, [allIncidents]);
 
-	// Helper function to categorize TS
-	const categorizeTS = (
-		ts: string | null | undefined,
-	): "vendor" | "internal" => {
-		if (!ts) return "internal";
-		const tsLower = ts.toLowerCase();
-		if (
-			tsLower.includes("waneda") ||
-			tsLower.includes("lintas") ||
-			tsLower.includes("fiber")
-		) {
-			return "vendor";
+	// Helper function to check if vendor matches selected vendor
+	const isVendorMatch = (incident: any, vendorName: string): boolean => {
+		if (!incident.ts) return false;
+		const tsLower = incident.ts.toLowerCase();
+		const vendorLower = vendorName.toLowerCase();
+		
+		// Handle special cases
+		if (vendorLower === "waneda") {
+			return tsLower.includes("waneda");
 		}
-		return "internal";
+		if (vendorLower === "lintas") {
+			return tsLower.includes("lintas") || tsLower.includes("fiber");
+		}
+		
+		// General matching
+		return tsLower.includes(vendorLower);
+	};
+
+	// Function to add new vendor
+	const addNewVendor = () => {
+		if (newVendorName.trim() && !getAvailableVendors.includes(newVendorName.trim())) {
+			// Add to available vendors (this will trigger re-render)
+			setSelectedVendorForAnalytics(newVendorName.trim().toLowerCase());
+			setNewVendorName("");
+			setShowAddVendor(false);
+		}
+	};
+
+	// Function to handle vendor selection change
+	const handleVendorChange = (vendor: string) => {
+		if (vendor === "add_new") {
+			setShowAddVendor(true);
+		} else {
+			setSelectedVendorForAnalytics(vendor);
+			setShowAddVendor(false);
+		}
 	};
 
 	// Helper function to normalize NCAL values
@@ -575,7 +764,7 @@ const TSAnalytics: React.FC = () => {
 		return powerAfter - powerBefore; // Positive means increase in attenuation
 	};
 
-	// Filter incidents based on selected period
+	// Filter incidents based on selected period and year
 	const filteredIncidents = useMemo(() => {
 		if (!allIncidents) return [];
 		const now = new Date();
@@ -591,14 +780,20 @@ const TSAnalytics: React.FC = () => {
 				cutoffDate.setFullYear(now.getFullYear() - 1);
 				break;
 			case "all":
-				return allIncidents;
+				// For "all" period, still filter by selected year
+				return allIncidents.filter((incident) => {
+					if (!incident.startTime) return false;
+					const incidentYear = new Date(incident.startTime).getFullYear();
+					return incidentYear === selectedYear;
+				});
 		}
 		return allIncidents.filter((incident) => {
 			if (!incident.startTime) return false;
 			const incidentDate = new Date(incident.startTime);
-			return incidentDate >= cutoffDate;
+			const incidentYear = incidentDate.getFullYear();
+			return incidentDate >= cutoffDate && incidentYear === selectedYear;
 		});
-	}, [allIncidents, selectedPeriod]);
+	}, [allIncidents, selectedPeriod, selectedYear]);
 
 	// Calculate comprehensive statistics
 	const analyticsData = useMemo(() => {
@@ -850,17 +1045,17 @@ const TSAnalytics: React.FC = () => {
 		};
 	}, [filteredIncidents]);
 
-	// Compute Waneda-specific monthly recap and performance details
-	const wanedaStats = useMemo(() => {
-		// filter vendor incidents for Waneda only
-		const wanedaIncidents = filteredIncidents.filter((i) => {
+	// Compute vendor-specific monthly recap and performance details
+	const vendorStats = useMemo(() => {
+		// filter vendor incidents for selected vendor
+		const vendorIncidents = filteredIncidents.filter((i) => {
 			return (
 				categorizeTS(i.ts) === "vendor" &&
 				i.ts &&
-				i.ts.toLowerCase().includes("waneda")
+				isVendorMatch(i, selectedVendorForAnalytics)
 			);
 		});
-		if (wanedaIncidents.length === 0) {
+		if (vendorIncidents.length === 0) {
 			return {
 				items: [] as any[],
 				total: {
@@ -881,7 +1076,7 @@ const TSAnalytics: React.FC = () => {
 		}
 		// Group by month
 		const monthMap: Record<string, any> = {};
-		wanedaIncidents.forEach((incident) => {
+		vendorIncidents.forEach((incident) => {
 			if (!incident.startTime) return;
 			const month = new Date(incident.startTime)
 				.toLocaleString("en-US", { month: "short" })
@@ -900,7 +1095,7 @@ const TSAnalytics: React.FC = () => {
 				};
 			}
 			monthMap[month].total++;
-			const duration = getWanedaDuration(incident);
+			const duration = getVendorDuration(incident);
 			const extraTime = Math.max(duration - VENDOR_SLA_MINUTES, 0);
 			monthMap[month].totalDuration += duration;
 			monthMap[month].extraDuration += extraTime;
@@ -953,7 +1148,7 @@ const TSAnalytics: React.FC = () => {
 				let actualSLA = 0;
 				if (data.incidents.length > 0) {
 					const scores = data.incidents.map((incident: any) => {
-						const d = getWanedaDuration(incident);
+						const d = getVendorDuration(incident);
 						if (!d || d <= 0 || isNaN(d)) return 0;
 						return Math.min(1, VENDOR_SLA_MINUTES / d);
 					});
@@ -1029,7 +1224,7 @@ const TSAnalytics: React.FC = () => {
 			const allScores: number[] = [];
 			items.forEach((item: any) => {
 				item.incidents.forEach((incident: any) => {
-					const d = getWanedaDuration(incident);
+					const d = getVendorDuration(incident);
 					if (!d || d <= 0 || isNaN(d)) {
 						allScores.push(0);
 					} else {
@@ -1071,17 +1266,17 @@ const TSAnalytics: React.FC = () => {
 			},
 			donutData,
 		};
-	}, [filteredIncidents]);
+	}, [filteredIncidents, selectedVendorForAnalytics]);
 
-	// Sort Waneda monthly items chronologically from January to December.
+	// Sort vendor monthly items chronologically from January to December.
 	// Without sorting, months derived from object keys may appear in arbitrary order.
-	const wanedaItemsSorted = useMemo(() => {
-		return [...wanedaStats.items].sort((a: any, b: any) => {
+	const vendorItemsSorted = useMemo(() => {
+		return [...vendorStats.items].sort((a: any, b: any) => {
 			return MONTH_ORDER.indexOf(a.month) - MONTH_ORDER.indexOf(b.month);
 		});
-	}, [wanedaStats.items]);
+	}, [vendorStats.items]);
 
-	// Build fiscal months list (Jul to Jun) and prepare monthly view data for Waneda
+	// Build fiscal months list (Jul to Jun) and prepare monthly view data for selected vendor
 	const fiscalMonths = [
 		"JUL",
 		"AUG",
@@ -1096,8 +1291,8 @@ const TSAnalytics: React.FC = () => {
 		"MAY",
 		"JUN",
 	];
-	const wanedaMonthlyViewData = fiscalMonths.map((month) => {
-		const item = wanedaStats.items.find((i: any) => i.month === month);
+	const vendorMonthlyViewData = fiscalMonths.map((month) => {
+		const item = vendorStats.items.find((i: any) => i.month === month);
 		if (item) {
 			// compute average power difference (powerAfter - powerBefore) per month for attenuation
 			const powerDiffs: number[] = [];
@@ -1171,12 +1366,12 @@ const TSAnalytics: React.FC = () => {
 	});
 
 	// Helper function for simple averages
-	const monthsWithData = wanedaMonthlyViewData.filter((m) => m.totalCase > 0);
+	const monthsWithData = vendorMonthlyViewData.filter((m) => m.totalCase > 0);
 	const avg = (arr: number[]) =>
 		arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : 0;
 
 	// Compute totals across fiscal year using definisi B
-	const totalWanedaDefB = wanedaMonthlyViewData.reduce(
+	const totalVendorDefB = vendorMonthlyViewData.reduce(
 		(acc: any, row: any) => {
 			acc.totalCase += row.totalCase;
 			acc.nonTarget += row.nonTarget;
@@ -1196,16 +1391,16 @@ const TSAnalytics: React.FC = () => {
 		},
 	);
 
-	// Auto-generated insights based on Waneda and Internal TS performance
+	// Auto-generated insights based on selected vendor and Internal TS performance
 	const insights = useMemo(() => {
 		const items: { icon: JSX.Element; title: string; description: string }[] =
 			[];
-		// Insights for Waneda vendor: determine best and worst SLA months and longest average extra time
-		if (wanedaStats.items && wanedaStats.items.length > 0) {
-			let bestSlaItem = wanedaStats.items[0];
-			let worstSlaItem = wanedaStats.items[0];
-			let longestExtraItem = wanedaStats.items[0];
-			wanedaStats.items.forEach((item) => {
+		// Insights for selected vendor: determine best and worst SLA months and longest average extra time
+		if (vendorStats.items && vendorStats.items.length > 0) {
+			let bestSlaItem = vendorStats.items[0];
+			let worstSlaItem = vendorStats.items[0];
+			let longestExtraItem = vendorStats.items[0];
+			vendorStats.items.forEach((item) => {
 				if (item.actualSLA > bestSlaItem.actualSLA) bestSlaItem = item;
 				if (item.actualSLA < worstSlaItem.actualSLA) worstSlaItem = item;
 				if (item.avgExtra > longestExtraItem.avgExtra) longestExtraItem = item;
@@ -1269,7 +1464,7 @@ const TSAnalytics: React.FC = () => {
 			}
 		}
 		return items;
-	}, [wanedaStats, analyticsData]);
+	}, [vendorStats, analyticsData]);
 
 	useEffect(() => {
 		setIsLoading(false);
@@ -1332,7 +1527,96 @@ const TSAnalytics: React.FC = () => {
 					description="Comprehensive analysis of technical support performance and vendor management"
 				/>
 				{/* Header */}
-				<div className="flex flex-col md:flex-row md:items-center md:justify-end gap-4">
+				<div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+					{/* Vendor and Year Selection */}
+					<div className="flex flex-col sm:flex-row gap-4">
+						{/* Vendor Selection */}
+						<div className="flex flex-col gap-2">
+							<label className="text-sm font-medium text-muted-foreground">
+								Select Vendor
+							</label>
+							<div className="flex gap-2">
+								<select
+									value={selectedVendorForAnalytics}
+									onChange={(e) => handleVendorChange(e.target.value)}
+									className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-zinc-900 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent flex-1"
+								>
+									{getAvailableVendors.map((vendor) => (
+										<option key={vendor} value={vendor.toLowerCase()}>
+											{vendor}
+										</option>
+									))}
+									<option value="add_new">+ Add New Vendor</option>
+								</select>
+								{showAddVendor && (
+									<div className="flex gap-2">
+										<input
+											type="text"
+											value={newVendorName}
+											onChange={(e) => setNewVendorName(e.target.value)}
+											placeholder="New vendor name"
+											className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-zinc-900 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+											onKeyDown={(e) => e.key === 'Enter' && addNewVendor()}
+										/>
+										<Button
+											onClick={addNewVendor}
+											size="sm"
+											className="px-3 py-2"
+										>
+											Add
+										</Button>
+										<Button
+											onClick={() => setShowAddVendor(false)}
+											variant="outline"
+											size="sm"
+											className="px-3 py-2"
+										>
+											Cancel
+										</Button>
+									</div>
+								)}
+							</div>
+						</div>
+						
+						{/* Year Selection */}
+						<div className="flex flex-col gap-2">
+							<label className="text-sm font-medium text-muted-foreground">
+								Select Year
+							</label>
+							<select
+								value={selectedYear}
+								onChange={(e) => setSelectedYear(parseInt(e.target.value))}
+								className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-zinc-900 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+							>
+								{getAvailableYears.map((year) => (
+									<option key={year} value={year}>
+										{year}
+									</option>
+								))}
+							</select>
+						</div>
+						
+						{/* Debug Info */}
+						{process.env.NODE_ENV === 'development' && (
+							<div className="flex flex-col gap-2">
+								<label className="text-sm font-medium text-muted-foreground">
+									Debug Info
+								</label>
+								<div className="text-xs text-muted-foreground bg-gray-50 dark:bg-zinc-800 p-2 rounded">
+									<div>Registered Vendors: {registeredVendors?.length || 0}</div>
+									<div>Available Vendors: {getAvailableVendors.length}</div>
+									<div>Selected: {selectedVendorForAnalytics}</div>
+									<div>Year: {selectedYear}</div>
+									{registeredVendors && registeredVendors.length > 0 && (
+										<div>
+											<div>Vendor Names: {registeredVendors.map(v => v.name).join(', ')}</div>
+										</div>
+									)}
+								</div>
+							</div>
+						)}
+					</div>
+
 					{/* Period Filter */}
 					<div className="flex items-center gap-2 scale-75 transform origin-right">
 						<FilterListIcon className="w-4 h-4 text-muted-foreground" />
@@ -1875,20 +2159,20 @@ const TSAnalytics: React.FC = () => {
 						</CardFooter>
 					</Card>
 				</div>
-				{/* Waneda Monthly Recap and Performance */}
+				{/* Vendor Monthly Recap and Performance */}
 				<Card>
 					<CardHeader className="flex flex-col gap-1 pb-1">
 						<CardTitle className="flex items-center gap-2">
 							<BusinessIcon className="w-6 h-6 text-blue-700" />
 							<CardHeaderTitle className="text-base md:text-lg">
-								Waneda Monthly Recap
+								{selectedVendorForAnalytics.charAt(0).toUpperCase() + selectedVendorForAnalytics.slice(1)} Monthly Recap
 							</CardHeaderTitle>
 							<Badge className="bg-blue-700 text-white text-xs px-2 py-0.5 rounded-md w-fit font-semibold">
 								Vendor Focus
 							</Badge>
 						</CardTitle>
 						<CardHeaderDescription className="text-xs">
-							Detailed monthly metrics and payment analysis for Waneda
+							Detailed monthly metrics and payment analysis for {selectedVendorForAnalytics} ({selectedYear})
 						</CardHeaderDescription>
 					</CardHeader>
 					<CardContent className="p-6">
@@ -1907,7 +2191,7 @@ const TSAnalytics: React.FC = () => {
 								>
 									<BarChart
 										accessibilityLayer
-										data={wanedaItemsSorted.map((item) => ({
+										data={vendorItemsSorted.map((item) => ({
 											month: item.month,
 											target: item.target,
 											nonTarget: item.nonTarget,
@@ -1953,7 +2237,7 @@ const TSAnalytics: React.FC = () => {
 									}}
 								>
 									<LineChart
-										data={wanedaItemsSorted.map((item) => ({
+										data={vendorItemsSorted.map((item) => ({
 											month: item.month,
 											actual: item.actualSLA * 100,
 											targetLine: 100,
@@ -2032,7 +2316,7 @@ const TSAnalytics: React.FC = () => {
 								>
 									<BarChart
 										accessibilityLayer
-										data={wanedaItemsSorted.map((item) => ({
+										data={vendorItemsSorted.map((item) => ({
 											month: item.month,
 											mttr: item.avgDuration, // keep in minutes for proper formatting
 											extra: item.avgExtra,
@@ -2101,7 +2385,7 @@ const TSAnalytics: React.FC = () => {
 												content={<ChartTooltipContent indicator="dashed" />}
 											/>
 											<Pie
-												data={wanedaStats.donutData}
+												data={vendorStats.donutData}
 												dataKey="value"
 												nameKey="name"
 												cx="50%"
@@ -2111,7 +2395,7 @@ const TSAnalytics: React.FC = () => {
 												fill="#8884d8"
 												paddingAngle={2}
 											>
-												{wanedaStats.donutData.map((_, index) => (
+												{vendorStats.donutData.map((_, index) => (
 													<Cell
 														key={`cell-${index}`}
 														fill={index === 0 ? "#10b981" : "#ef4444"}
@@ -2123,7 +2407,7 @@ const TSAnalytics: React.FC = () => {
 
 									{/* Custom Legend */}
 									<div className="mt-4 space-y-2">
-										{wanedaStats.donutData.map((item, index) => (
+										{vendorStats.donutData.map((item, index) => (
 											<div
 												key={item.name}
 												className="flex items-center justify-between text-sm"
@@ -2149,7 +2433,7 @@ const TSAnalytics: React.FC = () => {
 											<div className="flex items-center justify-between text-sm font-semibold">
 												<span className="text-muted-foreground">Total</span>
 												<span className="text-card-foreground">
-													{wanedaStats.donutData
+													{vendorStats.donutData
 														.map((item) => Number(item.value))
 														.reduce((sum, value) => sum + value, 0)
 														.toLocaleString()}
@@ -2202,16 +2486,16 @@ const TSAnalytics: React.FC = () => {
 								];
 								const totalsMap: Record<string, any> = {
 									// sums
-									totalCase: totalWanedaDefB.totalCase,
-									nonTarget: totalWanedaDefB.nonTarget,
-									target: totalWanedaDefB.target,
-									fullPayment: wanedaMonthlyViewData.reduce(
+									totalCase: totalVendorDefB.totalCase,
+									nonTarget: totalVendorDefB.nonTarget,
+									target: totalVendorDefB.target,
+									fullPayment: vendorMonthlyViewData.reduce(
 										(sum, row) => sum + row.fullPayment,
 										0,
 									),
-									actualPayment: totalWanedaDefB.totalPayments,
-									deduction: totalWanedaDefB.totalDeductions,
-									paymentType2: totalWanedaDefB.totalPaymentType2,
+									actualPayment: totalVendorDefB.totalPayments,
+									deduction: totalVendorDefB.totalDeductions,
+									paymentType2: totalVendorDefB.totalPaymentType2,
 
 									// simple (unweighted) averages across months with data
 									mttr: avg(monthsWithData.map((m) => m.mttr)),
@@ -2267,7 +2551,7 @@ const TSAnalytics: React.FC = () => {
 													<td className="px-3 py-2 font-medium whitespace-nowrap">
 														{cat.label}
 													</td>
-													{wanedaMonthlyViewData.map((row: any) => (
+													{vendorMonthlyViewData.map((row: any) => (
 														<td
 															key={row.month + cat.key}
 															className={`px-3 py-2 text-right ${cat.color}`}
@@ -2387,10 +2671,10 @@ const TSAnalytics: React.FC = () => {
 											</tr>
 										</thead>
 										<tbody>
-											{wanedaStats.items
+											{vendorStats.items
 												.find((item) => item.month === selectedVendor)
 												?.incidents.map((incident: any, idx: number) => {
-													const duration = getWanedaDuration(incident);
+													const duration = getVendorDuration(incident);
 													const start = getDateTime(incident, "start");
 													const pause1 = getDateTime(incident, "pause1");
 													const restart1 = getDateTime(incident, "restart1");
