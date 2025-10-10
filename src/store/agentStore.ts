@@ -1,138 +1,187 @@
-import { create } from 'zustand';
-import { AgentMetric, Ticket, sanitizeTickets, calcAllMetrics, isBacklogTicket } from '@/utils/agentKpi';
+import { create } from "zustand";
+import {
+	AgentMetric,
+	Ticket,
+	sanitizeTickets,
+	calcAllMetrics,
+	isBacklogTicket,
+} from "@/utils/agentKpi";
+import { logger } from "@/lib/logger";
 
 interface AgentStore {
-  tickets: Ticket[];
-  agentMetrics: AgentMetric[];
-  setTickets: (tickets: Ticket[]) => void;
-  setAgentMetrics: (tickets: Ticket[]) => void;
+	tickets: Ticket[];
+	agentMetrics: AgentMetric[];
+	setTickets: (tickets: Ticket[]) => void;
+	setAgentMetrics: (tickets: Ticket[]) => void;
 }
 
 // Fungsi mapping field tiket agar sesuai agentKpi
 function mapTicketFieldsForAgentKpi(ticket) {
-  let status = ticket.status || ticket.STATUS;
-  if (typeof status === 'string') {
-    const s = status.trim().toLowerCase();
-    if (s === 'close ticket' || s === 'closed') status = 'Closed';
-    else if (s === 'open ticket' || s === 'open') status = 'Open';
-  }
-  const WaktuOpen = ticket['OPEN TIME'] || ticket.openTime;
-  const WaktuCloseTicket = ticket['CLOSE TIME'] || ticket.closeTime;
-  const ClosePenanganan =
-    ticket['CLOSE PENANGANAN 1'] ||
-    ticket.closeHandling1;
-  const Penanganan2 =
-    ticket['PENANGANAN 2'] ||
-    ticket.Penanganan2 ||
-    ticket['CLOSE PENANGANAN 2'] ||
-    ticket.closeHandling2;
-  const OpenBy = ticket['OPEN BY'] || ticket.openBy;
+	let status = ticket.status || ticket.STATUS;
+	if (typeof status === "string") {
+		const s = status.trim().toLowerCase();
+		if (s === "close ticket" || s === "closed") status = "Closed";
+		else if (s === "open ticket" || s === "open") status = "Open";
+	}
+	const WaktuOpen = ticket["OPEN TIME"] || ticket.openTime;
+	const WaktuCloseTicket = ticket["CLOSE TIME"] || ticket.closeTime;
+	const ClosePenanganan = ticket["CLOSE PENANGANAN 1"] || ticket.closeHandling1;
+	const Penanganan2 =
+		ticket["PENANGANAN 2"] ||
+		ticket.Penanganan2 ||
+		ticket["CLOSE PENANGANAN 2"] ||
+		ticket.closeHandling2;
+	const OpenBy = ticket["OPEN BY"] || ticket.openBy;
 
-  const mapped = {
-    ...ticket,
-    WaktuOpen,
-    WaktuCloseTicket,
-    ClosePenanganan,
-    closeHandling: ticket['CLOSE PENANGANAN'] || ticket.closeHandling,
-    closeHandling1: ticket['CLOSE PENANGANAN 1'] || ticket.closeHandling1,
-    Penanganan2,
-    OpenBy,
-    status,
-  };
-  // Debug: log satu tiket hasil mapping
-  if (typeof window !== 'undefined' && window && !(window as any).__agentKpiDebugged) {
-    console.log('Mapped ticket for agentKpi:', mapped);
-    (window as any).__agentKpiDebugged = true;
-  }
-  return mapped;
+	const mapped = {
+		...ticket,
+		WaktuOpen,
+		WaktuCloseTicket,
+		ClosePenanganan,
+		closeHandling: ticket["CLOSE PENANGANAN"] || ticket.closeHandling,
+		closeHandling1: ticket["CLOSE PENANGANAN 1"] || ticket.closeHandling1,
+		Penanganan2,
+		OpenBy,
+		status,
+	};
+	// Debug: log satu tiket hasil mapping
+	if (
+		typeof window !== "undefined" &&
+		window &&
+		!(window as any).__agentKpiDebugged
+	) {
+		logger.info("Mapped ticket for agentKpi:", mapped);
+		(window as any).__agentKpiDebugged = true;
+	}
+	return mapped;
 }
 
 // Saat setAgentMetrics dipanggil, pastikan vol dihitung dari jumlah tiket valid (openBy & handlingDuration.rawHours > 0)
 function computeAgentMetrics(tickets) {
-  // Filter tiket valid untuk agent
-  const validTickets = tickets.filter(t => t.openBy && t.handlingDuration && t.handlingDuration.rawHours > 0);
-  // Group by agent
-  const agentMap = {};
-  validTickets.forEach(t => {
-    const agent = t.openBy;
-    if (!agentMap[agent]) agentMap[agent] = [];
-    agentMap[agent].push(t);
-  });
-  // Hitung KPI per agent (pakai logika calcMetrics)
-  return Object.entries(agentMap).map(([agent, arr]) => {
-    const ticketsArr = arr as Ticket[];
-    // Adaptasi dari calcMetrics
-    const vol = ticketsArr.length;
-    
-    // Menentukan backlog berdasarkan kriteria yang sudah divalidasi:
-    // 1. Status adalah "OPEN TICKET"
-    // 2. WaktuCloseTicket kosong/null
-    // 3. WaktuCloseTicket di bulan berikutnya dari WaktuOpen
-    const backlog = ticketsArr.filter(isBacklogTicket).length;
-    let frtSum = 0, artSum = 0, frtCount = 0, artCount = 0, fcrCount = 0, slaCount = 0;
-    ticketsArr.forEach(t => {
-      const open = t.WaktuOpen instanceof Date ? t.WaktuOpen : new Date(t.WaktuOpen);
-      const close = t.WaktuCloseTicket ? (t.WaktuCloseTicket instanceof Date ? t.WaktuCloseTicket : new Date(t.WaktuCloseTicket)) : undefined;
-      
-      // FRT: closeHandling1 - WaktuOpen (minutes) - First Response Time
-      const closePen1 = t.closeHandling1 ? (t.closeHandling1 instanceof Date ? t.closeHandling1 : new Date(t.closeHandling1)) : undefined;
-      if (closePen1 && open && closePen1.getTime() >= open.getTime()) {
-        frtSum += (closePen1.getTime() - open.getTime()) / 60000;
-        frtCount++;
-      }
-      
-      // ART: closeHandling - WaktuOpen (minutes) - Average Resolution Time
-      const closeHandling = t.closeHandling ? (t.closeHandling instanceof Date ? t.closeHandling : new Date(t.closeHandling)) : undefined;
-      if (closeHandling && open && closeHandling.getTime() >= open.getTime()) {
-        artSum += (closeHandling.getTime() - open.getTime()) / 60000;
-        artCount++;
-      }
-      
-      // FCR: hanya 1 penanganan (Penanganan2 kosong/null)
-      if (!t.Penanganan2) fcrCount++;
-      
-      // SLA: ART <= 1440 min (24 jam) - based on closeHandling
-      if (closeHandling && open && closeHandling.getTime() >= open.getTime() && (closeHandling.getTime() - open.getTime()) / 60000 <= 1440) slaCount++;
-    });
-    const frt = frtCount ? frtSum / frtCount : 0;
-    const art = artCount ? artSum / artCount : 0;
-    const fcr = vol ? (fcrCount / vol) * 100 : 0;
-    const sla = vol ? (slaCount / vol) * 100 : 0;
-    // Score & rank
-    const score = (function scoreAgent(m) {
-      const frtNorm = m.frt <= 0 ? 100 : Math.max(0, Math.min(100, (120 / m.frt) * 100)); // Target FRT 120 minutes
-      const artNorm = m.art <= 0 ? 100 : Math.max(0, Math.min(100, (1440 / m.art) * 100)); // Target ART 1440 minutes
-      const fcrNorm = Math.max(0, Math.min(100, m.fcr));
-      const slaNorm = Math.max(0, Math.min(100, m.sla));
-      const volNorm = Math.max(0, Math.min(100, (m.vol / 100) * 100));
-      const backlogNorm = m.backlog === 0 ? 100 : Math.max(0, 100 - Math.min(100, (m.backlog / 10) * 100));
-      return (
-        frtNorm * 0.25 +
-        artNorm * 0.20 +
-        fcrNorm * 0.20 +
-        slaNorm * 0.15 +
-        volNorm * 0.10 +
-        backlogNorm * 0.10
-      ) / 1.0;
-    })({ frt, art, fcr, sla, vol, backlog });
-    const rank = (function rank(score): 'A'|'B'|'C'|'D' {
-      if (score >= 60) return 'A';
-      if (score >= 50) return 'B';
-      if (score >= 40) return 'C';
-      return 'D';
-    })(score);
-    return { agent, frt, art, fcr, sla, vol, backlog, score, rank };
-  });
+	// Filter tiket valid untuk agent
+	const validTickets = tickets.filter(
+		(t) => t.openBy && t.handlingDuration && t.handlingDuration.rawHours > 0,
+	);
+	// Group by agent
+	const agentMap = {};
+	validTickets.forEach((t) => {
+		const agent = t.openBy;
+		if (!agentMap[agent]) agentMap[agent] = [];
+		agentMap[agent].push(t);
+	});
+	// Hitung KPI per agent (pakai logika calcMetrics)
+	return Object.entries(agentMap).map(([agent, arr]) => {
+		const ticketsArr = arr as Ticket[];
+		// Adaptasi dari calcMetrics
+		const vol = ticketsArr.length;
+
+		// Menentukan backlog berdasarkan kriteria yang sudah divalidasi:
+		// 1. Status adalah "OPEN TICKET"
+		// 2. WaktuCloseTicket kosong/null
+		// 3. WaktuCloseTicket di bulan berikutnya dari WaktuOpen
+		const backlog = ticketsArr.filter(isBacklogTicket).length;
+		let frtSum = 0,
+			artSum = 0,
+			frtCount = 0,
+			artCount = 0,
+			fcrCount = 0,
+			slaCount = 0;
+		ticketsArr.forEach((t) => {
+			const open =
+				t.WaktuOpen instanceof Date ? t.WaktuOpen : new Date(t.WaktuOpen);
+			const close = t.WaktuCloseTicket
+				? t.WaktuCloseTicket instanceof Date
+					? t.WaktuCloseTicket
+					: new Date(t.WaktuCloseTicket)
+				: undefined;
+
+			// FRT: closeHandling1 - WaktuOpen (minutes) - First Response Time
+			const closePen1 = t.closeHandling1
+				? t.closeHandling1 instanceof Date
+					? t.closeHandling1
+					: new Date(t.closeHandling1)
+				: undefined;
+			if (closePen1 && open && closePen1.getTime() >= open.getTime()) {
+				frtSum += (closePen1.getTime() - open.getTime()) / 60000;
+				frtCount++;
+			}
+
+			// ART: closeHandling - WaktuOpen (minutes) - Average Resolution Time
+			const closeHandling = t.closeHandling
+				? t.closeHandling instanceof Date
+					? t.closeHandling
+					: new Date(t.closeHandling)
+				: undefined;
+			if (closeHandling && open && closeHandling.getTime() >= open.getTime()) {
+				artSum += (closeHandling.getTime() - open.getTime()) / 60000;
+				artCount++;
+			}
+
+			// FCR: hanya 1 penanganan (Penanganan2 kosong/null)
+			if (!t.Penanganan2) fcrCount++;
+
+			// SLA: ART <= 1440 min (24 jam) - based on closeHandling
+			if (
+				closeHandling &&
+				open &&
+				closeHandling.getTime() >= open.getTime() &&
+				(closeHandling.getTime() - open.getTime()) / 60000 <= 1440
+			)
+				slaCount++;
+		});
+		const frt = frtCount ? frtSum / frtCount : 0;
+		const art = artCount ? artSum / artCount : 0;
+		const fcr = vol ? (fcrCount / vol) * 100 : 0;
+		const sla = vol ? (slaCount / vol) * 100 : 0;
+		// Score & rank
+		const score = (function scoreAgent(m) {
+			const frtNorm =
+				m.frt <= 0 ? 100 : Math.max(0, Math.min(100, (120 / m.frt) * 100)); // Target FRT 120 minutes
+			const artNorm =
+				m.art <= 0 ? 100 : Math.max(0, Math.min(100, (1440 / m.art) * 100)); // Target ART 1440 minutes
+			const fcrNorm = Math.max(0, Math.min(100, m.fcr));
+			const slaNorm = Math.max(0, Math.min(100, m.sla));
+			const volNorm = Math.max(0, Math.min(100, (m.vol / 100) * 100));
+			const backlogNorm =
+				m.backlog === 0
+					? 100
+					: Math.max(0, 100 - Math.min(100, (m.backlog / 10) * 100));
+			return (
+				(frtNorm * 0.25 +
+					artNorm * 0.2 +
+					fcrNorm * 0.2 +
+					slaNorm * 0.15 +
+					volNorm * 0.1 +
+					backlogNorm * 0.1) /
+				1.0
+			);
+		})({ frt, art, fcr, sla, vol, backlog });
+		const rank = (function rank(score): "A" | "B" | "C" | "D" {
+			if (score >= 60) return "A";
+			if (score >= 50) return "B";
+			if (score >= 40) return "C";
+			return "D";
+		})(score);
+		return { agent, frt, art, fcr, sla, vol, backlog, score, rank };
+	});
 }
 
 export const useAgentStore = create<AgentStore>((set) => ({
-  tickets: [],
-  agentMetrics: [],
-  setTickets: (tickets) => {
-    set({ tickets });
-    set({ agentMetrics: calcAllMetrics(sanitizeTickets(tickets.map(mapTicketFieldsForAgentKpi))) });
-  },
-  setAgentMetrics: (tickets) => {
-    set({ agentMetrics: computeAgentMetrics(sanitizeTickets(tickets.map(mapTicketFieldsForAgentKpi))) });
-  },
+	tickets: [],
+	agentMetrics: [],
+	setTickets: (tickets) => {
+		set({ tickets });
+		set({
+			agentMetrics: calcAllMetrics(
+				sanitizeTickets(tickets.map(mapTicketFieldsForAgentKpi)),
+			),
+		});
+	},
+	setAgentMetrics: (tickets) => {
+		set({
+			agentMetrics: computeAgentMetrics(
+				sanitizeTickets(tickets.map(mapTicketFieldsForAgentKpi)),
+			),
+		});
+	},
 }));

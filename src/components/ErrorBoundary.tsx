@@ -1,30 +1,34 @@
-import React from 'react';
+import React from "react";
+import { logger } from "@/lib/logger";
 
 interface ErrorBoundaryState {
-  hasError: boolean;
+	hasError: boolean;
 }
 
-class ErrorBoundary extends React.Component<React.PropsWithChildren<{}>, ErrorBoundaryState> {
-  constructor(props: React.PropsWithChildren<{}>) {
-    super(props);
-    this.state = { hasError: false };
-  }
+class ErrorBoundary extends React.Component<
+	React.PropsWithChildren<{}>,
+	ErrorBoundaryState
+> {
+	constructor(props: React.PropsWithChildren<{}>) {
+		super(props);
+		this.state = { hasError: false };
+	}
 
-  static getDerivedStateFromError(error: any) {
-    return { hasError: true };
-  }
+	static getDerivedStateFromError(error: any) {
+		return { hasError: true };
+	}
 
-  componentDidCatch(error: any, errorInfo: any) {
-    // Bisa log ke service monitoring di sini
-    // console.error(error, errorInfo);
-  }
+	componentDidCatch(error: any, errorInfo: any) {
+		// Bisa log ke service monitoring di sini
+		// logger.error(error, errorInfo);
+	}
 
-  render() {
-    if (this.state.hasError) {
-      return <h1>Terjadi kesalahan pada halaman ini.</h1>;
-    }
-    return this.props.children;
-  }
+	render() {
+		if (this.state.hasError) {
+			return <h1>Terjadi kesalahan pada halaman ini.</h1>;
+		}
+		return this.props.children;
+	}
 }
 
-export default ErrorBoundary; 
+export default ErrorBoundary;

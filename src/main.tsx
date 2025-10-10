@@ -1,7 +1,7 @@
-import React from 'react'
-import ReactDOM from 'react-dom/client'
-import App from './App.tsx'
-import './index.css'
+import React from "react";
+import ReactDOM from "react-dom/client";
+import App from "./App.tsx";
+import "./index.css";
 
 // No-flash script to prevent theme flashing
 const noFlashScript = `
@@ -16,12 +16,12 @@ const noFlashScript = `
 `;
 
 // Inject no-flash script
-const script = document.createElement('script');
+const script = document.createElement("script");
 script.innerHTML = noFlashScript;
 document.head.appendChild(script);
 
-ReactDOM.createRoot(document.getElementById('root')!).render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>,
-) 
+ReactDOM.createRoot(document.getElementById("root")!).render(
+	<React.StrictMode>
+		<App />
+	</React.StrictMode>,
+);
