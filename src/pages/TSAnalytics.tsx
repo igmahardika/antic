@@ -1325,7 +1325,7 @@ const TSAnalytics: React.FC = () => {
 	}
 
 	return (
-		<PageWrapper maxW="2xl">
+		<PageWrapper maxW="4xl">
 			<div className="space-y-6 lg:space-y-8">
 				<PageHeader
 					title="Technical Support Analytics"

@@ -18,7 +18,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
 				className="flex-1 transition-all duration-300"
 				style={{ paddingLeft: sidebarCollapsed ? 64 : 256 }}
 			>
-				<PageWrapper>{children}</PageWrapper>
+				<PageWrapper maxW="4xl">{children}</PageWrapper>
 			</main>
 		</div>
 	);

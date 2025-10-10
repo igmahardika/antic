@@ -287,6 +287,11 @@ export function SidebarNav({
 					path: "/documentation/admin-rumus",
 					icon: <ScienceIcon sx={{ fontSize: 16 }} />,
 				},
+				{
+					name: "Formulas Temp",
+					path: "/admin-rumus-temp",
+					icon: <ScienceIcon sx={{ fontSize: 16 }} />,
+				},
 			],
 		},
 		{
@@ -295,15 +300,31 @@ export function SidebarNav({
 			icon: <AdminPanelSettingsIcon sx={{ fontSize: 16 }} />,
 		},
 	];
-	// Selalu tampilkan semua menu, tanpa filter permission/role
-	const allowedMenus: any[] = allMenus;
+	// Get user info and permissions
 	let user: { username: string; role: string } = { username: "", role: "user" };
+	let permissions: any[] = [];
 	try {
 		user = JSON.parse(localStorage.getItem("user") || '{"role":"user"}');
-		// const permissions = JSON.parse(localStorage.getItem('menuPermissions') || '{}'); // Removed unused variable
-
-		// allowedMenus = allMenus.filter(menu => allowed.includes(menu.name)); // This line is removed
+		permissions = JSON.parse(localStorage.getItem('menuPermissions') || '[]');
 	} catch {}
+
+	// Filter menus based on user permissions
+	const getFilteredMenus = (userRole: string, permissions: any[]) => {
+		const userPermissions = permissions.find(p => p.role === userRole);
+		if (!userPermissions) return allMenus; // Show all if no permissions found
+		
+		return allMenus.filter(menu => {
+			if (menu.children) {
+				menu.children = menu.children.filter(child => 
+					userPermissions.menus.includes(child.name)
+				);
+				return menu.children.length > 0;
+			}
+			return userPermissions.menus.includes(menu.name);
+		});
+	};
+
+	const allowedMenus = getFilteredMenus(user.role, permissions);
 	// Responsive/collapse logic (hover only)
 	const [autoCollapsed, setAutoCollapsed] = React.useState(false);
 	const handleMouseEnter = () => {

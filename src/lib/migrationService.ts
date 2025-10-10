@@ -4,7 +4,7 @@ import { userAPI, menuPermissionAPI } from "./api";
 import { logger } from "@/lib/logger";
 
 const API_BASE_URL =
-	import.meta.env.VITE_API_URL || "http://api.hms.nexa.net.id";
+	import.meta.env.VITE_API_URL || "https://api.hms.nexa.net.id";
 
 // Helper function untuk mengambil auth token
 const getAuthToken = (): string | null => {

@@ -8,7 +8,7 @@
 
 const envBase =
 	import.meta.env.VITE_API_URL ||
-	(import.meta.env.DEV ? "http://api.hms.nexa.net.id" : "/api");
+	(import.meta.env.DEV ? "https://api.hms.nexa.net.id" : "/api");
 
 export const API_CONFIG = {
 	baseURL: envBase.replace(/\/$/, ""), // hilangkan trailing slash

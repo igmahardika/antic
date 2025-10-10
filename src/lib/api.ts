@@ -1,6 +1,6 @@
 // API service untuk komunikasi dengan backend MySQL
 const API_BASE_URL =
-	import.meta.env.VITE_API_URL || "http://api.hms.nexa.net.id";
+	import.meta.env.VITE_API_URL || "https://api.hms.nexa.net.id";
 
 // Helper function untuk mengambil auth token
 const getAuthToken = (): string | null => {
@@ -32,37 +32,73 @@ const getMockAuthHeaders = (): HeadersInit => {
 	};
 };
 
-// Generic API call function
+// Generic API call function with retry mechanism
 async function apiCall<T>(
 	endpoint: string,
 	options: RequestInit = {},
+	retries: number = 3,
 ): Promise<T> {
 	const url = `${API_BASE_URL}${endpoint}`;
-	const response = await fetch(url, {
-		...options,
-		headers: {
-			...getMockAuthHeaders(),
-			...options.headers,
-		},
-	});
+	
+	for (let attempt = 1; attempt <= retries; attempt++) {
+		try {
+			const response = await fetch(url, {
+				...options,
+				headers: {
+					...getMockAuthHeaders(),
+					...options.headers,
+				},
+			});
 
-	if (!response.ok) {
-		const errorData = await response.json().catch(() => ({}));
+			// Handle redirects (301, 302, etc.)
+			if (response.redirected) {
+				console.warn(`API call redirected from ${url} to ${response.url}`);
+			}
 
-		// Handle validation errors with details
-		if (errorData.details && Array.isArray(errorData.details)) {
-			const validationMessages = errorData.details
-				.map((detail: any) => `${detail.field}: ${detail.message}`)
-				.join(", ");
-			throw new Error(`Validation failed: ${validationMessages}`);
+			if (!response.ok) {
+				const errorData = await response.json().catch(() => ({}));
+
+				// Handle validation errors with details
+				if (errorData.details && Array.isArray(errorData.details)) {
+					const validationMessages = errorData.details
+						.map((detail: any) => `${detail.field}: ${detail.message}`)
+						.join(", ");
+					throw new Error(`Validation failed: ${validationMessages}`);
+				}
+
+				throw new Error(
+					errorData.error || `HTTP error! status: ${response.status}`,
+				);
+			}
+
+			return response.json();
+		} catch (error) {
+			// Handle CORS and network errors
+			if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
+				if (attempt === retries) {
+					throw new Error(`Network error: Unable to connect to API server after ${retries} attempts. Please check your internet connection and try again.`);
+				}
+				// Wait before retry
+				await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+				continue;
+			}
+			
+			// Handle CORS preflight errors
+			if (error instanceof TypeError && error.message.includes('Preflight response is not successful')) {
+				if (attempt === retries) {
+					throw new Error(`CORS error: API server is not responding correctly after ${retries} attempts. Please contact administrator.`);
+				}
+				// Wait before retry
+				await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+				continue;
+			}
+			
+			// For other errors, don't retry
+			throw error;
 		}
-
-		throw new Error(
-			errorData.error || `HTTP error! status: ${response.status}`,
-		);
 	}
-
-	return response.json();
+	
+	throw new Error(`API call failed after ${retries} attempts`);
 }
 
 // User Management API

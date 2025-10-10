@@ -15,6 +15,7 @@ import ErrorBoundary from "./components/ErrorBoundary";
 import { AgentAnalyticsProvider } from "./components/AgentAnalyticsContext";
 import { TicketAnalyticsProvider } from "./components/TicketAnalyticsContext";
 import AdminRumus from "./pages/AdminRumus";
+import AdminRumusTemp from "./pages/AdminRumus-temp";
 import MasterDataAgent from "./components/MasterDataAgent";
 import CustomerData from "./pages/CustomerData";
 import { IncidentData } from "./pages/IncidentData";
@@ -248,6 +249,7 @@ function AppLayout() {
 									element={<SummaryDashboard standalone={true} />}
 								/>
 								<Route path="/admin-rumus" element={<AdminRumus />} />
+								<Route path="/admin-rumus-temp" element={<AdminRumusTemp />} />
 								<Route path="/master-agent" element={<MasterDataAgent />} />
 								<Route path="/customer" element={<CustomerData />} />
 								<Route path="*" element={<NotFound />} />

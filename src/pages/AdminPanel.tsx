@@ -1,4 +1,4 @@
-import React, { useRef } from "react";
+import React, { useRef, useEffect } from "react";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
@@ -14,10 +14,11 @@ const allMenus = [
 	"Dashboard",
 
 	// Ticket Management
-	"Data Grid",
-	"Kanban Board",
+	"Ticket Data",
+	"Customer Analytics",
 	"Ticket Analytics",
 	"Agent Analytics",
+	"Upload Data",
 
 	// Incident Management
 	"Incident Data",
@@ -30,8 +31,8 @@ const allMenus = [
 	"Customer Data",
 
 	// Documentation & Tools
-	"Upload Data",
 	"Formulas",
+	"Formulas Temp",
 
 	// Administration
 	"Admin Panel",
@@ -62,9 +63,17 @@ const AdminPanel: React.FC = () => {
 	const fileInputRef = useRef<HTMLInputElement>(null);
 
 	// Load users and permissions from MySQL API
-	React.useEffect(() => {
+	useEffect(() => {
 		loadData();
 	}, []);
+
+	// Memory leak prevention for success message
+	useEffect(() => {
+		if (success) {
+			const timer = setTimeout(() => setSuccess(false), 3000);
+			return () => clearTimeout(timer);
+		}
+	}, [success]);
 
 	const loadData = async () => {
 		try {
@@ -76,7 +85,21 @@ const AdminPanel: React.FC = () => {
 			setMenuPermissions(permissionsData);
 		} catch (err) {
 			logger.error("Failed to load data:", err);
-			setError("Failed to load data. Please check your connection.");
+			
+			// Provide more specific error messages
+			if (err instanceof Error) {
+				if (err.message.includes('CORS error')) {
+					setError("API server CORS configuration issue. Please contact administrator.");
+				} else if (err.message.includes('Network error')) {
+					setError("Unable to connect to API server. Please check your internet connection.");
+				} else if (err.message.includes('HTTP error! status: 301')) {
+					setError("API endpoint redirect issue. Please refresh the page and try again.");
+				} else {
+					setError(`Failed to load data: ${err.message}`);
+				}
+			} else {
+				setError("Failed to load data. Please check your connection.");
+			}
 		}
 	};
 
@@ -95,7 +118,6 @@ const AdminPanel: React.FC = () => {
 			setPassword("");
 			setRole("user");
 			setSuccess(true);
-			setTimeout(() => setSuccess(false), 3000);
 		} catch (err) {
 			logger.error("Failed to add user:", err);
 			setError(err instanceof Error ? err.message : "Failed to add user");
@@ -116,6 +138,13 @@ const AdminPanel: React.FC = () => {
 		setEditUsername("");
 		setEditPassword("");
 		setEditRole("user");
+	};
+
+	// Keyboard navigation for modal
+	const handleKeyDown = (e: React.KeyboardEvent) => {
+		if (e.key === 'Escape') {
+			closeEditModal();
+		}
 	};
 	const handleEditUser = async (e: React.FormEvent) => {
 		e.preventDefault();
@@ -225,7 +254,7 @@ const AdminPanel: React.FC = () => {
 		if (!file) return;
 
 		// For security reasons, bulk import is disabled in MySQL version
-		alert(
+		setError(
 			"Import feature is disabled for security reasons in the MySQL version. Please add users manually through the admin panel.",
 		);
 
@@ -263,6 +292,7 @@ const AdminPanel: React.FC = () => {
 			<div className="flex gap-3 mb-6">
 				<button
 					onClick={handleExport}
+					aria-label="Export user data to JSON file"
 					className="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg shadow-sm transition-colors text-sm"
 				>
 					Export User Data
@@ -274,6 +304,7 @@ const AdminPanel: React.FC = () => {
 						accept="application/json"
 						ref={fileInputRef}
 						onChange={handleImport}
+						aria-label="Import user data from JSON file"
 						className="hidden"
 					/>
 				</label>
@@ -335,6 +366,7 @@ const AdminPanel: React.FC = () => {
 									<button
 										type="button"
 										onClick={() => setShowPassword((v) => !v)}
+										aria-label={showPassword ? "Hide password" : "Show password"}
 										className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-card-foreground focus:outline-none"
 									>
 										{showPassword ? (
@@ -447,6 +479,7 @@ const AdminPanel: React.FC = () => {
 									);
 									loadData();
 								}}
+								aria-label={`Select all permissions for ${selectedRoleForEditing} role`}
 								className="bg-green-500 hover:bg-green-600 text-white text-xs font-semibold px-3 py-1.5 rounded-lg shadow-sm transition-colors"
 							>
 								Select All
@@ -460,6 +493,7 @@ const AdminPanel: React.FC = () => {
 									);
 									loadData();
 								}}
+								aria-label={`Deselect all permissions for ${selectedRoleForEditing} role`}
 								className="bg-red-500 hover:bg-red-600 text-white text-xs font-semibold px-3 py-1.5 rounded-lg shadow-sm transition-colors"
 							>
 								Deselect All
@@ -789,18 +823,20 @@ const AdminPanel: React.FC = () => {
 												</td>
 												<td className="px-4 py-3 text-center">
 													<div className="flex gap-2 justify-center">
-														<button
-															onClick={() => openEditModal(idx)}
-															className="bg-yellow-400 hover:bg-yellow-500 text-white rounded px-3 py-1 text-xs font-semibold shadow-sm transition-colors"
-														>
-															Edit
-														</button>
-														<button
-															onClick={() => handleDeleteUser(user.id)}
-															className="bg-red-500 hover:bg-red-600 text-white rounded px-3 py-1 text-xs font-semibold shadow-sm transition-colors"
-														>
-															Delete
-														</button>
+						<button
+							onClick={() => openEditModal(idx)}
+							aria-label={`Edit user ${user.username}`}
+							className="bg-yellow-400 hover:bg-yellow-500 text-white rounded px-3 py-1 text-xs font-semibold shadow-sm transition-colors"
+						>
+							Edit
+						</button>
+						<button
+							onClick={() => handleDeleteUser(user.id)}
+							aria-label={`Delete user ${user.username}`}
+							className="bg-red-500 hover:bg-red-600 text-white rounded px-3 py-1 text-xs font-semibold shadow-sm transition-colors"
+						>
+							Delete
+						</button>
 													</div>
 												</td>
 											</tr>
@@ -815,9 +851,16 @@ const AdminPanel: React.FC = () => {
 
 			{/* Modal Edit User */}
 			{editUserIdx !== null && (
-				<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+				<div 
+					className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+					role="dialog"
+					aria-modal="true"
+					aria-labelledby="edit-user-title"
+					onKeyDown={handleKeyDown}
+					tabIndex={-1}
+				>
 					<div className="bg-background text-foreground rounded-xl shadow-lg p-6 w-full max-w-md mx-4">
-						<h3 className="text-lg font-bold mb-4 text-card-foreground">
+						<h3 id="edit-user-title" className="text-lg font-bold mb-4 text-card-foreground">
 							Edit User
 						</h3>
 						<form className="space-y-4" onSubmit={handleEditUser}>
@@ -856,6 +899,7 @@ const AdminPanel: React.FC = () => {
 									<button
 										type="button"
 										onClick={() => setShowEditPassword((v) => !v)}
+										aria-label={showEditPassword ? "Hide password" : "Show password"}
 										className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-card-foreground focus:outline-none"
 									>
 										{showEditPassword ? (
