@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll } from 'vitest';
-import { db } from '../db';
+import { db } from '../lib/db';
 import { createUploadSession, deleteByFile, finalizeUploadSession } from './uploadSessions';
 
 // Catatan: Tes ini mensimulasikan lingkungan browser minimal; sesuaikan jika menggunakan jsdom

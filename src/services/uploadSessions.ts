@@ -1,5 +1,5 @@
 // Auto-generated: upload sessions service
-import { db } from '../db';
+import { db } from '../lib/db';
 import type { IUploadSession, UploadDataType } from '../types.upload';
 import { generateBatchId, generateFileHash } from '../utils/fileFingerprint';
 
@@ -18,16 +18,16 @@ export const createUploadSession = async (file: File, dataType: UploadDataType) 
     dataType,
     status: 'uploading'
   };
-  await db.uploadSessions.add(session as any);
+  await (db as any).uploadSessions.add(session as any);
   return session;
 };
 
 export const finalizeUploadSession = async (sessionId: string, updates: Partial<IUploadSession>) => {
-  await db.uploadSessions.update(sessionId, { ...updates } as any);
+  await (db as any).uploadSessions.update(sessionId, { ...updates } as any);
 };
 
 export const deleteByFile = async (fileName: string, dataType: UploadDataType) => {
-  const session = await db.uploadSessions
+  const session = await (db as any).uploadSessions
     .where('fileName').equals(fileName)
     .and((s: IUploadSession) => s.dataType === dataType)
     .first();
@@ -43,12 +43,12 @@ export const deleteByFile = async (fileName: string, dataType: UploadDataType) =
     deletedCount = await (db.customers as any).where('batchId').equals(session.id).delete();
   }
 
-  await db.uploadSessions.update(session.id, { status: 'deleted', recordCount: 0, successCount: 0 } as any);
+  await (db as any).uploadSessions.update(session.id, { status: 'deleted', recordCount: 0, successCount: 0 } as any);
   return { session, deletedCount };
 };
 
 export const listUploadHistory = async (dataType?: UploadDataType) => {
-  const coll = (db.uploadSessions as any).orderBy('uploadTimestamp').reverse();
+  const coll = ((db as any).uploadSessions as any).orderBy('uploadTimestamp').reverse();
   return dataType ? (await coll.filter((s: IUploadSession) => s.dataType === dataType).toArray())
                   : (await coll.toArray());
 };

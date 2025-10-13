@@ -80,6 +80,7 @@ export class TicketDB extends Dexie {
 	customers!: Table<ICustomer, string>;
 	incidents!: Table<Incident, string>; // pk = id
 	vendors!: Table<IVendor, number>;
+	uploadSessions!: Table<any, string>; // uploadSessions table
 
 	constructor() {
 		super("InsightTicketDatabase");

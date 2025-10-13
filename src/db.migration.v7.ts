@@ -1,6 +1,6 @@
 // Auto-generated: Dexie migration v7 (uploadSessions + batchId indexes)
 // Catatan: Pastikan modul ini diimport sedini mungkin (mis. di src/main.tsx)
-import { db } from './db';
+import { db } from './lib/db';
 
 // Definisikan versi baru & stores tambahan
 // Tidak mengubah definisi versi lama—Dexie menggabungkan urutan version() saat inisialisasi
