@@ -3,6 +3,7 @@ import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "@/lib/db";
 import PageWrapper from "@/components/PageWrapper";
 import PageHeader from "@/components/ui/PageHeader";
+import SummaryCard from "@/components/ui/SummaryCard";
 import {
 	Card,
 	CardContent,
@@ -222,39 +223,27 @@ const VendorData: React.FC = () => {
 
 				{/* Summary Cards */}
 				<div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-					<Card>
-						<CardContent className="p-6">
-							<div className="flex items-center gap-4">
-								<BusinessIcon className="w-8 h-8 text-blue-600" />
-								<div>
-									<p className="text-sm font-medium text-muted-foreground">Total Vendors</p>
-									<p className="text-2xl font-bold">{vendors.length}</p>
-								</div>
-							</div>
-						</CardContent>
-					</Card>
-					<Card>
-						<CardContent className="p-6">
-							<div className="flex items-center gap-4">
-								<CheckCircleIcon className="w-8 h-8 text-green-600" />
-								<div>
-									<p className="text-sm font-medium text-muted-foreground">Active Vendors</p>
-									<p className="text-2xl font-bold">{vendors.filter(v => v.isActive).length}</p>
-								</div>
-							</div>
-						</CardContent>
-					</Card>
-					<Card>
-						<CardContent className="p-6">
-							<div className="flex items-center gap-4">
-								<CancelIcon className="w-8 h-8 text-red-600" />
-								<div>
-									<p className="text-sm font-medium text-muted-foreground">Inactive Vendors</p>
-									<p className="text-2xl font-bold">{vendors.filter(v => !v.isActive).length}</p>
-								</div>
-							</div>
-						</CardContent>
-					</Card>
+					<SummaryCard
+						icon={<BusinessIcon className="w-5 h-5 text-white" />}
+						iconBg="bg-blue-500"
+						title="Total Vendors"
+						value={vendors.length}
+						description="All registered vendors"
+					/>
+					<SummaryCard
+						icon={<CheckCircleIcon className="w-5 h-5 text-white" />}
+						iconBg="bg-green-500"
+						title="Active Vendors"
+						value={vendors.filter(v => v.isActive).length}
+						description="Currently active vendors"
+					/>
+					<SummaryCard
+						icon={<CancelIcon className="w-5 h-5 text-white" />}
+						iconBg="bg-red-500"
+						title="Inactive Vendors"
+						value={vendors.filter(v => !v.isActive).length}
+						description="Inactive or disabled vendors"
+					/>
 				</div>
 
 				{/* Controls */}
