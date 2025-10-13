@@ -52,3 +52,36 @@ export const listUploadHistory = async (dataType?: UploadDataType) => {
   return dataType ? (await coll.filter((s: IUploadSession) => s.dataType === dataType).toArray())
                   : (await coll.toArray());
 };
+
+// Helper function to create upload session for existing data
+export const createUploadSessionForExistingData = async (dataType: UploadDataType, fileName: string = 'legacy-data') => {
+  const id = generateBatchId();
+  const session: IUploadSession = {
+    id,
+    fileName,
+    fileHash: 'legacy-' + Date.now(),
+    fileSize: 0,
+    uploadTimestamp: Date.now(),
+    recordCount: 0,
+    successCount: 0,
+    errorCount: 0,
+    dataType,
+    status: 'completed'
+  };
+  
+  // Count existing records
+  let recordCount = 0;
+  if (dataType === 'tickets') {
+    recordCount = await db.tickets.count();
+  } else if (dataType === 'incidents') {
+    recordCount = await db.incidents.count();
+  } else if (dataType === 'customers') {
+    recordCount = await db.customers.count();
+  }
+  
+  session.recordCount = recordCount;
+  session.successCount = recordCount;
+  
+  await (db as any).uploadSessions.add(session as any);
+  return session;
+};

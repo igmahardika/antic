@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { listUploadHistory, deleteByFile } from '../services/uploadSessions';
+import { listUploadHistory, deleteByFile, createUploadSessionForExistingData } from '../services/uploadSessions';
 import type { UploadDataType, IUploadSession } from '../types.upload';
 
 type Props = {
@@ -17,8 +17,21 @@ export default function DeleteByFileDialog({ dataType, onClose, onDeleted }: Pro
   useEffect(() => {
     const loadHistory = async () => {
       try {
-        const sessions = await listUploadHistory(dataType);
+        let sessions = await listUploadHistory(dataType);
         console.log('Upload history for', dataType, ':', sessions);
+        
+        // If no sessions found but data exists, create a legacy session
+        if (sessions.length === 0) {
+          console.log('No upload sessions found, checking for existing data...');
+          try {
+            const legacySession = await createUploadSessionForExistingData(dataType, 'legacy-data');
+            console.log('Created legacy session:', legacySession);
+            sessions = [legacySession];
+          } catch (error) {
+            console.error('Failed to create legacy session:', error);
+          }
+        }
+        
         setHistory(sessions);
       } catch (error) {
         console.error('Error loading upload history:', error);
@@ -66,6 +79,11 @@ export default function DeleteByFileDialog({ dataType, onClose, onDeleted }: Pro
         {history.length === 0 && (
           <p className="text-sm text-gray-500 mb-3">
             Belum ada file yang diupload untuk {dataType}. Upload file terlebih dahulu untuk menggunakan fitur ini.
+          </p>
+        )}
+        {history.length > 0 && history[0].fileName === 'legacy-data' && (
+          <p className="text-sm text-blue-600 mb-3">
+            Data yang sudah ada sebelumnya akan dihapus sebagai "legacy-data". Upload file baru untuk tracking yang lebih baik.
           </p>
         )}
         {err && <p className="text-red-600 text-sm mb-3">{err}</p>}
