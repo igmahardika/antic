@@ -10,6 +10,7 @@ import {
 } from "@/utils/incidentUtils";
 import { fixAllMissingEndTime } from "@/utils/durationFixUtils";
 import { db } from "@/lib/db";
+import DeleteByFileDialog from "./DeleteByFileDialog";
 
 import {
 	Card,
@@ -381,6 +382,7 @@ export const IncidentUpload: React.FC = () => {
 		preview: Incident[];
 	} | null>(null);
 	const [parsedIncidents, setParsedIncidents] = useState<Incident[]>([]);
+	const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
 	const onDrop = useCallback(async (acceptedFiles: File[]) => {
 		if (acceptedFiles.length === 0) return;
@@ -1354,6 +1356,17 @@ export const IncidentUpload: React.FC = () => {
 								dicocokkan berdasarkan No Case dan Start Time.
 							</div>
 
+							<div className="flex gap-3 mb-4">
+								<Button
+									onClick={() => setShowDeleteDialog(true)}
+									variant="outline"
+									className="flex-1"
+								>
+									<DeleteIcon className="w-4 h-4 mr-2" />
+									Delete by File (Upload History)
+								</Button>
+							</div>
+
 							{parsedIncidents.length > 0 ? (
 								<div className="space-y-4">
 									<Alert>
@@ -1523,6 +1536,16 @@ export const IncidentUpload: React.FC = () => {
 					</Tabs>
 				</CardContent>
 			</Card>
+			{showDeleteDialog && (
+				<DeleteByFileDialog
+					dataType="incidents"
+					onClose={() => setShowDeleteDialog(false)}
+					onDeleted={({ fileName, deletedCount }) => {
+						alert(`Terhapus ${deletedCount} data incident dari ${fileName}`);
+						// Refresh data if needed
+					}}
+				/>
+			)}
 		</div>
 	);
 };
