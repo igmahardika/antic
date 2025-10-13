@@ -11,7 +11,7 @@ import AdminPanel from "./pages/AdminPanel";
 import { lazyPage } from "./routes/lazyPage";
 import { AnalyticsProvider } from "./components/AnalyticsContext";
 // import { useAgentMetricsPolling } from './hooks/useAgentMetricsPolling'; // Temporarily disabled
-import ErrorBoundary from "./components/ErrorBoundary";
+import { ErrorBoundary } from "./components/ErrorBoundary";
 import { AgentAnalyticsProvider } from "./components/AgentAnalyticsContext";
 import { TicketAnalyticsProvider } from "./components/TicketAnalyticsContext";
 import AdminRumus from "./pages/AdminRumus";

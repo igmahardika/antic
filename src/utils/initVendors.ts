@@ -59,3 +59,4 @@ export const initializeDefaultVendors = async () => {
 if (typeof window !== 'undefined') {
   initializeDefaultVendors().catch(console.error);
 }
+
