@@ -168,3 +168,15 @@ Untuk pertanyaan atau dukungan, silakan buat issue di GitHub repository.
 ---
 
 **ANTIC** - Advanced Network Ticket Incident Control
+
+## Backend Architecture
+**Active Service:** helpdesk-backend/
+**Prod URL:** https://api.hms.nexa.net.id
+
+### Run Locally
+1. cp helpdesk-backend/.env.example helpdesk-backend/.env lalu isi DB_*, REDIS_*, JWT_*
+2. cd helpdesk-backend && npm install && npm run build && npm run start
+3. Migrate: npm run migrate
+4. Healthcheck: GET /health
+
+> legacy/antic-backend dipertahankan sebagai arsip; **tidak digunakan** di production.
