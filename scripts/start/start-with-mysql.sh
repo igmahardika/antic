@@ -27,7 +27,7 @@ export PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
 echo "🔧 Setting up environment..."
 
 # Check if we're in the right directory
-if [ ! -f "package.json" ] || [ ! -d "antic-backend" ]; then
+if [ ! -f "package.json" ] || [ ! -d "helpdesk-backend" ]; then
     echo -e "${RED}❌ Error: Please run this script from the antic project root directory${NC}"
     exit 1
 fi
@@ -39,9 +39,9 @@ if [ ! -d "node_modules" ]; then
 fi
 
 # Install backend dependencies if needed
-if [ ! -d "antic-backend/node_modules" ]; then
+if [ ! -d "helpdesk-backend/node_modules" ]; then
     echo "📦 Installing backend dependencies..."
-    cd antic-backend
+    cd helpdesk-backend
     npm install
     cd ..
 fi
@@ -60,7 +60,7 @@ fi
 
 # Start backend server
 echo "🖥️  Starting Backend API Server..."
-cd antic-backend
+cd helpdesk-backend
 
 # Kill existing backend process if running
 if check_port 3001; then

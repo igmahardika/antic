@@ -77,7 +77,7 @@ check_backend() {
     if ! curl -s "$API_BASE/health" > /dev/null; then
         log_error "Backend is not running on $API_BASE"
         echo "Please start the backend server first:"
-        echo "  cd antic-backend && npm start"
+        echo "  cd helpdesk-backend && npm start"
         exit 1
     fi
     

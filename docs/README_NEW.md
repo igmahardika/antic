@@ -64,7 +64,7 @@ cd antic
 ### Manual Setup
 ```bash
 # 1. Setup Backend
-cd antic-backend
+cd helpdesk-backend
 npm install
 cp env.example .env
 # Edit .env dengan konfigurasi database dan Redis Anda
@@ -179,7 +179,7 @@ antic/
 │   ├── lib/                     # Utilities & API client
 │   ├── hooks/                   # Custom React hooks
 │   └── store/                   # State management
-├── antic-backend/               # Backend source
+├── helpdesk-backend/               # Backend source
 │   ├── config/                  # Configuration files
 │   ├── migrations/              # Database migrations
 │   └── server.mjs              # Main server file
@@ -225,8 +225,8 @@ CORS_ORIGIN=http://localhost:5173
 npm install -g pm2
 
 # Start backend
-cd antic-backend
-pm2 start server.mjs --name "antic-backend"
+cd helpdesk-backend
+pm2 start server.mjs --name "helpdesk-backend"
 
 # Build and serve frontend
 cd ..
@@ -266,7 +266,7 @@ mysql -u user -p -e "SELECT 1"
 pm2 monit
 
 # Application logs
-pm2 logs antic-backend
+pm2 logs helpdesk-backend
 pm2 logs antic-frontend
 ```
 
@@ -285,8 +285,8 @@ pm2 logs antic-frontend
 ## 📚 Documentation
 
 - [Setup Guide](SETUP_GUIDE.md) - Panduan setup lengkap
-- [Backend API](antic-backend/README.md) - Dokumentasi API backend
-- [Migration Guide](antic-backend/migrations/README.md) - Database migrations
+- [Backend API](helpdesk-backend/README.md) - Dokumentasi API backend
+- [Migration Guide](helpdesk-backend/migrations/README.md) - Database migrations
 
 ---
 

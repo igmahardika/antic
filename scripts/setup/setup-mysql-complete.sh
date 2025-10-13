@@ -37,7 +37,7 @@ if [ ! -f "package.json" ]; then
 fi
 
 print_status "Step 1: Installing backend dependencies..."
-cd antic-backend
+cd helpdesk-backend
 if [ ! -d "node_modules" ]; then
     npm install
 else
@@ -77,7 +77,7 @@ print_success "Setup completed successfully!"
 echo ""
 echo "📋 Next Steps:"
 echo "1. Start the backend server:"
-echo "   cd antic-backend && npm start"
+echo "   cd helpdesk-backend && npm start"
 echo ""
 echo "2. In another terminal, start the frontend:"
 echo "   npm run dev"

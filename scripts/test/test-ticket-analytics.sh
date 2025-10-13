@@ -21,7 +21,7 @@ if curl -s http://localhost:3001/health >/dev/null 2>&1; then
 else
     echo -e "${RED}❌ Backend API is not running${NC}"
     echo "Starting backend..."
-    cd antic-backend && npm start &
+    cd helpdesk-backend && npm start &
     sleep 5
     cd ..
 fi

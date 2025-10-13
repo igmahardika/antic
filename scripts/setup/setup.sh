@@ -171,7 +171,7 @@ setup_redis() {
 setup_backend() {
     log_header "Setting up Backend"
     
-    cd antic-backend
+    cd helpdesk-backend
     
     # Install dependencies
     log_info "Installing backend dependencies..."
@@ -265,7 +265,7 @@ test_setup() {
     
     # Start backend in background
     log_info "Starting backend server..."
-    cd antic-backend
+    cd helpdesk-backend
     npm start &
     BACKEND_PID=$!
     cd ..
@@ -312,7 +312,7 @@ create_startup_scripts() {
     cat > start-backend.sh << 'EOF'
 #!/bin/bash
 echo "🚀 Starting Helpdesk Management System Backend..."
-cd antic-backend
+cd helpdesk-backend
 npm start
 EOF
     
@@ -330,7 +330,7 @@ echo "🚀 Starting Helpdesk Management System..."
 
 # Start backend in background
 echo "Starting backend..."
-cd antic-backend
+cd helpdesk-backend
 npm start &
 BACKEND_PID=$!
 cd ..
@@ -386,11 +386,11 @@ print_final_instructions() {
     
     echo "📚 Documentation:"
     echo "  • Setup Guide: SETUP_GUIDE.md"
-    echo "  • Backend API: antic-backend/README.md"
+    echo "  • Backend API: helpdesk-backend/README.md"
     echo ""
     
     echo "🔧 Configuration files:"
-    echo "  • Backend env: antic-backend/.env"
+    echo "  • Backend env: helpdesk-backend/.env"
     echo "  • Frontend config: src/lib/config.ts"
     echo ""
     

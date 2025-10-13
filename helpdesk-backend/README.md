@@ -36,7 +36,7 @@ Backend API untuk Helpdesk Management System dengan implementasi Redis caching d
 ### 1. Clone dan Install Dependencies
 
 ```bash
-cd antic-backend
+cd helpdesk-backend
 npm install
 # atau
 pnpm install
@@ -298,13 +298,13 @@ CORS_ORIGIN=https://your-frontend-domain.com
 npm install -g pm2
 
 # Start dengan PM2
-pm2 start server.mjs --name "antic-backend"
+pm2 start server.mjs --name "helpdesk-backend"
 
 # Monitor
 pm2 monit
 
 # Logs
-pm2 logs antic-backend
+pm2 logs helpdesk-backend
 ```
 
 ### Nginx Reverse Proxy

@@ -58,7 +58,7 @@ if [ $? -ne 0 ]; then
 fi
 
 print_status "Step 4: Installing backend dependencies..."
-cd antic-backend
+cd helpdesk-backend
 npm install
 if [ $? -ne 0 ]; then
     print_error "Failed to install backend dependencies"
@@ -71,7 +71,7 @@ pkill -f "node.*server.mjs" || true
 sleep 2
 
 # Start backend in background
-nohup node server.mjs > /var/log/antic-backend.log 2>&1 &
+nohup node server.mjs > /var/log/helpdesk-backend.log 2>&1 &
 if [ $? -eq 0 ]; then
     print_success "Backend service started"
 else
@@ -122,6 +122,6 @@ echo "   - Password: admin123"
 echo "   - Role: super admin"
 echo ""
 echo "📊 Backend Log:"
-echo "   tail -f /var/log/antic-backend.log"
+echo "   tail -f /var/log/helpdesk-backend.log"
 echo ""
 print_success "✅ Helpdesk Management System is live!"

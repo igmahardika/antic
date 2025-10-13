@@ -39,12 +39,12 @@ fi
 print_status "Step 1: Backing up current package files..."
 cp package.json package.json.backup
 cp package-lock.json package-lock.json.backup 2>/dev/null || true
-cp antic-backend/package.json antic-backend/package.json.backup
-cp antic-backend/package-lock.json antic-backend/package-lock.json.backup 2>/dev/null || true
+cp helpdesk-backend/package.json helpdesk-backend/package.json.backup
+cp helpdesk-backend/package-lock.json helpdesk-backend/package-lock.json.backup 2>/dev/null || true
 print_success "Backup created"
 
 print_status "Step 2: Updating backend dependencies..."
-cd antic-backend
+cd helpdesk-backend
 
 # Update critical security dependencies
 npm update bcrypt
@@ -98,12 +98,12 @@ npm install crypto-js # For client-side encryption if needed
 
 print_status "Step 7: Updating package-lock files..."
 npm install
-cd antic-backend && npm install && cd ..
+cd helpdesk-backend && npm install && cd ..
 
 print_status "Step 8: Running security audit..."
 echo ""
 echo "📊 Backend Security Audit:"
-cd antic-backend && npm audit && cd ..
+cd helpdesk-backend && npm audit && cd ..
 echo ""
 echo "📊 Frontend Security Audit:"
 npm audit
@@ -112,15 +112,15 @@ print_status "Step 9: Cleaning up..."
 # Remove node_modules and reinstall to ensure clean state
 print_warning "Cleaning node_modules for fresh install..."
 rm -rf node_modules
-rm -rf antic-backend/node_modules
+rm -rf helpdesk-backend/node_modules
 
 npm install
-cd antic-backend && npm install && cd ..
+cd helpdesk-backend && npm install && cd ..
 
 print_status "Step 10: Final security verification..."
 echo ""
 echo "🔍 Final Backend Audit:"
-cd antic-backend && npm audit && cd ..
+cd helpdesk-backend && npm audit && cd ..
 echo ""
 echo "🔍 Final Frontend Audit:"
 npm audit
@@ -144,7 +144,7 @@ echo ""
 echo "📁 Backup files created:"
 echo "   - package.json.backup"
 echo "   - package-lock.json.backup"
-echo "   - antic-backend/package.json.backup"
-echo "   - antic-backend/package-lock.json.backup"
+echo "   - helpdesk-backend/package.json.backup"
+echo "   - helpdesk-backend/package-lock.json.backup"
 echo ""
 print_success "✅ Security hardening complete!"

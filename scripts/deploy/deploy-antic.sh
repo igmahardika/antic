@@ -99,7 +99,7 @@ fi
 cd "$APP_DIR"
 
 echo "=== 4. Generate backend .env"
-cd "$APP_DIR/antic-backend"
+cd "$APP_DIR/helpdesk-backend"
 cat > .env <<ENV
 # generated $(date)
 # Database Configuration
@@ -167,7 +167,7 @@ export PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
 npm run build
 
 echo "=== 9. PM2 – jalankan API"
-cd "$APP_DIR/antic-backend"
+cd "$APP_DIR/helpdesk-backend"
 pm2 delete antic-api 2>/dev/null || true
 pm2 start server.mjs --name antic-api --env production
 pm2 save
@@ -210,7 +210,7 @@ echo "  • Host         : localhost:3306"
 echo ""
 echo "📁 Project Files:"
 echo "  • Frontend     : ${APP_DIR}/dist"
-echo "  • Backend      : ${APP_DIR}/antic-backend"
+echo "  • Backend      : ${APP_DIR}/helpdesk-backend"
 echo "  • Logs         : ~/.pm2/logs"
 echo ""
 echo "📋 CloudPanel Setup Required:"
