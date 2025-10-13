@@ -17,6 +17,7 @@ import { db } from "../lib/db";
 import { usePageUrlState } from "../hooks/usePageUrlState";
 import { PaginationControls } from "../components";
 import { logger } from "@/lib/logger";
+import DeleteByFileDialog from "../components/DeleteByFileDialog";
 
 const CUSTOMER_HEADERS = ["Nama", "Jenis Klien", "Layanan", "Kategori"];
 
@@ -29,6 +30,7 @@ const CustomerData: React.FC = () => {
 	const [error, setError] = useState<string | null>(null);
 	const [jenisKlienFilter, setJenisKlienFilter] = useState<string>("ALL");
 	const [fileName, setFileName] = useState<string>("");
+	const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
 	// URL-synced pagination
 	const {
@@ -426,7 +428,14 @@ const CustomerData: React.FC = () => {
 							)}
 						</div>
 						{/* Tombol Action */}
-						<div className="flex flex-col w-full items-end justify-center">
+						<div className="flex flex-col w-full items-end justify-center gap-2">
+							<button
+								onClick={() => setShowDeleteDialog(true)}
+								className="px-4 py-2 rounded-lg bg-orange-600 text-white font-semibold text-xs hover:bg-orange-700 transition"
+								type="button"
+							>
+								Delete by File
+							</button>
 							<button
 								onClick={() => {
 									handleClearCache();
@@ -485,6 +494,19 @@ const CustomerData: React.FC = () => {
 						pageSizes={[25, 50, 100, 200]}
 					/>
 				</div>
+			)}
+			{showDeleteDialog && (
+				<DeleteByFileDialog
+					dataType="customers"
+					onClose={() => setShowDeleteDialog(false)}
+					onDeleted={({ fileName, deletedCount }) => {
+						alert(`Terhapus ${deletedCount} data customer dari ${fileName}`);
+						// Refresh data
+						setDataPerBulan({});
+						setBulanList([]);
+						setBulanDipilih("");
+					}}
+				/>
 			)}
 		</PageWrapper>
 	);

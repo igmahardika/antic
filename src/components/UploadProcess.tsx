@@ -23,6 +23,7 @@ import { db, ITicket } from "@/lib/db";
 import { formatDurationDHM } from "@/lib/utils";
 import SummaryCard from "./ui/SummaryCard";
 import { useLiveQuery } from "dexie-react-hooks";
+import DeleteByFileDialog from "./DeleteByFileDialog";
 // import SecurityNotice from './SecurityNotice'; // Temporarily disabled for Excel support
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 import TableChartIcon from "@mui/icons-material/TableChart";
@@ -94,6 +95,7 @@ const UploadProcess = ({ onUploadComplete }: UploadProcessProps) => {
 	);
 	const [errorLog, setErrorLog] = useState<IErrorLog[]>([]);
 	const [useBackendParser, setUseBackendParser] = useState(true);
+	const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
 	// Ambil jumlah tiket di database (GridView)
 	const ticketsInDb = useLiveQuery(() => db.tickets.count(), []);
@@ -361,14 +363,24 @@ const UploadProcess = ({ onUploadComplete }: UploadProcessProps) => {
 							<DownloadIcon className="h-4 w-4 mr-2" />
 							Download Template
 						</Button>
-						<Button
-							onClick={handleReset}
-							variant="destructive"
-							className="w-full sm:w-auto text-base"
-						>
-							<DeleteIcon className="h-4 w-4 mr-2" />
-							Reset Database
-						</Button>
+						<div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+							<Button
+								onClick={() => setShowDeleteDialog(true)}
+								variant="outline"
+								className="w-full sm:w-auto text-base"
+							>
+								<DeleteIcon className="h-4 w-4 mr-2" />
+								Delete by File
+							</Button>
+							<Button
+								onClick={handleReset}
+								variant="destructive"
+								className="w-full sm:w-auto text-base"
+							>
+								<DeleteIcon className="h-4 w-4 mr-2" />
+								Reset Database
+							</Button>
+						</div>
 					</div>
 				</div>
 				{uploadSummary ? (
@@ -431,6 +443,16 @@ const UploadProcess = ({ onUploadComplete }: UploadProcessProps) => {
 					)}
 				<ErrorLogTable errors={errorLog} />
 			</div>
+			{showDeleteDialog && (
+				<DeleteByFileDialog
+					dataType="tickets"
+					onClose={() => setShowDeleteDialog(false)}
+					onDeleted={({ fileName, deletedCount }) => {
+						alert(`Terhapus ${deletedCount} data dari ${fileName}`);
+						onUploadComplete(); // Refresh data
+					}}
+				/>
+			)}
 		</PageWrapper>
 	);
 };
