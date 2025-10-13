@@ -15,7 +15,17 @@ export default function DeleteByFileDialog({ dataType, onClose, onDeleted }: Pro
   const [err, setErr] = useState<string | null>(null);
 
   useEffect(() => {
-    listUploadHistory(dataType).then(setHistory);
+    const loadHistory = async () => {
+      try {
+        const sessions = await listUploadHistory(dataType);
+        console.log('Upload history for', dataType, ':', sessions);
+        setHistory(sessions);
+      } catch (error) {
+        console.error('Error loading upload history:', error);
+        setHistory([]);
+      }
+    };
+    loadHistory();
   }, [dataType]);
 
   const handleDelete = async () => {
@@ -43,12 +53,21 @@ export default function DeleteByFileDialog({ dataType, onClose, onDeleted }: Pro
           onChange={(e) => setSelected(e.target.value)}
         >
           <option value="">— pilih file —</option>
-          {history.map(s => (
-            <option key={s.id} value={s.fileName}>
-              {s.fileName} · {new Date(s.uploadTimestamp).toLocaleString()} · {s.recordCount} rec
-            </option>
-          ))}
+          {history.length === 0 ? (
+            <option value="" disabled>Tidak ada file upload untuk {dataType}</option>
+          ) : (
+            history.map(s => (
+              <option key={s.id} value={s.fileName}>
+                {s.fileName} · {new Date(s.uploadTimestamp).toLocaleString()} · {s.recordCount} rec
+              </option>
+            ))
+          )}
         </select>
+        {history.length === 0 && (
+          <p className="text-sm text-gray-500 mb-3">
+            Belum ada file yang diupload untuk {dataType}. Upload file terlebih dahulu untuk menggunakan fitur ini.
+          </p>
+        )}
         {err && <p className="text-red-600 text-sm mb-3">{err}</p>}
         <div className="flex gap-2 justify-end">
           <button className="px-3 py-2 rounded-lg border" onClick={onClose} disabled={loading}>Batal</button>

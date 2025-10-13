@@ -18,6 +18,7 @@ import { usePageUrlState } from "../hooks/usePageUrlState";
 import { PaginationControls } from "../components";
 import { logger } from "@/lib/logger";
 import DeleteByFileDialog from "../components/DeleteByFileDialog";
+import { createUploadSession, finalizeUploadSession } from '../services/uploadSessions';
 
 const CUSTOMER_HEADERS = ["Nama", "Jenis Klien", "Layanan", "Kategori"];
 
@@ -108,6 +109,16 @@ const CustomerData: React.FC = () => {
 		const file = e.target.files?.[0];
 		if (file) {
 			setFileName(file.name);
+			
+			// Create upload session for tracking
+			let session;
+			createUploadSession(file, 'customers').then(s => {
+				session = s;
+				console.log('Created upload session for customers:', session);
+			}).catch(error => {
+				console.error('Failed to create upload session:', error);
+			});
+			
 			const reader = new FileReader();
 			reader.onload = async (evt) => {
 				const data = evt.target?.result;
@@ -173,7 +184,27 @@ const CustomerData: React.FC = () => {
 							});
 							await db.customers.clear();
 							if (allCustomers.length > 0) {
-								await db.customers.bulkAdd(allCustomers);
+								// Add upload session metadata to customers
+								const enrichedCustomers = allCustomers.map(customer => ({
+									...customer,
+									uploadTimestamp: session ? session.uploadTimestamp : Date.now(),
+									fileName: file.name,
+									fileHash: session ? session.fileHash : null,
+									batchId: session ? session.id : null,
+									uploadSessionId: session ? session.id : null
+								}));
+								
+								await db.customers.bulkAdd(enrichedCustomers);
+								
+								// Finalize upload session
+								if (session) {
+									await finalizeUploadSession(session.id, {
+										status: 'completed',
+										recordCount: enrichedCustomers.length,
+										successCount: enrichedCustomers.length,
+										errorCount: 0
+									});
+								}
 							}
 							alert("Data customer berhasil disimpan ke IndexedDB.");
 						},
@@ -253,7 +284,27 @@ const CustomerData: React.FC = () => {
 							});
 							await db.customers.clear();
 							if (allCustomers.length > 0) {
-								await db.customers.bulkAdd(allCustomers);
+								// Add upload session metadata to customers
+								const enrichedCustomers = allCustomers.map(customer => ({
+									...customer,
+									uploadTimestamp: session ? session.uploadTimestamp : Date.now(),
+									fileName: file.name,
+									fileHash: session ? session.fileHash : null,
+									batchId: session ? session.id : null,
+									uploadSessionId: session ? session.id : null
+								}));
+								
+								await db.customers.bulkAdd(enrichedCustomers);
+								
+								// Finalize upload session
+								if (session) {
+									await finalizeUploadSession(session.id, {
+										status: 'completed',
+										recordCount: enrichedCustomers.length,
+										successCount: enrichedCustomers.length,
+										errorCount: 0
+									});
+								}
 							}
 							alert("Data customer berhasil disimpan ke IndexedDB.");
 						}

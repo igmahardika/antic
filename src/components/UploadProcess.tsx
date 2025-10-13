@@ -24,6 +24,7 @@ import { formatDurationDHM } from "@/lib/utils";
 import SummaryCard from "./ui/SummaryCard";
 import { useLiveQuery } from "dexie-react-hooks";
 import DeleteByFileDialog from "./DeleteByFileDialog";
+import { createUploadSession, finalizeUploadSession } from '../services/uploadSessions';
 // import SecurityNotice from './SecurityNotice'; // Temporarily disabled for Excel support
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 import TableChartIcon from "@mui/icons-material/TableChart";
@@ -136,6 +137,15 @@ const UploadProcess = ({ onUploadComplete }: UploadProcessProps) => {
 		setIsProcessing(true);
 		setProgress(0);
 
+		// Create upload session for tracking
+		let session;
+		try {
+			session = await createUploadSession(file, 'tickets');
+			console.log('Created upload session:', session);
+		} catch (error) {
+			console.error('Failed to create upload session:', error);
+		}
+
 		try {
 			const data = await file.arrayBuffer();
 			const fileExtension = file.name.toLowerCase().split(".").pop();
@@ -154,7 +164,7 @@ const UploadProcess = ({ onUploadComplete }: UploadProcessProps) => {
 							try {
 								json = results.data as any[];
 								fileHeaders = Object.keys(json[0] || {});
-								await processUploadedData(json, fileHeaders);
+								await processUploadedData(json, fileHeaders, session, file);
 								resolve();
 							} catch (error) {
 								reject(error);
@@ -204,7 +214,7 @@ const UploadProcess = ({ onUploadComplete }: UploadProcessProps) => {
 				json = rows;
 				fileHeaders = headers.filter((h) => h !== "");
 
-				await processUploadedData(json, fileHeaders);
+				await processUploadedData(json, fileHeaders, session, file);
 			} else {
 				throw new Error(
 					"Unsupported file format. Please use CSV or Excel files.",
@@ -212,6 +222,20 @@ const UploadProcess = ({ onUploadComplete }: UploadProcessProps) => {
 			}
 		} catch (error) {
 			logger.error("Error processing file:", error);
+			
+			// Finalize upload session with error status
+			if (session) {
+				try {
+					await finalizeUploadSession(session.id, {
+						status: 'failed',
+						errorCount: 1,
+						errorLog: [String(error instanceof Error ? error.message : error)]
+					});
+				} catch (finalizeError) {
+					console.error('Failed to finalize upload session:', finalizeError);
+				}
+			}
+			
 			alert(
 				`Error processing file: ${error instanceof Error ? error.message : "Unknown error"}`,
 			);
@@ -221,7 +245,7 @@ const UploadProcess = ({ onUploadComplete }: UploadProcessProps) => {
 		}
 	};
 
-	const processUploadedData = async (json: any[], fileHeaders: string[]) => {
+	const processUploadedData = async (json: any[], fileHeaders: string[], session: any, file: File) => {
 		// Debug: Log detected headers
 		logger.info("Detected Headers:", fileHeaders);
 		logger.info("Expected Headers:", EXPECTED_HEADERS);
@@ -245,7 +269,27 @@ const UploadProcess = ({ onUploadComplete }: UploadProcessProps) => {
 			processAndAnalyzeData(json);
 
 		if (processedTickets.length > 0) {
-			await db.tickets.bulkPut(processedTickets);
+			// Add upload session metadata to tickets
+			const enrichedTickets = processedTickets.map(ticket => ({
+				...ticket,
+				uploadTimestamp: session ? session.uploadTimestamp : Date.now(),
+				fileName: file.name,
+				fileHash: session ? session.fileHash : null,
+				batchId: session ? session.id : null,
+				uploadSessionId: session ? session.id : null
+			}));
+			
+			await db.tickets.bulkPut(enrichedTickets);
+			
+			// Finalize upload session
+			if (session) {
+				await finalizeUploadSession(session.id, {
+					status: 'completed',
+					recordCount: enrichedTickets.length,
+					successCount: enrichedTickets.length,
+					errorCount: errorRows.length
+				});
+			}
 		}
 
 		const successCount = processedTickets.length;
@@ -1002,25 +1046,4 @@ const processAndAnalyzeData = (
 export default UploadProcess;
 
 // --- [AUTO-ADDED] Delete-by-File integration (Tickets) ---
-// import { createUploadSession, finalizeUploadSession } from '../services/uploadSessions';
-// import DeleteByFileDialog from './DeleteByFileDialog';
-// const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-//
-// async function handleUploadFile_withSession(file: File) {
-//   const session = await createUploadSession(file, 'tickets');
-//   try {
-//     const parsed: any[] = await parseTicketsFromFile(file); // gunakan parser kamu
-//     const stamp = Date.now();
-//     const enriched = parsed.map(r => ({ ...r, uploadTimestamp: stamp, fileName: file.name, fileHash: session.fileHash, batchId: session.id, uploadSessionId: session.id }));
-//     await db.tickets.bulkPut(enriched as any);
-//     await finalizeUploadSession(session.id, { status: 'completed', recordCount: enriched.length, successCount: enriched.length });
-//   } catch (e: any) {
-//     await finalizeUploadSession(session.id, { status: 'failed', errorCount: 1, errorLog: [String(e?.message || e)] });
-//     throw e;
-//   }
-// }
-//
-// {/* Tambahkan tombol di toolbar */}
-// {/* <button onClick={() => setShowDeleteDialog(true)} className="btn btn-outline">Delete by File</button> */}
-// {/* {showDeleteDialog && <DeleteByFileDialog dataType="tickets" onClose={() => setShowDeleteDialog(false)} onDeleted={({fileName, deletedCount}) => toast.success(`Terhapus ${deletedCount} data dari ${fileName}`)} />} */}
 // --- [END AUTO-ADDED] ---
