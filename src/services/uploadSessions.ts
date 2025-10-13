@@ -43,7 +43,8 @@ export const deleteByFile = async (fileName: string, dataType: UploadDataType) =
     deletedCount = await (db.customers as any).where('batchId').equals(session.id).delete();
   }
 
-  await (db as any).uploadSessions.update(session.id, { status: 'deleted', recordCount: 0, successCount: 0 } as any);
+  // Delete the upload session from database
+  await (db as any).uploadSessions.delete(session.id);
   return { session, deletedCount };
 };
 
