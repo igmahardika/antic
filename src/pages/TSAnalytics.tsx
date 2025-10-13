@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "@/lib/db";
+import { usePerf } from "@/hooks/usePerf";
 import { initializeDefaultVendors } from "@/utils/initVendors";
 // Menggunakan getWanedaDuration yang didefinisikan lokal untuk perhitungan yang lebih akurat
 import { formatDurationDHM } from "@/lib/utils";
@@ -33,7 +34,7 @@ import {
 	Line,
 	ReferenceLine,
 	Cell,
-} from "recharts";
+} from "@/charts/rechartsLazy";
 
 import PageWrapper from "@/components/PageWrapper";
 import PageHeader from "@/components/ui/PageHeader";
@@ -57,6 +58,7 @@ import EngineeringIcon from "@mui/icons-material/Engineering";
 import FilterListIcon from "@mui/icons-material/FilterList";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import { logger } from "@/lib/logger";
+import { notify } from "@/lib/notify";
 
 // Constants sesuai requirements
 const VENDOR_SLA_MINUTES = 240;
@@ -159,6 +161,16 @@ const TSAnalytics: React.FC = () => {
 	const [selectedPeriod, setSelectedPeriod] = useState<
 		"3m" | "6m" | "1y" | "all"
 	>("6m");
+	
+	// Performance monitoring
+	const metrics = usePerf('TSAnalytics');
+	
+	// Log performance metrics
+	React.useEffect(() => {
+		if (metrics.length > 0) {
+			logger.info('TSAnalytics performance metrics:', metrics);
+		}
+	}, [metrics]);
 	const [selectedVendor, setSelectedVendor] = useState<string>("all");
 	const [selectedVendorForAnalytics, setSelectedVendorForAnalytics] = useState<string>("waneda");
 	const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
@@ -203,30 +215,29 @@ const TSAnalytics: React.FC = () => {
 	// Get registered vendors from database
 	const registeredVendors = useLiveQuery(async () => {
 		try {
-			console.log("🔍 TSAnalytics: Starting vendor loading...");
+			import.meta.env.DEV && logger.info("🔍 TSAnalytics: Starting vendor loading...");
 			
-			// First, check if vendors table exists and has data
+			// Load all vendors from database (same as VendorData.tsx)
 			const allVendors = await db.vendors.toArray();
-			console.log("🔍 TSAnalytics: All vendors in database:", allVendors);
-			logger.info("🔍 TSAnalytics: All vendors in database:", allVendors);
+			import.meta.env.DEV && logger.info("🔍 TSAnalytics: All vendors in database:", allVendors);
 			
 			// If no vendors exist, initialize default ones
 			if (allVendors.length === 0) {
-				console.log("🔧 TSAnalytics: No vendors found, initializing default vendors...");
-				logger.info("🔧 TSAnalytics: No vendors found, initializing default vendors...");
+				import.meta.env.DEV && logger.info("🔧 TSAnalytics: No vendors found, initializing default vendors...");
 				await initializeDefaultVendors();
+				// Reload after initialization
+				const reloadedVendors = await db.vendors.toArray();
+				import.meta.env.DEV && logger.info("✅ TSAnalytics: Loaded", reloadedVendors.length, "vendors from database after initialization");
+				return reloadedVendors;
 			}
 			
-			const vendors = await db.vendors.where('isActive').equals(1).toArray();
-			console.log("✅ TSAnalytics: Loaded", vendors.length, "active vendors from database");
-			console.log("📋 TSAnalytics: Vendor details:", vendors);
-			logger.info("✅ TSAnalytics: Loaded", vendors.length, "active vendors from database");
-			logger.info("📋 TSAnalytics: Vendor details:", vendors);
+			import.meta.env.DEV && logger.info("✅ TSAnalytics: Loaded", allVendors.length, "vendors from database");
+			import.meta.env.DEV && logger.info("📋 TSAnalytics: Vendor details:", allVendors);
 			
-			return vendors;
+			return allVendors;
 		} catch (error) {
-			console.error("❌ TSAnalytics: Failed to load vendors from database:", error);
 			logger.error("❌ TSAnalytics: Failed to load vendors from database:", error);
+			notify.error("Gagal memuat data vendor. Silakan refresh halaman.");
 			return [];
 		}
 	}, []);
@@ -337,38 +348,28 @@ const TSAnalytics: React.FC = () => {
 	const getAvailableVendors = useMemo(() => {
 		if (!registeredVendors) return [];
 		
-		// Return only registered active vendors
+		// Return all vendors from database (not just registered ones)
 		return registeredVendors.map(vendor => vendor.name).sort();
 	}, [registeredVendors]);
 
 	// Debug: Log available vendors
 	useEffect(() => {
-		console.log("🔍 TSAnalytics Debug - Vendor Status:");
-		console.log("📊 registeredVendors:", registeredVendors);
-		console.log("📊 registeredVendors length:", registeredVendors?.length || 0);
-		console.log("📊 getAvailableVendors:", getAvailableVendors);
-		console.log("📊 getAvailableVendors length:", getAvailableVendors.length);
-		
-		logger.info("🔍 TSAnalytics Debug - Vendor Status:");
-		logger.info("📊 registeredVendors:", registeredVendors);
-		logger.info("📊 registeredVendors length:", registeredVendors?.length || 0);
-		logger.info("📊 getAvailableVendors:", getAvailableVendors);
-		logger.info("📊 getAvailableVendors length:", getAvailableVendors.length);
+		import.meta.env.DEV && logger.info("🔍 TSAnalytics Debug - Vendor Status:");
+		import.meta.env.DEV && logger.info("📊 registeredVendors:", registeredVendors);
+		import.meta.env.DEV && logger.info("📊 registeredVendors length:", registeredVendors?.length || 0);
+		import.meta.env.DEV && logger.info("📊 getAvailableVendors:", getAvailableVendors);
+		import.meta.env.DEV && logger.info("📊 getAvailableVendors length:", getAvailableVendors.length);
 		
 		if (getAvailableVendors.length > 0) {
-			console.log("✅ Available vendors for selection:", getAvailableVendors);
-			logger.info("✅ Available vendors for selection:", getAvailableVendors);
+			import.meta.env.DEV && logger.info("✅ Available vendors for selection:", getAvailableVendors);
 		} else {
-			console.warn("⚠️ No vendors available for selection");
-			logger.warn("⚠️ No vendors available for selection");
+			import.meta.env.DEV && logger.warn("⚠️ No vendors available for selection");
 		}
 		
 		if (registeredVendors && registeredVendors.length > 0) {
-			console.log("✅ Registered vendors from database:", registeredVendors.map(v => v.name));
-			logger.info("✅ Registered vendors from database:", registeredVendors.map(v => v.name));
+			import.meta.env.DEV && logger.info("✅ Registered vendors from database:", registeredVendors.map(v => v.name));
 		} else {
-			console.warn("⚠️ No registered vendors found in database");
-			logger.warn("⚠️ No registered vendors found in database");
+			import.meta.env.DEV && logger.warn("⚠️ No registered vendors found in database");
 		}
 	}, [getAvailableVendors, registeredVendors]);
 
@@ -1596,25 +1597,6 @@ const TSAnalytics: React.FC = () => {
 							</select>
 						</div>
 						
-						{/* Debug Info */}
-						{process.env.NODE_ENV === 'development' && (
-							<div className="flex flex-col gap-2">
-								<label className="text-sm font-medium text-muted-foreground">
-									Debug Info
-								</label>
-								<div className="text-xs text-muted-foreground bg-gray-50 dark:bg-zinc-800 p-2 rounded">
-									<div>Registered Vendors: {registeredVendors?.length || 0}</div>
-									<div>Available Vendors: {getAvailableVendors.length}</div>
-									<div>Selected: {selectedVendorForAnalytics}</div>
-									<div>Year: {selectedYear}</div>
-									{registeredVendors && registeredVendors.length > 0 && (
-										<div>
-											<div>Vendor Names: {registeredVendors.map(v => v.name).join(', ')}</div>
-										</div>
-									)}
-								</div>
-							</div>
-						)}
 					</div>
 
 					{/* Period Filter */}
@@ -2773,4 +2755,6 @@ const TSAnalytics: React.FC = () => {
 	);
 };
 
-export default TSAnalytics;
+import { withBoundary } from "@/components/withBoundary";
+
+export default withBoundary(TSAnalytics);

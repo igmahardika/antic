@@ -1,6 +1,7 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react-swc'
 import path from 'path'
+import { visualizer } from 'rollup-plugin-visualizer'
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
@@ -8,7 +9,15 @@ export default defineConfig(({ mode }) => {
   process.env.NODE_ENV = mode === 'production' ? 'production' : 'development'
   
   return {
-    plugins: [react()],
+    plugins: [
+      react(),
+      visualizer({
+        filename: 'dist/bundle-report.html',
+        gzipSize: true,
+        brotliSize: true,
+        template: 'treemap'
+      })
+    ],
     esbuild: {
       drop: mode === 'production' ? ['console'] : [],
     },
@@ -35,7 +44,7 @@ export default defineConfig(({ mode }) => {
           }
         }
       },
-      chunkSizeWarningLimit: 1000,
+      chunkSizeWarningLimit: 900,
       terserOptions: {
         compress: {
           drop_console: mode === 'production',

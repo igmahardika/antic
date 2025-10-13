@@ -2950,37 +2950,17 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
 										{Object.keys(tiketPerKategoriPerBulan)
 											.sort()
 											.map((month) => {
-												// Total unique clients across ALL categories this month (union, active, excluded classifications)
-												const unionSet = new Set<string>(
-													gridData2025
-														.filter((t) => {
-															const d = new Date(t.openTime);
-															const m = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-															if (m !== month) return false;
-															const name = (t.name || "").trim().toLowerCase();
-															if (!name) return false;
-															const cls = (t.classification || "")
-																.toString()
-																.trim()
-																.toLowerCase();
-															if (
-																cls === "di luar layanan" ||
-																cls === "gangguan diluar layanan" ||
-																cls === "request"
-															)
-																return false;
-															const activeMonths =
-																customerMonthMap.get(name) || [];
-															return activeMonths.includes(month);
-														})
-														.map((t) => (t.name || "").trim().toLowerCase()),
-												);
+												// Total tickets across ALL categories this month
+												const totalTickets = kategoriList.reduce((sum, kat) => {
+													const tickets = tiketPerKategoriPerBulan[month]?.[kat] || 0;
+													return sum + tickets;
+												}, 0);
 												return (
 													<td
 														key={month}
 														className="text-center p-2 font-bold text-card-foreground"
 													>
-														{unionSet.size}
+														{totalTickets}
 													</td>
 												);
 											})}
@@ -3441,11 +3421,24 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
 																.filter((t) => {
 																	const d = new Date(t.openTime);
 																	const m = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+																	const name = (t.name || "").trim().toLowerCase();
 																	const kategori =
-																		customerKategoriMap.get(
-																			(t.name || "").trim().toLowerCase(),
-																		) || "Unknown";
-																	return m === month && kategori === kat;
+																		customerKategoriMap.get(name) || "Unknown";
+																	const cls = (t.classification || "")
+																		.toString()
+																		.trim()
+																		.toLowerCase();
+																	const activeMonths =
+																		customerMonthMap.get(name) || [];
+																	return (
+																		m === month &&
+																		kategori === kat &&
+																		name &&
+																		activeMonths.includes(month) &&
+																		cls !== "di luar layanan" &&
+																		cls !== "gangguan diluar layanan" &&
+																		cls !== "request"
+																	);
 																})
 																.map((t) =>
 																	(t.name || "").trim().toLowerCase(),

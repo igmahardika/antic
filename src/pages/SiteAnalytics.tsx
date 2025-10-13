@@ -1,13 +1,13 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "@/lib/db";
+import { usePerf } from "@/hooks/usePerf";
 import { normalizeNCAL } from "@/utils/incidentUtils";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import SummaryCard from "@/components/ui/SummaryCard";
-import { Tooltip as RechartsTooltip } from "recharts";
 import {
 	XAxis,
 	YAxis,
@@ -15,7 +15,8 @@ import {
 	AreaChart,
 	Area,
 	ResponsiveContainer,
-} from "recharts";
+	Tooltip as RechartsTooltip,
+} from "@/charts/rechartsLazy";
 import PageWrapper from "@/components/PageWrapper";
 import PageHeader from "@/components/ui/PageHeader";
 import {
@@ -114,6 +115,16 @@ export const SiteAnalytics: React.FC = () => {
 	const [selectedPeriod, setSelectedPeriod] = useState<
 		"3m" | "6m" | "1y" | "all"
 	>("6m");
+	
+	// Performance monitoring
+	const metrics = usePerf('SiteAnalytics');
+	
+	// Log performance metrics
+	React.useEffect(() => {
+		if (metrics.length > 0) {
+			logger.info('SiteAnalytics performance metrics:', metrics);
+		}
+	}, [metrics]);
 
 	// Get all incidents with robust database connection
 	const allIncidents = useLiveQuery(async () => {
@@ -1517,4 +1528,6 @@ export const SiteAnalytics: React.FC = () => {
 	);
 };
 
-export default SiteAnalytics;
+import { withBoundary } from "@/components/withBoundary";
+
+export default withBoundary(SiteAnalytics);

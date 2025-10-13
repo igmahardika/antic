@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "@/lib/db";
+import { usePerf } from "@/hooks/usePerf";
 import {
 	calculateCustomDuration,
 	calculateNetDuration,
@@ -31,7 +32,7 @@ import {
 	Cell,
 	LineChart,
 	Line,
-} from "recharts";
+} from "@/charts/rechartsLazy";
 
 import PageWrapper from "@/components/PageWrapper";
 import PageHeader from "@/components/ui/PageHeader";
@@ -357,6 +358,16 @@ const IncidentAnalytics: React.FC = () => {
 	const [selectedPeriod, setSelectedPeriod] = useState<
 		"3m" | "6m" | "1y" | "all"
 	>("6m");
+	
+	// Performance monitoring
+	const metrics = usePerf('IncidentAnalytics');
+	
+	// Log performance metrics
+	React.useEffect(() => {
+		if (metrics.length > 0) {
+			logger.info('IncidentAnalytics performance metrics:', metrics);
+		}
+	}, [metrics]);
 
 	// Get all incidents with robust database connection
 	const allIncidents = useLiveQuery(async () => {
@@ -2795,4 +2806,6 @@ const IncidentAnalytics: React.FC = () => {
 	);
 };
 
-export default IncidentAnalytics;
+import { withBoundary } from "@/components/withBoundary";
+
+export default withBoundary(IncidentAnalytics);

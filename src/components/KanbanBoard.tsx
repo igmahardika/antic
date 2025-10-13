@@ -48,7 +48,6 @@ import TimeFilter from "./TimeFilter";
 import * as RadixDialog from "@radix-ui/react-dialog";
 import { usePageUrlState } from "@/hooks/usePageUrlState";
 import { PaginationControls } from "@/components";
-import { DialogContentResponsive } from "@/components/DialogContentResponsive";
 import { logger } from "@/lib/logger";
 
 // Using built-in fonts for reliability - no external font loading needed
@@ -1809,10 +1808,7 @@ const KanbanBoard = () => {
 			>
 				<RadixDialog.Portal>
 					<RadixDialog.Overlay className="fixed inset-0 bg-black/50 z-50 backdrop-blur-sm" />
-					<DialogContentResponsive
-						size="xl"
-						className="fixed right-0 top-0 h-full bg-card text-card-foreground shadow-2xl z-50 transition-all duration-300"
-					>
+					<RadixDialog.Content className="fixed right-0 top-0 h-full w-full md:w-[900px] max-w-full bg-card text-card-foreground shadow-2xl z-50 overflow-y-auto">
 						{selectedCustomer && (
 							<>
 								{/* Accessibility: Hidden Title and Description */}
@@ -2039,18 +2035,20 @@ const KanbanBoard = () => {
 												};
 											});
 											return chartData.length > 0 ? (
-												<div className="w-full max-w-5xl mx-auto overflow-x-auto">
+												<div className="w-full mx-auto overflow-x-auto">
 													<div
 														style={{
-															minWidth: Math.max(700, chartData.length * 120),
+															minWidth: Math.max(400, chartData.length * 80),
 														}}
 													>
-														<MiniTrendChart data={chartData} height={160} />
+														<MiniTrendChart data={chartData} height={200} />
 													</div>
 												</div>
 											) : (
-												<div className="text-gray-400 text-center py-8">
-													No ticket history data available.
+												<div className="text-gray-400 text-center py-12">
+													<div className="text-4xl mb-2">📊</div>
+													<p className="text-sm">No ticket history data available for this customer.</p>
+													<p className="text-xs text-gray-500 mt-1">Data will appear here once tickets are created.</p>
 												</div>
 											);
 										})()}
@@ -2197,7 +2195,7 @@ const KanbanBoard = () => {
 								</div>
 							</>
 						)}
-					</DialogContentResponsive>
+					</RadixDialog.Content>
 				</RadixDialog.Portal>
 			</RadixDialog.Root>
 

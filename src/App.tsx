@@ -9,6 +9,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 import Login from "./pages/Login";
 import AdminPanel from "./pages/AdminPanel";
 import { lazyPage } from "./routes/lazyPage";
+import LoadingView from "@/components/feedback/LoadingView";
 import { AnalyticsProvider } from "./components/AnalyticsContext";
 // import { useAgentMetricsPolling } from './hooks/useAgentMetricsPolling'; // Temporarily disabled
 import { ErrorBoundary } from "./components/ErrorBoundary";
@@ -34,9 +35,18 @@ const UploadProcess = lazyPage(() => import("./components/UploadProcess"));
 const SummaryDashboard = lazyPage(
 	() => import("./components/SummaryDashboard"),
 );
-const IncidentAnalytics = lazyPage(() => import("./pages/IncidentAnalytics"));
-const TSAnalytics = lazyPage(() => import("./pages/TSAnalytics"));
-const SiteAnalytics = lazyPage(() => import("./pages/SiteAnalytics"));
+const IncidentAnalytics = lazyPage(
+	() => import("./pages/IncidentAnalytics"),
+	<LoadingView label="Loading Incident Analytics…" />
+);
+const TSAnalytics = lazyPage(
+	() => import("./pages/TSAnalytics"),
+	<LoadingView label="Loading Technical Support Analytics…" />
+);
+const SiteAnalytics = lazyPage(
+	() => import("./pages/SiteAnalytics"),
+	<LoadingView label="Loading Site Analytics…" />
+);
 // Escalation pages removed
 
 // New sidebar imports
