@@ -978,3 +978,27 @@ const processAndAnalyzeData = (
 };
 
 export default UploadProcess;
+
+// --- [AUTO-ADDED] Delete-by-File integration (Tickets) ---
+// import { createUploadSession, finalizeUploadSession } from '../services/uploadSessions';
+// import DeleteByFileDialog from './DeleteByFileDialog';
+// const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+//
+// async function handleUploadFile_withSession(file: File) {
+//   const session = await createUploadSession(file, 'tickets');
+//   try {
+//     const parsed: any[] = await parseTicketsFromFile(file); // gunakan parser kamu
+//     const stamp = Date.now();
+//     const enriched = parsed.map(r => ({ ...r, uploadTimestamp: stamp, fileName: file.name, fileHash: session.fileHash, batchId: session.id, uploadSessionId: session.id }));
+//     await db.tickets.bulkPut(enriched as any);
+//     await finalizeUploadSession(session.id, { status: 'completed', recordCount: enriched.length, successCount: enriched.length });
+//   } catch (e: any) {
+//     await finalizeUploadSession(session.id, { status: 'failed', errorCount: 1, errorLog: [String(e?.message || e)] });
+//     throw e;
+//   }
+// }
+//
+// {/* Tambahkan tombol di toolbar */}
+// {/* <button onClick={() => setShowDeleteDialog(true)} className="btn btn-outline">Delete by File</button> */}
+// {/* {showDeleteDialog && <DeleteByFileDialog dataType="tickets" onClose={() => setShowDeleteDialog(false)} onDeleted={({fileName, deletedCount}) => toast.success(`Terhapus ${deletedCount} data dari ${fileName}`)} />} */}
+// --- [END AUTO-ADDED] ---

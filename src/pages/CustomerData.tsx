@@ -491,3 +491,26 @@ const CustomerData: React.FC = () => {
 };
 
 export default CustomerData;
+
+// --- [AUTO-ADDED] Delete-by-File integration (Customers) ---
+// import { createUploadSession, finalizeUploadSession } from '../services/uploadSessions';
+// import DeleteByFileDialog from '../components/DeleteByFileDialog';
+// const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+//
+// async function handleUploadCustomer_withSession(file: File) {
+//   const session = await createUploadSession(file, 'customers');
+//   try {
+//     const parsed: any[] = await parseCustomers(file); // gunakan parser kamu
+//     const stamp = Date.now();
+//     const enriched = parsed.map(r => ({ ...r, uploadTimestamp: stamp, fileName: file.name, fileHash: session.fileHash, batchId: session.id, uploadSessionId: session.id }));
+//     await db.customers.bulkPut(enriched as any);
+//     await finalizeUploadSession(session.id, { status: 'completed', recordCount: enriched.length, successCount: enriched.length });
+//   } catch (e: any) {
+//     await finalizeUploadSession(session.id, { status: 'failed', errorCount: 1, errorLog: [String(e?.message || e)] });
+//   }
+// }
+//
+// {/* Tambahkan tombol di toolbar */}
+// {/* <button onClick={() => setShowDeleteDialog(true)} className="btn btn-outline">Delete by File</button> */}
+// {/* {showDeleteDialog && <DeleteByFileDialog dataType="customers" onClose={() => setShowDeleteDialog(false)} onDeleted={({fileName, deletedCount}) => toast.success(`Terhapus ${deletedCount} data customer dari ${fileName}`)} />} */}
+// --- [END AUTO-ADDED] ---
