@@ -87,6 +87,7 @@ const KanbanBoard = () => {
 		initialPage: 1,
 		initialPageSize: 20,
 		allowedPageSizes: [10, 20, 50, 100],
+		totalItems: filteredCustomers.length,
 		resetOnDeps: [startMonth, endMonth, selectedYear, repClassFilter],
 	});
 

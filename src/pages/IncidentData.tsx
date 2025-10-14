@@ -74,6 +74,7 @@ export const IncidentData: React.FC = () => {
 		initialPage: 1,
 		initialPageSize: 50,
 		allowedPageSizes: [10, 25, 50, 100],
+		totalItems: total,
 		resetOnDeps: [selectedMonth],
 	});
 

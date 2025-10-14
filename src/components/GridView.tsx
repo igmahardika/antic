@@ -249,6 +249,7 @@ const GridView = ({ data: propsData }: { data?: ITicket[] }) => {
 		initialPage: 1,
 		initialPageSize: 10,
 		allowedPageSizes: [10, 25, 50, 100],
+		totalItems: filtered.length,
 		resetOnDeps: [
 			search,
 			validasiFilter,

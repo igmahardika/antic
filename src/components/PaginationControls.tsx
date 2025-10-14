@@ -1,3 +1,7 @@
+import { Button } from './ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
+import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
+
 export function PaginationControls(props: {
 	page: number;
 	pageSize: number;
@@ -14,58 +18,103 @@ export function PaginationControls(props: {
 		onPageSizeChange,
 		pageSizes = [10, 25, 50, 100],
 	} = props;
+
+	// Don't show pagination if only 1 page
+	if (totalPages <= 1) {
+		return (
+			<div className="flex items-center justify-between w-full">
+				<div className="flex items-center space-x-2">
+					<p className="text-sm text-muted-foreground">
+						Showing all results
+					</p>
+				</div>
+				<div className="flex items-center space-x-2">
+					<p className="text-sm text-muted-foreground">Rows per page:</p>
+					<Select value={pageSize.toString()} onValueChange={(value) => onPageSizeChange(Number(value))}>
+						<SelectTrigger className="h-8 w-[70px]">
+							<SelectValue />
+						</SelectTrigger>
+						<SelectContent>
+							{pageSizes.map((size) => (
+								<SelectItem key={size} value={size.toString()}>
+									{size}
+								</SelectItem>
+							))}
+						</SelectContent>
+					</Select>
+				</div>
+			</div>
+		);
+	}
+
 	return (
-		<div
-			role="navigation"
-			aria-label="Pagination"
-			style={{ display: "flex", gap: 8, alignItems: "center" }}
-		>
-			<button
-				onClick={() => onPageChange(1)}
-				disabled={page <= 1}
-				aria-label="First page"
-			>
-				⏮️
-			</button>
-			<button
-				onClick={() => onPageChange(page - 1)}
-				disabled={page <= 1}
-				aria-label="Previous page"
-			>
-				◀️
-			</button>
-			<span aria-live="polite" aria-atomic>{`Page ${page} of ${Math.max(
-				1,
-				totalPages,
-			)}`}</span>
-			<button
-				onClick={() => onPageChange(page + 1)}
-				disabled={page >= totalPages}
-				aria-label="Next page"
-			>
-				▶️
-			</button>
-			<button
-				onClick={() => onPageChange(totalPages)}
-				disabled={page >= totalPages}
-				aria-label="Last page"
-			>
-				⏭️
-			</button>
-			<label style={{ display: "inline-flex", gap: 6, alignItems: "center" }}>
-				Page size:
-				<select
-					value={pageSize}
-					onChange={(e) => onPageSizeChange(Number(e.target.value))}
-					aria-label="Items per page"
-				>
-					{pageSizes.map((s) => (
-						<option key={s} value={s}>
-							{s}
-						</option>
-					))}
-				</select>
-			</label>
+		<div className="flex items-center justify-between w-full">
+			<div className="flex items-center space-x-2">
+				<p className="text-sm text-muted-foreground">
+					Page {page} of {totalPages}
+				</p>
+			</div>
+			
+			<div className="flex items-center space-x-2">
+				<div className="flex items-center space-x-1">
+					<Button
+						variant="outline"
+						size="sm"
+						onClick={() => onPageChange(1)}
+						disabled={page <= 1}
+						aria-label="First page"
+						className="h-8 w-8 p-0"
+					>
+						<ChevronsLeft className="h-4 w-4" />
+					</Button>
+					<Button
+						variant="outline"
+						size="sm"
+						onClick={() => onPageChange(page - 1)}
+						disabled={page <= 1}
+						aria-label="Previous page"
+						className="h-8 w-8 p-0"
+					>
+						<ChevronLeft className="h-4 w-4" />
+					</Button>
+					<Button
+						variant="outline"
+						size="sm"
+						onClick={() => onPageChange(page + 1)}
+						disabled={page >= totalPages}
+						aria-label="Next page"
+						className="h-8 w-8 p-0"
+					>
+						<ChevronRight className="h-4 w-4" />
+					</Button>
+					<Button
+						variant="outline"
+						size="sm"
+						onClick={() => onPageChange(totalPages)}
+						disabled={page >= totalPages}
+						aria-label="Last page"
+						className="h-8 w-8 p-0"
+					>
+						<ChevronsRight className="h-4 w-4" />
+					</Button>
+				</div>
+				
+				<div className="flex items-center space-x-2">
+					<p className="text-sm text-muted-foreground">Rows per page:</p>
+					<Select value={pageSize.toString()} onValueChange={(value) => onPageSizeChange(Number(value))}>
+						<SelectTrigger className="h-8 w-[70px]">
+							<SelectValue />
+						</SelectTrigger>
+						<SelectContent>
+							{pageSizes.map((size) => (
+								<SelectItem key={size} value={size.toString()}>
+									{size}
+								</SelectItem>
+							))}
+						</SelectContent>
+					</Select>
+				</div>
+			</div>
 		</div>
 	);
 }
