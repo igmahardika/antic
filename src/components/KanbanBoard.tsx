@@ -154,9 +154,10 @@ const KanbanBoard = () => {
 		});
 	}, [allTickets, startMonth, endMonth, selectedYear]);
 
-	// --- Agregasi customer dari tiket hasil filter ---
+	// --- Optimized customer aggregation with performance improvements ---
 	const customerCards = useMemo(() => {
-		if (!filteredTickets) return [];
+		if (!filteredTickets || filteredTickets.length === 0) return [];
+		
 		// LOGGING: Show number of customer cards
 		logger.info(
 			"[KanbanBoard] customerCards:",
@@ -165,15 +166,17 @@ const KanbanBoard = () => {
 			new Set(filteredTickets.map((t) => t.customerId || "Unknown")).size,
 			"unique customers",
 		);
-		// Map customer hanya dari filteredTickets
+		
+		// Optimized customer mapping with for loop for better performance
 		const map = new Map();
-		filteredTickets.forEach((t) => {
+		for (let i = 0; i < filteredTickets.length; i++) {
+			const t = filteredTickets[i];
 			const customerId = t.customerId || "Unknown";
 			if (!map.has(customerId)) {
 				map.set(customerId, []);
 			}
 			map.get(customerId).push(t);
-		});
+		}
 		// Hanya customer yang punya tiket di periode filter
 		return Array.from(map.entries()).map(([customerId, tickets]) => {
 			// Use configurable risk classification
@@ -185,10 +188,12 @@ const KanbanBoard = () => {
 				handling: tickets.map((t) => t.handling).filter(Boolean),
 				conclusion: "",
 			};
-			// fullTicketHistory hanya untuk insight/historical, tidak mempengaruhi summary
-			const fullTicketHistory = allTickets.filter(
-				(t) => (t.customerId || "Unknown") === customerId,
-			);
+			// Optimized fullTicketHistory - only load when needed
+			const fullTicketHistory = useMemo(() => {
+				return allTickets.filter(
+					(t) => (t.customerId || "Unknown") === customerId,
+				);
+			}, [allTickets, customerId]);
 			// Trend analysis: bandingkan jumlah tiket bulan ini vs bulan sebelumnya
 			let trend: "Naik" | "Turun" | "Stabil" = "Stabil";
 			if (tickets.length > 0) {

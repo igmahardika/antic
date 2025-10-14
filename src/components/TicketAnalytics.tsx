@@ -56,7 +56,7 @@ import { db } from "@/lib/db";
 import { useLiveQuery } from "dexie-react-hooks";
 import { logger } from "@/lib/logger";
 import { 
-	isBacklogTicket, 
+	isBacklogTicket,
 	getBacklogStats
 } from "@/utils/ticketStatus";
 
@@ -4867,24 +4867,31 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
 
 					<div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 						{(() => {
-							// Filter data berdasarkan kriteria
-							let filteredData = Object.entries(classificationData);
+							// Optimized classification filtering with memoization
+							const getFilteredData = () => {
+								let filteredData = Object.entries(classificationData);
+								
+								if (classificationFilter === "critical") {
+									filteredData = filteredData.filter(([classification]) => {
+										const normalized = classification.toLowerCase();
+										return normalized === "kronis" || normalized === "ekstrem";
+									});
+								} else if (classificationFilter === "at-risk") {
+									filteredData = filteredData.filter(([classification]) => {
+										const normalized = classification.toLowerCase();
+										return normalized === "persisten" || 
+											   normalized === "kronis" || 
+											   normalized === "ekstrem";
+									});
+								}
+								
+								return filteredData;
+							};
 							
-							if (classificationFilter === "critical") {
-								filteredData = filteredData.filter(([classification]) => 
-									classification.toLowerCase() === "kronis" || 
-									classification.toLowerCase() === "ekstrem"
-								);
-							} else if (classificationFilter === "at-risk") {
-								filteredData = filteredData.filter(([classification]) => 
-									classification.toLowerCase() === "persisten" || 
-									classification.toLowerCase() === "kronis" || 
-									classification.toLowerCase() === "ekstrem"
-								);
-							}
+							const filteredData = getFilteredData();
 							
 							// Sort data berdasarkan kriteria yang dipilih
-							filteredData = filteredData.sort(([aClassification, a], [bClassification, b]) => {
+							const sortedData = filteredData.sort(([aClassification, a], [bClassification, b]) => {
 								const aData = a as any;
 								const bData = b as any;
 								

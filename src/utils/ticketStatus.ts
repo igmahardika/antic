@@ -25,7 +25,7 @@ export type TicketStatus = 'OPEN' | 'CLOSED' | 'BACKLOG';
 /**
  * Parse date safely, return null if invalid
  */
-function parseDateSafe(dateString: string | undefined): Date | null {
+export function parseDateSafe(dateString: string | undefined): Date | null {
 	if (!dateString) return null;
 	const d = new Date(dateString);
 	return isNaN(d.getTime()) ? null : d;

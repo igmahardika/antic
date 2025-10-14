@@ -1,6 +1,16 @@
 import { useState, useEffect } from "react";
 import "ag-grid-community/styles/ag-theme-quartz.css";
 import "./AgentAnalytics.css";
+import { parseDateSafe } from "@/utils/ticketStatus";
+
+// Configurable CPI calculation weights
+const CPI_WEIGHTS = {
+	EFFICIENCY: 0.25,
+	QUALITY: 0.30,
+	RESOLUTION: 0.20,
+	RELIABILITY: 0.15,
+	PRODUCTIVITY: 0.10
+} as const;
 import EmojiEventsIcon from "@mui/icons-material/EmojiEvents";
 import StarIcon from "@mui/icons-material/Star";
 import GroupIcon from "@mui/icons-material/Group";
@@ -2329,13 +2339,12 @@ const AgentAnalytics = () => {
 
 												const slaCompliant = agentTickets.filter((t) => {
 													if (!t.openTime || !t.closeHandling) return false;
-													const openDate = new Date(t.openTime);
-													const handlingDate = new Date(t.closeHandling);
-													if (
-														isNaN(openDate.getTime()) ||
-														isNaN(handlingDate.getTime())
-													)
-														return false;
+													
+													// Use safe date parsing
+													const openDate = parseDateSafe(t.openTime);
+													const handlingDate = parseDateSafe(t.closeHandling);
+													
+													if (!openDate || !handlingDate) return false;
 													if (handlingDate <= openDate) return false;
 
 													const diffMin =
@@ -2381,11 +2390,11 @@ const AgentAnalytics = () => {
 												);
 
 												const cpi = Math.round(
-													efficiencyScore * 0.25 +
-														qualityScore * 0.3 +
-														resolutionScore * 0.2 +
-														reliabilityScore * 0.15 +
-														productivityScore * 0.1,
+													efficiencyScore * CPI_WEIGHTS.EFFICIENCY +
+														qualityScore * CPI_WEIGHTS.QUALITY +
+														resolutionScore * CPI_WEIGHTS.RESOLUTION +
+														reliabilityScore * CPI_WEIGHTS.RELIABILITY +
+														productivityScore * CPI_WEIGHTS.PRODUCTIVITY,
 												);
 
 												const getCPILevel = (score) => {
@@ -3248,13 +3257,12 @@ const AgentAnalytics = () => {
 												// SLA calculation - using closeHandling
 												const slaCompliant = agentTickets.filter((t) => {
 													if (!t.openTime || !t.closeHandling) return false;
-													const openDate = new Date(t.openTime);
-													const handlingDate = new Date(t.closeHandling);
-													if (
-														isNaN(openDate.getTime()) ||
-														isNaN(handlingDate.getTime())
-													)
-														return false;
+													
+													// Use safe date parsing
+													const openDate = parseDateSafe(t.openTime);
+													const handlingDate = parseDateSafe(t.closeHandling);
+													
+													if (!openDate || !handlingDate) return false;
 													if (handlingDate <= openDate) return false;
 
 													const diffMin =
@@ -3410,11 +3418,11 @@ const AgentAnalytics = () => {
 
 												// Calculate CPI with weights
 												const cpi = Math.round(
-													efficiencyScore * 0.25 +
-														qualityScore * 0.3 +
-														resolutionScore * 0.2 +
-														reliabilityScore * 0.15 +
-														productivityScore * 0.1,
+													efficiencyScore * CPI_WEIGHTS.EFFICIENCY +
+														qualityScore * CPI_WEIGHTS.QUALITY +
+														resolutionScore * CPI_WEIGHTS.RESOLUTION +
+														reliabilityScore * CPI_WEIGHTS.RELIABILITY +
+														productivityScore * CPI_WEIGHTS.PRODUCTIVITY,
 												);
 
 												// Determine CPI level
@@ -3908,13 +3916,12 @@ const AgentAnalytics = () => {
 
 												const slaCompliant = agentTickets.filter((t) => {
 													if (!t.openTime || !t.closeHandling) return false;
-													const openDate = new Date(t.openTime);
-													const handlingDate = new Date(t.closeHandling);
-													if (
-														isNaN(openDate.getTime()) ||
-														isNaN(handlingDate.getTime())
-													)
-														return false;
+													
+													// Use safe date parsing
+													const openDate = parseDateSafe(t.openTime);
+													const handlingDate = parseDateSafe(t.closeHandling);
+													
+													if (!openDate || !handlingDate) return false;
 													if (handlingDate <= openDate) return false;
 
 													const diffMin =

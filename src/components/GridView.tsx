@@ -3,6 +3,7 @@ import { ITicket } from "@/lib/db";
 import { db } from "@/lib/db";
 import { formatDateTimeDDMMYYYY } from "@/lib/utils";
 import { useAnalytics } from "./AnalyticsContext";
+import { parseDateSafe } from "@/utils/ticketStatus";
 import ConfirmationNumberIcon from "@mui/icons-material/ConfirmationNumber";
 import GroupIcon from "@mui/icons-material/Group";
 import HowToRegIcon from "@mui/icons-material/HowToReg";
@@ -20,55 +21,59 @@ import { usePageUrlState } from "@/hooks/usePageUrlState";
 import { PaginationControls } from "@/components";
 import { OverflowX } from "@/components/OverflowX";
 import { logger } from "@/lib/logger";
+import ErrorBoundary from "./ErrorBoundary";
 
-// Helper function to parse date and extract month/year
+// Optimized date parsing with caching
+const dateParseCache = new Map<string, { month: string; year: string }>();
+
 const parseDateForFilter = (dateString: string) => {
 	if (!dateString) return { month: "", year: "" };
+
+	// Check cache first
+	if (dateParseCache.has(dateString)) {
+		return dateParseCache.get(dateString)!;
+	}
 
 	let month = "";
 	let year = "";
 
-	try {
-		// Try parsing as Date object first
-		const date = new Date(dateString);
-		if (!isNaN(date.getTime())) {
-			month = String(date.getMonth() + 1).padStart(2, "0");
-			year = String(date.getFullYear());
-			return { month, year };
-		}
-	} catch (error) {
-		// Continue to string parsing
+	// Use safe date parsing first
+	const date = parseDateSafe(dateString);
+	if (date) {
+		month = String(date.getMonth() + 1).padStart(2, "0");
+		year = String(date.getFullYear());
+		const result = { month, year };
+		dateParseCache.set(dateString, result);
+		return result;
 	}
 
-	// Try to extract from string patterns
-	// Pattern 1: YYYY-MM-DD or YYYY/MM/DD
-	const isoMatch = dateString.match(/(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})/);
-	if (isoMatch) {
-		year = isoMatch[1];
-		month = isoMatch[2].padStart(2, "0");
-		return { month, year };
-	}
+	// Fallback to string patterns (optimized regex)
+	const patterns = [
+		/(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})/, // YYYY-MM-DD or YYYY/MM/DD
+		/(\d{1,2})[-\/](\d{1,2})[-\/](\d{4})/, // DD/MM/YYYY or DD-MM-YYYY
+		/(\d{4})/ // Just year
+	];
 
-	// Pattern 2: DD/MM/YYYY or DD-MM-YYYY
-	const dmyMatch = dateString.match(/(\d{1,2})[-\/](\d{1,2})[-\/](\d{4})/);
-	if (dmyMatch) {
-		year = dmyMatch[3];
-		month = dmyMatch[2].padStart(2, "0");
-		return { month, year };
-	}
-
-	// Pattern 3: Just extract year and month from any 4-digit year
-	const yearMatch = dateString.match(/(\d{4})/);
-	if (yearMatch) {
-		year = yearMatch[1];
-		// Try to find month pattern
-		const monthMatch = dateString.match(/(\d{1,2})/);
-		if (monthMatch) {
-			month = monthMatch[1].padStart(2, "0");
+	for (const pattern of patterns) {
+		const match = dateString.match(pattern);
+		if (match) {
+			if (pattern === patterns[0]) { // YYYY-MM-DD
+				year = match[1];
+				month = match[2].padStart(2, "0");
+			} else if (pattern === patterns[1]) { // DD/MM/YYYY
+				year = match[3];
+				month = match[2].padStart(2, "0");
+			} else { // Just year
+				year = match[1];
+				month = "01"; // Default to January
+			}
+			break;
 		}
 	}
 
-	return { month, year };
+	const result = { month, year };
+	dateParseCache.set(dateString, result);
+	return result;
 };
 
 // Helper functions untuk validasi durasi
@@ -274,29 +279,37 @@ const GridView = ({ data: propsData }: { data?: ITicket[] }) => {
 	// Ambil jumlah total tiket di database (tanpa filter apapun)
 	const totalTicketsInDb = useLiveQuery(() => db.tickets.count(), []);
 
-	// Duration statistics
+	// Optimized duration statistics with memoization
 	const durationStats = useMemo(() => {
-		if (!data)
+		if (!data || data.length === 0)
 			return { invalidDuration: 0, longDuration: 0, zeroDuration: 0 };
 
 		let invalidDuration = 0;
 		let longDuration = 0;
 		let zeroDuration = 0;
 
-		data.forEach((ticket) => {
+		// Use for loop for better performance
+		for (let i = 0; i < data.length; i++) {
+			const ticket = data[i];
 			const duration = ticket.duration?.rawHours || 0;
-			if (duration === 0) zeroDuration++;
-			else if (duration > 24) invalidDuration++;
-			else if (duration > 8) longDuration++;
-
-			// Check handling duration (ART)
 			const handlingDuration = ticket.handlingDuration?.rawHours || 0;
-			if (handlingDuration > 24) invalidDuration++;
-
-			// Check handling duration 1 (FRT)
 			const handlingDuration1 = ticket.handlingDuration1?.rawHours || 0;
+
+			// Count zero durations
+			if (duration === 0) zeroDuration++;
+			if (handlingDuration === 0) zeroDuration++;
+			if (handlingDuration1 === 0) zeroDuration++;
+
+			// Count invalid durations (>24h)
+			if (duration > 24) invalidDuration++;
+			if (handlingDuration > 24) invalidDuration++;
 			if (handlingDuration1 > 24) invalidDuration++;
-		});
+
+			// Count long durations (8-24h)
+			if (duration > 8 && duration <= 24) longDuration++;
+			if (handlingDuration > 8 && handlingDuration <= 24) longDuration++;
+			if (handlingDuration1 > 8 && handlingDuration1 <= 24) longDuration++;
+		}
 
 		return { invalidDuration, longDuration, zeroDuration };
 	}, [data]);
@@ -310,15 +323,16 @@ const GridView = ({ data: propsData }: { data?: ITicket[] }) => {
 			if (!a.openTime && !b.openTime) return 0;
 			if (!a.openTime) return 1; // Put items without openTime at the end
 			if (!b.openTime) return -1;
-			
-			const dateA = new Date(a.openTime);
-			const dateB = new Date(b.openTime);
-			
+
+			// Use safe date parsing
+			const dateA = parseDateSafe(a.openTime);
+			const dateB = parseDateSafe(b.openTime);
+
 			// If dates are invalid, put them at the end
-			if (isNaN(dateA.getTime()) && isNaN(dateB.getTime())) return 0;
-			if (isNaN(dateA.getTime())) return 1;
-			if (isNaN(dateB.getTime())) return -1;
-			
+			if (!dateA && !dateB) return 0;
+			if (!dateA) return 1;
+			if (!dateB) return -1;
+
 			// Sort descending (newest first)
 			return dateB.getTime() - dateA.getTime();
 		});
@@ -352,18 +366,14 @@ const GridView = ({ data: propsData }: { data?: ITicket[] }) => {
 		// Filter customer validation - using openTime as reference
 		if (validasiFilter !== "all" && customerNames.size > 0) {
 			result = result.filter((row) => {
-				// Check if it's 2025 data using openTime
+				// Check if it's 2025 data using safe date parsing
 				let is2025 = false;
 				if (row.openTime) {
-					try {
-						const openDate = new Date(row.openTime);
-						if (!isNaN(openDate.getTime())) {
-							is2025 = openDate.getFullYear() === 2025;
-						} else {
-							// Fallback to string check
-							is2025 = row.openTime.includes("2025");
-						}
-					} catch (error) {
+					const openDate = parseDateSafe(row.openTime);
+					if (openDate) {
+						is2025 = openDate.getFullYear() === 2025;
+					} else {
+						// Fallback to string check
 						is2025 = row.openTime.includes("2025");
 					}
 				}
@@ -823,6 +833,7 @@ const GridView = ({ data: propsData }: { data?: ITicket[] }) => {
 				</CardContent>
 			</Card>
 		</PageWrapper>
+		</ErrorBoundary>
 	);
 };
 
