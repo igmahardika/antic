@@ -50,7 +50,8 @@ import { usePageUrlState } from "@/hooks/usePageUrlState";
 import { PaginationControls } from "@/components";
 import { logger } from "@/lib/logger";
 import { 
-	isClosedTicket
+	isClosedTicket,
+	getTicketStatus
 } from "@/utils/ticketStatus";
 
 // Using built-in fonts for reliability - no external font loading needed
@@ -61,6 +62,45 @@ if (typeof window !== "undefined" && !window.Buffer) {
 		window.Buffer = Buffer;
 	});
 }
+
+// Configurable risk thresholds
+const RISK_THRESHOLDS = {
+	PERSISTENT: 3,
+	CHRONIC: 10,
+	EXTREME: 18
+} as const;
+
+// Helper function for risk classification
+const getRiskClassification = (ticketCount: number): string => {
+	if (ticketCount >= RISK_THRESHOLDS.EXTREME) return "Ekstrem";
+	if (ticketCount >= RISK_THRESHOLDS.CHRONIC) return "Kronis";
+	if (ticketCount >= RISK_THRESHOLDS.PERSISTENT) return "Persisten";
+	return "Normal";
+};
+
+// Helper function for safe date parsing
+const parseDateSafe = (dateString: string | undefined): Date | null => {
+	if (!dateString) return null;
+	const date = new Date(dateString);
+	return isNaN(date.getTime()) ? null : date;
+};
+
+// Error boundary component
+const ErrorFallback = ({ error, customer }: { error: string; customer?: any }) => (
+	<div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+		<div className="flex items-center gap-2 text-red-700">
+			<WarningAmberIcon className="w-5 h-5" />
+			<span className="font-semibold">Error loading customer data</span>
+		</div>
+		<p className="text-red-600 text-sm mt-1">{error}</p>
+		{customer && (
+			<p className="text-red-500 text-xs mt-2">
+				Customer: {customer.name || customer.customerId || "Unknown"}
+			</p>
+		)}
+	</div>
+);
+
 
 const KanbanBoard = () => {
 	const analytics = useAnalytics();
@@ -108,9 +148,9 @@ const KanbanBoard = () => {
 		const cutoffStart = new Date(y, mStart, 1, 0, 0, 0, 0);
 		const cutoffEnd = new Date(y, mEnd + 1, 0, 23, 59, 59, 999);
 		return allTickets.filter((t) => {
-			if (!t.openTime) return false;
-			const d = new Date(t.openTime);
-			return d >= cutoffStart && d <= cutoffEnd;
+			const openDate = parseDateSafe(t.openTime);
+			if (!openDate) return false;
+			return openDate >= cutoffStart && openDate <= cutoffEnd;
 		});
 	}, [allTickets, startMonth, endMonth, selectedYear]);
 
@@ -136,10 +176,8 @@ const KanbanBoard = () => {
 		});
 		// Hanya customer yang punya tiket di periode filter
 		return Array.from(map.entries()).map(([customerId, tickets]) => {
-			let repClass = "Normal";
-			if (tickets.length > 18) repClass = "Ekstrem";
-			else if (tickets.length >= 10) repClass = "Kronis";
-			else if (tickets.length >= 3) repClass = "Persisten";
+			// Use configurable risk classification
+			const repClass = getRiskClassification(tickets.length);
 			// Analisis insight
 			const analysis = {
 				description: tickets.map((t) => t.description).filter(Boolean),
@@ -161,15 +199,15 @@ const KanbanBoard = () => {
 				const mPrev = mEnd - 1;
 				// Bulan ini
 				const ticketsThisMonth = tickets.filter((t) => {
-					if (!t.openTime) return false;
-					const d = new Date(t.openTime);
-					return d.getFullYear() === y && d.getMonth() === mEnd;
+					const openDate = parseDateSafe(t.openTime);
+					if (!openDate) return false;
+					return openDate.getFullYear() === y && openDate.getMonth() === mEnd;
 				});
 				// Bulan sebelumnya
 				const ticketsPrevMonth = tickets.filter((t) => {
-					if (!t.openTime) return false;
-					const d = new Date(t.openTime);
-					return d.getFullYear() === y && d.getMonth() === mPrev;
+					const openDate = parseDateSafe(t.openTime);
+					if (!openDate) return false;
+					return openDate.getFullYear() === y && openDate.getMonth() === mPrev;
 				});
 				if (ticketsThisMonth.length > ticketsPrevMonth.length) trend = "Naik";
 				else if (ticketsThisMonth.length < ticketsPrevMonth.length)
@@ -281,11 +319,9 @@ const KanbanBoard = () => {
 		if (!allTickets) return [];
 		const yearSet = new Set<string>();
 		allTickets.forEach((t) => {
-			if (t.openTime) {
-				const d = new Date(t.openTime);
-				if (!isNaN(d.getTime())) {
-					yearSet.add(String(d.getFullYear()));
-				}
+			const openDate = parseDateSafe(t.openTime);
+			if (openDate) {
+				yearSet.add(String(openDate.getFullYear()));
 			}
 		});
 		return Array.from(yearSet).sort();
@@ -442,9 +478,9 @@ const KanbanBoard = () => {
 		// Group tickets by month-year
 		const groups = {};
 		tickets.forEach((t) => {
-			if (!t.openTime) return;
-			const d = new Date(t.openTime);
-			const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+			const openDate = parseDateSafe(t.openTime);
+			if (!openDate) return;
+			const key = `${openDate.getFullYear()}-${String(openDate.getMonth() + 1).padStart(2, "0")}`;
 			if (!groups[key]) groups[key] = [];
 			groups[key].push(t);
 		});
@@ -474,8 +510,12 @@ const KanbanBoard = () => {
 					const [yyyy, mm] = key.split("-");
 					const monthLabel = `${monthNames[parseInt(mm, 10) - 1]} ${yyyy}`;
 					const monthTickets = groups[key].sort(
-						(a, b) =>
-							Number(new Date(a.openTime)) - Number(new Date(b.openTime)),
+						(a, b) => {
+							const dateA = parseDateSafe(a.openTime);
+							const dateB = parseDateSafe(b.openTime);
+							if (!dateA || !dateB) return 0;
+							return dateA.getTime() - dateB.getTime();
+						}
 					);
 
 					return (
@@ -542,17 +582,17 @@ const KanbanBoard = () => {
 												<td className="px-4 py-3">
 													<Badge
 														variant={
-															t.status === "Closed"
+															getTicketStatus(t) === "CLOSED"
 																? "success"
-																: t.status === "Open"
+																: getTicketStatus(t) === "OPEN"
 																	? "warning"
-																	: t.status === "Escalated"
+																	: getTicketStatus(t) === "BACKLOG"
 																		? "danger"
 																		: "default"
 														}
 														className="text-xs font-semibold"
 													>
-														{t.status || "Unknown"}
+														{getTicketStatus(t)}
 													</Badge>
 												</td>
 											</tr>
@@ -602,9 +642,9 @@ const KanbanBoard = () => {
 		const tickets = customer.fullTicketHistory || customer.allTickets || [];
 		const ticketsPerMonth = months.map(({ year, month }) =>
 			tickets.filter((t) => {
-				if (!t.openTime) return false;
-				const d = new Date(t.openTime);
-				return d.getFullYear() === year && d.getMonth() === month;
+				const openDate = parseDateSafe(t.openTime);
+				if (!openDate) return false;
+				return openDate.getFullYear() === year && openDate.getMonth() === month;
 			}),
 		);
 
@@ -710,8 +750,9 @@ const KanbanBoard = () => {
 	}
 
 	function CustomerCard({ customer, tickets }) {
-		// tickets: tiket customer ini sesuai filter waktu & risk
-		const closed = tickets.filter(isClosedTicket).length;
+		try {
+			// tickets: tiket customer ini sesuai filter waktu & risk
+			const closed = tickets.filter(isClosedTicket).length;
 		const percentClosed =
 			tickets.length > 0
 				? Math.round((Number(closed) / Number(tickets.length)) * 100)
@@ -739,8 +780,12 @@ const KanbanBoard = () => {
 		const lastTicket = tickets
 			.slice()
 			.sort(
-				(a, b) =>
-					new Date(b.openTime).getTime() - new Date(a.openTime).getTime(),
+				(a, b) => {
+					const dateA = parseDateSafe(a.openTime);
+					const dateB = parseDateSafe(b.openTime);
+					if (!dateA || !dateB) return 0;
+					return dateB.getTime() - dateA.getTime();
+				}
 			)[0];
 		// Trend badge
 		let trendBadge = null;
@@ -881,6 +926,10 @@ const KanbanBoard = () => {
 				</Tooltip>
 			</TooltipProvider>
 		);
+		} catch (error) {
+			logger.error("CustomerCard error:", error);
+			return <ErrorFallback error={error.message} customer={customer} />;
+		}
 	}
 
 	// Helper untuk normalisasi label risk ke bahasa Inggris
@@ -1227,9 +1276,9 @@ const KanbanBoard = () => {
 		// Group tickets by month-year for ticket history
 		const groups = {};
 		(tickets || []).forEach((t) => {
-			if (!t.openTime) return;
-			const d = new Date(t.openTime);
-			const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+			const openDate = parseDateSafe(t.openTime);
+			if (!openDate) return;
+			const key = `${openDate.getFullYear()}-${String(openDate.getMonth() + 1).padStart(2, "0")}`;
 			if (!groups[key]) groups[key] = [];
 			groups[key].push(t);
 		});
@@ -1238,12 +1287,15 @@ const KanbanBoard = () => {
 		);
 
 		// Helper function for status badge
-		const getStatusBadge = (status) => {
+		const getStatusBadge = (ticket) => {
+			const status = getTicketStatus(ticket);
 			switch (status) {
-				case "Closed":
+				case "CLOSED":
 					return [styles.statusBadge, styles.statusClosed];
-				case "Open":
+				case "OPEN":
 					return [styles.statusBadge, styles.statusOpen];
+				case "BACKLOG":
+					return [styles.statusBadge, styles.statusPending];
 				default:
 					return [styles.statusBadge, styles.statusPending];
 			}
@@ -1419,14 +1471,17 @@ const KanbanBoard = () => {
 											style={[styles.tableRow, i % 2 === 1 && styles.zebra]}
 										>
 											<Text style={[styles.tableCell, { flex: 1.2 }]}>
-												{t.openTime
-													? new Date(t.openTime).toLocaleDateString("en-GB") +
-														" " +
-														new Date(t.openTime).toLocaleTimeString("en-GB", {
-															hour: "2-digit",
-															minute: "2-digit",
-														})
-													: "-"}
+												{(() => {
+													const openDate = parseDateSafe(t.openTime);
+													return openDate
+														? openDate.toLocaleDateString("en-GB") +
+															" " +
+															openDate.toLocaleTimeString("en-GB", {
+																hour: "2-digit",
+																minute: "2-digit",
+															})
+														: "-";
+												})()}
 											</Text>
 											<Text style={[styles.tableCell, { flex: 2 }]}>
 												{t.description || "No description"}
@@ -1441,8 +1496,8 @@ const KanbanBoard = () => {
 												{t.handlingDuration?.formatted || "-"}
 											</Text>
 											<Text style={[styles.tableCell, { flex: 0.8 }]}>
-												<Text style={getStatusBadge(t.status)}>
-													{t.status || "Unknown"}
+												<Text style={getStatusBadge(t)}>
+													{getTicketStatus(t)}
 												</Text>
 											</Text>
 										</View>
@@ -1526,14 +1581,17 @@ const KanbanBoard = () => {
 										style={[styles.tableRow, i % 2 === 1 && styles.zebra]}
 									>
 										<Text style={[styles.tableCell, { flex: 1.2 }]}>
-											{t.openTime
-												? new Date(t.openTime).toLocaleDateString("en-GB") +
-													" " +
-													new Date(t.openTime).toLocaleTimeString("en-GB", {
-														hour: "2-digit",
-														minute: "2-digit",
-													})
-												: "-"}
+											{(() => {
+												const openDate = parseDateSafe(t.openTime);
+												return openDate
+													? openDate.toLocaleDateString("en-GB") +
+														" " +
+														openDate.toLocaleTimeString("en-GB", {
+															hour: "2-digit",
+															minute: "2-digit",
+														})
+													: "-";
+											})()}
 										</Text>
 										<Text style={[styles.tableCell, { flex: 2 }]}>
 											{t.description || "No description"}
@@ -1548,8 +1606,8 @@ const KanbanBoard = () => {
 											{t.handlingDuration?.formatted || "-"}
 										</Text>
 										<Text style={[styles.tableCell, { flex: 0.8 }]}>
-											<Text style={getStatusBadge(t.status)}>
-												{t.status || "Unknown"}
+											<Text style={getStatusBadge(t)}>
+												{getTicketStatus(t)}
 											</Text>
 										</Text>
 									</View>
@@ -2082,9 +2140,9 @@ const KanbanBoard = () => {
 											const history = (
 												selectedCustomer.allTickets || []
 											).reduce((acc, t) => {
-												if (!t.openTime) return acc;
-												const d = new Date(t.openTime);
-												const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+												const openDate = parseDateSafe(t.openTime);
+												if (!openDate) return acc;
+												const key = `${openDate.getFullYear()}-${String(openDate.getMonth() + 1).padStart(2, "0")}`;
 												acc[key] = (acc[key] || 0) + 1;
 												return acc;
 											}, {});
@@ -2198,16 +2256,14 @@ const KanbanBoard = () => {
 															"Customer ID": selectedCustomer.customerId,
 															Description: ticket.description || "-",
 															Status: ticket.status || "-",
-															"Open Time": ticket.openTime
-																? new Date(ticket.openTime).toLocaleString(
-																		"id-ID",
-																	)
-																: "-",
-															"Close Time": ticket.closeTime
-																? new Date(ticket.closeTime).toLocaleString(
-																		"id-ID",
-																	)
-																: "-",
+															"Open Time": (() => {
+																const openDate = parseDateSafe(ticket.openTime);
+																return openDate ? openDate.toLocaleString("id-ID") : "-";
+															})(),
+															"Close Time": (() => {
+																const closeDate = parseDateSafe(ticket.closeTime);
+																return closeDate ? closeDate.toLocaleString("id-ID") : "-";
+															})(),
 															"Handling Duration":
 																ticket.handlingDuration?.formatted || "-",
 															Cause: ticket.cause || "-",
@@ -2241,16 +2297,14 @@ const KanbanBoard = () => {
 															"Customer ID": selectedCustomer.customerId,
 															Description: ticket.description || "-",
 															Status: ticket.status || "-",
-															"Open Time": ticket.openTime
-																? new Date(ticket.openTime).toLocaleString(
-																		"id-ID",
-																	)
-																: "-",
-															"Close Time": ticket.closeTime
-																? new Date(ticket.closeTime).toLocaleString(
-																		"id-ID",
-																	)
-																: "-",
+															"Open Time": (() => {
+																const openDate = parseDateSafe(ticket.openTime);
+																return openDate ? openDate.toLocaleString("id-ID") : "-";
+															})(),
+															"Close Time": (() => {
+																const closeDate = parseDateSafe(ticket.closeTime);
+																return closeDate ? closeDate.toLocaleString("id-ID") : "-";
+															})(),
 															"Handling Duration":
 																ticket.handlingDuration?.formatted || "-",
 															Cause: ticket.cause || "-",
