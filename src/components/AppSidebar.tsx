@@ -134,12 +134,12 @@ export default function AppSidebar() {
 			children: [
 				{
 					name: "Formulas",
-					path: "/documentation/formulas-new",
+					path: "/documentation/admin-rumus",
 					icon: <ScienceIcon sx={{ fontSize: 16 }} />,
 				},
 				{
-					name: "Formulas Legacy",
-					path: "/documentation/admin-rumus",
+					name: "Formulas Temp",
+					path: "/admin-rumus-temp",
 					icon: <ScienceIcon sx={{ fontSize: 16 }} />,
 				},
 			],

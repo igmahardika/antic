@@ -1,0 +1,213 @@
+{
+  "sections": [
+    {
+      "id": "changelog",
+      "title": "Changelog & Recent Updates",
+      "icon": "🔄",
+      "defaultExpanded": true,
+      "lastUpdated": "2025-01-15T10:00:00Z",
+      "version": "2.3.0",
+      "tags": ["updates", "changelog", "releases"],
+      "difficulty": "beginner",
+      "relatedSections": ["system-overview", "technical-specs"],
+      "content": [
+        {
+          "id": "latest-update",
+          "type": "changelog",
+          "data": {
+            "version": "2.3.0",
+            "date": "August 2025",
+            "type": "major",
+            "title": "Summary Dashboard Enhancement & Visual Optimization",
+            "description": "Major update focusing on dashboard improvements, visual consistency, and performance optimization.",
+            "features": [
+              "Layout Optimization: Changed to 2 rows with 6 cards each for better space utilization",
+              "Agent Leaderboard Redesign: Transformed from table to card-based grid with 5 agents per row",
+              "Chart Improvements: Enhanced Incident Trends with dual Y-axis and NCAL Performance with rounded bars",
+              "Visual Consistency: Standardized font sizes, colors, and spacing across all elements"
+            ],
+            "improvements": [
+              "TypeScript Optimization: Fixed unused parameters in chart legends",
+              "Chart Performance: Optimized chart rendering and data processing",
+              "Responsive Design: Improved mobile and tablet layout compatibility",
+              "Code Cleanup: Removed unused imports and optimized component structure"
+            ],
+            "fixes": [
+              "Fixed pagination issues in GridView component",
+              "Resolved uninitialized variable error in KanbanBoard",
+              "Fixed customer dialog positioning in Customer Analytics"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "system-overview",
+      "title": "System Overview",
+      "icon": "🏗️",
+      "defaultExpanded": false,
+      "lastUpdated": "2025-01-15T10:00:00Z",
+      "version": "2.3.0",
+      "tags": ["architecture", "overview", "system"],
+      "difficulty": "beginner",
+      "relatedSections": ["data-management", "technical-specs"],
+      "content": [
+        {
+          "id": "architecture-overview",
+          "type": "text",
+          "data": "The Helpdesk Management System is built with modern web technologies including React, TypeScript, and IndexedDB for client-side data storage. The system follows a component-based architecture with clear separation of concerns."
+        },
+        {
+          "id": "key-components",
+          "type": "list",
+          "data": {
+            "items": [
+              "React 18 with TypeScript for type safety",
+              "IndexedDB (Dexie.js) for client-side data storage",
+              "Tailwind CSS for styling and responsive design",
+              "Radix UI for accessible component primitives",
+              "Recharts for data visualization",
+              "React Router for navigation"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "data-management",
+      "title": "Data Management",
+      "icon": "💾",
+      "defaultExpanded": false,
+      "lastUpdated": "2025-01-15T10:00:00Z",
+      "version": "2.3.0",
+      "tags": ["database", "storage", "data"],
+      "difficulty": "intermediate",
+      "relatedSections": ["system-overview", "technical-specs"],
+      "content": [
+        {
+          "id": "database-schema",
+          "type": "text",
+          "data": "The system uses IndexedDB with Dexie.js for client-side data storage. The database schema includes tables for tickets, incidents, customers, and upload sessions."
+        },
+        {
+          "id": "data-tables",
+          "type": "table",
+          "data": {
+            "headers": ["Table", "Purpose", "Key Fields"],
+            "rows": [
+              ["tickets", "Store ticket information", "id, name, openTime, resolvedTime, status"],
+              ["incidents", "Store incident data", "id, ncal, site, description, timestamp"],
+              ["customers", "Store customer information", "id, nama, jenis_klien, contact"],
+              ["uploadSessions", "Track file uploads", "id, fileName, fileHash, uploadTimestamp"]
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "technical-specs",
+      "title": "Technical Specifications",
+      "icon": "⚙️",
+      "defaultExpanded": false,
+      "lastUpdated": "2025-01-15T10:00:00Z",
+      "version": "2.3.0",
+      "tags": ["performance", "guidelines", "specifications"],
+      "difficulty": "intermediate",
+      "relatedSections": ["system-overview", "data-management"],
+      "content": [
+        {
+          "id": "performance-optimization",
+          "type": "list",
+          "data": {
+            "items": [
+              "React.memo for component optimization",
+              "useMemo and useCallback hooks",
+              "Virtual scrolling for large datasets",
+              "Lazy loading of components",
+              "Efficient re-rendering strategies",
+              "Memory leak prevention"
+            ]
+          }
+        },
+        {
+          "id": "development-guidelines",
+          "type": "code",
+          "data": "// Code Style Guidelines\nconst exampleComponent = () => {\n  const [state, setState] = useState();\n  \n  useEffect(() => {\n    // Effect logic here\n  }, []);\n  \n  return <div>Component JSX</div>;\n};"
+        }
+      ]
+    },
+    {
+      "id": "advanced-documentation",
+      "title": "Advanced Technical Documentation & Calculation Formulas",
+      "icon": "📊",
+      "defaultExpanded": true,
+      "lastUpdated": "2025-01-15T10:00:00Z",
+      "version": "2.3.0",
+      "tags": ["formulas", "calculations", "metrics", "advanced"],
+      "difficulty": "advanced",
+      "relatedSections": ["technical-specs"],
+      "content": [
+        {
+          "id": "fcr-formula",
+          "type": "formula",
+          "data": {
+            "name": "First Call Resolution (FCR)",
+            "description": "Percentage of tickets resolved on the first call",
+            "formula": "FCR = (Tickets Resolved on First Call / Total Tickets) × 100%",
+            "dataSource": [
+              "Tickets with resolution_attempts = 1",
+              "Total tickets in period",
+              "Status = 'resolved'"
+            ],
+            "example": {
+              "inputs": {
+                "First-call resolutions": "85 tickets",
+                "Total tickets": "100 tickets"
+              },
+              "calculation": "FCR = (85/100) × 100%",
+              "result": "85%"
+            },
+            "target": "≥ 80% (Industry Standard)",
+            "category": "Customer Service"
+          }
+        },
+        {
+          "id": "art-formula",
+          "type": "formula",
+          "data": {
+            "name": "Average Resolution Time (ART)",
+            "description": "Average time taken to resolve tickets",
+            "formula": "ART = Σ(Resolution Time) / Number of Resolved Tickets",
+            "dataSource": [
+              "resolved_time - created_time",
+              "Business hours only (9AM-6PM)",
+              "Exclude weekends and holidays"
+            ],
+            "example": {
+              "inputs": {
+                "Total resolution time": "1,200 hours",
+                "Resolved tickets": "100"
+              },
+              "calculation": "ART = 1,200/100",
+              "result": "12 hours"
+            },
+            "target": "≤ 24 hours (SLA Standard)",
+            "category": "Performance"
+          }
+        },
+        {
+          "id": "csat-metric",
+          "type": "metric",
+          "data": {
+            "name": "Customer Satisfaction Score (CSAT)",
+            "description": "Customer satisfaction rating based on survey responses",
+            "formula": "CSAT = (Satisfied Responses / Total Responses) × 100%",
+            "target": "≥ 85% (Industry Standard)",
+            "category": "Customer Experience",
+            "importance": "high"
+          }
+        }
+      ]
+    }
+  ]
+}
