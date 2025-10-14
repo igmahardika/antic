@@ -55,6 +55,10 @@ import { Badge } from "./ui/badge";
 import { db } from "@/lib/db";
 import { useLiveQuery } from "dexie-react-hooks";
 import { logger } from "@/lib/logger";
+import { 
+	isBacklogTicket, 
+	getBacklogStats
+} from "@/utils/ticketStatus";
 
 // ClassificationDetails type removed - not used
 
@@ -323,6 +327,10 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
 	// Semua hook harus di awal
 
 	const [normalizePer1000, setNormalizePer1000] = useState(false);
+	
+	// State untuk Classification Analytics filtering dan sorting
+	const [classificationSortBy, setClassificationSortBy] = useState<"count" | "trend" | "priority">("count");
+	const [classificationFilter, setClassificationFilter] = useState<"all" | "critical" | "at-risk">("all");
 	const {
 		ticketAnalyticsData,
 		gridData, // filtered tickets
@@ -1423,43 +1431,13 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
 				{(() => {
 					const now = new Date();
 					// Gunakan definisi yang sama dengan Open tickets (logika kompleks)
-					const openTickets = (Array.isArray(gridData) ? gridData : []).filter(
-						(t) => {
-							// Jika tidak ada closeTime, termasuk tiket open
-							if (!t?.closeTime) return true;
+					// Use standardized backlog calculation
+					const allTickets = Array.isArray(gridData) ? gridData : [];
+					const backlogStats = getBacklogStats(allTickets);
 
-							const openDate = parseDateSafe(t?.openTime);
-							const closeDate = parseDateSafe(t?.closeTime);
-
-							if (!openDate || !closeDate) return true;
-
-							// Fallback 1: jika closeTime di masa depan dari sekarang, anggap open
-							if (closeDate > now) return true;
-
-							// Fallback 2: jika closeTime di bulan berikutnya dari openTime, anggap open
-							const openMonth = openDate.getMonth();
-							const openYear = openDate.getFullYear();
-							const closeMonth = closeDate.getMonth();
-							const closeYear = closeDate.getFullYear();
-
-							if (
-								closeYear > openYear ||
-								(closeYear === openYear && closeMonth > openMonth)
-							) {
-								return true;
-							}
-
-							// Fallback 3: jika closeTime lebih dari 30 hari setelah openTime, anggap open
-							const daysDiff =
-								(closeDate.getTime() - openDate.getTime()) /
-								(1000 * 60 * 60 * 24);
-							if (daysDiff > 30) return true;
-
-							return false;
-						},
-					);
-
-					const agesH = openTickets
+					// Use standardized backlog age calculation
+					const backlogTickets = allTickets.filter(isBacklogTicket);
+					const agesH = backlogTickets
 						.map((t) => {
 							const open = parseDateSafe(t?.openTime);
 							return open ? (now.getTime() - open.getTime()) / 3_600_000 : null;
@@ -1473,8 +1451,8 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
 							<SummaryCard
 								icon={<ErrorOutlineIcon className="w-6 h-6 text-white" />}
 								title="Backlog (Open)"
-								value={openTickets.length.toLocaleString()}
-								description="Tiket open: no closeTime, future closeTime, atau >30 hari"
+								value={backlogStats.backlog.toLocaleString()}
+								description="Tiket backlog berdasarkan status standar"
 								iconBg="bg-yellow-600"
 							/>
 							<SummaryCard
@@ -4793,8 +4771,144 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
 						</div>
 					</div>
 
+					{/* Summary Overview Cards */}
+					{(() => {
+						const totalCustomers = Object.values(classificationData).reduce((sum: number, d: any) => sum + (Number(d?.count) || 0), 0);
+						const normalCount = Number((classificationData.normal as any)?.count) || 0;
+						const persistenCount = Number((classificationData.persisten as any)?.count) || 0;
+						const kronisCount = Number((classificationData.kronis as any)?.count) || 0;
+						const ekstremCount = Number((classificationData.ekstrem as any)?.count) || 0;
+						const atRiskCount = persistenCount + kronisCount + ekstremCount;
+						
+						return (
+							<div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+								<SummaryCard
+									icon={<ConfirmationNumberIcon className="w-6 h-6 text-white" />}
+									title="Total Customers"
+									value={totalCustomers.toString()}
+									description="Total pelanggan yang diklasifikasi"
+									iconBg="bg-blue-600"
+								/>
+								<SummaryCard
+									icon={<CheckCircleIcon className="w-6 h-6 text-white" />}
+									title="Normal"
+									value={normalCount.toString()}
+									description={`${Number(totalCustomers) > 0 ? ((Number(normalCount) / Number(totalCustomers)) * 100).toFixed(1) : "0"}% dari total`}
+									iconBg="bg-green-600"
+								/>
+								<SummaryCard
+									icon={<WarningAmberIcon className="w-6 h-6 text-white" />}
+									title="At Risk"
+									value={atRiskCount.toString()}
+									description={`${Number(totalCustomers) > 0 ? ((Number(atRiskCount) / Number(totalCustomers)) * 100).toFixed(1) : "0"}% dari total`}
+									iconBg="bg-yellow-600"
+								/>
+								<SummaryCard
+									icon={<ErrorOutlineIcon className="w-6 h-6 text-white" />}
+									title="Critical"
+									value={(kronisCount + ekstremCount).toString()}
+									description={`${Number(totalCustomers) > 0 ? (((Number(kronisCount) + Number(ekstremCount)) / Number(totalCustomers)) * 100).toFixed(1) : "0"}% dari total`}
+									iconBg="bg-red-600"
+								/>
+							</div>
+						);
+					})()}
+
+					{/* Sorting and Filtering Controls */}
+					<div className="flex items-center justify-between mb-4">
+						<div className="flex items-center gap-4">
+						<div className="flex items-center gap-2">
+							<LabelIcon className="w-4 h-4 text-muted-foreground" />
+							<span className="text-sm text-muted-foreground">Sort by:</span>
+							<select 
+								className="text-xs bg-background border border-gray-200 dark:border-gray-700 rounded px-2 py-1"
+								value={classificationSortBy}
+								onChange={(e) => setClassificationSortBy(e.target.value as "count" | "trend" | "priority")}
+							>
+								<option value="count">Count</option>
+								<option value="trend">Trend</option>
+								<option value="priority">Priority</option>
+							</select>
+						</div>
+						<div className="flex items-center gap-2">
+							<BarChartIcon className="w-4 h-4 text-muted-foreground" />
+							<span className="text-sm text-muted-foreground">Show:</span>
+							<select 
+								className="text-xs bg-background border border-gray-200 dark:border-gray-700 rounded px-2 py-1"
+								value={classificationFilter}
+								onChange={(e) => setClassificationFilter(e.target.value as "all" | "critical" | "at-risk")}
+							>
+								<option value="all">All Classifications</option>
+								<option value="critical">Critical Only</option>
+								<option value="at-risk">At Risk Only</option>
+							</select>
+						</div>
+						</div>
+						
+						{/* Active Filter Indicator */}
+						<div className="flex items-center gap-2">
+							{(classificationFilter !== "all" || classificationSortBy !== "count") && (
+								<div className="flex items-center gap-2 text-xs text-muted-foreground">
+									<span>Active filters:</span>
+									{classificationFilter !== "all" && (
+										<Badge variant="info" className="text-[8px] px-1 py-0.5">
+											{classificationFilter === "critical" ? "Critical Only" : "At Risk Only"}
+										</Badge>
+									)}
+									{classificationSortBy !== "count" && (
+										<Badge variant="secondary" className="text-[8px] px-1 py-0.5">
+											Sorted by {classificationSortBy}
+										</Badge>
+									)}
+								</div>
+							)}
+						</div>
+					</div>
+
 					<div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-						{Object.entries(classificationData).map(
+						{(() => {
+							// Filter data berdasarkan kriteria
+							let filteredData = Object.entries(classificationData);
+							
+							if (classificationFilter === "critical") {
+								filteredData = filteredData.filter(([classification]) => 
+									classification.toLowerCase() === "kronis" || 
+									classification.toLowerCase() === "ekstrem"
+								);
+							} else if (classificationFilter === "at-risk") {
+								filteredData = filteredData.filter(([classification]) => 
+									classification.toLowerCase() === "persisten" || 
+									classification.toLowerCase() === "kronis" || 
+									classification.toLowerCase() === "ekstrem"
+								);
+							}
+							
+							// Sort data berdasarkan kriteria yang dipilih
+							filteredData = filteredData.sort(([aClassification, a], [bClassification, b]) => {
+								const aData = a as any;
+								const bData = b as any;
+								
+								switch (classificationSortBy) {
+									case "count":
+										return bData.count - aData.count;
+									case "trend":
+										// Sort berdasarkan trend terakhir (naik/turun)
+										const aTrend = aData.trendline?.data?.slice(-1)[0] || 0;
+										const bTrend = bData.trendline?.data?.slice(-1)[0] || 0;
+										return bTrend - aTrend;
+									case "priority":
+										// Sort berdasarkan prioritas: Ekstrem > Kronis > Persisten > Normal
+										const priorityOrder = { "ekstrem": 4, "kronis": 3, "persisten": 2, "normal": 1 };
+										const aPriority = priorityOrder[aClassification.toLowerCase()] || 0;
+										const bPriority = priorityOrder[bClassification.toLowerCase()] || 0;
+										return bPriority - aPriority;
+									default:
+										return bData.count - aData.count;
+								}
+							});
+							
+							return filteredData;
+						})().map(
 							([classification, details]) => {
 								const d = details as {
 									count: number;
@@ -4868,8 +4982,27 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
 												</div>
 											</div>
 											<div className="text-right">
-												<div className="text-base font-bold text-card-foreground">
-													{d.count}
+												<div className="flex items-center gap-2 mb-1">
+													<div className="text-base font-bold text-card-foreground">
+														{d.count}
+													</div>
+													<div className="flex items-center gap-1">
+														{d.count > 50 && (
+															<Badge variant="danger" className="text-[8px] px-1 py-0.5">
+																High Volume
+															</Badge>
+														)}
+														{trend.length > 0 && trend[trend.length - 1] > 20 && (
+															<Badge variant="warning" className="text-[8px] px-1 py-0.5">
+																Rising
+															</Badge>
+														)}
+														{d.count < 5 && (
+															<Badge variant="secondary" className="text-[8px] px-1 py-0.5">
+																Low Volume
+															</Badge>
+														)}
+													</div>
 												</div>
 												<div className="text-xs text-muted-foreground">
 													total
@@ -4877,78 +5010,79 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
 											</div>
 										</div>
 
-										{/* Trend Data */}
+										{/* Simplified Trend Data */}
 										{d.trendline && d.trendline.labels.length > 0 && (
 											<div className="mb-3">
-												<div className="flex items-center justify-between text-xs text-muted-foreground mb-2">
-													<span>Tren bulanan</span>
-													<span>Perubahan</span>
-												</div>
-												<div className="space-y-2">
-													{d.trendline.labels.map((label, i) => (
+												<div className="text-xs text-muted-foreground mb-2">Trend 3 bulan terakhir</div>
+												<div className="flex items-center justify-between bg-background text-foreground rounded-lg px-3 py-2">
+													<div className="flex items-center gap-2">
+														<span className="text-xs font-medium text-gray-700 dark:text-gray-300">
+															{d.trendline.labels.slice(-3).join(' → ')}
+														</span>
+														<span className="font-mono text-sm font-bold text-card-foreground">
+															{d.trendline.data.slice(-3).join(' → ')}
+														</span>
+													</div>
+													{trend.length > 0 && trend[trend.length - 1] !== null && (
 														<div
-															key={label}
-															className="flex items-center justify-between bg-background text-foreground rounded-lg px-3 py-2"
+															className={`flex items-center gap-1 text-xs font-medium ${
+																trend[trend.length - 1]! > 0
+																	? "text-green-600 dark:text-green-400"
+																	: trend[trend.length - 1]! < 0
+																		? "text-red-600 dark:text-red-400"
+																		: "text-muted-foreground"
+															}`}
 														>
-															<div className="flex items-center gap-3">
-																<span className="text-xs font-medium text-gray-700 dark:text-gray-300 min-w-[40px]">
-																	{label}
-																</span>
-																<span className="font-mono text-sm font-bold text-card-foreground">
-																	{d.trendline.data[i]}
-																</span>
-															</div>
-															{i > 0 && trend[i] !== null && (
-																<div
-																	className={`flex items-center gap-1 text-xs font-medium ${
-																		trend[i]! > 0
-																			? "text-green-600 dark:text-green-400"
-																			: trend[i]! < 0
-																				? "text-red-600 dark:text-red-400"
-																				: "text-muted-foreground"
-																	}`}
-																>
-																	<span>
-																		{trend[i]! > 0 ? (
-																			<TrendingUpIcon className="w-3 h-3" />
-																		) : trend[i]! < 0 ? (
-																			<TrendingDownIcon className="w-3 h-3" />
-																		) : (
-																			<TrendingFlatIcon className="w-3 h-3" />
-																		)}
-																	</span>
-																	<span>
-																		{trend[i]! > 0 ? "+" : ""}
-																		{trend[i]!.toFixed(1)}%
-																	</span>
-																</div>
-															)}
+															<span>
+																{trend[trend.length - 1]! > 0 ? (
+																	<TrendingUpIcon className="w-3 h-3" />
+																) : trend[trend.length - 1]! < 0 ? (
+																	<TrendingDownIcon className="w-3 h-3" />
+																) : (
+																	<TrendingFlatIcon className="w-3 h-3" />
+																)}
+															</span>
+															<span>
+																{trend[trend.length - 1]! > 0 ? "+" : ""}
+																{trend[trend.length - 1]!.toFixed(1)}%
+															</span>
 														</div>
-													))}
+													)}
 												</div>
 											</div>
 										)}
 
-										{/* Sub-classification */}
+										{/* Improved Sub-classification */}
 										{d.sub && Object.keys(d.sub).length > 0 && (
 											<div>
 												<div className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-2">
-													Sub-klasifikasi
+													Top Sub-klasifikasi
 												</div>
-												<div className="flex flex-wrap gap-1.5">
+												<div className="space-y-2">
 													{Object.entries(d.sub)
 														.sort((a, b) => b[1] - a[1])
-														.map(([sub, count]) => (
-															<span
-																key={sub}
-																className="bg-background text-foreground rounded-full px-2 py-1 text-xs font-medium text-gray-700 dark:text-gray-300 "
-															>
-																{sub}:{" "}
-																<span className="font-bold text-card-foreground">
-																	{count}
-																</span>
-															</span>
-														))}
+														.slice(0, 3)
+														.map(([sub, count]) => {
+															const percentage = d.count > 0 ? (count / d.count) * 100 : 0;
+															return (
+																<div key={sub} className="flex items-center justify-between">
+																	<span className="text-xs text-gray-700 dark:text-gray-300 truncate flex-1 mr-2">
+																		{sub}
+																	</span>
+																	<div className="flex items-center gap-2 flex-shrink-0">
+																		<div className="w-16 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+																			<div 
+																				className="h-full bg-blue-500 transition-all duration-300"
+																				style={{ width: `${Math.min(percentage, 100)}%` }}
+																			></div>
+																		</div>
+																		<span className="text-xs font-bold text-card-foreground min-w-[20px] text-right">
+																			{count}
+																		</span>
+																	</div>
+																</div>
+															);
+														})}
 												</div>
 											</div>
 										)}

@@ -49,6 +49,10 @@ import {
 import { Badge } from "@/components/ui/badge";
 import * as RadixDialog from "@radix-ui/react-dialog";
 import { logger } from "@/lib/logger";
+import { 
+	isBacklogTicket, 
+	isClosedTicket
+} from "@/utils/ticketStatus";
 
 // Define the structure of the data this component will receive
 export interface AgentAnalyticsData {
@@ -2289,13 +2293,7 @@ const AgentAnalytics = () => {
 												}
 
 												// Performance metrics
-												const closedTickets = agentTickets.filter((t) => {
-													const status = (t.status || "").trim().toLowerCase();
-													return (
-														status.includes("close") ||
-														status.includes("closed")
-													);
-												}).length;
+												const closedTickets = agentTickets.filter(isClosedTicket).length;
 
 												const ahtValues = agentTickets
 													.filter((t) => {
@@ -2749,13 +2747,7 @@ const AgentAnalytics = () => {
 												const totalTickets = agentTickets.length;
 
 												// Calculate closed tickets with proper status validation
-												const closedTickets = agentTickets.filter((t) => {
-													const status = (t.status || "").trim().toLowerCase();
-													return (
-														status.includes("close") ||
-														status.includes("closed")
-													);
-												}).length;
+												const closedTickets = agentTickets.filter(isClosedTicket).length;
 
 												// Calculate AHT (Average Handle Time) with validation
 												const ahtValues = agentTickets
@@ -2869,14 +2861,8 @@ const AgentAnalytics = () => {
 															artValues.length
 														: 0;
 
-												// Calculate backlog with proper validation
-												const backlog = agentTickets.filter((t) => {
-													const status = (t.status || "").trim().toLowerCase();
-													const hasCloseTime =
-														t.closeTime &&
-														!isNaN(new Date(t.closeTime).getTime());
-													return !status.includes("close") && !hasCloseTime;
-												}).length;
+												// Calculate backlog using standardized function
+												const backlog = agentTickets.filter(isBacklogTicket).length;
 
 												// Calculate escalation rate with validation
 												const escalated = agentTickets.filter((t) => {

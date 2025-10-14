@@ -98,6 +98,36 @@ const renderDuration = (duration: any) => {
 	);
 };
 
+// Helper function untuk durasi penanganan dengan logika khusus
+const renderHandlingDuration = (duration: any) => {
+	const durationValue = duration?.rawHours || 0;
+	const formatted = duration?.formatted || "";
+	
+	// Jika durasi 0 atau tidak ada, kosongkan
+	if (durationValue === 0 || !formatted || formatted === "00:00:00") {
+		return <span className="text-xs"></span>;
+	}
+	
+	// Tentukan warna berdasarkan durasi
+	let colorClass = "text-gray-500"; // default
+	if (durationValue > 24) {
+		colorClass = "text-red-500"; // overtime
+	} else if (durationValue > 8) {
+		colorClass = "text-amber-500"; // long duration
+	} else if (durationValue > 0) {
+		colorClass = "text-green-500"; // normal
+	}
+
+	return (
+		<div className={`text-xs font-mono ${colorClass}`}>
+			{formatted}
+			{durationValue > 24 && (
+				<div className="text-[8px] text-red-500 opacity-90">Overtime</div>
+			)}
+		</div>
+	);
+};
+
 const columns = [
 	{ key: "customerId", label: "Customer ID", width: "120px" },
 	{ key: "name", label: "Name", width: "150px" },
@@ -164,9 +194,7 @@ const columns = [
 		key: "handlingDuration2",
 		label: "Durasi Penanganan 2",
 		width: "140px",
-		render: (_v: any, row: any) => (
-			<span className="text-xs">{row.handlingDuration2?.formatted || ""}</span>
-		),
+		render: (_v: any, row: any) => renderHandlingDuration(row.handlingDuration2),
 	},
 	{ key: "handling3", label: "Penanganan 3", width: "180px" },
 	{
@@ -180,9 +208,7 @@ const columns = [
 		key: "handlingDuration3",
 		label: "Durasi Penanganan 3",
 		width: "140px",
-		render: (_v: any, row: any) => (
-			<span className="text-xs">{row.handlingDuration3?.formatted || ""}</span>
-		),
+		render: (_v: any, row: any) => renderHandlingDuration(row.handlingDuration3),
 	},
 	{ key: "handling4", label: "Penanganan 4", width: "180px" },
 	{
@@ -196,9 +222,7 @@ const columns = [
 		key: "handlingDuration4",
 		label: "Durasi Penanganan 4",
 		width: "140px",
-		render: (_v: any, row: any) => (
-			<span className="text-xs">{row.handlingDuration4?.formatted || ""}</span>
-		),
+		render: (_v: any, row: any) => renderHandlingDuration(row.handlingDuration4),
 	},
 	{ key: "handling5", label: "Penanganan 5", width: "180px" },
 	{
@@ -212,9 +236,7 @@ const columns = [
 		key: "handlingDuration5",
 		label: "Durasi Penanganan 5",
 		width: "140px",
-		render: (_v: any, row: any) => (
-			<span className="text-xs">{row.handlingDuration5?.formatted || ""}</span>
-		),
+		render: (_v: any, row: any) => renderHandlingDuration(row.handlingDuration5),
 	},
 	{ key: "openBy", label: "Open By", width: "120px" },
 	{ key: "cabang", label: "Cabang", width: "100px" },
@@ -225,7 +247,9 @@ const columns = [
 
 const GridView = ({ data: propsData }: { data?: ITicket[] }) => {
 	const { gridData } = useAnalytics();
-	const data = propsData || gridData;
+	// Use allTicketsInDb directly to avoid double filtering
+	const allTicketsInDb = useLiveQuery(() => db.tickets.toArray(), []);
+	const data = propsData || allTicketsInDb || gridData;
 	const [search, setSearch] = useState("");
 	const [validasiFilter, setValidasiFilter] = useState<
 		"all" | "valid" | "invalid"
@@ -249,19 +273,17 @@ const GridView = ({ data: propsData }: { data?: ITicket[] }) => {
 
 	// Ambil jumlah total tiket di database (tanpa filter apapun)
 	const totalTicketsInDb = useLiveQuery(() => db.tickets.count(), []);
-	// Ambil seluruh tiket di database (tanpa filter apapun)
-	const allTicketsInDb = useLiveQuery(() => db.tickets.toArray(), []);
 
 	// Duration statistics
 	const durationStats = useMemo(() => {
-		if (!allTicketsInDb)
+		if (!data)
 			return { invalidDuration: 0, longDuration: 0, zeroDuration: 0 };
 
 		let invalidDuration = 0;
 		let longDuration = 0;
 		let zeroDuration = 0;
 
-		allTicketsInDb.forEach((ticket) => {
+		data.forEach((ticket) => {
 			const duration = ticket.duration?.rawHours || 0;
 			if (duration === 0) zeroDuration++;
 			else if (duration > 24) invalidDuration++;
@@ -277,12 +299,39 @@ const GridView = ({ data: propsData }: { data?: ITicket[] }) => {
 		});
 
 		return { invalidDuration, longDuration, zeroDuration };
-	}, [allTicketsInDb]);
+	}, [data]);
 
 	// Filter validasi customer and duration
 	const filtered = useMemo(() => {
 		if (!data) return [];
-		let result = data;
+		
+		// Sort data by openTime descending (newest first) before applying filters
+		let result = [...data].sort((a, b) => {
+			if (!a.openTime && !b.openTime) return 0;
+			if (!a.openTime) return 1; // Put items without openTime at the end
+			if (!b.openTime) return -1;
+			
+			const dateA = new Date(a.openTime);
+			const dateB = new Date(b.openTime);
+			
+			// If dates are invalid, put them at the end
+			if (isNaN(dateA.getTime()) && isNaN(dateB.getTime())) return 0;
+			if (isNaN(dateA.getTime())) return 1;
+			if (isNaN(dateB.getTime())) return -1;
+			
+			// Sort descending (newest first)
+			return dateB.getTime() - dateA.getTime();
+		});
+		
+		// Debug: Log initial data count and show sample of newest data
+		logger.info(`GridView: Initial data count: ${data.length}, sorted by openTime descending`);
+		if (result.length > 0) {
+			logger.info(`GridView: Sample of newest tickets:`, result.slice(0, 3).map(t => ({
+				openTime: t.openTime,
+				customerId: t.customerId,
+				name: t.name
+			})));
+		}
 
 		// Debug: Log sample data to understand format
 		if (result.length > 0 && (monthFilter !== "all" || yearFilter !== "all")) {
@@ -369,7 +418,7 @@ const GridView = ({ data: propsData }: { data?: ITicket[] }) => {
 				const yearMatch = yearFilter === "all" || year === yearFilter;
 
 				// Debug logging for first few items
-				if (result.indexOf(row) < 3) {
+				if (data.indexOf(row) < 3) {
 					logger.info(
 						`Filter debug - openTime: "${row.openTime}", month: "${month}", year: "${year}", monthFilter: "${monthFilter}", yearFilter: "${yearFilter}", monthMatch: ${monthMatch}, yearMatch: ${yearMatch}`,
 					);
@@ -379,6 +428,9 @@ const GridView = ({ data: propsData }: { data?: ITicket[] }) => {
 			});
 		}
 
+		// Debug: Log final result count
+		logger.info(`GridView: Final filtered count: ${result.length}, filters: month=${monthFilter}, year=${yearFilter}, duration=${durationFilter}, validasi=${validasiFilter}`);
+		
 		return result;
 	}, [
 		data,

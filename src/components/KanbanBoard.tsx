@@ -49,6 +49,9 @@ import * as RadixDialog from "@radix-ui/react-dialog";
 import { usePageUrlState } from "@/hooks/usePageUrlState";
 import { PaginationControls } from "@/components";
 import { logger } from "@/lib/logger";
+import { 
+	isClosedTicket
+} from "@/utils/ticketStatus";
 
 // Using built-in fonts for reliability - no external font loading needed
 
@@ -708,7 +711,7 @@ const KanbanBoard = () => {
 
 	function CustomerCard({ customer, tickets }) {
 		// tickets: tiket customer ini sesuai filter waktu & risk
-		const closed = tickets.filter((t) => t.status === "Closed").length;
+		const closed = tickets.filter(isClosedTicket).length;
 		const percentClosed =
 			tickets.length > 0
 				? Math.round((Number(closed) / Number(tickets.length)) * 100)
@@ -1188,9 +1191,7 @@ const KanbanBoard = () => {
 			},
 		});
 		// Calculate summary data
-		const closed = customer.allTickets.filter(
-			(t) => t.status === "Closed",
-		).length;
+		const closed = customer.allTickets.filter(isClosedTicket).length;
 		const avgHandling =
 			customer.allTickets.length > 0
 				? customer.allTickets.reduce(
@@ -1940,9 +1941,7 @@ const KanbanBoard = () => {
 											</span>
 											<div className="text-2xl font-bold text-green-700 dark:text-green-300 mt-1">
 												{
-													selectedCustomer.allTickets.filter(
-														(t) => t.status === "Closed",
-													).length
+													selectedCustomer.allTickets.filter(isClosedTicket).length
 												}
 											</div>
 										</div>

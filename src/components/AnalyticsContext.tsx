@@ -13,6 +13,9 @@ import {
 	generateAnalysisConclusion,
 } from "@/lib/utils";
 import { logger } from "@/lib/logger";
+import { 
+	isClosedTicket
+} from "@/utils/ticketStatus";
 
 // Struktur context
 const AnalyticsContext = createContext(null);
@@ -179,9 +182,7 @@ export const AnalyticsProvider = ({ children }) => {
 		const gridData: ITicket[] = filteredTickets;
 		function processKanbanData(tickets, classMap, masterMap) {
 			const customerMap = {};
-			const closedTickets = tickets.filter(
-				(ticket) => (ticket.status || "").trim().toLowerCase() === "closed",
-			);
+			const closedTickets = tickets.filter(isClosedTicket);
 			closedTickets.forEach((ticket) => {
 				const customerId = ticket.customerId || "Unknown Customer";
 				if (customerId === "Unknown Customer") return;
@@ -399,9 +400,7 @@ export const AnalyticsProvider = ({ children }) => {
 					.filter((v) => !isNaN(v))
 					.reduce((acc, curr) => acc + curr, 0)
 			: 0;
-		const closedTickets = gridData.filter(
-			(t: ITicket) => (t.status || "").trim().toLowerCase() === "closed",
-		).length;
+		const closedTickets = gridData.filter(isClosedTicket).length;
 		// Overdue: tiket dengan durasi > 24 jam
 		const overdueTickets = gridData.filter(
 			(t: ITicket) => Number(t.duration?.rawHours) > 24,

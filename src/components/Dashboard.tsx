@@ -27,6 +27,9 @@ import UserCheckIcon from "@mui/icons-material/HowToReg";
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 import UsersIcon from "@mui/icons-material/People";
 import { logger } from "@/lib/logger";
+import { 
+	isClosedTicket
+} from "@/utils/ticketStatus";
 
 const allTabs = [
 	{ name: "Dashboard", component: SummaryDashboard, icon: BarChartIcon },
@@ -366,9 +369,7 @@ const Dashboard = () => {
 			(acc, t) => acc + (t.duration?.rawHours || 0),
 			0,
 		);
-		const closedTickets = gridData.filter(
-			(t) => (t.status || "").trim().toLowerCase() === "closed",
-		).length;
+		const closedTickets = gridData.filter(isClosedTicket).length;
 
 		const complaints: { [key: string]: number } = {};
 		gridData.forEach((t) => {

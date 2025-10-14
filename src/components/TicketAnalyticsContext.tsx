@@ -13,6 +13,10 @@ import {
 	generateAnalysisConclusion,
 } from "@/lib/utils";
 import { logger } from "@/lib/logger";
+import { 
+	isOpenTicket,
+	isClosedTicket
+} from "@/utils/ticketStatus";
 
 const TicketAnalyticsContext = createContext(null);
 
@@ -129,49 +133,10 @@ export const TicketAnalyticsProvider = ({ children }) => {
 		: 0;
 
 	// Menentukan tiket closed berdasarkan status yang mengandung 'close'
-	const closedTickets = gridData.filter((t) => {
-		const status = (t.status || "").trim().toLowerCase();
-		return status.includes("close");
-	}).length;
+	const closedTickets = gridData.filter(isClosedTicket).length;
 
-	// Menentukan tiket open berdasarkan kriteria:
-	// SEMUA TIKET MEMILIKI STATUS "Closed", jadi kita fokus pada closeTime analysis
-	// 1. Waktu Close Ticket kosong ATAU
-	// 2. Waktu Close Ticket di masa depan ATAU
-	// 3. Waktu Close Ticket di bulan berikutnya dari bulan Open
-	const openTicketsArray = gridData.filter((t) => {
-		// Jika tidak ada closeTime, termasuk tiket open
-		if (!t.closeTime) return true;
-
-		const openDate = new Date(t.openTime);
-		const closeDate = new Date(t.closeTime);
-
-		if (isNaN(openDate.getTime()) || isNaN(closeDate.getTime())) return true;
-
-		// Fallback 1: jika closeTime di masa depan dari sekarang, anggap open
-		const now = new Date();
-		if (closeDate > now) return true;
-
-		// Fallback 2: jika closeTime di bulan berikutnya dari openTime, anggap open
-		const openMonth = openDate.getMonth();
-		const openYear = openDate.getFullYear();
-		const closeMonth = closeDate.getMonth();
-		const closeYear = closeDate.getFullYear();
-
-		if (
-			closeYear > openYear ||
-			(closeYear === openYear && closeMonth > openMonth)
-		) {
-			return true;
-		}
-
-		// Fallback 3: jika closeTime lebih dari 30 hari setelah openTime, anggap open
-		const daysDiff =
-			(closeDate.getTime() - openDate.getTime()) / (1000 * 60 * 60 * 24);
-		if (daysDiff > 30) return true;
-
-		return false;
-	});
+	// Use standardized open tickets calculation
+	const openTicketsArray = gridData.filter(isOpenTicket);
 
 	// Debug: Log open tickets analysis
 	if (typeof window !== "undefined") {
