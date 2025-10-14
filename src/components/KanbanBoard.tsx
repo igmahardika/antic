@@ -74,23 +74,6 @@ const KanbanBoard = () => {
 	const [openDialogId, setOpenDialogId] = useState<string | null>(null);
 	const [repClassFilter, setRepClassFilter] = useState<string>("Total");
 
-	// URL-synced pagination
-	const {
-		page,
-		pageSize,
-		setPage,
-		setPageSize,
-		totalPages: paginationTotalPages,
-	} = usePageUrlState({
-		paramPage: "kanban_page",
-		paramPageSize: "kanban_pageSize",
-		initialPage: 1,
-		initialPageSize: 20,
-		allowedPageSizes: [10, 20, 50, 100],
-		totalItems: filteredCustomers.length,
-		resetOnDeps: [startMonth, endMonth, selectedYear, repClassFilter],
-	});
-
 	// Hapus state lokal filter waktu
 
 	const MONTH_OPTIONS = [
@@ -251,6 +234,23 @@ const KanbanBoard = () => {
 			return bTickets - aTickets;
 		});
 	}, [customerCards, repClassFilter]);
+
+	// URL-synced pagination
+	const {
+		page,
+		pageSize,
+		setPage,
+		setPageSize,
+		totalPages: paginationTotalPages,
+	} = usePageUrlState({
+		paramPage: "kanban_page",
+		paramPageSize: "kanban_pageSize",
+		initialPage: 1,
+		initialPageSize: 20,
+		allowedPageSizes: [10, 20, 50, 100],
+		totalItems: filteredCustomers.length,
+		resetOnDeps: [startMonth, endMonth, selectedYear, repClassFilter],
+	});
 
 	const selectedCustomer = useMemo(() => {
 		if (!openDialogId) return null;
