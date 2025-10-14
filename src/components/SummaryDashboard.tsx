@@ -306,12 +306,27 @@ const SummaryDashboard = ({
 				WaktuOpen: t.openTime,
 				WaktuCloseTicket: t.closeTime,
 				ClosePenanganan: t.closeHandling,
+				closeHandling: t.closeHandling, // For ART calculation
+				closeHandling1: t.closeHandling1, // For FRT calculation
 				Penanganan2: t.handling2,
 				OpenBy: t.openBy || t.name || "Unknown",
 				status: t.status,
 			}));
 		const sanitized = sanitizeTickets(raw);
 		const metrics = calcAllMetrics(sanitized);
+		
+		// Debug logging for FRT/ART calculation
+		if (metrics.length > 0) {
+			logger.info("[SummaryDashboard] Agent metrics sample:", {
+				agent: metrics[0].agent,
+				frt: metrics[0].frt,
+				art: metrics[0].art,
+				vol: metrics[0].vol,
+				hasCloseHandling: raw.some(t => t.closeHandling),
+				hasCloseHandling1: raw.some(t => t.closeHandling1),
+				totalTickets: raw.length
+			});
+		}
 
 		// Gunakan perhitungan score yang sama dengan AgentAnalytics
 		const maxTicket = Math.max(...metrics.map((m) => m.vol || 0), 1);
@@ -530,14 +545,14 @@ const SummaryDashboard = ({
 					icon={<TimerIcon className="w-5 h-5 text-white" />}
 					iconBg="bg-blue-500"
 					title="Avg FRT"
-					value={formatDurationDHM(kpis.frtAvg / 60)}
+					value={formatDurationDHM(kpis.frtAvg)}
 					description="first response time"
 				/>
 				<SummaryCard
 					icon={<TimerIcon className="w-5 h-5 text-white" />}
 					iconBg="bg-indigo-500"
 					title="Avg ART"
-					value={formatDurationDHM(kpis.artAvg / 60)}
+					value={formatDurationDHM(kpis.artAvg)}
 					description="resolution time"
 				/>
 				<SummaryCard
@@ -1349,7 +1364,7 @@ const SummaryDashboard = ({
 															: "text-red-600"
 											}`}
 										>
-											{formatDurationDHM(row.frtAvg / 60)}
+											{formatDurationDHM(row.frtAvg)}
 										</div>
 										<div
 											className={`text-xs opacity-80 leading-tight ${
@@ -1373,7 +1388,7 @@ const SummaryDashboard = ({
 															: "text-red-600"
 											}`}
 										>
-											{formatDurationDHM(row.artAvg / 60)}
+											{formatDurationDHM(row.artAvg)}
 										</div>
 										<div
 											className={`text-xs opacity-80 leading-tight ${
