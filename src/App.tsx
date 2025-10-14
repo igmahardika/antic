@@ -17,6 +17,7 @@ import { AgentAnalyticsProvider } from "./components/AgentAnalyticsContext";
 import { TicketAnalyticsProvider } from "./components/TicketAnalyticsContext";
 import AdminRumus from "./pages/AdminRumus";
 import AdminRumusTemp from "./pages/AdminRumus-temp";
+import FormulasNew from "./pages/FormulasNew";
 import MasterDataAgent from "./components/MasterDataAgent";
 import CustomerData from "./pages/CustomerData";
 import { IncidentData } from "./pages/IncidentData";
@@ -226,6 +227,10 @@ function AppLayout() {
 									element={<SiteAnalytics />}
 								/>
 								{/* Escalation routes removed */}
+								<Route
+									path="/documentation/formulas-new"
+									element={<FormulasNew />}
+								/>
 								<Route
 									path="/documentation/admin-rumus"
 									element={<AdminRumus />}
