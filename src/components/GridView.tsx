@@ -236,28 +236,6 @@ const GridView = ({ data: propsData }: { data?: ITicket[] }) => {
 	const [monthFilter, setMonthFilter] = useState<string>("all");
 	const [yearFilter, setYearFilter] = useState<string>("all");
 
-	// URL-synced pagination
-	const {
-		page,
-		pageSize,
-		setPage,
-		setPageSize,
-		totalPages: paginationTotalPages,
-	} = usePageUrlState({
-		paramPage: "grid_page",
-		paramPageSize: "grid_pageSize",
-		initialPage: 1,
-		initialPageSize: 10,
-		allowedPageSizes: [10, 25, 50, 100],
-		totalItems: filtered.length,
-		resetOnDeps: [
-			search,
-			validasiFilter,
-			durationFilter,
-			monthFilter,
-			yearFilter,
-		],
-	});
 
 	// Ambil semua customer dari IndexedDB
 	const allCustomers = useLiveQuery(() => db.customers.toArray(), []);
@@ -411,6 +389,29 @@ const GridView = ({ data: propsData }: { data?: ITicket[] }) => {
 		monthFilter,
 		yearFilter,
 	]);
+
+	// URL-synced pagination
+	const {
+		page,
+		pageSize,
+		setPage,
+		setPageSize,
+		totalPages: paginationTotalPages,
+	} = usePageUrlState({
+		paramPage: "grid_page",
+		paramPageSize: "grid_pageSize",
+		initialPage: 1,
+		initialPageSize: 10,
+		allowedPageSizes: [10, 25, 50, 100],
+		totalItems: filtered.length,
+		resetOnDeps: [
+			search,
+			validasiFilter,
+			durationFilter,
+			monthFilter,
+			yearFilter,
+		],
+	});
 
 	const paged = useMemo(
 		() => filtered.slice((page - 1) * pageSize, page * pageSize),
