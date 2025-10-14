@@ -282,18 +282,20 @@ function AppLayout() {
 }
 
 const App = () => (
-	<ThemeProvider>
-		<QueryClientProvider client={queryClient}>
-			<TooltipProvider>
-				<Toaster />
-				<AnalyticsProvider>
-					<BrowserRouter>
-						<AppLayout />
-					</BrowserRouter>
-				</AnalyticsProvider>
-			</TooltipProvider>
-		</QueryClientProvider>
-	</ThemeProvider>
+	<ErrorBoundary>
+		<ThemeProvider>
+			<QueryClientProvider client={queryClient}>
+				<TooltipProvider>
+					<Toaster />
+					<AnalyticsProvider>
+						<BrowserRouter>
+							<AppLayout />
+						</BrowserRouter>
+					</AnalyticsProvider>
+				</TooltipProvider>
+			</QueryClientProvider>
+		</ThemeProvider>
+	</ErrorBoundary>
 );
 
 export default App;

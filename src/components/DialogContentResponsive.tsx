@@ -1,6 +1,9 @@
 import React from "react";
 import { DialogContent } from "@/components/ui/dialog";
 
+// Pastikan konten dialog memiliki:
+// role="dialog" aria-modal="true" dan pengelolaan fokus saat mount/unmount.
+
 type DialogSize = "sm" | "md" | "lg" | "xl" | "2xl";
 const SIZE_TO_CLASS: Record<DialogSize, string> = {
 	sm: "max-w-md",

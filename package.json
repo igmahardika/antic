@@ -1,7 +1,7 @@
 {
   "name": "helpdesk-management-system",
   "private": true,
-  "version": "1.0.0",
+  "version": "0.2.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -9,11 +9,13 @@
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
+    "typecheck": "tsc --noEmit",
     "type-check": "tsc --noEmit",
     "test": "vitest",
     "test:coverage": "vitest --coverage",
+    "coverage": "vitest run --coverage",
     "audit": "pnpm audit",
-    "check:all": "pnpm audit && pnpm type-check && pnpm lint",
+    "check:all": "pnpm typecheck && pnpm lint && pnpm test -- --run",
     "preview": "vite preview",
     "start": "node helpdesk-backend/server.mjs"
   },

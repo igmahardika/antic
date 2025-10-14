@@ -2,6 +2,16 @@ import { useEffect, useState } from 'react';
 import { listUploadHistory, deleteByFile, createUploadSessionForExistingData, cleanupEmptySessions } from '../services/uploadSessions';
 import type { UploadDataType, IUploadSession } from '../types.upload';
 
+// Aksesibilitas: role, aria, fokus
+// Asumsi menggunakan komponen Dialog dari UI lib; tambahkan props:
+// <Dialog open={open} onOpenChange={setOpen}>
+//   <DialogContent role="dialog" aria-modal="true" aria-labelledby="delete-title" aria-describedby="delete-desc" autoFocus>
+//     <h2 id="delete-title">Delete by File</h2>
+//     <p id="delete-desc">This action cannot be undone.</p>
+//     <button aria-label="Close" onClick={onClose} />
+//   </DialogContent>
+// </Dialog>
+
 type Props = {
   dataType: UploadDataType;
   onClose: () => void;

@@ -1,4 +1,4 @@
-import React, {
+import {
 	createContext,
 	useContext,
 	useMemo,
@@ -30,25 +30,29 @@ export const AnalyticsProvider = ({ children }) => {
 	const [endMonth, setEndMonth] = useState(null);
 	const [selectedYear, setSelectedYear] = useState(null);
 	const [refreshTrigger, setRefreshTrigger] = useState(0);
+	const [isLoading, setIsLoading] = useState(true);
 
 	// Data dari IndexedDB
 	const allTickets = useLiveQuery(() => db.tickets.toArray(), [refreshTrigger]);
 	useEffect(() => {
 		logger.info("[DEBUG] allTickets from IndexedDB:", allTickets);
+		if (allTickets) {
+			setIsLoading(false);
+		}
 	}, [allTickets]);
 
 	useEffect(() => {
 		if (
-			allTickets &&
-			allTickets.length > 0 &&
+			Array.isArray(allTickets) && 
+			allTickets.length > 0 && 
+			!isLoading &&
 			(!startMonth || !endMonth || !selectedYear)
 		) {
 			const dates = allTickets
 				.map((t) => t.openTime)
-				.filter(Boolean)
-				.map((d) => new Date(d));
+				.filter(Boolean) as string[];
 			if (dates.length > 0) {
-				const latest = new Date(Math.max(...dates.map((d) => d.getTime())));
+				const latest = new Date(Math.max(...dates.map((d) => new Date(d).getTime())));
 				const month = String(latest.getMonth() + 1).padStart(2, "0");
 				const year = String(latest.getFullYear());
 				setStartMonth(month);
@@ -56,7 +60,7 @@ export const AnalyticsProvider = ({ children }) => {
 				setSelectedYear(year);
 			}
 		}
-	}, [allTickets, startMonth, endMonth, selectedYear]);
+	}, [allTickets, isLoading, startMonth, endMonth, selectedYear]);
 
 	// Ambil semua bulan & tahun unik
 	const allMonthsInData = useMemo(() => {
@@ -345,7 +349,7 @@ export const AnalyticsProvider = ({ children }) => {
 							return `${monthNum}/${year}`;
 						}),
 						datasets: Object.entries(agentMonthlyPerformance).map(
-							([agentName, monthlyData], index) => {
+							([agentName, monthlyData], _index) => {
 								const md = monthlyData as any;
 								const color = "#3b82f6";
 								return {
@@ -804,6 +808,14 @@ export const AnalyticsProvider = ({ children }) => {
 		cutoffEnd,
 		refresh: () => setRefreshTrigger((t) => t + 1),
 	};
+
+	// Cleanup effect
+	useEffect(() => {
+		return () => {
+			// Cleanup subscription / timers
+			setRefreshTrigger?.(0);
+		};
+	}, []);
 
 	return (
 		<AnalyticsContext.Provider value={value}>

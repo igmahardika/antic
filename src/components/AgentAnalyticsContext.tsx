@@ -66,13 +66,20 @@ export const AgentAnalyticsProvider = ({ children }) => {
 	masterAgentList.forEach((agent) => {
 		agentPerformance[agent] = { durations: [], closed: 0 };
 	});
+	// Helper function to validate duration data
+	const validateDuration = (duration: any): number => {
+		if (!duration?.rawHours || isNaN(duration.rawHours)) return 0;
+		return Math.max(0, duration.rawHours);
+	};
+
 	filteredTickets.forEach((t) => {
-		if (t.handlingDuration?.rawHours > 0) {
+		const validatedDuration = validateDuration(t.handlingDuration);
+		if (validatedDuration > 0) {
 			const agentName = t.openBy || "Unassigned";
 			if (!agentPerformance[agentName]) {
 				agentPerformance[agentName] = { durations: [], closed: 0 };
 			}
-			agentPerformance[agentName].durations.push(t.handlingDuration.rawHours);
+			agentPerformance[agentName].durations.push(validatedDuration);
 			if (t.status === "Closed") {
 				agentPerformance[agentName].closed++;
 			}

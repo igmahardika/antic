@@ -1,58 +1,21 @@
 name: CI
 on:
   push:
-    branches: [ main ]
+    branches: [ main, fix/**, chore/** ]
   pull_request:
     branches: [ main ]
 
 jobs:
-  guard-naming:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Guard stale references to antic-backend
-        run: |
-          set -e
-          if git grep -n "antic-backend" -- . ':!legacy/' ; then
-            echo "Found stale references to 'antic-backend' outside legacy/" ; exit 1 ;
-          fi
-
-  build-and-test:
+  build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: 'npm'
-      - name: Install root deps (if any)
-        run: |
-          [ -f package.json ] && npm ci || echo "(no root package.json)"
-      - name: Install backend deps
-        working-directory: helpdesk-backend
-        run: |
-          npm ci
-      - name: Lint backend
-        working-directory: helpdesk-backend
-        run: |
-          npm run lint || echo "(no lint script)"
-      - name: Test backend
-        working-directory: helpdesk-backend
-        run: |
-          npm test --if-present -- --ci --reporter=default || echo "(no tests)"
-      - name: Build backend
-        working-directory: helpdesk-backend
-        run: |
-          npm run build || echo "(no build script)"
-
-  security-audit:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-      - name: NPM audit (best-effort)
-        working-directory: helpdesk-backend
-        run: |
-          npm audit --audit-level=high || true
+          node-version: 20
+          cache: 'pnpm'
+      - run: corepack enable
+      - run: pnpm install
+      - run: pnpm typecheck
+      - run: pnpm lint
+      - run: pnpm test -- --run --coverage

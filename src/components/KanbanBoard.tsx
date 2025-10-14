@@ -8,6 +8,7 @@ import GroupIcon from "@mui/icons-material/Group";
 import HowToRegIcon from "@mui/icons-material/HowToReg";
 import PageWrapper from "./PageWrapper";
 
+
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import WhatshotIcon from "@mui/icons-material/Whatshot";
@@ -154,10 +155,9 @@ const KanbanBoard = () => {
 		});
 	}, [allTickets, startMonth, endMonth, selectedYear]);
 
-	// --- Optimized customer aggregation with performance improvements ---
+	// --- Agregasi customer dari tiket hasil filter ---
 	const customerCards = useMemo(() => {
-		if (!filteredTickets || filteredTickets.length === 0) return [];
-		
+		if (!filteredTickets) return [];
 		// LOGGING: Show number of customer cards
 		logger.info(
 			"[KanbanBoard] customerCards:",
@@ -166,17 +166,15 @@ const KanbanBoard = () => {
 			new Set(filteredTickets.map((t) => t.customerId || "Unknown")).size,
 			"unique customers",
 		);
-		
-		// Optimized customer mapping with for loop for better performance
+		// Map customer hanya dari filteredTickets
 		const map = new Map();
-		for (let i = 0; i < filteredTickets.length; i++) {
-			const t = filteredTickets[i];
+		filteredTickets.forEach((t) => {
 			const customerId = t.customerId || "Unknown";
 			if (!map.has(customerId)) {
 				map.set(customerId, []);
 			}
 			map.get(customerId).push(t);
-		}
+		});
 		// Hanya customer yang punya tiket di periode filter
 		return Array.from(map.entries()).map(([customerId, tickets]) => {
 			// Use configurable risk classification
@@ -188,12 +186,10 @@ const KanbanBoard = () => {
 				handling: tickets.map((t) => t.handling).filter(Boolean),
 				conclusion: "",
 			};
-			// Optimized fullTicketHistory - only load when needed
-			const fullTicketHistory = useMemo(() => {
-				return allTickets.filter(
-					(t) => (t.customerId || "Unknown") === customerId,
-				);
-			}, [allTickets, customerId]);
+			// fullTicketHistory hanya untuk insight/historical, tidak mempengaruhi summary
+			const fullTicketHistory = allTickets.filter(
+				(t) => (t.customerId || "Unknown") === customerId,
+			);
 			// Trend analysis: bandingkan jumlah tiket bulan ini vs bulan sebelumnya
 			let trend: "Naik" | "Turun" | "Stabil" = "Stabil";
 			if (tickets.length > 0) {
