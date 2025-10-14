@@ -9,11 +9,6 @@ interface ContentRendererProps {
 }
 
 export default function ContentRenderer({ content, searchQuery = "" }: ContentRendererProps) {
-  const highlightSearchQuery = (text: string) => {
-    if (!searchQuery) return text;
-    const regex = new RegExp(`(${searchQuery})`, 'gi');
-    return text.replace(regex, '<mark class="bg-yellow-200 dark:bg-yellow-800">$1</mark>');
-  };
 
   const renderContentBlock = (block: ContentBlock) => {
     switch (block.type) {
@@ -46,12 +41,7 @@ export default function ContentRenderer({ content, searchQuery = "" }: ContentRe
 }
 
 // Formula Renderer
-function FormulaRenderer({ data, searchQuery }: { data: FormulaData; searchQuery: string }) {
-  const highlightSearchQuery = (text: string) => {
-    if (!searchQuery) return text;
-    const regex = new RegExp(`(${searchQuery})`, 'gi');
-    return text.replace(regex, '<mark class="bg-yellow-200 dark:bg-yellow-800">$1</mark>');
-  };
+function FormulaRenderer({ data }: { data: FormulaData; searchQuery: string }) {
   return (
     <Card className="border-l-4 border-l-blue-500">
       <CardHeader className="pb-3">
@@ -196,12 +186,7 @@ function ChangelogRenderer({ data, searchQuery }: { data: ChangelogEntry; search
 }
 
 // Metric Renderer
-function MetricRenderer({ data, searchQuery }: { data: MetricData; searchQuery: string }) {
-  const highlightSearchQuery = (text: string) => {
-    if (!searchQuery) return text;
-    const regex = new RegExp(`(${searchQuery})`, 'gi');
-    return text.replace(regex, '<mark class="bg-yellow-200 dark:bg-yellow-800">$1</mark>');
-  };
+function MetricRenderer({ data }: { data: MetricData; searchQuery: string }) {
   return (
     <Card className="border-l-4 border-l-purple-500">
       <CardHeader className="pb-3">

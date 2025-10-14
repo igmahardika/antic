@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import PageWrapper from '../components/PageWrapper';
 import EnhancedCollapsibleSection from '../components/documentation/EnhancedCollapsibleSection';
 import ContentRenderer from '../components/documentation/ContentRenderer';
@@ -7,11 +7,8 @@ import { useDocumentationSearch } from '../hooks/useDocumentationSearch';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
 import { 
-  Bookmark, 
   BookmarkCheck, 
-  Download, 
   Filter, 
-  SortAsc,
   RefreshCw,
   Settings
 } from 'lucide-react';
@@ -36,10 +33,12 @@ export default function ModernAdminRumus() {
 
   // Load documentation data
   useEffect(() => {
-    setSections(documentationData.sections);
+    // Type assertion to ensure compatibility
+    const sections = documentationData.sections as DocumentationSection[];
+    setSections(sections);
     
     // Set initially expanded sections
-    const initiallyExpanded = documentationData.sections
+    const initiallyExpanded = sections
       .filter(section => section.defaultExpanded)
       .map(section => section.id);
     setExpandedSections(new Set(initiallyExpanded));
@@ -94,18 +93,6 @@ export default function ModernAdminRumus() {
     }
   };
 
-  // Handle section toggle
-  const handleSectionToggle = (sectionId: string) => {
-    setExpandedSections(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(sectionId)) {
-        newSet.delete(sectionId);
-      } else {
-        newSet.add(sectionId);
-      }
-      return newSet;
-    });
-  };
 
   // Filter sections based on search
   const filteredSections = searchQuery ? 
@@ -117,7 +104,7 @@ export default function ModernAdminRumus() {
     ) : sections;
 
   return (
-    <PageWrapper maxW="6xl">
+    <PageWrapper maxW="4xl">
       <div className="space-y-8">
         {/* Header */}
         <div className="text-center space-y-4">
@@ -172,7 +159,7 @@ export default function ModernAdminRumus() {
               <span>
                 Found {searchResults.length} results for "{searchQuery}"
               </span>
-              <Badge variant="outline">
+              <Badge variant="secondary">
                 {filteredSections.length} sections
               </Badge>
             </div>
