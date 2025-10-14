@@ -520,16 +520,16 @@ const KanbanBoard = () => {
 												<td className="px-4 py-3 whitespace-nowrap text-gray-900 dark:text-gray-100 font-medium">
 													{formatDateTimeDDMMYYYY(t.openTime)}
 												</td>
-												<td className="px-4 py-3 text-gray-700 dark:text-gray-300 max-w-xs">
-													<div className="line-clamp-2">
+												<td className="px-4 py-3 text-gray-700 dark:text-gray-300 max-w-sm">
+													<div className="line-clamp-3">
 														{t.description || "-"}
 													</div>
 												</td>
-												<td className="px-4 py-3 text-gray-700 dark:text-gray-300 max-w-xs">
-													<div className="line-clamp-2">{t.cause || "-"}</div>
+												<td className="px-4 py-3 text-gray-700 dark:text-gray-300 max-w-sm">
+													<div className="line-clamp-3">{t.cause || "-"}</div>
 												</td>
-												<td className="px-4 py-3 text-gray-700 dark:text-gray-300 max-w-xs">
-													<div className="line-clamp-2">
+												<td className="px-4 py-3 text-gray-700 dark:text-gray-300 max-w-sm">
+													<div className="line-clamp-3">
 														{t.handling || "-"}
 													</div>
 												</td>
@@ -1888,7 +1888,7 @@ const KanbanBoard = () => {
 			>
 				<RadixDialog.Portal>
 					<RadixDialog.Overlay className="fixed inset-0 bg-black/50 z-50 backdrop-blur-sm" />
-					<RadixDialog.Content className="fixed right-0 top-0 h-full w-full md:w-[900px] max-w-full bg-card text-card-foreground shadow-2xl z-50 overflow-y-auto">
+					<RadixDialog.Content className="fixed right-0 top-0 h-full w-full md:w-[1200px] lg:w-[1400px] max-w-full bg-card text-card-foreground shadow-2xl z-50 overflow-y-auto">
 						{selectedCustomer && (
 							<>
 								{/* Accessibility: Hidden Title and Description */}
@@ -1925,7 +1925,7 @@ const KanbanBoard = () => {
 									<h3 className="text-lg font-semibold text-card-foreground mb-4">
 										Summary Metrics
 									</h3>
-									<div className="grid grid-cols-2 md:grid-cols-3 gap-6 mb-8">
+									<div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6 mb-8">
 										<div className="bg-gray-50 dark:bg-zinc-800 rounded-lg p-4">
 											<span className="text-sm font-medium text-gray-600 dark:text-gray-400">
 												Total Tickets
