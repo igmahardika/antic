@@ -481,7 +481,8 @@ const GridView = ({ data: propsData }: { data?: ITicket[] }) => {
 	);
 
 	return (
-		<PageWrapper maxW="4xl">
+		<ErrorBoundary>
+			<PageWrapper maxW="4xl">
 			{/* Header Section */}
 			<div className="mb-8">
 				<div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
@@ -832,7 +833,7 @@ const GridView = ({ data: propsData }: { data?: ITicket[] }) => {
 					</div>
 				</CardContent>
 			</Card>
-		</PageWrapper>
+			</PageWrapper>
 		</ErrorBoundary>
 	);
 };

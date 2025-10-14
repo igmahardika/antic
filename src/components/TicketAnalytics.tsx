@@ -4914,7 +4914,7 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
 								}
 							});
 							
-							return filteredData;
+							return sortedData;
 						})().map(
 							([classification, details]) => {
 								const d = details as {
