@@ -19,6 +19,7 @@ import SummaryCard from "@/components/ui/SummaryCard";
 import PageWrapper from "@/components/PageWrapper";
 import PageHeader from "@/components/ui/PageHeader";
 import { formatDurationDHM } from "@/lib/utils";
+import { logger } from "@/lib/logger";
 
 // MUI Icons for consistency with project standards
 import FlashOnIcon from "@mui/icons-material/FlashOn";
