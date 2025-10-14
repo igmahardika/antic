@@ -2057,7 +2057,8 @@ const KanbanBoard = () => {
 													{generateInsight(selectedCustomer.allTickets).solusi}
 												</span>
 											</div>
-											<div className="flex items-start gap-3">
+											{/* Recommendation section hidden */}
+											{/* <div className="flex items-start gap-3">
 												<Badge variant="info" className="mt-1 flex-shrink-0">
 													Recommendation
 												</Badge>
@@ -2067,7 +2068,7 @@ const KanbanBoard = () => {
 															.rekomendasi
 													}
 												</span>
-											</div>
+											</div> */}
 										</div>
 									</div>
 								</div>
