@@ -15,8 +15,7 @@ import { AnalyticsProvider } from "./components/AnalyticsContext";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { AgentAnalyticsProvider } from "./components/AgentAnalyticsContext";
 import { TicketAnalyticsProvider } from "./components/TicketAnalyticsContext";
-import AdminRumus from "./pages/AdminRumus";
-import AdminRumusTemp from "./pages/AdminRumus-temp";
+import ModernAdminRumus from "./pages/ModernAdminRumus";
 import MasterDataAgent from "./components/MasterDataAgent";
 import CustomerData from "./pages/CustomerData";
 import { IncidentData } from "./pages/IncidentData";
@@ -228,7 +227,7 @@ function AppLayout() {
 								{/* Escalation routes removed */}
 								<Route
 									path="/documentation/admin-rumus"
-									element={<AdminRumus />}
+									element={<ModernAdminRumus />}
 								/>
 								{/* Path lama tetap untuk fallback/compatibility */}
 								<Route
@@ -259,8 +258,7 @@ function AppLayout() {
 									path="/summary-dashboard"
 									element={<SummaryDashboard standalone={true} />}
 								/>
-								<Route path="/admin-rumus" element={<AdminRumus />} />
-								<Route path="/admin-rumus-temp" element={<AdminRumusTemp />} />
+								<Route path="/admin-rumus" element={<ModernAdminRumus />} />
 								<Route path="/master-agent" element={<MasterDataAgent />} />
 								<Route path="/customer" element={<CustomerData />} />
 								<Route path="/vendor-data" element={<VendorData />} />
