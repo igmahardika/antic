@@ -10,12 +10,36 @@ import {
   BookmarkCheck, 
   Filter, 
   RefreshCw,
-  Settings
+  Settings,
+  RotateCcw,
+  LayoutDashboard,
+  Database,
+  Calculator,
+  FileText,
+  Code,
+  BarChart3
 } from 'lucide-react';
 import type { DocumentationSection, SearchResult } from '../types/documentation';
 
 // Import sample data (in production, this would come from an API)
 import documentationData from '../data/documentation-sections.json';
+
+// Icon mapping function
+const getIconComponent = (iconName: string) => {
+  const iconMap: Record<string, React.ComponentType<any>> = {
+    'Update': RotateCcw,
+    'Dashboard': LayoutDashboard,
+    'Database': Database,
+    'Calculator': Calculator,
+    'Settings': Settings,
+    'FileText': FileText,
+    'Code': Code,
+    'BarChart3': BarChart3
+  };
+  
+  const IconComponent = iconMap[iconName] || FileText;
+  return <IconComponent className="h-5 w-5" />;
+};
 
 export default function ModernAdminRumus() {
   const [sections, setSections] = useState<DocumentationSection[]>([]);
@@ -202,6 +226,7 @@ export default function ModernAdminRumus() {
               <EnhancedCollapsibleSection
                 section={{
                   ...section,
+                  icon: getIconComponent(section.icon as string),
                   defaultExpanded: expandedSections.has(section.id)
                 }}
                 isBookmarked={bookmarkedSections.has(section.id)}

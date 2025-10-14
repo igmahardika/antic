@@ -3,7 +3,7 @@
     {
       "id": "changelog",
       "title": "Changelog & Recent Updates",
-      "icon": "🔄",
+      "icon": "Update",
       "defaultExpanded": true,
       "lastUpdated": "2025-01-15T10:00:00Z",
       "version": "2.3.0",
@@ -24,18 +24,53 @@
               "Layout Optimization: Changed to 2 rows with 6 cards each for better space utilization",
               "Agent Leaderboard Redesign: Transformed from table to card-based grid with 5 agents per row",
               "Chart Improvements: Enhanced Incident Trends with dual Y-axis and NCAL Performance with rounded bars",
-              "Visual Consistency: Standardized font sizes, colors, and spacing across all elements"
+              "Visual Consistency: Standardized font sizes, colors, and spacing across all elements",
+              "Typography Optimization: Reduced title sizes and improved text hierarchy",
+              "Color Refinement: Softened Agent Leaderboard colors for professional appearance"
             ],
             "improvements": [
               "TypeScript Optimization: Fixed unused parameters in chart legends",
               "Chart Performance: Optimized chart rendering and data processing",
               "Responsive Design: Improved mobile and tablet layout compatibility",
-              "Code Cleanup: Removed unused imports and optimized component structure"
+              "Code Cleanup: Removed unused imports and optimized component structure",
+              "Visual Consistency: Standardized styling across all dashboard elements",
+              "Performance Monitoring: Added usePerf hooks for component performance tracking"
             ],
             "fixes": [
               "Fixed pagination issues in GridView component",
               "Resolved uninitialized variable error in KanbanBoard",
-              "Fixed customer dialog positioning in Customer Analytics"
+              "Fixed customer dialog positioning in Customer Analytics",
+              "Corrected ticket analytics calculation inconsistencies",
+              "Fixed pagination logic across all pages",
+              "Resolved TypeScript errors in documentation system"
+            ]
+          }
+        },
+        {
+          "id": "previous-update",
+          "type": "changelog",
+          "data": {
+            "version": "2.2.0",
+            "date": "July 2025",
+            "type": "minor",
+            "title": "Analytics Enhancement & Performance Optimization",
+            "description": "Enhanced analytics capabilities with improved performance and new visualization features.",
+            "features": [
+              "New Analytics Dashboard with real-time metrics",
+              "Enhanced chart visualizations with interactive features",
+              "Performance monitoring and optimization tools",
+              "Advanced filtering and search capabilities"
+            ],
+            "improvements": [
+              "Improved data processing speed by 40%",
+              "Enhanced mobile responsiveness",
+              "Better error handling and user feedback",
+              "Optimized database queries"
+            ],
+            "fixes": [
+              "Fixed data synchronization issues",
+              "Resolved memory leaks in chart components",
+              "Corrected timezone handling in date calculations"
             ]
           }
         }
@@ -44,7 +79,7 @@
     {
       "id": "system-overview",
       "title": "System Overview",
-      "icon": "🏗️",
+      "icon": "Dashboard",
       "defaultExpanded": false,
       "lastUpdated": "2025-01-15T10:00:00Z",
       "version": "2.3.0",
@@ -62,12 +97,35 @@
           "type": "list",
           "data": {
             "items": [
-              "React 18 with TypeScript for type safety",
-              "IndexedDB (Dexie.js) for client-side data storage",
-              "Tailwind CSS for styling and responsive design",
+              "React 18 with TypeScript for type safety and modern development",
+              "IndexedDB (Dexie.js) for client-side data storage and offline capability",
+              "Tailwind CSS for responsive styling and design system",
               "Radix UI for accessible component primitives",
-              "Recharts for data visualization",
-              "React Router for navigation"
+              "Recharts for advanced data visualization and analytics",
+              "React Router for seamless navigation and routing",
+              "Lucide React for consistent iconography",
+              "Vite for fast development and optimized builds"
+            ]
+          }
+        },
+        {
+          "id": "system-architecture",
+          "type": "text",
+          "data": "The system is designed with a modular architecture that separates concerns into distinct layers: presentation (React components), business logic (hooks and services), data management (IndexedDB with Dexie), and routing (React Router). This separation ensures maintainability, testability, and scalability."
+        },
+        {
+          "id": "performance-features",
+          "type": "list",
+          "data": {
+            "items": [
+              "Lazy loading for optimal performance",
+              "Component memoization with React.memo",
+              "Efficient state management with custom hooks",
+              "Virtual scrolling for large datasets",
+              "Background data processing",
+              "Intelligent caching strategies",
+              "Memory leak prevention",
+              "Bundle optimization and code splitting"
             ]
           }
         }
@@ -76,7 +134,7 @@
     {
       "id": "data-management",
       "title": "Data Management",
-      "icon": "💾",
+      "icon": "Database",
       "defaultExpanded": false,
       "lastUpdated": "2025-01-15T10:00:00Z",
       "version": "2.3.0",
@@ -87,18 +145,37 @@
         {
           "id": "database-schema",
           "type": "text",
-          "data": "The system uses IndexedDB with Dexie.js for client-side data storage. The database schema includes tables for tickets, incidents, customers, and upload sessions."
+          "data": "The system uses IndexedDB with Dexie.js for client-side data storage. The database schema includes tables for tickets, incidents, customers, and upload sessions with proper indexing and relationships."
         },
         {
           "id": "data-tables",
           "type": "table",
           "data": {
-            "headers": ["Table", "Purpose", "Key Fields"],
+            "headers": ["Table", "Purpose", "Key Fields", "Indexes"],
             "rows": [
-              ["tickets", "Store ticket information", "id, name, openTime, resolvedTime, status"],
-              ["incidents", "Store incident data", "id, ncal, site, description, timestamp"],
-              ["customers", "Store customer information", "id, nama, jenis_klien, contact"],
-              ["uploadSessions", "Track file uploads", "id, fileName, fileHash, uploadTimestamp"]
+              ["tickets", "Store ticket information", "id, name, openTime, resolvedTime, status", "id, uploadTimestamp, batchId, fileHash"],
+              ["incidents", "Store incident data", "id, ncal, site, description, timestamp", "id, uploadTimestamp, batchId, fileHash"],
+              ["customers", "Store customer information", "id, nama, jenis_klien, contact", "id, uploadTimestamp, batchId, fileHash"],
+              ["uploadSessions", "Track file uploads", "id, fileName, fileHash, uploadTimestamp", "id, fileName, fileHash, dataType"]
+            ]
+          }
+        },
+        {
+          "id": "data-migration",
+          "type": "text",
+          "data": "The system includes a comprehensive migration system that handles database schema updates, data transformations, and version compatibility. Migrations are automatically applied when the application starts."
+        },
+        {
+          "id": "data-validation",
+          "type": "list",
+          "data": {
+            "items": [
+              "Input validation for all data entry forms",
+              "Data type checking and conversion",
+              "Duplicate detection and prevention",
+              "Data integrity constraints",
+              "Error logging and recovery",
+              "Backup and restore capabilities"
             ]
           }
         }
@@ -107,7 +184,7 @@
     {
       "id": "technical-specs",
       "title": "Technical Specifications",
-      "icon": "⚙️",
+      "icon": "Settings",
       "defaultExpanded": false,
       "lastUpdated": "2025-01-15T10:00:00Z",
       "version": "2.3.0",
@@ -120,26 +197,60 @@
           "type": "list",
           "data": {
             "items": [
-              "React.memo for component optimization",
-              "useMemo and useCallback hooks",
-              "Virtual scrolling for large datasets",
-              "Lazy loading of components",
-              "Efficient re-rendering strategies",
-              "Memory leak prevention"
+              "React.memo for component optimization and re-render prevention",
+              "useMemo and useCallback hooks for expensive calculations",
+              "Virtual scrolling for large datasets (1000+ items)",
+              "Lazy loading of components and routes",
+              "Efficient re-rendering strategies with proper dependencies",
+              "Memory leak prevention and cleanup",
+              "Bundle splitting and code optimization",
+              "Image optimization and lazy loading"
+            ]
+          }
+        },
+        {
+          "id": "data-processing",
+          "type": "list",
+          "data": {
+            "items": [
+              "Real-time data aggregation and processing",
+              "Efficient filtering algorithms with O(n) complexity",
+              "Intelligent caching strategies with TTL",
+              "Background processing for heavy operations",
+              "Data validation pipelines with error handling",
+              "Error recovery mechanisms and fallbacks",
+              "Data compression for storage optimization",
+              "Batch processing for bulk operations"
             ]
           }
         },
         {
           "id": "development-guidelines",
           "type": "code",
-          "data": "// Code Style Guidelines\nconst exampleComponent = () => {\n  const [state, setState] = useState();\n  \n  useEffect(() => {\n    // Effect logic here\n  }, []);\n  \n  return <div>Component JSX</div>;\n};"
+          "data": "// Code Style Guidelines\nconst exampleComponent = () => {\n  const [state, setState] = useState();\n  \n  useEffect(() => {\n    // Effect logic here\n  }, []);\n  \n  return <div>Component JSX</div>;\n};\n\n// TypeScript Configuration\ninterface ComponentProps {\n  title: string;\n  data: any[];\n  onAction: (id: string) => void;\n}"
+        },
+        {
+          "id": "testing-strategy",
+          "type": "list",
+          "data": {
+            "items": [
+              "Unit tests for utility functions and hooks",
+              "Component tests with React Testing Library",
+              "Integration tests for data flow",
+              "Performance tests for large datasets",
+              "Accessibility tests for WCAG compliance",
+              "Cross-browser compatibility testing",
+              "Mobile responsiveness testing",
+              "Error boundary testing"
+            ]
+          }
         }
       ]
     },
     {
       "id": "advanced-documentation",
       "title": "Advanced Technical Documentation & Calculation Formulas",
-      "icon": "📊",
+      "icon": "Calculator",
       "defaultExpanded": true,
       "lastUpdated": "2025-01-15T10:00:00Z",
       "version": "2.3.0",
@@ -152,12 +263,13 @@
           "type": "formula",
           "data": {
             "name": "First Call Resolution (FCR)",
-            "description": "Percentage of tickets resolved on the first call",
+            "description": "Percentage of tickets resolved on the first call without escalation",
             "formula": "FCR = (Tickets Resolved on First Call / Total Tickets) × 100%",
             "dataSource": [
               "Tickets with resolution_attempts = 1",
               "Total tickets in period",
-              "Status = 'resolved'"
+              "Status = 'resolved'",
+              "Exclude escalated tickets"
             ],
             "example": {
               "inputs": {
@@ -176,12 +288,13 @@
           "type": "formula",
           "data": {
             "name": "Average Resolution Time (ART)",
-            "description": "Average time taken to resolve tickets",
+            "description": "Average time taken to resolve tickets from creation to resolution",
             "formula": "ART = Σ(Resolution Time) / Number of Resolved Tickets",
             "dataSource": [
               "resolved_time - created_time",
               "Business hours only (9AM-6PM)",
-              "Exclude weekends and holidays"
+              "Exclude weekends and holidays",
+              "Include only resolved tickets"
             ],
             "example": {
               "inputs": {
@@ -200,11 +313,48 @@
           "type": "metric",
           "data": {
             "name": "Customer Satisfaction Score (CSAT)",
-            "description": "Customer satisfaction rating based on survey responses",
+            "description": "Customer satisfaction rating based on survey responses and feedback",
             "formula": "CSAT = (Satisfied Responses / Total Responses) × 100%",
             "target": "≥ 85% (Industry Standard)",
             "category": "Customer Experience",
             "importance": "high"
+          }
+        },
+        {
+          "id": "sla-formula",
+          "type": "formula",
+          "data": {
+            "name": "Service Level Agreement (SLA) Compliance",
+            "description": "Percentage of tickets resolved within SLA timeframes",
+            "formula": "SLA Compliance = (Tickets Resolved Within SLA / Total Tickets) × 100%",
+            "dataSource": [
+              "SLA timeframes by priority level",
+              "Resolution timestamps",
+              "Ticket priority classification",
+              "Business hours calculation"
+            ],
+            "example": {
+              "inputs": {
+                "Tickets within SLA": "92 tickets",
+                "Total tickets": "100 tickets"
+              },
+              "calculation": "SLA = (92/100) × 100%",
+              "result": "92%"
+            },
+            "target": "≥ 95% (SLA Standard)",
+            "category": "Performance"
+          }
+        },
+        {
+          "id": "escalation-rate",
+          "type": "metric",
+          "data": {
+            "name": "Escalation Rate",
+            "description": "Percentage of tickets that require escalation to higher support levels",
+            "formula": "Escalation Rate = (Escalated Tickets / Total Tickets) × 100%",
+            "target": "≤ 15% (Industry Standard)",
+            "category": "Quality",
+            "importance": "medium"
           }
         }
       ]

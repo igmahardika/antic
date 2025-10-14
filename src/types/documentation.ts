@@ -1,8 +1,9 @@
 // Documentation types for AdminRumus modernization
+import React from 'react';
 export interface DocumentationSection {
   id: string;
   title: string;
-  icon: string;
+  icon: string | React.ReactNode;
   defaultExpanded: boolean;
   content: ContentBlock[];
   lastUpdated: string;
