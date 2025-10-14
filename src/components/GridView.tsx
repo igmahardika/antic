@@ -21,7 +21,7 @@ import { usePageUrlState } from "@/hooks/usePageUrlState";
 import { PaginationControls } from "@/components";
 import { OverflowX } from "@/components/OverflowX";
 import { logger } from "@/lib/logger";
-import ErrorBoundary from "./ErrorBoundary";
+import { ErrorBoundary } from "./ErrorBoundary";
 
 // Optimized date parsing with caching
 const dateParseCache = new Map<string, { month: string; year: string }>();
