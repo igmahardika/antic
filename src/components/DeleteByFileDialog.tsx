@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { listUploadHistory, deleteByFile, createUploadSessionForExistingData } from '../services/uploadSessions';
+import { useEffect, useState } from 'react';
+import { listUploadHistory, deleteByFile, createUploadSessionForExistingData, cleanupEmptySessions } from '../services/uploadSessions';
 import type { UploadDataType, IUploadSession } from '../types.upload';
 
 type Props = {
@@ -17,6 +17,9 @@ export default function DeleteByFileDialog({ dataType, onClose, onDeleted }: Pro
   useEffect(() => {
     const loadHistory = async () => {
       try {
+        // Clean up empty sessions first
+        await cleanupEmptySessions(dataType);
+        
         let sessions = await listUploadHistory(dataType);
         console.log('Upload history for', dataType, ':', sessions);
         
@@ -47,7 +50,8 @@ export default function DeleteByFileDialog({ dataType, onClose, onDeleted }: Pro
     try {
       const { deletedCount, session } = await deleteByFile(selected, dataType);
       
-      // Refresh the history list after successful deletion
+      // Clean up empty sessions and refresh the history list after successful deletion
+      await cleanupEmptySessions(dataType);
       const updatedHistory = await listUploadHistory(dataType);
       setHistory(updatedHistory);
       

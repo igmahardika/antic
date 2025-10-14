@@ -50,8 +50,13 @@ export const deleteByFile = async (fileName: string, dataType: UploadDataType) =
 
 export const listUploadHistory = async (dataType?: UploadDataType) => {
   const coll = ((db as any).uploadSessions as any).orderBy('uploadTimestamp').reverse();
-  return dataType ? (await coll.filter((s: IUploadSession) => s.dataType === dataType).toArray())
-                  : (await coll.toArray());
+  let sessions = dataType ? (await coll.filter((s: IUploadSession) => s.dataType === dataType).toArray())
+                         : (await coll.toArray());
+  
+  // Filter out sessions with 0 records
+  sessions = sessions.filter(session => session.recordCount > 0);
+  
+  return sessions;
 };
 
 // Helper function to create upload session for existing data
@@ -85,4 +90,20 @@ export const createUploadSessionForExistingData = async (dataType: UploadDataTyp
   
   await (db as any).uploadSessions.add(session as any);
   return session;
+};
+
+// Clean up empty upload sessions
+export const cleanupEmptySessions = async (dataType?: UploadDataType) => {
+  // Get all sessions (including those with 0 records)
+  const coll = ((db as any).uploadSessions as any).orderBy('uploadTimestamp').reverse();
+  let allSessions = dataType ? (await coll.filter((s: IUploadSession) => s.dataType === dataType).toArray())
+                             : (await coll.toArray());
+  
+  const emptySessions = allSessions.filter(session => session.recordCount === 0);
+  
+  for (const session of emptySessions) {
+    await (db as any).uploadSessions.delete(session.id);
+  }
+  
+  return emptySessions.length;
 };
