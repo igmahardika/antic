@@ -10,7 +10,6 @@ import {
 } from "@/utils/incidentUtils";
 import { fixAllMissingEndTime } from "@/utils/durationFixUtils";
 import { db } from "@/lib/db";
-import DeleteByFileDialog from "./DeleteByFileDialog";
 
 import {
 	Card,
@@ -30,6 +29,8 @@ import CancelIcon from "@mui/icons-material/Cancel";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import DeleteIcon from "@mui/icons-material/Delete";
 import InfoIcon from "@mui/icons-material/Info";
+import DeleteByFileDialog from "./DeleteByFileDialog";
+import { createUploadSession, finalizeUploadSession } from '../services/uploadSessions';
 
 /**
  * ——————— WHY THIS FIX ———————
@@ -389,9 +390,15 @@ export const IncidentUpload: React.FC = () => {
 		setIsUploading(true);
 		setProgress(0);
 		setUploadResult(null);
+		
+		let session: any = null;
 
 		try {
 			const file = acceptedFiles[0];
+			
+			// Create upload session for tracking
+			session = await createUploadSession(file, 'incidents');
+			
 			// Penting: cellDates:true agar tanggal jadi Date, bukan angka
 			const workbook = XLSX.read(await file.arrayBuffer(), {
 				type: "array",
@@ -975,12 +982,31 @@ export const IncidentUpload: React.FC = () => {
 					sheet: "DATABASE",
 					message: `Saving ${finalIncidents.length} incidents...`,
 				});
-				await saveIncidentsChunked(finalIncidents);
+				
+				// Add upload session metadata to incidents
+				const enrichedIncidents = finalIncidents.map(incident => ({
+					...incident,
+					uploadTimestamp: Date.now(),
+					fileName: file.name,
+					fileHash: session.fileHash,
+					batchId: session.id,
+					uploadSessionId: session.id
+				}));
+				
+				await saveIncidentsChunked(enrichedIncidents);
+				
+				// Finalize upload session
+				await finalizeUploadSession(session.id, {
+					status: 'completed',
+					recordCount: enrichedIncidents.length,
+					successCount: enrichedIncidents.length
+				});
+				
 				uploadLog.push({
 					type: "success",
 					row: 0,
 					sheet: "DATABASE",
-					message: `Saved ${finalIncidents.length} incidents`,
+					message: `Saved ${enrichedIncidents.length} incidents with upload session tracking`,
 				});
 
 				setProgress(100);
@@ -1015,6 +1041,20 @@ export const IncidentUpload: React.FC = () => {
 			setParsedIncidents(allRows);
 		} catch (error: any) {
 			const errorMsg = `Upload failed: ${error?.message || error}`;
+			
+			// Finalize upload session as failed
+			try {
+				if (session) {
+					await finalizeUploadSession(session.id, {
+						status: 'failed',
+						errorCount: 1,
+						errorLog: [errorMsg]
+					});
+				}
+			} catch (sessionError) {
+				console.error('Failed to finalize upload session:', sessionError);
+			}
+			
 			setUploadResult({
 				success: 0,
 				failed: 1,
@@ -1356,17 +1396,6 @@ export const IncidentUpload: React.FC = () => {
 								dicocokkan berdasarkan No Case dan Start Time.
 							</div>
 
-							<div className="flex gap-3 mb-4">
-								<Button
-									onClick={() => setShowDeleteDialog(true)}
-									variant="outline"
-									className="flex-1"
-								>
-									<DeleteIcon className="w-4 h-4 mr-2" />
-									Delete by File (Upload History)
-								</Button>
-							</div>
-
 							{parsedIncidents.length > 0 ? (
 								<div className="space-y-4">
 									<Alert>
@@ -1536,13 +1565,28 @@ export const IncidentUpload: React.FC = () => {
 					</Tabs>
 				</CardContent>
 			</Card>
+			
+			{/* Delete by File Button */}
+			<div className="mt-6 flex justify-center">
+				<Button
+					onClick={() => setShowDeleteDialog(true)}
+					variant="outline"
+					className="w-full sm:w-auto"
+				>
+					<DeleteIcon className="h-4 w-4 mr-2" />
+					Delete by File
+				</Button>
+			</div>
+			
+			{/* Delete by File Dialog */}
 			{showDeleteDialog && (
 				<DeleteByFileDialog
 					dataType="incidents"
 					onClose={() => setShowDeleteDialog(false)}
 					onDeleted={({ fileName, deletedCount }) => {
 						alert(`Terhapus ${deletedCount} data incident dari ${fileName}`);
-						// Refresh data if needed
+						setParsedIncidents([]);
+						setUploadResult(null);
 					}}
 				/>
 			)}
