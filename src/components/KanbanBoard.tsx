@@ -73,6 +73,7 @@ const KanbanBoard = () => {
 	// --- All state and ref hooks must be at the top ---
 	const [openDialogId, setOpenDialogId] = useState<string | null>(null);
 	const [repClassFilter, setRepClassFilter] = useState<string>("Total");
+	const [searchQuery, setSearchQuery] = useState<string>("");
 
 	// Hapus state lokal filter waktu
 
@@ -221,19 +222,33 @@ const KanbanBoard = () => {
 	}, [customerCards]);
 	const { repClassSummary, totalCustomers } = processedData;
 
-	// --- Filtered customer cards by risk filter ---
+	// --- Filtered customer cards by risk filter and search ---
 	const filteredCustomers = useMemo(() => {
 		if (!customerCards) return [];
 		let filtered = customerCards;
+		
+		// Apply risk filter
 		if (repClassFilter && repClassFilter !== "Total") {
 			filtered = customerCards.filter((c) => c.repClass === repClassFilter);
 		}
+		
+		// Apply search filter
+		if (searchQuery.trim()) {
+			const query = searchQuery.toLowerCase().trim();
+			filtered = filtered.filter((customer) => {
+				const nameMatch = customer.name?.toLowerCase().includes(query);
+				const customerIdMatch = customer.customerId?.toLowerCase().includes(query);
+				const repClassMatch = customer.repClass?.toLowerCase().includes(query);
+				return nameMatch || customerIdMatch || repClassMatch;
+			});
+		}
+		
 		return filtered.slice().sort((a, b) => {
 			const aTickets = a.ticketCount || 0;
 			const bTickets = b.ticketCount || 0;
 			return bTickets - aTickets;
 		});
-	}, [customerCards, repClassFilter]);
+	}, [customerCards, repClassFilter, searchQuery]);
 
 	// URL-synced pagination
 	const {
@@ -249,7 +264,7 @@ const KanbanBoard = () => {
 		initialPageSize: 20,
 		allowedPageSizes: [10, 20, 50, 100],
 		totalItems: filteredCustomers.length,
-		resetOnDeps: [startMonth, endMonth, selectedYear, repClassFilter],
+		resetOnDeps: [startMonth, endMonth, selectedYear, repClassFilter, searchQuery],
 	});
 
 	const selectedCustomer = useMemo(() => {
@@ -1667,7 +1682,34 @@ const KanbanBoard = () => {
 							Monitor customer ticket patterns and risk assessment
 						</p>
 					</div>
-					<div className="flex justify-end">
+					<div className="flex flex-col lg:flex-row lg:items-center lg:justify-end gap-4">
+						{/* Search Input */}
+						<div className="flex items-center gap-2">
+							<label htmlFor="customer-search" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+								Search:
+							</label>
+							<div className="relative">
+								<input
+									id="customer-search"
+									type="text"
+									placeholder="Search by name, ID, or risk level..."
+									value={searchQuery}
+									onChange={(e) => setSearchQuery(e.target.value)}
+									className="w-64 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+								/>
+								{searchQuery && (
+									<button
+										onClick={() => setSearchQuery("")}
+										className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
+										aria-label="Clear search"
+									>
+										×
+									</button>
+								)}
+							</div>
+						</div>
+						
+						{/* Time Filter */}
 						<div className="scale-90 transform origin-right">
 							<TimeFilter
 								startMonth={startMonth}
@@ -1744,6 +1786,28 @@ const KanbanBoard = () => {
 				</div>
 			</div>
 
+			{/* Search Results Indicator */}
+			{searchQuery && (
+				<div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+					<div className="flex items-center justify-between">
+						<div className="flex items-center gap-2">
+							<span className="text-sm font-medium text-blue-800 dark:text-blue-200">
+								Search Results:
+							</span>
+							<span className="text-sm text-blue-600 dark:text-blue-300">
+								{filteredCustomers.length} customer{filteredCustomers.length !== 1 ? 's' : ''} found for "{searchQuery}"
+							</span>
+						</div>
+						<button
+							onClick={() => setSearchQuery("")}
+							className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-200 underline"
+						>
+							Clear search
+						</button>
+					</div>
+				</div>
+			)}
+
 			{/* Customer Cards Grid with improved layout */}
 			<div className="flex-grow">
 				{filteredCustomers.length > 0 ? (
@@ -1790,14 +1854,29 @@ const KanbanBoard = () => {
 				) : (
 					<div className="text-center py-16">
 						<div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gray-100 dark:bg-zinc-800 flex items-center justify-center">
-							<GroupIcon className="w-8 h-8 text-gray-400" />
+							{searchQuery ? (
+								<span className="text-2xl">🔍</span>
+							) : (
+								<GroupIcon className="w-8 h-8 text-gray-400" />
+							)}
 						</div>
 						<h3 className="text-xl font-semibold text-card-foreground mb-2">
-							No Customers Found
+							{searchQuery ? "No Search Results" : "No Customers Found"}
 						</h3>
-						<p className="text-gray-500 dark:text-gray-400">
-							No customers match the current filter criteria.
+						<p className="text-gray-500 dark:text-gray-400 mb-4">
+							{searchQuery 
+								? `No customers found matching "${searchQuery}". Try adjusting your search terms.`
+								: "No customers match the current filter criteria."
+							}
 						</p>
+						{searchQuery && (
+							<button
+								onClick={() => setSearchQuery("")}
+								className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+							>
+								Clear Search
+							</button>
+						)}
 					</div>
 				)}
 			</div>
