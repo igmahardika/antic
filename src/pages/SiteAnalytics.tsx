@@ -804,7 +804,7 @@ export const SiteAnalytics: React.FC = () => {
 											{/* Status Badge */}
 											<div className="col-span-1 flex items-center justify-center">
 												<Badge 
-													variant={site.avgDuration < siteStats.avgSiteRecovery ? "default" : "destructive"}
+													variant={site.avgDuration < siteStats.avgSiteRecovery ? "default" : "danger"}
 													className="text-xs px-1 py-0"
 												>
 													{site.avgDuration < siteStats.avgSiteRecovery ? "✓" : "⚠"}
@@ -865,7 +865,7 @@ export const SiteAnalytics: React.FC = () => {
 									</CardHeaderTitle>
 								</CardTitle>
 								{Object.values(siteStats.siteRiskScore).filter((site: any) => site.level === "High").length > 0 && (
-									<Badge variant="destructive" className="text-xs">
+									<Badge variant="danger" className="text-xs">
 										HIGH RISK
 									</Badge>
 								)}
@@ -967,8 +967,8 @@ export const SiteAnalytics: React.FC = () => {
 													{/* Risk Level */}
 													<div className="col-span-2 text-center flex items-center justify-center">
 														<Badge 
-															variant={siteData.level === "High" ? "destructive" : 
-																	siteData.level === "Medium" ? "secondary" : "default"}
+															variant={siteData.level === "High" ? "danger" : 
+																	siteData.level === "Medium" ? "warning" : "success"}
 															className="text-xs"
 														>
 															{siteData.level}
