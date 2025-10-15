@@ -680,10 +680,10 @@ export const SiteAnalytics: React.FC = () => {
 				)}
 
 				{/* KPI Cards */}
-				<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+				<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
 					<SummaryCard
 						icon={<LocationOnIcon className="w-5 h-5 text-white" />}
-						iconBg="bg-slate-600"
+						iconBg="bg-blue-500"
 						title="Total Sites Affected"
 						value={siteStats.totalSites}
 						description={`${siteStats.uniqueSites} unique sites`}
@@ -691,7 +691,7 @@ export const SiteAnalytics: React.FC = () => {
 
 					<SummaryCard
 						icon={<AccessTimeIcon className="w-5 h-5 text-white" />}
-						iconBg="bg-slate-600"
+						iconBg="bg-amber-500"
 						title="Avg Site Duration"
 						value={
 							siteStats.avgSiteDuration > 0
@@ -703,7 +703,7 @@ export const SiteAnalytics: React.FC = () => {
 
 					<SummaryCard
 						icon={<CheckCircleIcon className="w-5 h-5 text-white" />}
-						iconBg="bg-slate-600"
+						iconBg="bg-emerald-500"
 						title="Site Reliability"
 						value={`${siteStats.siteReliability.toFixed(1)}%`}
 						description="Resolution rate across sites"
@@ -711,7 +711,7 @@ export const SiteAnalytics: React.FC = () => {
 
 					<SummaryCard
 						icon={<ErrorOutlineIcon className="w-5 h-5 text-white" />}
-						iconBg="bg-slate-600"
+						iconBg="bg-rose-500"
 						title="High Risk Sites"
 						value={
 							Object.values(siteStats.siteRiskScore).filter(
@@ -754,37 +754,41 @@ export const SiteAnalytics: React.FC = () => {
 									{topAffectedSitesData.slice(0, 6).map((site, index) => (
 										<div
 											key={site.name}
-											className="grid grid-cols-12 gap-2 py-3 px-3 rounded-lg transition-colors hover:bg-gray-50 dark:hover:bg-gray-800 border-l-2 border-l-slate-300"
+											className="grid grid-cols-12 gap-2 py-3 px-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
 										>
 											{/* Rank */}
 											<div className="col-span-1 flex items-center">
-												<div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-white bg-slate-500">
+												<div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium text-white bg-gray-500">
 													{index + 1}
 												</div>
 											</div>
 											
 											{/* Site Name */}
 											<div className="col-span-4 flex items-center min-w-0">
-												<div className="truncate font-medium text-sm">
+												<div className="truncate font-medium text-sm text-gray-900 dark:text-gray-100">
 													{site.name}
 												</div>
 											</div>
 											
 											{/* Incidents */}
 											<div className="col-span-2 text-center flex items-center justify-center">
-												<span className="font-bold text-slate-700 dark:text-slate-300">{site.count}</span>
+												<span className="font-semibold text-gray-700 dark:text-gray-300">{site.count}</span>
 											</div>
 											
 											{/* Avg Duration */}
 											<div className="col-span-2 text-center flex items-center justify-center">
-												<span className="text-xs font-mono text-slate-600 dark:text-slate-400">
+												<span className="text-xs font-mono text-gray-600 dark:text-gray-400">
 													{formatDurationHMS(site.avgDuration)}
 												</span>
 											</div>
 											
 											{/* Resolution Rate */}
 											<div className="col-span-2 text-center flex items-center justify-center">
-												<span className="text-xs font-bold text-slate-700 dark:text-slate-300">
+												<span className={`text-xs font-medium ${
+													site.resolutionRate >= 90 ? 'text-emerald-600' : 
+													site.resolutionRate >= 70 ? 'text-amber-600' : 
+													'text-rose-600'
+												}`}>
 													{site.resolutionRate.toFixed(0)}%
 												</span>
 											</div>
@@ -802,16 +806,16 @@ export const SiteAnalytics: React.FC = () => {
 									))}
 									
 									{/* Summary Stats */}
-									<div className="mt-4 p-3 bg-slate-50 dark:bg-slate-800 rounded-lg">
+									<div className="mt-4 p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
 										<div className="grid grid-cols-3 gap-4 text-center">
 											<div>
-												<div className="text-lg font-bold text-slate-700 dark:text-slate-300">
+												<div className="text-lg font-bold text-gray-700 dark:text-gray-300">
 													{topAffectedSitesData.slice(0, 3).reduce((sum, site) => sum + site.count, 0)}
 												</div>
 												<div className="text-xs text-muted-foreground">Top 3 Incidents</div>
 											</div>
 											<div>
-												<div className="text-lg font-bold text-slate-700 dark:text-slate-300">
+												<div className="text-lg font-bold text-gray-700 dark:text-gray-300">
 													{formatDurationHMS(
 														topAffectedSitesData.slice(0, 6).reduce((sum, site) => sum + site.avgDuration, 0) / 6
 													)}
@@ -819,7 +823,7 @@ export const SiteAnalytics: React.FC = () => {
 												<div className="text-xs text-muted-foreground">Avg Resolution</div>
 											</div>
 											<div>
-												<div className="text-lg font-bold text-slate-700 dark:text-slate-300">
+												<div className="text-lg font-bold text-gray-700 dark:text-gray-300">
 													{(topAffectedSitesData.slice(0, 6).reduce((sum, site) => sum + site.resolutionRate, 0) / 6).toFixed(0)}%
 												</div>
 												<div className="text-xs text-muted-foreground">Avg Rate</div>
@@ -843,11 +847,11 @@ export const SiteAnalytics: React.FC = () => {
 					</Card>
 
 					{/* Site Risk Assessment - Compact Design */}
-					<Card className="border-l-4 border-l-slate-400">
+					<Card>
 						<CardHeader className="pb-3">
 							<div className="flex items-center justify-between">
 								<CardTitle className="flex items-center gap-2">
-									<WarningAmberIcon className="w-5 h-5 text-slate-600" />
+									<WarningAmberIcon className="w-5 h-5 text-amber-500" />
 									<CardHeaderTitle className="text-base md:text-lg">
 										Risk Assessment
 									</CardHeaderTitle>
@@ -863,26 +867,26 @@ export const SiteAnalytics: React.FC = () => {
 							</CardHeaderDescription>
 							
 							{/* Risk Distribution - Compact */}
-							<div className="mt-3 p-2 bg-gray-50 dark:bg-gray-800 rounded-lg">
+							<div className="mt-3 p-2 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
 								<div className="flex items-center justify-between mb-2">
 									<span className="text-xs font-medium">Risk Distribution</span>
 									<span className="text-xs text-muted-foreground">{siteStats.totalSites} sites</span>
 								</div>
-								<div className="flex h-3 bg-gray-200 rounded-full overflow-hidden">
+								<div className="flex h-2 bg-gray-200 rounded-full overflow-hidden">
 									<div 
-										className="bg-slate-600 h-full" 
+										className="bg-rose-500 h-full" 
 										style={{ 
 											width: `${siteStats.totalSites > 0 ? (Object.values(siteStats.siteRiskScore).filter((site: any) => site.level === "High").length / siteStats.totalSites) * 100 : 0}%` 
 										}}
 									/>
 									<div 
-										className="bg-slate-400 h-full" 
+										className="bg-amber-500 h-full" 
 										style={{ 
 											width: `${siteStats.totalSites > 0 ? (Object.values(siteStats.siteRiskScore).filter((site: any) => site.level === "Medium").length / siteStats.totalSites) * 100 : 0}%` 
 										}}
 									/>
 									<div 
-										className="bg-slate-300 h-full" 
+										className="bg-emerald-500 h-full" 
 										style={{ 
 											width: `${siteStats.totalSites > 0 ? (Object.values(siteStats.siteRiskScore).filter((site: any) => site.level === "Low").length / siteStats.totalSites) * 100 : 0}%` 
 										}}
@@ -917,25 +921,25 @@ export const SiteAnalytics: React.FC = () => {
 											return (
 												<div
 													key={site}
-													className="grid grid-cols-12 gap-2 py-3 px-3 rounded-lg transition-colors hover:bg-gray-50 dark:hover:bg-gray-800 border-l-2 border-l-slate-300"
+													className="grid grid-cols-12 gap-2 py-3 px-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
 												>
 													{/* Rank */}
 													<div className="col-span-1 flex items-center">
-														<div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-white bg-slate-500">
+														<div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium text-white bg-gray-500">
 															{index + 1}
 														</div>
 													</div>
 													
 													{/* Site Name */}
 													<div className="col-span-4 flex items-center min-w-0">
-														<div className="truncate font-medium text-sm">
+														<div className="truncate font-medium text-sm text-gray-900 dark:text-gray-100">
 															{site}
 														</div>
 													</div>
 													
 													{/* Risk Score */}
 													<div className="col-span-2 text-center flex items-center justify-center">
-														<span className="font-bold text-slate-700 dark:text-slate-300">
+														<span className="font-semibold text-gray-700 dark:text-gray-300">
 															{siteData.riskScore.toFixed(1)}
 														</span>
 													</div>
@@ -943,7 +947,8 @@ export const SiteAnalytics: React.FC = () => {
 													{/* Risk Level */}
 													<div className="col-span-2 text-center flex items-center justify-center">
 														<Badge 
-															variant="default"
+															variant={siteData.level === "High" ? "danger" : 
+																	siteData.level === "Medium" ? "warning" : "success"}
 															className="text-xs"
 														>
 															{siteData.level}
@@ -952,36 +957,42 @@ export const SiteAnalytics: React.FC = () => {
 													
 													{/* Incidents */}
 													<div className="col-span-2 text-center flex items-center justify-center">
-														<span className="text-xs font-bold text-slate-700 dark:text-slate-300">
+														<span className="text-xs font-semibold text-gray-600 dark:text-gray-400">
 															{siteData.count || 0}
 														</span>
 													</div>
 													
 													{/* Action */}
 													<div className="col-span-1 flex items-center justify-center">
-														<ErrorOutlineIcon className="w-4 h-4 text-slate-500" />
+														{siteData.level === "High" ? (
+															<ErrorOutlineIcon className="w-4 h-4 text-rose-500" />
+														) : siteData.level === "Medium" ? (
+															<WarningAmberIcon className="w-4 h-4 text-amber-500" />
+														) : (
+															<CheckCircleIcon className="w-4 h-4 text-emerald-500" />
+														)}
 													</div>
 												</div>
 											);
 										})}
 									
 									{/* Risk Summary */}
-									<div className="mt-4 p-3 bg-slate-50 dark:bg-slate-800 rounded-lg">
+									<div className="mt-4 p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
 										<div className="grid grid-cols-3 gap-4 text-center">
 											<div>
-												<div className="text-lg font-bold text-slate-700 dark:text-slate-300">
+												<div className="text-lg font-bold text-gray-700 dark:text-gray-300">
 													{Object.values(siteStats.siteRiskScore).filter((site: any) => site.level === "High").length}
 												</div>
 												<div className="text-xs text-muted-foreground">High Risk</div>
 											</div>
 											<div>
-												<div className="text-lg font-bold text-slate-700 dark:text-slate-300">
+												<div className="text-lg font-bold text-gray-700 dark:text-gray-300">
 													{Object.values(siteStats.siteRiskScore).filter((site: any) => site.level === "Medium").length}
 												</div>
 												<div className="text-xs text-muted-foreground">Medium Risk</div>
 											</div>
 											<div>
-												<div className="text-lg font-bold text-slate-700 dark:text-slate-300">
+												<div className="text-lg font-bold text-gray-700 dark:text-gray-300">
 													{Object.values(siteStats.siteRiskScore).filter((site: any) => site.level === "Low").length}
 												</div>
 												<div className="text-xs text-muted-foreground">Low Risk</div>
