@@ -754,45 +754,37 @@ export const SiteAnalytics: React.FC = () => {
 									{topAffectedSitesData.slice(0, 6).map((site, index) => (
 										<div
 											key={site.name}
-											className={`grid grid-cols-12 gap-2 py-3 px-3 rounded-lg transition-colors hover:bg-gray-50 dark:hover:bg-gray-800 ${
-												index < 3 ? 'bg-red-50 dark:bg-red-900/20 border-l-2 border-l-red-500' : 
-												index < 5 ? 'bg-orange-50 dark:bg-orange-900/20 border-l-2 border-l-orange-500' : 
-												'bg-yellow-50 dark:bg-yellow-900/20 border-l-2 border-l-yellow-500'
-											}`}
+											className="grid grid-cols-12 gap-2 py-3 px-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800/50 border-b border-gray-100 dark:border-gray-800 last:border-b-0"
 										>
 											{/* Rank */}
 											<div className="col-span-1 flex items-center">
-												<div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-white ${
-													index < 3 ? 'bg-red-500' : 
-													index < 5 ? 'bg-orange-500' : 
-													'bg-yellow-500'
-												}`}>
+												<div className="w-6 h-6 rounded-full bg-gray-600 flex items-center justify-center text-xs font-bold text-white">
 													{index + 1}
 												</div>
 											</div>
 											
 											{/* Site Name */}
 											<div className="col-span-4 flex items-center min-w-0">
-												<div className="truncate font-medium text-sm">
+												<div className="truncate font-medium text-sm text-gray-900 dark:text-gray-100">
 													{site.name}
 												</div>
 											</div>
 											
 											{/* Incidents */}
 											<div className="col-span-2 text-center flex items-center justify-center">
-												<span className="font-bold text-red-600">{site.count}</span>
+												<span className="font-semibold text-gray-700 dark:text-gray-300">{site.count}</span>
 											</div>
 											
 											{/* Avg Duration */}
 											<div className="col-span-2 text-center flex items-center justify-center">
-												<span className="text-xs font-mono text-orange-600">
+												<span className="text-xs font-mono text-gray-600 dark:text-gray-400">
 													{formatDurationHMS(site.avgDuration)}
 												</span>
 											</div>
 											
 											{/* Resolution Rate */}
 											<div className="col-span-2 text-center flex items-center justify-center">
-												<span className={`text-xs font-bold ${
+												<span className={`text-xs font-semibold ${
 													site.resolutionRate >= 90 ? 'text-green-600' : 
 													site.resolutionRate >= 70 ? 'text-yellow-600' : 
 													'text-red-600'
@@ -814,16 +806,16 @@ export const SiteAnalytics: React.FC = () => {
 									))}
 									
 									{/* Summary Stats */}
-									<div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+									<div className="mt-4 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
 										<div className="grid grid-cols-3 gap-4 text-center">
 											<div>
-												<div className="text-lg font-bold text-red-600">
+												<div className="text-lg font-bold text-gray-700 dark:text-gray-300">
 													{topAffectedSitesData.slice(0, 3).reduce((sum, site) => sum + site.count, 0)}
 												</div>
 												<div className="text-xs text-muted-foreground">Top 3 Incidents</div>
 											</div>
 											<div>
-												<div className="text-lg font-bold text-orange-600">
+												<div className="text-lg font-bold text-gray-700 dark:text-gray-300">
 													{formatDurationHMS(
 														topAffectedSitesData.slice(0, 6).reduce((sum, site) => sum + site.avgDuration, 0) / 6
 													)}
@@ -831,7 +823,7 @@ export const SiteAnalytics: React.FC = () => {
 												<div className="text-xs text-muted-foreground">Avg Resolution</div>
 											</div>
 											<div>
-												<div className="text-lg font-bold text-green-600">
+												<div className="text-lg font-bold text-gray-700 dark:text-gray-300">
 													{(topAffectedSitesData.slice(0, 6).reduce((sum, site) => sum + site.resolutionRate, 0) / 6).toFixed(0)}%
 												</div>
 												<div className="text-xs text-muted-foreground">Avg Rate</div>
@@ -929,37 +921,25 @@ export const SiteAnalytics: React.FC = () => {
 											return (
 												<div
 													key={site}
-													className={`grid grid-cols-12 gap-2 py-3 px-3 rounded-lg transition-colors hover:bg-gray-50 dark:hover:bg-gray-800 ${
-														siteData.level === "High" ? 'bg-red-50 dark:bg-red-900/20 border-l-2 border-l-red-500' : 
-														siteData.level === "Medium" ? 'bg-yellow-50 dark:bg-yellow-900/20 border-l-2 border-l-yellow-500' : 
-														'bg-green-50 dark:bg-green-900/20 border-l-2 border-l-green-500'
-													}`}
+													className="grid grid-cols-12 gap-2 py-3 px-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800/50 border-b border-gray-100 dark:border-gray-800 last:border-b-0"
 												>
 													{/* Rank */}
 													<div className="col-span-1 flex items-center">
-														<div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-white ${
-															siteData.level === "High" ? 'bg-red-500' : 
-															siteData.level === "Medium" ? 'bg-yellow-500' : 
-															'bg-green-500'
-														}`}>
+														<div className="w-6 h-6 rounded-full bg-gray-600 flex items-center justify-center text-xs font-bold text-white">
 															{index + 1}
 														</div>
 													</div>
 													
 													{/* Site Name */}
 													<div className="col-span-4 flex items-center min-w-0">
-														<div className="truncate font-medium text-sm">
+														<div className="truncate font-medium text-sm text-gray-900 dark:text-gray-100">
 															{site}
 														</div>
 													</div>
 													
 													{/* Risk Score */}
 													<div className="col-span-2 text-center flex items-center justify-center">
-														<span className={`font-bold ${
-															siteData.level === "High" ? 'text-red-600' : 
-															siteData.level === "Medium" ? 'text-yellow-600' : 
-															'text-green-600'
-														}`}>
+														<span className="font-semibold text-gray-700 dark:text-gray-300">
 															{siteData.riskScore.toFixed(1)}
 														</span>
 													</div>
@@ -977,7 +957,7 @@ export const SiteAnalytics: React.FC = () => {
 													
 													{/* Incidents */}
 													<div className="col-span-2 text-center flex items-center justify-center">
-														<span className="text-xs font-bold text-blue-600">
+														<span className="text-xs font-semibold text-gray-600 dark:text-gray-400">
 															{siteData.count || 0}
 														</span>
 													</div>
@@ -997,22 +977,22 @@ export const SiteAnalytics: React.FC = () => {
 										})}
 									
 									{/* Risk Summary */}
-									<div className="mt-4 p-3 bg-gradient-to-r from-red-50 to-yellow-50 dark:from-red-900/20 dark:to-yellow-900/20 rounded-lg">
+									<div className="mt-4 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
 										<div className="grid grid-cols-3 gap-4 text-center">
 											<div>
-												<div className="text-lg font-bold text-red-600">
+												<div className="text-lg font-bold text-gray-700 dark:text-gray-300">
 													{Object.values(siteStats.siteRiskScore).filter((site: any) => site.level === "High").length}
 												</div>
 												<div className="text-xs text-muted-foreground">High Risk</div>
 											</div>
 											<div>
-												<div className="text-lg font-bold text-yellow-600">
+												<div className="text-lg font-bold text-gray-700 dark:text-gray-300">
 													{Object.values(siteStats.siteRiskScore).filter((site: any) => site.level === "Medium").length}
 												</div>
 												<div className="text-xs text-muted-foreground">Medium Risk</div>
 											</div>
 											<div>
-												<div className="text-lg font-bold text-green-600">
+												<div className="text-lg font-bold text-gray-700 dark:text-gray-300">
 													{Object.values(siteStats.siteRiskScore).filter((site: any) => site.level === "Low").length}
 												</div>
 												<div className="text-xs text-muted-foreground">Low Risk</div>
@@ -1052,51 +1032,51 @@ export const SiteAnalytics: React.FC = () => {
 					<CardContent>
 						<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
 							{/* Reliability Rate */}
-							<div className="text-center p-4 bg-green-50 dark:bg-green-900/20 rounded-xl shadow-sm">
-								<CheckCircleIcon className="w-6 h-6 text-green-600 mx-auto mb-2" />
-								<div className="text-lg font-bold text-green-600">
+							<div className="text-center p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
+								<CheckCircleIcon className="w-6 h-6 text-gray-600 mx-auto mb-2" />
+								<div className="text-lg font-bold text-gray-700 dark:text-gray-300">
 									{siteStats.siteReliability.toFixed(1)}%
 								</div>
 								<div className="text-sm text-muted-foreground">
 									Reliability Rate
 								</div>
-								<div className="text-xs text-green-600 mt-1">
+								<div className="text-xs text-gray-500 mt-1">
 									Resolution Success
 								</div>
 							</div>
 
 							{/* Unique Sites */}
-							<div className="text-center p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl shadow-sm">
-								<LocationOnIcon className="w-6 h-6 text-blue-600 mx-auto mb-2" />
-								<div className="text-lg font-bold text-blue-600">
+							<div className="text-center p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
+								<LocationOnIcon className="w-6 h-6 text-gray-600 mx-auto mb-2" />
+								<div className="text-lg font-bold text-gray-700 dark:text-gray-300">
 									{siteStats.uniqueSites}
 								</div>
 								<div className="text-sm text-muted-foreground">
 									Unique Sites
 								</div>
-								<div className="text-xs text-blue-600 mt-1">
+								<div className="text-xs text-gray-500 mt-1">
 									Affected Locations
 								</div>
 							</div>
 
 							{/* Recovery Time */}
-							<div className="text-center p-4 bg-orange-50 dark:bg-orange-900/20 rounded-xl shadow-sm">
-								<AccessTimeIcon className="w-6 h-6 text-orange-600 mx-auto mb-2" />
-								<div className="text-lg font-bold text-orange-600">
+							<div className="text-center p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
+								<AccessTimeIcon className="w-6 h-6 text-gray-600 mx-auto mb-2" />
+								<div className="text-lg font-bold text-gray-700 dark:text-gray-300">
 									{formatDurationHMS(siteStats.avgSiteRecovery)}
 								</div>
 								<div className="text-sm text-muted-foreground">
 									Avg Recovery
 								</div>
-								<div className="text-xs text-orange-600 mt-1">
+								<div className="text-xs text-gray-500 mt-1">
 									Time per Site
 								</div>
 							</div>
 
 							{/* Risk Assessment */}
-							<div className="text-center p-4 bg-red-50 dark:bg-red-900/20 rounded-xl  shadow-sm">
-								<WarningAmberIcon className="w-6 h-6 text-red-600 mx-auto mb-2" />
-								<div className="text-lg font-bold text-red-600">
+							<div className="text-center p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
+								<WarningAmberIcon className="w-6 h-6 text-gray-600 mx-auto mb-2" />
+								<div className="text-lg font-bold text-gray-700 dark:text-gray-300">
 									{
 										Object.values(siteStats.siteRiskScore).filter(
 											(site: any) => site.level === "High",
@@ -1106,34 +1086,34 @@ export const SiteAnalytics: React.FC = () => {
 								<div className="text-sm text-muted-foreground">
 									High Risk Sites
 								</div>
-								<div className="text-xs text-red-600 mt-1">
+								<div className="text-xs text-gray-500 mt-1">
 									Requires Attention
 								</div>
 							</div>
 						</div>
 
 						{/* Additional Metrics */}
-						<div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-4 pt-4 border-t ">
-							<div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg ">
+						<div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+							<div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
 								<div className="flex items-center gap-2">
-									<div className="w-3 h-3 bg-purple-500 rounded-full"></div>
+									<div className="w-3 h-3 bg-gray-500 rounded-full"></div>
 									<span className="text-sm text-muted-foreground">
 										Total Incidents:
 									</span>
 								</div>
-								<span className="font-semibold text-card-foreground">
+								<span className="font-semibold text-gray-700 dark:text-gray-300">
 									{siteStats.totalSites}
 								</span>
 							</div>
 
-							<div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg ">
+							<div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
 								<div className="flex items-center gap-2">
-									<div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
+									<div className="w-3 h-3 bg-gray-500 rounded-full"></div>
 									<span className="text-sm text-muted-foreground">
 										Medium Risk:
 									</span>
 								</div>
-								<span className="font-semibold text-yellow-600">
+								<span className="font-semibold text-gray-700 dark:text-gray-300">
 									{
 										Object.values(siteStats.siteRiskScore).filter(
 											(site: any) => site.level === "Medium",
@@ -1142,14 +1122,14 @@ export const SiteAnalytics: React.FC = () => {
 								</span>
 							</div>
 
-							<div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg ">
+							<div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
 								<div className="flex items-center gap-2">
-									<div className="w-3 h-3 bg-green-500 rounded-full"></div>
+									<div className="w-3 h-3 bg-gray-500 rounded-full"></div>
 									<span className="text-sm text-muted-foreground">
 										Low Risk:
 									</span>
 								</div>
-								<span className="font-semibold text-green-600">
+								<span className="font-semibold text-gray-700 dark:text-gray-300">
 									{
 										Object.values(siteStats.siteRiskScore).filter(
 											(site: any) => site.level === "Low",
