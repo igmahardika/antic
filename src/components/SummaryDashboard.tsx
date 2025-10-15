@@ -212,7 +212,7 @@ const SummaryDashboard = ({
 			const year = label.split(" ").pop();
 			if (year) years.add(year);
 		});
-		return Array.from(years).sort();
+		return Array.from(years).sort((a, b) => parseInt(a) - parseInt(b));
 	}, [monthlyStatsData]);
 
 	// State for selected year (default: last year in data)
@@ -267,7 +267,7 @@ const SummaryDashboard = ({
 			if (!yearMap[year]) yearMap[year] = [];
 			yearMap[year].push(idx);
 		});
-		const years = Object.keys(yearMap).sort();
+		const years = Object.keys(yearMap).sort((a, b) => parseInt(a) - parseInt(b));
 		const datasets = monthlyStatsData.datasets.map((ds) => ({
 			...ds,
 			data: years.map((year) =>
@@ -475,9 +475,22 @@ const SummaryDashboard = ({
 				resolutionRate:
 					item.incidents > 0 ? (item.resolved / item.incidents) * 100 : 0,
 			}))
-			.sort(
-				(a, b) => new Date(a.month).getTime() - new Date(b.month).getTime(),
-			);
+			.sort((a, b) => {
+				// Parse month names to proper dates for sorting
+				const monthNames = {
+					'Jan': 0, 'Feb': 1, 'Mar': 2, 'Apr': 3, 'May': 4, 'Jun': 5,
+					'Jul': 6, 'Aug': 7, 'Sep': 8, 'Oct': 9, 'Nov': 10, 'Dec': 11
+				};
+				
+				const parseMonth = (monthStr: string) => {
+					const [month, year] = monthStr.split(' ');
+					const monthNum = monthNames[month as keyof typeof monthNames];
+					const yearNum = parseInt(year);
+					return new Date(yearNum, monthNum, 1).getTime();
+				};
+				
+				return parseMonth(a.month) - parseMonth(b.month);
+			});
 	}, [allIncidents]);
 
 	const content = (

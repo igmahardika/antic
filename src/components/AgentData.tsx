@@ -1,27 +1,20 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "@/lib/db";
 import PageWrapper from "./PageWrapper";
 import { Badge } from "./ui/badge";
+import { Button } from "./ui/button";
 import {
 	Tooltip,
 	TooltipContent,
 	TooltipProvider,
 	TooltipTrigger,
 } from "./ui/tooltip";
+import PhotoManagement from "./PhotoManagement";
+import { Users, Image as ImageIcon } from "lucide-react";
 
 const CURRENT_YEAR = 2025;
 
-function formatDateDMY(date: Date | number | string) {
-	if (!date) return "-";
-	const d = new Date(date);
-	if (isNaN(d.getTime())) return "-";
-	return d.toLocaleDateString("id-ID", {
-		day: "2-digit",
-		month: "2-digit",
-		year: "numeric",
-	});
-}
 function formatDurationHMS(hours: number) {
 	if (!isFinite(hours)) return "-";
 	const totalSeconds = Math.round(hours * 3600);
@@ -29,16 +22,6 @@ function formatDurationHMS(hours: number) {
 	const m = Math.floor((totalSeconds % 3600) / 60);
 	const s = totalSeconds % 60;
 	return [h, m, s].map((v) => String(v).padStart(2, "0")).join(":");
-}
-function getShift(openTime: string | number | Date) {
-	if (!openTime) return "-";
-	const d = new Date(openTime);
-	if (isNaN(d.getTime())) return "-";
-	const hour = d.getHours();
-	if (hour >= 8 && hour < 17) return "Pagi";
-	if (hour >= 17 || hour < 1) return "Sore";
-	if (hour >= 1 && hour < 8) return "Malam";
-	return "-";
 }
 function formatMasaAktif(
 	first: string | number | Date,
@@ -71,7 +54,8 @@ function formatMasaAktif(
 	return str.trim() || "0 hr";
 }
 
-const MasterDataAgent: React.FC = () => {
+const AgentData: React.FC = () => {
+	const [activeTab, setActiveTab] = useState<'data' | 'photos'>('data');
 	const allTickets = useLiveQuery(() => db.tickets.toArray(), []);
 
 	const { activeAgents, nonActiveAgents } = useMemo(() => {
@@ -180,6 +164,17 @@ const MasterDataAgent: React.FC = () => {
 			activeAgents: all.filter((a) => a.lastYear === CURRENT_YEAR),
 			nonActiveAgents: all.filter((a) => a.lastYear < CURRENT_YEAR),
 		};
+	}, [allTickets]);
+
+	// Get all unique agent names for photo management
+	const allAgentNames = useMemo(() => {
+		if (!allTickets) return [];
+		const agentSet = new Set<string>();
+		allTickets.forEach((t) => {
+			const agent = t.openBy?.trim();
+			if (agent) agentSet.add(agent);
+		});
+		return Array.from(agentSet).sort();
 	}, [allTickets]);
 
 	const renderTable = (agents: any[], title: string) => (
@@ -311,13 +306,43 @@ const MasterDataAgent: React.FC = () => {
 				</h1>
 				<p className="text-gray-500 dark:text-gray-400 mb-6">
 					List agent otomatis dari data tiket, beserta tahun aktif masing-masing
-					agent.
+					agent dan manajemen foto agent.
 				</p>
 			</div>
-			{renderTable(activeAgents, `Active Agent (${CURRENT_YEAR})`)}
-			{renderTable(nonActiveAgents, "Nonaktif Agent")}
+
+			{/* Tab Navigation */}
+			<div className="flex gap-4 mb-8">
+				<Button
+					variant={activeTab === 'data' ? 'default' : 'outline'}
+					onClick={() => setActiveTab('data')}
+					className="flex items-center space-x-2"
+				>
+					<Users className="w-4 h-4" />
+					<span>Agent Data</span>
+				</Button>
+				<Button
+					variant={activeTab === 'photos' ? 'default' : 'outline'}
+					onClick={() => setActiveTab('photos')}
+					className="flex items-center space-x-2"
+				>
+					<ImageIcon className="w-4 h-4" />
+					<span>Photo Management</span>
+				</Button>
+			</div>
+
+			{/* Tab Content */}
+			{activeTab === 'data' && (
+				<div>
+					{renderTable(activeAgents, `Active Agent (${CURRENT_YEAR})`)}
+					{renderTable(nonActiveAgents, "Nonaktif Agent")}
+				</div>
+			)}
+
+			{activeTab === 'photos' && (
+				<PhotoManagement allAgents={allAgentNames} />
+			)}
 		</PageWrapper>
 	);
 };
 
-export default MasterDataAgent;
+export default AgentData;

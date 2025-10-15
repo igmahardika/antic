@@ -612,7 +612,7 @@ const IncidentAnalytics: React.FC = () => {
 
 				// Ensure proper calculation
 				if (obj.count > 0 && obj.total > 0) {
-					obj.avg = obj.total / obj.count;
+					obj.avg = Math.max(0, obj.total / obj.count);
 					logger.info(
 						`🔧 DEBUG: Calculated avg = ${obj.total} / ${obj.count} = ${obj.avg}`,
 					);
@@ -635,7 +635,7 @@ const IncidentAnalytics: React.FC = () => {
 		logger.info("📊 DEBUG: Final map state:", JSON.stringify(map, null, 2));
 
 		Object.keys(map)
-			.sort()
+			.sort((a, b) => new Date(a + "-01").getTime() - new Date(b + "-01").getTime())
 			.forEach((month) => {
 				logger.info(`\nMonth: ${month}`);
 				Object.keys(map[month]).forEach((ncal) => {
@@ -666,7 +666,7 @@ const IncidentAnalytics: React.FC = () => {
 	// Prepare chart data arrays (sorted by month)
 	const monthlyNCALData = useMemo(() => {
 		return Object.keys(byMonthNCAL)
-			.sort()
+			.sort((a, b) => new Date(a + "-01").getTime() - new Date(b + "-01").getTime())
 			.map((month) => {
 				const row: any = { month };
 				NCAL_ORDER.forEach((ncal) => {
@@ -677,7 +677,7 @@ const IncidentAnalytics: React.FC = () => {
 	}, [byMonthNCAL]);
 	const monthlyNCALDurationData = useMemo(() => {
 		const chartData = Object.keys(byMonthNCALDuration)
-			.sort()
+			.sort((a, b) => new Date(a + "-01").getTime() - new Date(b + "-01").getTime())
 			.map((month) => {
 				const row: any = { month };
 				NCAL_ORDER.forEach((ncal) => {
@@ -766,7 +766,7 @@ const IncidentAnalytics: React.FC = () => {
 			Object.keys(map[month]).forEach((ncal) => {
 				const obj = map[month][ncal];
 				if (obj.count > 0 && obj.total > 0) {
-					obj.avg = obj.total / obj.count;
+					obj.avg = Math.max(0, obj.total / obj.count);
 				} else {
 					obj.avg = 0;
 				}
@@ -775,11 +775,11 @@ const IncidentAnalytics: React.FC = () => {
 
 		// Convert to chart data format with NCAL lines
 		const chartData = Object.keys(map)
-			.sort()
+			.sort((a, b) => new Date(a + "-01").getTime() - new Date(b + "-01").getTime())
 			.map((month) => {
 				const row: any = { month };
 				NCAL_ORDER.forEach((ncal) => {
-					row[ncal] = map[month]?.[ncal]?.avg || 0;
+					row[ncal] = Math.max(0, map[month]?.[ncal]?.avg || 0);
 				});
 				return row;
 			});
@@ -809,7 +809,7 @@ const IncidentAnalytics: React.FC = () => {
 			if (!map[key][ncal]) map[key][ncal] = { total: 0, count: 0, avg: 0 };
 
 			// Calculate pause duration from incident data
-			const pauseDuration = inc.totalDurationPauseMin || 0;
+			const pauseDuration = Math.max(0, inc.totalDurationPauseMin || 0);
 
 			if (pauseDuration > 0) {
 				map[key][ncal].total += pauseDuration;
@@ -822,7 +822,7 @@ const IncidentAnalytics: React.FC = () => {
 			Object.keys(map[month]).forEach((ncal) => {
 				const obj = map[month][ncal];
 				if (obj.count > 0 && obj.total > 0) {
-					obj.avg = obj.total / obj.count;
+					obj.avg = Math.max(0, obj.total / obj.count);
 				} else {
 					obj.avg = 0;
 				}
@@ -831,11 +831,11 @@ const IncidentAnalytics: React.FC = () => {
 
 		// Convert to chart data format with NCAL lines
 		const chartData = Object.keys(map)
-			.sort()
+			.sort((a, b) => new Date(a + "-01").getTime() - new Date(b + "-01").getTime())
 			.map((month) => {
 				const row: any = { month };
 				NCAL_ORDER.forEach((ncal) => {
-					row[ncal] = map[month]?.[ncal]?.avg || 0;
+					row[ncal] = Math.max(0, map[month]?.[ncal]?.avg || 0);
 				});
 				return row;
 			});
@@ -905,7 +905,7 @@ const IncidentAnalytics: React.FC = () => {
 		});
 
 		return Object.keys(map)
-			.sort()
+			.sort((a, b) => new Date(a + "-01").getTime() - new Date(b + "-01").getTime())
 			.map((month) => {
 				const row: any = { month };
 				["High", "Medium", "Low", "Unknown"].forEach((priority) => {
@@ -969,7 +969,7 @@ const IncidentAnalytics: React.FC = () => {
 		});
 
 		return Object.keys(map)
-			.sort()
+			.sort((a, b) => new Date(a + "-01").getTime() - new Date(b + "-01").getTime())
 			.map((month) => ({
 				month,
 				...map[month],

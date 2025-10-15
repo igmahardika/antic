@@ -11,9 +11,9 @@ import { useAgentStore } from "@/store/agentStore";
 
 // Dropdown/avatar imports removed (unused)
 
-import UploadProcess from "./UploadProcess";
-import GridViewComponent from "./GridView";
-import KanbanBoard from "./KanbanBoard";
+import UploadData from "./UploadData";
+import TicketData from "./TicketData";
+import CustomerAnalytics from "./CustomerAnalytics";
 import TicketAnalytics from "./TicketAnalytics";
 import AgentAnalytics from "./AgentAnalytics";
 import SummaryDashboard from "./SummaryDashboard";
@@ -33,11 +33,11 @@ import {
 
 const allTabs = [
 	{ name: "Dashboard", component: SummaryDashboard, icon: BarChartIcon },
-	{ name: "Data Grid", component: GridViewComponent, icon: GridViewIcon },
-	{ name: "Customer Analytics", component: KanbanBoard, icon: GroupIcon },
+	{ name: "Data Grid", component: TicketData, icon: GridViewIcon },
+	{ name: "Customer Analytics", component: CustomerAnalytics, icon: GroupIcon },
 	{ name: "Ticket Analytics", component: TicketAnalytics, icon: BarChartIcon },
 	{ name: "Agent Analytics", component: AgentAnalytics, icon: UserCheckIcon },
-	{ name: "Upload Data", component: UploadProcess, icon: CloudUploadIcon },
+	{ name: "Upload Data", component: UploadData, icon: CloudUploadIcon },
 	{ name: "Admin Panel", component: AdminPanel, icon: UsersIcon },
 ];
 

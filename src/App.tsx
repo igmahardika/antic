@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
-import Index from "./pages/Index";
+import Dashboard from "./pages/Dashboard";
 import NotFound from "./pages/NotFound";
 import { ThemeProvider } from "@/components/theme-provider";
 import Login from "./pages/Login";
@@ -15,8 +15,8 @@ import { AnalyticsProvider } from "./components/AnalyticsContext";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { AgentAnalyticsProvider } from "./components/AgentAnalyticsContext";
 import { TicketAnalyticsProvider } from "./components/TicketAnalyticsContext";
-import ModernAdminRumus from "./pages/ModernAdminRumus";
-import MasterDataAgent from "./components/MasterDataAgent";
+import Formulas from "./pages/Formulas";
+import AgentData from "./components/AgentData";
 import CustomerData from "./pages/CustomerData";
 import { IncidentData } from "./pages/IncidentData";
 import VendorData from "./pages/VendorData";
@@ -25,12 +25,12 @@ import VendorData from "./pages/VendorData";
 const AgentAnalytics = lazyPage(
 	() => import("./components/analytics/agent/AgentAnalytics"),
 );
-const GridView = lazyPage(() => import("./components/GridView"));
-const KanbanBoard = lazyPage(() => import("./components/KanbanBoard"));
+const TicketData = lazyPage(() => import("./components/TicketData"));
+const CustomerAnalytics = lazyPage(() => import("./components/CustomerAnalytics"));
 const TicketAnalytics = lazyPage(
 	() => import("./components/analytics/ticket/TicketAnalytics"),
 );
-const UploadProcess = lazyPage(() => import("./components/UploadProcess"));
+const UploadData = lazyPage(() => import("./components/UploadData"));
 const SummaryDashboard = lazyPage(
 	() => import("./components/SummaryDashboard"),
 );
@@ -176,12 +176,12 @@ function AppLayout() {
 						</div>
 						<div className="p-4 sm:p-6 lg:p-8">
 							<Routes>
-								<Route path="/" element={<Index />} />
+								<Route path="/" element={<Dashboard />} />
 								<Route path="/admin" element={<AdminPanel />} />
 								<Route path="/login" element={<Login />} />
 								{/* Path lama tetap, tambahkan path baru nested sesuai sidebar */}
-								<Route path="/ticket/grid-view" element={<GridView />} />
-								<Route path="/ticket/kanban-board" element={<KanbanBoard />} />
+								<Route path="/ticket/grid-view" element={<TicketData />} />
+								<Route path="/ticket/kanban-board" element={<CustomerAnalytics />} />
 								<Route
 									path="/ticket/ticket-analytics"
 									element={
@@ -200,11 +200,11 @@ function AppLayout() {
 								/>
 								<Route
 									path="/ticket/upload"
-									element={<UploadProcess onUploadComplete={() => {}} />}
+									element={<UploadData onUploadComplete={() => {}} />}
 								/>
 								<Route
 									path="/masterdata/data-agent"
-									element={<MasterDataAgent />}
+									element={<AgentData />}
 								/>
 								<Route
 									path="/masterdata/data-customer"
@@ -227,7 +227,7 @@ function AppLayout() {
 								{/* Escalation routes removed */}
 								<Route
 									path="/documentation/admin-rumus"
-									element={<ModernAdminRumus />}
+									element={<Formulas />}
 								/>
 								{/* Path lama tetap untuk fallback/compatibility */}
 								<Route
@@ -240,8 +240,8 @@ function AppLayout() {
 										</ErrorBoundary>
 									}
 								/>
-								<Route path="/grid-view" element={<GridView />} />
-								<Route path="/kanban-board" element={<KanbanBoard />} />
+								<Route path="/grid-view" element={<TicketData />} />
+								<Route path="/kanban-board" element={<CustomerAnalytics />} />
 								<Route
 									path="/ticket-analytics"
 									element={
@@ -252,14 +252,14 @@ function AppLayout() {
 								/>
 								<Route
 									path="/upload"
-									element={<UploadProcess onUploadComplete={() => {}} />}
+									element={<UploadData onUploadComplete={() => {}} />}
 								/>
 								<Route
 									path="/summary-dashboard"
 									element={<SummaryDashboard standalone={true} />}
 								/>
-								<Route path="/admin-rumus" element={<ModernAdminRumus />} />
-								<Route path="/master-agent" element={<MasterDataAgent />} />
+								<Route path="/admin-rumus" element={<Formulas />} />
+								<Route path="/master-agent" element={<AgentData />} />
 								<Route path="/customer" element={<CustomerData />} />
 								<Route path="/vendor-data" element={<VendorData />} />
 								<Route path="*" element={<NotFound />} />

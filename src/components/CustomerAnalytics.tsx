@@ -103,7 +103,7 @@ const ErrorFallback = ({ error, customer }: { error: string; customer?: any }) =
 );
 
 
-const KanbanBoard = () => {
+const CustomerAnalytics = () => {
 	const analytics = useAnalytics();
 	const {
 		allTickets,
@@ -2351,4 +2351,4 @@ const KanbanBoard = () => {
 	);
 };
 
-export default KanbanBoard;
+export default CustomerAnalytics;

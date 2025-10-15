@@ -41,7 +41,7 @@ const getIconComponent = (iconName: string) => {
   return <IconComponent className="h-5 w-5" />;
 };
 
-export default function ModernAdminRumus() {
+export default function Formulas() {
   const [sections, setSections] = useState<DocumentationSection[]>([]);
   const [bookmarkedSections, setBookmarkedSections] = useState<Set<string>>(new Set());
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set());

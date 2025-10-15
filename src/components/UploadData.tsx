@@ -87,7 +87,7 @@ const EXPECTED_HEADERS = [
 	"Open By",
 ];
 
-const UploadProcess = ({ onUploadComplete }: UploadProcessProps) => {
+const UploadData = ({ onUploadComplete }: UploadProcessProps) => {
 	const [isProcessing, setIsProcessing] = useState(false);
 	const [progress, setProgress] = useState(0);
 
@@ -1043,7 +1043,7 @@ const processAndAnalyzeData = (
 	return { tickets, errorRows };
 };
 
-export default UploadProcess;
+export default UploadData;
 
 // --- [AUTO-ADDED] Delete-by-File integration (Tickets) ---
 // --- [END AUTO-ADDED] ---

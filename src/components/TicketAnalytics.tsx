@@ -1039,7 +1039,7 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
 		if (!monthMap[month]) monthMap[month] = 0;
 		monthMap[month] += 1;
 	});
-	const months = Object.keys(monthMap).sort();
+	const months = Object.keys(monthMap).sort((a, b) => new Date(a + "-01").getTime() - new Date(b + "-01").getTime());
 	if (months.length >= 2) {
 		let naik = 0,
 			turun = 0,
@@ -1925,7 +1925,7 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
 										if (monthMap[month][shift] !== undefined)
 											monthMap[month][shift] += 1;
 									});
-									const months = Object.keys(monthMap).sort();
+									const months = Object.keys(monthMap).sort((a, b) => new Date(a + "-01").getTime() - new Date(b + "-01").getTime());
 									return months.map((month, idx) => (
 										<View
 											key={month}
@@ -1970,7 +1970,7 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
 										if (!monthMap[month]) monthMap[month] = 0;
 										monthMap[month] += 1;
 									});
-									const months = Object.keys(monthMap).sort();
+									const months = Object.keys(monthMap).sort((a, b) => new Date(a + "-01").getTime() - new Date(b + "-01").getTime());
 									return months.map((month, idx) => (
 										<View
 											key={month}
@@ -2527,7 +2527,7 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
 						<ResponsiveContainer width="100%" height={300}>
 							<AreaChart
 								data={(() => {
-									const months = Object.keys(tiketPerJenisKlienPerBulan).sort();
+									const months = Object.keys(tiketPerJenisKlienPerBulan).sort((a, b) => new Date(a + "-01").getTime() - new Date(b + "-01").getTime());
 									return months.map((month) => {
 										const row: any = { month };
 										jenisKlienList.forEach((jk) => {
@@ -2653,7 +2653,7 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
 											Client Type
 										</th>
 										{Object.keys(tiketPerJenisKlienPerBulan)
-											.sort()
+											.sort((a, b) => new Date(a + "-01").getTime() - new Date(b + "-01").getTime())
 											.map((month) => (
 												<th
 													key={month}
@@ -2684,7 +2684,7 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
 												{jk}
 											</td>
 											{Object.keys(tiketPerJenisKlienPerBulan)
-												.sort()
+												.sort((a, b) => new Date(a + "-01").getTime() - new Date(b + "-01").getTime())
 												.map((month) => {
 													const tickets =
 														tiketPerJenisKlienPerBulan[month]?.[jk] || 0;
@@ -2717,7 +2717,7 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
 											Total
 										</td>
 										{Object.keys(tiketPerJenisKlienPerBulan)
-											.sort()
+											.sort((a, b) => new Date(a + "-01").getTime() - new Date(b + "-01").getTime())
 											.map((month) => {
 												const obj =
 													customerMonthRowCountByType.get(month) || {};
@@ -2765,7 +2765,7 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
 						<ResponsiveContainer width="100%" height={300}>
 							<AreaChart
 								data={(() => {
-									const months = Object.keys(tiketPerKategoriPerBulan).sort();
+									const months = Object.keys(tiketPerKategoriPerBulan).sort((a, b) => new Date(a + "-01").getTime() - new Date(b + "-01").getTime());
 									return months.map((month) => {
 										const row: any = { month };
 										kategoriList.forEach((kat) => {
@@ -2870,7 +2870,7 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
 											Client Category
 										</th>
 										{Object.keys(tiketPerKategoriPerBulan)
-											.sort()
+											.sort((a, b) => new Date(a + "-01").getTime() - new Date(b + "-01").getTime())
 											.map((month) => (
 												<th
 													key={month}
@@ -2894,7 +2894,7 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
 												{kat}
 											</td>
 											{Object.keys(tiketPerKategoriPerBulan)
-												.sort()
+												.sort((a, b) => new Date(a + "-01").getTime() - new Date(b + "-01").getTime())
 												.map((month) => {
 													const tickets =
 														tiketPerKategoriPerBulan[month]?.[kat] || 0;
@@ -2927,7 +2927,7 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
 											Total
 										</td>
 										{Object.keys(tiketPerKategoriPerBulan)
-											.sort()
+											.sort((a, b) => new Date(a + "-01").getTime() - new Date(b + "-01").getTime())
 											.map((month) => {
 												// Total tickets across ALL categories this month
 												const totalTickets = kategoriList.reduce((sum, kat) => {
@@ -2964,7 +2964,7 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
 						<ResponsiveContainer width="100%" height={300}>
 							<AreaChart
 								data={(() => {
-									const months = Object.keys(tiketPerJenisKlienPerBulan).sort();
+									const months = Object.keys(tiketPerJenisKlienPerBulan).sort((a, b) => new Date(a + "-01").getTime() - new Date(b + "-01").getTime());
 									return months.map((month) => {
 										const row: any = { month };
 										jenisKlienList.forEach((jk) => {
@@ -3106,7 +3106,7 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
 											Client Type
 										</th>
 										{Object.keys(tiketPerJenisKlienPerBulan)
-											.sort()
+											.sort((a, b) => new Date(a + "-01").getTime() - new Date(b + "-01").getTime())
 											.map((month) => (
 												<th
 													key={month}
@@ -3137,7 +3137,7 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
 												{jk}
 											</td>
 											{Object.keys(tiketPerJenisKlienPerBulan)
-												.sort()
+												.sort((a, b) => new Date(a + "-01").getTime() - new Date(b + "-01").getTime())
 												.map((month) => {
 													const uniqueClients = Array.from(
 														new Set(
@@ -3190,7 +3190,7 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
 											Total
 										</td>
 										{Object.keys(tiketPerJenisKlienPerBulan)
-											.sort()
+											.sort((a, b) => new Date(a + "-01").getTime() - new Date(b + "-01").getTime())
 											.map((month) => {
 												// Total unique clients across ALL types this month (union, active, excluded classifications)
 												const unionSet = new Set<string>(
@@ -3248,7 +3248,7 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
 							<ResponsiveContainer width="100%" height={300}>
 								<AreaChart
 									data={(() => {
-										const months = Object.keys(tiketPerKategoriPerBulan).sort();
+										const months = Object.keys(tiketPerKategoriPerBulan).sort((a, b) => new Date(a + "-01").getTime() - new Date(b + "-01").getTime());
 										return months.map((month) => {
 											const row: any = { month };
 											kategoriList.forEach((kat) => {
@@ -3371,7 +3371,7 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
 											Category
 										</th>
 										{Object.keys(tiketPerKategoriPerBulan)
-											.sort()
+											.sort((a, b) => new Date(a + "-01").getTime() - new Date(b + "-01").getTime())
 											.map((month) => (
 												<th
 													key={month}
@@ -3392,7 +3392,7 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
 												{kat}
 											</td>
 											{Object.keys(tiketPerKategoriPerBulan)
-												.sort()
+												.sort((a, b) => new Date(a + "-01").getTime() - new Date(b + "-01").getTime())
 												.map((month) => {
 													const uniqueClients = Array.from(
 														new Set(
@@ -3442,7 +3442,7 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
 											Total
 										</td>
 										{Object.keys(tiketPerKategoriPerBulan)
-											.sort()
+											.sort((a, b) => new Date(a + "-01").getTime() - new Date(b + "-01").getTime())
 											.map((month) => {
 												// Total unique clients across ALL categories this month (union, active, excluded classifications)
 												const unionSet = new Set<string>(
@@ -3502,7 +3502,7 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
 									data={(() => {
 										const months = Object.keys(
 											tiketPerJenisKlienPerBulan,
-										).sort();
+										).sort((a, b) => new Date(a + "-01").getTime() - new Date(b + "-01").getTime());
 										return months.map((month) => {
 											const row: any = { month };
 											jenisKlienList.forEach((jk) => {
@@ -3664,7 +3664,7 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
 											Type
 										</th>
 										{Object.keys(tiketPerJenisKlienPerBulan)
-											.sort()
+											.sort((a, b) => new Date(a + "-01").getTime() - new Date(b + "-01").getTime())
 											.map((month) => (
 												<th
 													key={month}
@@ -3685,7 +3685,7 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
 												{jk}
 											</td>
 											{Object.keys(tiketPerJenisKlienPerBulan)
-												.sort()
+												.sort((a, b) => new Date(a + "-01").getTime() - new Date(b + "-01").getTime())
 												.map((month) => {
 													const denom = Array.from(
 														customerJenisKlienMap.entries(),
@@ -3757,7 +3757,7 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
 						<ResponsiveContainer width="100%" height={300}>
 							<AreaChart
 								data={(() => {
-									const months = Object.keys(tiketPerKategoriPerBulan).sort();
+									const months = Object.keys(tiketPerKategoriPerBulan).sort((a, b) => new Date(a + "-01").getTime() - new Date(b + "-01").getTime());
 									return months.map((month) => {
 										const row: any = { month };
 										kategoriList.forEach((kat) => {
@@ -3886,7 +3886,7 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
 											Category
 										</th>
 										{Object.keys(tiketPerKategoriPerBulan)
-											.sort()
+											.sort((a, b) => new Date(a + "-01").getTime() - new Date(b + "-01").getTime())
 											.map((month) => (
 												<th
 													key={month}
@@ -3907,7 +3907,7 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
 												{kat}
 											</td>
 											{Object.keys(tiketPerKategoriPerBulan)
-												.sort()
+												.sort((a, b) => new Date(a + "-01").getTime() - new Date(b + "-01").getTime())
 												.map((month) => {
 													// Klien unik yang komplain bulan ini (aktif + exclude klasifikasi)
 													const uniqueClients = Array.from(
@@ -3984,7 +3984,7 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
 									data={(() => {
 										const months = Object.keys(
 											tiketPerJenisKlienPerBulan,
-										).sort();
+										).sort((a, b) => new Date(a + "-01").getTime() - new Date(b + "-01").getTime());
 										return months.map((month) => {
 											const totalActive = customerMonthRowCount.get(month) || 0;
 											const complainCount = (() => {
@@ -4111,7 +4111,7 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
 											Type
 										</th>
 										{Object.keys(tiketPerJenisKlienPerBulan)
-											.sort()
+											.sort((a, b) => new Date(a + "-01").getTime() - new Date(b + "-01").getTime())
 											.map((month) => (
 												<th
 													key={month}
@@ -4128,7 +4128,7 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
 											Active Clients
 										</td>
 										{Object.keys(tiketPerJenisKlienPerBulan)
-											.sort()
+											.sort((a, b) => new Date(a + "-01").getTime() - new Date(b + "-01").getTime())
 											.map((month) => {
 												const totalClients =
 													customerMonthRowCount.get(month) || 0;
@@ -4147,7 +4147,7 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
 											Complaint Clients
 										</td>
 										{Object.keys(tiketPerJenisKlienPerBulan)
-											.sort()
+											.sort((a, b) => new Date(a + "-01").getTime() - new Date(b + "-01").getTime())
 											.map((month) => {
 												// Complaining clients that are also active this month (union)
 												const activeNames = new Set(
@@ -4215,7 +4215,7 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
 						<ResponsiveContainer width="100%" height={300}>
 							<AreaChart
 								data={(() => {
-									const months = Object.keys(tiketPerJenisKlienPerBulan).sort();
+									const months = Object.keys(tiketPerJenisKlienPerBulan).sort((a, b) => new Date(a + "-01").getTime() - new Date(b + "-01").getTime());
 									return months.map((month) => {
 										// Active unique names this month
 										const activeNames = new Set(
@@ -4333,7 +4333,7 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
 											Month
 										</th>
 										{Object.keys(tiketPerJenisKlienPerBulan)
-											.sort()
+											.sort((a, b) => new Date(a + "-01").getTime() - new Date(b + "-01").getTime())
 											.map((month) => (
 												<th
 													key={month}
@@ -4350,7 +4350,7 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
 											Total Ratio
 										</td>
 										{Object.keys(tiketPerJenisKlienPerBulan)
-											.sort()
+											.sort((a, b) => new Date(a + "-01").getTime() - new Date(b + "-01").getTime())
 											.map((month) => {
 												// Denominator: total rows uploaded for this month
 												const totalClients =

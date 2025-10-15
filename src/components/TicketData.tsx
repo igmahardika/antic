@@ -210,7 +210,7 @@ const columns = [
 	{ key: "subClassification", label: "Sub Klasifikasi", width: "140px" },
 ];
 
-const GridView = ({ data: propsData }: { data?: ITicket[] }) => {
+const TicketData = ({ data: propsData }: { data?: ITicket[] }) => {
 	const { gridData } = useAnalytics();
 	// Use allTicketsInDb directly to avoid double filtering
 	const allTicketsInDb = useLiveQuery(() => db.tickets.toArray(), []);
@@ -791,4 +791,4 @@ const GridView = ({ data: propsData }: { data?: ITicket[] }) => {
 	);
 };
 
-export default GridView;
+export default TicketData;
