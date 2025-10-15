@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-// import SummaryCard from "@/components/ui/SummaryCard"; // Replaced with EnhancedSummaryCard
+import SummaryCard from "@/components/ui/SummaryCard";
 import {
 	XAxis,
 	YAxis,
@@ -37,8 +37,6 @@ import FilterListIcon from "@mui/icons-material/FilterList";
 import ErrorOutlineIcon from "@mui/icons-material/ErrorOutline";
 import TrackChangesIcon from "@mui/icons-material/TrackChanges";
 import TrendingUpIcon from "@mui/icons-material/TrendingUp";
-import TrendingDownIcon from "@mui/icons-material/TrendingDown";
-import TrendingFlatIcon from "@mui/icons-material/TrendingFlat";
 import { logger } from "@/lib/logger";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
@@ -70,97 +68,7 @@ const formatDurationHMS = (minutes: number): string => {
 	return `${hrs}:${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
 };
 
-// Enhanced helper functions for trend calculation
-const calculateTrend = (current: number, previous: number): { value: number; direction: 'up' | 'down' | 'stable' } => {
-	if (previous === 0) return { value: 0, direction: 'stable' };
-	const change = ((current - previous) / previous) * 100;
-	if (Math.abs(change) < 1) return { value: 0, direction: 'stable' };
-	return { 
-		value: Math.round(change), 
-		direction: change > 0 ? 'up' : 'down' 
-	};
-};
 
-// Enhanced KPI Card component
-const EnhancedSummaryCard = ({ 
-	icon, 
-	title, 
-	value, 
-	description, 
-	iconBg, 
-	trend, 
-	comparison 
-}: {
-	icon: React.ReactNode;
-	title: string;
-	value: string | number;
-	description: string;
-	iconBg: string;
-	trend?: { value: number; direction: 'up' | 'down' | 'stable'; period: string };
-	comparison?: { label: string; value: string; status: 'above' | 'below' | 'meeting' };
-}) => {
-	const getTrendIcon = (direction: string) => {
-		switch (direction) {
-			case 'up': return <TrendingUpIcon className="w-4 h-4 text-green-500" />;
-			case 'down': return <TrendingDownIcon className="w-4 h-4 text-red-500" />;
-			default: return <TrendingFlatIcon className="w-4 h-4 text-gray-500" />;
-		}
-	};
-
-	const getTrendColor = (direction: string) => {
-		switch (direction) {
-			case 'up': return 'text-green-600';
-			case 'down': return 'text-red-600';
-			default: return 'text-gray-600';
-		}
-	};
-
-	const getComparisonColor = (status: string) => {
-		switch (status) {
-			case 'above': return 'text-green-600';
-			case 'below': return 'text-red-600';
-			default: return 'text-blue-600';
-		}
-	};
-
-	return (
-		<Card className="relative overflow-hidden">
-			<div className="p-6">
-				<div className="flex items-center justify-between">
-					<div className="flex items-center gap-3">
-						<div className={`p-3 rounded-lg ${iconBg}`}>
-							{icon}
-						</div>
-						<div>
-							<h3 className="text-sm font-medium text-muted-foreground">{title}</h3>
-							<p className="text-2xl font-bold text-card-foreground">{value}</p>
-						</div>
-					</div>
-					{trend && (
-						<div className="text-right">
-							<div className={`flex items-center gap-1 text-sm font-medium ${getTrendColor(trend.direction)}`}>
-								{getTrendIcon(trend.direction)}
-								<span>{Math.abs(trend.value)}%</span>
-							</div>
-							<p className="text-xs text-muted-foreground">{trend.period}</p>
-						</div>
-					)}
-				</div>
-				<div className="mt-4 space-y-2">
-					<p className="text-sm text-muted-foreground">{description}</p>
-					{comparison && (
-						<div className="flex items-center justify-between text-xs">
-							<span className="text-muted-foreground">{comparison.label}:</span>
-							<span className={`font-medium ${getComparisonColor(comparison.status)}`}>
-								{comparison.value}
-							</span>
-						</div>
-					)}
-				</div>
-			</div>
-		</Card>
-	);
-};
 
 // Helper function to validate and calculate risk score
 const calculateRiskScore = (
@@ -771,27 +679,19 @@ export const SiteAnalytics: React.FC = () => {
 					</Alert>
 				)}
 
-				{/* Enhanced KPI Cards with Trends */}
-				<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-					<EnhancedSummaryCard
+				{/* KPI Cards */}
+				<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-6">
+					<SummaryCard
 						icon={<LocationOnIcon className="w-5 h-5 text-white" />}
+						iconBg="bg-blue-700"
 						title="Total Sites Affected"
 						value={siteStats.totalSites}
 						description={`${siteStats.uniqueSites} unique sites`}
-						iconBg="bg-blue-700"
-						trend={{
-							...calculateTrend(siteStats.totalSites, siteStats.previousPeriodStats.totalSites),
-							period: "vs last period"
-						}}
-						comparison={{
-							label: "vs Target",
-							value: "85%",
-							status: siteStats.totalSites > 10 ? "above" : "below"
-						}}
 					/>
 
-					<EnhancedSummaryCard
+					<SummaryCard
 						icon={<AccessTimeIcon className="w-5 h-5 text-white" />}
+						iconBg="bg-orange-500"
 						title="Avg Site Duration"
 						value={
 							siteStats.avgSiteDuration > 0
@@ -799,37 +699,19 @@ export const SiteAnalytics: React.FC = () => {
 								: "0:00:00"
 						}
 						description="Average incident duration per site"
-						iconBg="bg-orange-500"
-						trend={{
-							...calculateTrend(siteStats.avgSiteDuration, siteStats.previousPeriodStats.avgSiteDuration),
-							period: "vs last period"
-						}}
-						comparison={{
-							label: "vs Target",
-							value: "4:00:00",
-							status: siteStats.avgSiteDuration < 240 ? "meeting" : "above"
-						}}
 					/>
 
-					<EnhancedSummaryCard
+					<SummaryCard
 						icon={<CheckCircleIcon className="w-5 h-5 text-white" />}
+						iconBg="bg-green-600"
 						title="Site Reliability"
 						value={`${siteStats.siteReliability.toFixed(1)}%`}
 						description="Resolution rate across sites"
-						iconBg="bg-green-600"
-						trend={{
-							...calculateTrend(siteStats.siteReliability, siteStats.previousPeriodStats.siteReliability),
-							period: "vs last period"
-						}}
-						comparison={{
-							label: "vs Target",
-							value: "90%",
-							status: siteStats.siteReliability >= 90 ? "meeting" : "below"
-						}}
 					/>
 
-					<EnhancedSummaryCard
+					<SummaryCard
 						icon={<ErrorOutlineIcon className="w-5 h-5 text-white" />}
+						iconBg="bg-red-600"
 						title="High Risk Sites"
 						value={
 							Object.values(siteStats.siteRiskScore).filter(
@@ -837,23 +719,12 @@ export const SiteAnalytics: React.FC = () => {
 							).length
 						}
 						description="Sites with high risk score"
-						iconBg="bg-red-600"
-						trend={{
-							value: 0,
-							direction: "stable",
-							period: "vs last period"
-						}}
-						comparison={{
-							label: "vs Target",
-							value: "0",
-							status: Object.values(siteStats.siteRiskScore).filter((site: any) => site.level === "High").length === 0 ? "meeting" : "above"
-						}}
 					/>
 				</div>
 
-				{/* Top Affected Sites & Site Risk Assessment */}
+				{/* Top Affected Sites & Risk Assessment - Compact Design */}
 				<div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-					{/* Top Affected Sites */}
+					{/* Top Affected Sites - Compact Table */}
 					<Card>
 						<CardHeader className="pb-3">
 							<CardTitle className="flex items-center gap-2">
@@ -863,225 +734,153 @@ export const SiteAnalytics: React.FC = () => {
 								</CardHeaderTitle>
 							</CardTitle>
 							<CardHeaderDescription className="text-xs">
-								Sites ranked by incident frequency, resolution time, and impact
-								severity
+								Sites ranked by incident frequency and resolution performance
 							</CardHeaderDescription>
-							<div className="mt-2 p-3 bg-red-50 dark:bg-red-900/20 rounded-lg ">
-								<div className="text-xs font-medium text-red-800 dark:text-red-200 mb-1">
-									Ranking Criteria:
-								</div>
-								<div className="text-xs text-red-700 dark:text-red-300">
-									<strong>Primary: Incident Count</strong> •{" "}
-									<strong>Secondary: Resolution Time</strong> •{" "}
-									<strong>Tertiary: Resolution Rate</strong>
-									<br />
-									<span className="text-red-600 dark:text-red-400">
-										• <ErrorOutlineIcon className="w-4 h-4 inline" /> Top 3:
-										Critical sites •{" "}
-										<WarningAmberIcon className="w-4 h-4 inline" /> Rank 4-5:
-										High priority •{" "}
-										<CheckCircleIcon className="w-4 h-4 inline" /> Rank 6-8:
-										Monitor
-									</span>
-								</div>
-							</div>
 						</CardHeader>
 						<CardContent>
-							<div className="space-y-3">
-								{topAffectedSitesData.length > 0 ? (
-									topAffectedSitesData.slice(0, 8).map((site, index) => (
+							{topAffectedSitesData.length > 0 ? (
+								<div className="space-y-2">
+									{/* Table Header */}
+									<div className="grid grid-cols-12 gap-2 py-2 px-3 bg-gray-50 dark:bg-gray-800 rounded-lg text-xs font-medium text-muted-foreground">
+										<div className="col-span-1">#</div>
+										<div className="col-span-4">Site</div>
+										<div className="col-span-2 text-center">Incidents</div>
+										<div className="col-span-2 text-center">Avg Time</div>
+										<div className="col-span-2 text-center">Rate</div>
+										<div className="col-span-1 text-center">Status</div>
+									</div>
+									
+									{/* Table Rows */}
+									{topAffectedSitesData.slice(0, 6).map((site, index) => (
 										<div
 											key={site.name}
-											className="p-4 bg-gradient-to-r from-gray-50 to-gray-100 dark:from-zinc-800 dark:to-zinc-700 rounded-xl shadow-sm border-l-4 border-l-blue-500"
+											className={`grid grid-cols-12 gap-2 py-3 px-3 rounded-lg transition-colors hover:bg-gray-50 dark:hover:bg-gray-800 ${
+												index < 3 ? 'bg-red-50 dark:bg-red-900/20 border-l-2 border-l-red-500' : 
+												index < 5 ? 'bg-orange-50 dark:bg-orange-900/20 border-l-2 border-l-orange-500' : 
+												'bg-yellow-50 dark:bg-yellow-900/20 border-l-2 border-l-yellow-500'
+											}`}
 										>
-											<div className="flex items-center justify-between mb-3">
-												<div className="flex items-center gap-3 min-w-0 flex-1">
-													{/* Enhanced Ranking Badge */}
-													<div className="relative">
-														<div
-															className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold text-white ${
-																index < 3
-																	? "bg-red-500 shadow-lg"
-																	: index < 5
-																		? "bg-orange-500 shadow-md"
-																		: "bg-yellow-500"
-															}`}
-														>
-															{index + 1}
-														</div>
-														{/* NEW: Performance Indicator */}
-														{site.avgDuration < siteStats.avgSiteRecovery && (
-															<div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full flex items-center justify-center">
-																<CheckCircleIcon className="w-2 h-2 text-white" />
-															</div>
-														)}
-													</div>
-													
-													<div className="min-w-0 flex-1">
-														<div className="font-semibold text-card-foreground truncate text-base">
-															{site.name}
-														</div>
-														<div className="text-sm text-muted-foreground flex items-center gap-2">
-															<span>{site.count} incidents</span>
-															<span>•</span>
-															<span>{formatDurationHMS(site.avgDuration)} avg</span>
-															{/* NEW: Performance Status */}
-											<Badge 
-												variant={site.avgDuration < siteStats.avgSiteRecovery ? "default" : "danger"}
-												className="text-xs"
-											>
-																{site.avgDuration < siteStats.avgSiteRecovery ? "Above Avg" : "Below Avg"}
-															</Badge>
-														</div>
-													</div>
-												</div>
-												
-												{/* Enhanced Metrics Display */}
-												<div className="flex-shrink-0 text-right">
-													<div className="text-lg font-bold text-red-600 flex items-center gap-1">
-														{site.count}
-														{/* NEW: Trend Arrow */}
-														<TrendingUpIcon className="w-4 h-4 text-green-500" />
-													</div>
-													<div className="text-xs text-gray-500 dark:text-gray-400">
-														Total Incidents
-													</div>
+											{/* Rank */}
+											<div className="col-span-1 flex items-center">
+												<div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-white ${
+													index < 3 ? 'bg-red-500' : 
+													index < 5 ? 'bg-orange-500' : 
+													'bg-yellow-500'
+												}`}>
+													{index + 1}
 												</div>
 											</div>
-
-											{/* NEW: Performance Progress Bar */}
-											<div className="mb-3">
-												<div className="flex justify-between text-xs text-muted-foreground mb-1">
-													<span>Performance Score</span>
-													<span>{Math.round((site.resolutionRate / 100) * 100)}%</span>
-												</div>
-												<Progress 
-													value={site.resolutionRate} 
-													className="h-2"
-												/>
-											</div>
-
-											{/* Enhanced Detailed Metrics */}
-											<div className="grid grid-cols-3 gap-3 pt-3 border-t border-gray-200 dark:border-gray-600">
-												<div className="text-center">
-													<div className="text-lg font-bold text-blue-600 flex items-center justify-center gap-1">
-														{site.count}
-														<span className="text-xs text-green-500">+2</span>
-													</div>
-													<div className="text-xs text-muted-foreground">Incident Count</div>
-													<div className="text-xs text-blue-600 font-medium">
-														{((site.count / siteStats.totalSites) * 100).toFixed(1)}% of total
-													</div>
-												</div>
-
-												<div className="text-center">
-													<div className="text-lg font-bold text-orange-600 flex items-center justify-center gap-1">
-														{formatDurationHMS(site.avgDuration)}
-														<span className="text-xs text-red-500">-15m</span>
-													</div>
-													<div className="text-xs text-muted-foreground">Avg Resolution</div>
-													<div className="text-xs text-orange-600 font-medium">
-														{site.avgDuration > siteStats.avgSiteRecovery ? "Above avg" : "Below avg"}
-													</div>
-												</div>
-
-												<div className="text-center">
-													<div className="text-lg font-bold text-green-600 flex items-center justify-center gap-1">
-														{site.resolutionRate.toFixed(1)}%
-														<span className="text-xs text-green-500">+5%</span>
-													</div>
-													<div className="text-xs text-muted-foreground">Resolution Rate</div>
-													<div className="text-xs text-green-600 font-medium">
-														{site.resolutionRate === 100 ? "All resolved" : "Some pending"}
-													</div>
+											
+											{/* Site Name */}
+											<div className="col-span-4 flex items-center min-w-0">
+												<div className="truncate font-medium text-sm">
+													{site.name}
 												</div>
 											</div>
-
-											{/* Enhanced Impact Assessment */}
-											<div className="mt-3 p-3 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
-												<div className="flex items-center gap-2 mb-2">
-													<TrackChangesIcon className="w-4 h-4 text-blue-600" />
-													<div className="text-xs font-medium text-blue-800 dark:text-blue-200">
-														Impact Assessment
-													</div>
-												</div>
-												<div className="text-xs text-blue-700 dark:text-blue-300">
-													{site.count >= 6
-														? "🔴 High Impact - Multiple incidents requiring immediate attention"
-														: site.count >= 4
-															? "🟡 Medium Impact - Moderate incident frequency"
-															: "🟢 Low Impact - Minimal incidents"}{" "}
-													• {site.avgDuration > 1440
-														? " Long resolution time"
-														: site.avgDuration > 720
-															? " Moderate resolution time"
-															: " Quick resolution"}{" "}
-													• {site.resolutionRate === 100
-														? " Fully resolved"
-														: " Has pending cases"}
-												</div>
-												
-												{/* NEW: Action Items */}
-												{site.count >= 4 && (
-													<div className="mt-2 pt-2 border-t border-blue-200 dark:border-blue-700">
-														<div className="text-xs font-medium text-blue-800 dark:text-blue-200 mb-1">
-															Recommended Actions:
-														</div>
-														<ul className="text-xs text-blue-700 dark:text-blue-300 space-y-1">
-															<li>• Review incident response procedures</li>
-															<li>• Consider additional training for site staff</li>
-															<li>• Implement preventive maintenance schedule</li>
-														</ul>
-													</div>
-												)}
+											
+											{/* Incidents */}
+											<div className="col-span-2 text-center flex items-center justify-center">
+												<span className="font-bold text-red-600">{site.count}</span>
+											</div>
+											
+											{/* Avg Duration */}
+											<div className="col-span-2 text-center flex items-center justify-center">
+												<span className="text-xs font-mono text-orange-600">
+													{formatDurationHMS(site.avgDuration)}
+												</span>
+											</div>
+											
+											{/* Resolution Rate */}
+											<div className="col-span-2 text-center flex items-center justify-center">
+												<span className={`text-xs font-bold ${
+													site.resolutionRate >= 90 ? 'text-green-600' : 
+													site.resolutionRate >= 70 ? 'text-yellow-600' : 
+													'text-red-600'
+												}`}>
+													{site.resolutionRate.toFixed(0)}%
+												</span>
+											</div>
+											
+											{/* Status Badge */}
+											<div className="col-span-1 flex items-center justify-center">
+												<Badge 
+													variant={site.avgDuration < siteStats.avgSiteRecovery ? "default" : "destructive"}
+													className="text-xs px-1 py-0"
+												>
+													{site.avgDuration < siteStats.avgSiteRecovery ? "✓" : "⚠"}
+												</Badge>
 											</div>
 										</div>
-									))
-								) : (
-									<div className="text-center py-8 text-gray-500 dark:text-gray-400">
-										<div className="flex flex-col items-center gap-3">
-											<LocationOnIcon className="w-12 h-12 text-gray-400" />
-											<div className="text-sm font-medium">No Site Data Available</div>
-											<div className="text-xs">For the selected period</div>
-											<Button variant="outline" size="sm" className="mt-2">
-												Refresh Data
-											</Button>
+									))}
+									
+									{/* Summary Stats */}
+									<div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+										<div className="grid grid-cols-3 gap-4 text-center">
+											<div>
+												<div className="text-lg font-bold text-red-600">
+													{topAffectedSitesData.slice(0, 3).reduce((sum, site) => sum + site.count, 0)}
+												</div>
+												<div className="text-xs text-muted-foreground">Top 3 Incidents</div>
+											</div>
+											<div>
+												<div className="text-lg font-bold text-orange-600">
+													{formatDurationHMS(
+														topAffectedSitesData.slice(0, 6).reduce((sum, site) => sum + site.avgDuration, 0) / 6
+													)}
+												</div>
+												<div className="text-xs text-muted-foreground">Avg Resolution</div>
+											</div>
+											<div>
+												<div className="text-lg font-bold text-green-600">
+													{(topAffectedSitesData.slice(0, 6).reduce((sum, site) => sum + site.resolutionRate, 0) / 6).toFixed(0)}%
+												</div>
+												<div className="text-xs text-muted-foreground">Avg Rate</div>
+											</div>
 										</div>
 									</div>
-								)}
-							</div>
+								</div>
+							) : (
+								<div className="text-center py-8 text-gray-500 dark:text-gray-400">
+									<div className="flex flex-col items-center gap-3">
+										<LocationOnIcon className="w-12 h-12 text-gray-400" />
+										<div className="text-sm font-medium">No Site Data Available</div>
+										<div className="text-xs">For the selected period</div>
+										<Button variant="outline" size="sm" className="mt-2">
+											Refresh Data
+										</Button>
+									</div>
+								</div>
+							)}
 						</CardContent>
 					</Card>
 
-					{/* Enhanced Site Risk Assessment */}
+					{/* Site Risk Assessment - Compact Design */}
 					<Card className="border-l-4 border-l-red-500">
 						<CardHeader className="pb-3">
 							<div className="flex items-center justify-between">
 								<CardTitle className="flex items-center gap-2">
 									<WarningAmberIcon className="w-5 h-5 text-yellow-600" />
 									<CardHeaderTitle className="text-base md:text-lg">
-										Site Risk Assessment
+										Risk Assessment
 									</CardHeaderTitle>
 								</CardTitle>
-								{/* Enhanced Risk Level Badge */}
 								{Object.values(siteStats.siteRiskScore).filter((site: any) => site.level === "High").length > 0 && (
-								<Badge variant="danger" className="text-xs">
-									HIGH RISK DETECTED
-								</Badge>
+									<Badge variant="destructive" className="text-xs">
+										HIGH RISK
+									</Badge>
 								)}
 							</div>
 							<CardHeaderDescription className="text-xs">
-								Risk score calculated from incident frequency, duration, and
-								resolution patterns
+								Risk levels based on incident frequency, duration, and resolution patterns
 							</CardHeaderDescription>
 							
-							{/* Enhanced Risk Distribution Chart */}
-							<div className="mt-4 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+							{/* Risk Distribution - Compact */}
+							<div className="mt-3 p-2 bg-gray-50 dark:bg-gray-800 rounded-lg">
 								<div className="flex items-center justify-between mb-2">
-									<span className="text-sm font-medium">Risk Distribution</span>
-									<span className="text-xs text-muted-foreground">Total Sites: {siteStats.totalSites}</span>
+									<span className="text-xs font-medium">Risk Distribution</span>
+									<span className="text-xs text-muted-foreground">{siteStats.totalSites} sites</span>
 								</div>
-								<div className="flex h-4 bg-gray-200 rounded-full overflow-hidden">
+								<div className="flex h-3 bg-gray-200 rounded-full overflow-hidden">
 									<div 
 										className="bg-red-500 h-full" 
 										style={{ 
@@ -1107,180 +906,132 @@ export const SiteAnalytics: React.FC = () => {
 									<span>Low: {Object.values(siteStats.siteRiskScore).filter((site: any) => site.level === "Low").length}</span>
 								</div>
 							</div>
-							<div className="mt-2 p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
-								<div className="text-xs font-medium text-yellow-800 dark:text-yellow-200 mb-1">
-									Risk Score Formula:
-								</div>
-								<div className="text-xs text-yellow-700 dark:text-yellow-300">
-									<strong>
-										Risk Score = (Incident Count × 10) + (Avg Duration in hours
-										× 2) + (100 - Resolution Rate)
-									</strong>
-									<br />
-									<span className="text-yellow-600 dark:text-yellow-400">
-										• High Risk: Score ≥ 100 • Medium Risk: Score 50-99 • Low
-										Risk: Score &lt; 50
-									</span>
-								</div>
-							</div>
 						</CardHeader>
 						<CardContent>
-							<div className="space-y-3">
-								{Object.keys(siteStats.siteRiskScore || {}).length > 0 ? (
-									Object.entries(siteStats.siteRiskScore || {})
-										.sort(
-											(a, b) =>
-												(b[1] as any).riskScore - (a[1] as any).riskScore,
-										)
-										.slice(0, 8)
+							{Object.keys(siteStats.siteRiskScore || {}).length > 0 ? (
+								<div className="space-y-2">
+									{/* Risk Table Header */}
+									<div className="grid grid-cols-12 gap-2 py-2 px-3 bg-gray-50 dark:bg-gray-800 rounded-lg text-xs font-medium text-muted-foreground">
+										<div className="col-span-1">#</div>
+										<div className="col-span-4">Site</div>
+										<div className="col-span-2 text-center">Score</div>
+										<div className="col-span-2 text-center">Level</div>
+										<div className="col-span-2 text-center">Incidents</div>
+										<div className="col-span-1 text-center">Action</div>
+									</div>
+									
+									{/* Risk Table Rows */}
+									{Object.entries(siteStats.siteRiskScore || {})
+										.sort((a, b) => (b[1] as any).riskScore - (a[1] as any).riskScore)
+										.slice(0, 6)
 										.map(([site, data], index) => {
 											const siteData = data as any;
 											return (
 												<div
 													key={site}
-													className="p-4 bg-gray-50 dark:bg-zinc-800 rounded-xl  shadow-sm"
+													className={`grid grid-cols-12 gap-2 py-3 px-3 rounded-lg transition-colors hover:bg-gray-50 dark:hover:bg-gray-800 ${
+														siteData.level === "High" ? 'bg-red-50 dark:bg-red-900/20 border-l-2 border-l-red-500' : 
+														siteData.level === "Medium" ? 'bg-yellow-50 dark:bg-yellow-900/20 border-l-2 border-l-yellow-500' : 
+														'bg-green-50 dark:bg-green-900/20 border-l-2 border-l-green-500'
+													}`}
 												>
-													<div className="flex items-center justify-between mb-3">
-														<div className="flex items-center gap-3 min-w-0 flex-1">
-															<div
-																className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold text-white ${
-																	siteData.level === "High"
-																		? "bg-red-500"
-																		: siteData.level === "Medium"
-																			? "bg-yellow-500"
-																			: "bg-green-500"
-																}`}
-															>
-																{index + 1}
-															</div>
-															<div className="min-w-0 flex-1">
-																<div className="font-semibold text-card-foreground truncate text-base">
-																	{site}
-																</div>
-																<div className="text-sm text-muted-foreground">
-																	{siteData.level} Risk Level
-																</div>
-															</div>
-														</div>
-														<div className="flex-shrink-0 text-right">
-															<div
-																className={`text-lg font-bold ${
-																	siteData.level === "High"
-																		? "text-red-600"
-																		: siteData.level === "Medium"
-																			? "text-yellow-600"
-																			: "text-green-600"
-																}`}
-															>
-																{siteData.riskScore.toFixed(1)}
-															</div>
-															<div className="text-xs text-gray-500 dark:text-gray-400">
-																Risk Score
-															</div>
+													{/* Rank */}
+													<div className="col-span-1 flex items-center">
+														<div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-white ${
+															siteData.level === "High" ? 'bg-red-500' : 
+															siteData.level === "Medium" ? 'bg-yellow-500' : 
+															'bg-green-500'
+														}`}>
+															{index + 1}
 														</div>
 													</div>
-
-													{/* Risk Factors Breakdown */}
-													<div className="grid grid-cols-3 gap-3 pt-3 border-t border-gray-200 dark:border-gray-600">
-														<div className="text-center">
-															<div className="text-lg font-bold text-purple-600">
-																{siteData.count || 0}
-															</div>
-															<div className="text-xs text-muted-foreground">
-																Incident Count
-															</div>
-															<div className="text-xs text-purple-600 font-medium">
-																(×10 = {(siteData.count || 0) * 10})
-															</div>
-														</div>
-
-														<div className="text-center">
-															<div className="text-lg font-bold text-orange-600">
-																{formatDurationHMS(siteData.avgDuration || 0)}
-															</div>
-															<div className="text-xs text-muted-foreground">
-																Avg Duration
-															</div>
-															<div className="text-xs text-orange-600 font-medium">
-																(×2 ={" "}
-																{(
-																	((siteData.avgDuration || 0) / 60) *
-																	2
-																).toFixed(1)}
-																)
-															</div>
-														</div>
-
-														<div className="text-center">
-															<div className="text-lg font-bold text-blue-600">
-																{siteData.resolutionRate
-																	? siteData.resolutionRate.toFixed(1)
-																	: "0"}
-																%
-															</div>
-															<div className="text-xs text-muted-foreground">
-																Resolution Rate
-															</div>
-															<div className="text-xs text-blue-600 font-medium">
-																(Penalty: {100 - (siteData.resolutionRate || 0)}
-																)
-															</div>
+													
+													{/* Site Name */}
+													<div className="col-span-4 flex items-center min-w-0">
+														<div className="truncate font-medium text-sm">
+															{site}
 														</div>
 													</div>
-
-													{/* Risk Calculation Explanation */}
-													<div className="mt-3 p-2 bg-gray-100 dark:bg-gray-700 rounded-lg">
-														<div className="text-xs text-muted-foreground mb-1">
-															Risk Calculation:
-														</div>
-														<div className="text-xs text-gray-700 dark:text-gray-300">
-															{siteData.level === "High" ? (
-																<>
-																	<ErrorOutlineIcon className="w-3 h-3 inline mr-1" />{" "}
-																	High Risk
-																</>
-															) : siteData.level === "Medium" ? (
-																<>
-																	<WarningAmberIcon className="w-3 h-3 inline mr-1" />{" "}
-																	Medium Risk
-																</>
-															) : (
-																<>
-																	<CheckCircleIcon className="w-3 h-3 inline mr-1" />{" "}
-																	Low Risk
-																</>
-															)}{" "}
-															• Score: {siteData.riskScore.toFixed(1)} •
-															{siteData.level === "High"
-																? " Requires immediate attention"
-																: siteData.level === "Medium"
-																	? " Monitor closely"
-																	: " Low priority"}{" "}
-															•
-															{siteData.count >= 5
-																? " High frequency"
-																: siteData.count >= 3
-																	? " Moderate frequency"
-																	: " Low frequency"}{" "}
-															incidents
-														</div>
+													
+													{/* Risk Score */}
+													<div className="col-span-2 text-center flex items-center justify-center">
+														<span className={`font-bold ${
+															siteData.level === "High" ? 'text-red-600' : 
+															siteData.level === "Medium" ? 'text-yellow-600' : 
+															'text-green-600'
+														}`}>
+															{siteData.riskScore.toFixed(1)}
+														</span>
+													</div>
+													
+													{/* Risk Level */}
+													<div className="col-span-2 text-center flex items-center justify-center">
+														<Badge 
+															variant={siteData.level === "High" ? "destructive" : 
+																	siteData.level === "Medium" ? "secondary" : "default"}
+															className="text-xs"
+														>
+															{siteData.level}
+														</Badge>
+													</div>
+													
+													{/* Incidents */}
+													<div className="col-span-2 text-center flex items-center justify-center">
+														<span className="text-xs font-bold text-blue-600">
+															{siteData.count || 0}
+														</span>
+													</div>
+													
+													{/* Action */}
+													<div className="col-span-1 flex items-center justify-center">
+														{siteData.level === "High" ? (
+															<ErrorOutlineIcon className="w-4 h-4 text-red-500" />
+														) : siteData.level === "Medium" ? (
+															<WarningAmberIcon className="w-4 h-4 text-yellow-500" />
+														) : (
+															<CheckCircleIcon className="w-4 h-4 text-green-500" />
+														)}
 													</div>
 												</div>
 											);
-										})
-								) : (
-									<div className="text-center py-8 text-gray-500 dark:text-gray-400">
-										<div className="flex flex-col items-center gap-3">
-											<WarningAmberIcon className="w-12 h-12 text-gray-400" />
-											<div className="text-sm font-medium">No Risk Assessment Data</div>
-											<div className="text-xs">Available for the selected period</div>
-											<Button variant="outline" size="sm" className="mt-2">
-												Refresh Data
-											</Button>
+										})}
+									
+									{/* Risk Summary */}
+									<div className="mt-4 p-3 bg-gradient-to-r from-red-50 to-yellow-50 dark:from-red-900/20 dark:to-yellow-900/20 rounded-lg">
+										<div className="grid grid-cols-3 gap-4 text-center">
+											<div>
+												<div className="text-lg font-bold text-red-600">
+													{Object.values(siteStats.siteRiskScore).filter((site: any) => site.level === "High").length}
+												</div>
+												<div className="text-xs text-muted-foreground">High Risk</div>
+											</div>
+											<div>
+												<div className="text-lg font-bold text-yellow-600">
+													{Object.values(siteStats.siteRiskScore).filter((site: any) => site.level === "Medium").length}
+												</div>
+												<div className="text-xs text-muted-foreground">Medium Risk</div>
+											</div>
+											<div>
+												<div className="text-lg font-bold text-green-600">
+													{Object.values(siteStats.siteRiskScore).filter((site: any) => site.level === "Low").length}
+												</div>
+												<div className="text-xs text-muted-foreground">Low Risk</div>
+											</div>
 										</div>
 									</div>
-								)}
-							</div>
+								</div>
+							) : (
+								<div className="text-center py-8 text-gray-500 dark:text-gray-400">
+									<div className="flex flex-col items-center gap-3">
+										<WarningAmberIcon className="w-12 h-12 text-gray-400" />
+										<div className="text-sm font-medium">No Risk Assessment Data</div>
+										<div className="text-xs">Available for the selected period</div>
+										<Button variant="outline" size="sm" className="mt-2">
+											Refresh Data
+										</Button>
+									</div>
+								</div>
+							)}
 						</CardContent>
 					</Card>
 				</div>
@@ -1299,7 +1050,7 @@ export const SiteAnalytics: React.FC = () => {
 						</CardHeaderDescription>
 					</CardHeader>
 					<CardContent>
-						<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+						<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
 							{/* Reliability Rate */}
 							<div className="text-center p-4 bg-green-50 dark:bg-green-900/20 rounded-xl shadow-sm">
 								<CheckCircleIcon className="w-6 h-6 text-green-600 mx-auto mb-2" />
@@ -1362,7 +1113,7 @@ export const SiteAnalytics: React.FC = () => {
 						</div>
 
 						{/* Additional Metrics */}
-						<div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 border-t ">
+						<div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-4 pt-4 border-t ">
 							<div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg ">
 								<div className="flex items-center gap-2">
 									<div className="w-3 h-3 bg-purple-500 rounded-full"></div>
@@ -1426,7 +1177,7 @@ export const SiteAnalytics: React.FC = () => {
 					</CardHeader>
 					<CardContent>
 						{/* Summary Stats */}
-						<div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+						<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
 							<div className="text-center p-3 bg-green-50 dark:bg-green-900/20 rounded-xl shadow-sm">
 								<div className="text-lg font-bold text-green-600">
 									{
@@ -1538,7 +1289,7 @@ export const SiteAnalytics: React.FC = () => {
 						</div>
 
 						{/* NCAL Details */}
-						<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+						<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
 							{ncalPerformanceData.map((item) => {
 								const target =
 									NCAL_TARGETS[item.name as keyof typeof NCAL_TARGETS] || 0;
