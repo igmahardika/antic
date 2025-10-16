@@ -17,6 +17,7 @@ import {
 	ResponsiveContainer,
 	Tooltip as RechartsTooltip,
 	ReferenceLine,
+	Legend,
 } from "@/charts/rechartsLazy";
 import PageWrapper from "@/components/PageWrapper";
 import PageHeader from "@/components/ui/PageHeader";
@@ -1533,26 +1534,16 @@ export const SiteAnalytics: React.FC = () => {
 											name="Unique Sites"
 											strokeWidth={2}
 										/>
+										<Legend 
+											wrapperStyle={{ 
+												paddingTop: '20px',
+												fontSize: '12px'
+											}}
+											iconType="rect"
+										/>
 									</AreaChart>
 								</ResponsiveContainer>
 							
-							{/* Enhanced Chart Legend */}
-							<div className="mt-4 flex justify-center gap-6">
-								<div className="flex items-center gap-2">
-									<div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-									<span className="text-sm text-muted-foreground">
-										Total Incidents
-									</span>
-									<span className="text-xs text-green-500">+12%</span>
-								</div>
-								<div className="flex items-center gap-2">
-									<div className="w-3 h-3 bg-green-500 rounded-full"></div>
-									<span className="text-sm text-muted-foreground">
-										Unique Sites
-									</span>
-									<span className="text-xs text-green-500">+8%</span>
-								</div>
-							</div>
 							
 							{/* Enhanced Chart Insights */}
 							<div className="mt-4 p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
@@ -1709,26 +1700,16 @@ export const SiteAnalytics: React.FC = () => {
 											name="Resolution Rate (%)"
 											strokeWidth={1.5}
 										/>
+										<Legend 
+											wrapperStyle={{ 
+												paddingTop: '20px',
+												fontSize: '12px'
+											}}
+											iconType="rect"
+										/>
 									</AreaChart>
 								</ResponsiveContainer>
 						
-							{/* Enhanced Chart Legend */}
-							<div className="mt-4 flex justify-center gap-6">
-								<div className="flex items-center gap-2">
-									<div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-									<span className="text-sm text-muted-foreground">
-										Avg Duration (Left)
-									</span>
-									<span className="text-xs text-red-500">-15m</span>
-								</div>
-								<div className="flex items-center gap-2">
-									<div className="w-3 h-3 bg-green-500 rounded-full"></div>
-									<span className="text-sm text-muted-foreground">
-										Resolution Rate % (Right)
-									</span>
-									<span className="text-xs text-green-500">+5%</span>
-								</div>
-							</div>
 							
 							{/* Enhanced Chart Insights */}
 							<div className="mt-4 p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
