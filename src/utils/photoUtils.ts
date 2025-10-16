@@ -140,6 +140,77 @@ export const createPhotoFromFile = (file: File, agentName: string): AgentPhoto =
 };
 
 /**
+ * Upload photo file to server
+ */
+export const uploadPhotoFile = async (file: File, agentName: string): Promise<string> => {
+  try {
+    // Validate file
+    if (!file) {
+      throw new Error('No file provided');
+    }
+    
+    // Validate file type
+    const allowedTypes = ['image/png', 'image/jpeg', 'image/jpg'];
+    if (!allowedTypes.includes(file.type)) {
+      throw new Error('File must be PNG, JPEG, or JPG');
+    }
+    
+    // Validate file size (max 5MB)
+    const maxSize = 5 * 1024 * 1024; // 5MB
+    if (file.size > maxSize) {
+      throw new Error('File size must be less than 5MB');
+    }
+    
+    // Create FormData for upload
+    const formData = new FormData();
+    formData.append('photo', file);
+    formData.append('agentName', agentName);
+    
+    // Upload to server
+    const response = await fetch('/api/upload-agent-photo', {
+      method: 'POST',
+      body: formData,
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Upload failed');
+    }
+    
+    const result = await response.json();
+    return result.filePath;
+    
+  } catch (error) {
+    console.error('Upload error:', error);
+    throw error;
+  }
+};
+
+/**
+ * Delete photo file from server
+ */
+export const deletePhotoFile = async (agentName: string): Promise<void> => {
+  try {
+    const response = await fetch('/api/delete-agent-photo', {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ agentName }),
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Delete failed');
+    }
+    
+  } catch (error) {
+    console.error('Delete error:', error);
+    throw error;
+  }
+};
+
+/**
  * Photo status colors for UI
  */
 export const getStatusColor = (status: string): string => {
