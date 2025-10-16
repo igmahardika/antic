@@ -782,7 +782,7 @@ export const SiteAnalytics: React.FC = () => {
 											{/* Status Badge */}
 											<div className="col-span-1 flex items-center justify-center">
 												<Badge 
-													variant={site.avgDuration < siteStats.avgSiteRecovery ? "default" : "danger"}
+													variant={site.avgDuration < siteStats.avgSiteRecovery ? "success" : "danger"}
 													className="text-xs px-1 py-0"
 												>
 													{site.avgDuration < siteStats.avgSiteRecovery ? "✓" : "⚠"}
@@ -1275,7 +1275,8 @@ export const SiteAnalytics: React.FC = () => {
 											{/* Enhanced Compliance Badge */}
 											<div className="flex items-center gap-2">
 												<Badge
-													className={isCompliant ? "bg-green-600" : "bg-red-600"}
+													variant={isCompliant ? "success" : "danger"}
+													className="text-xs"
 												>
 													{isCompliant ? "✓ Compliant" : "⚠ Exceeded"}
 												</Badge>
