@@ -1400,11 +1400,11 @@ export const SiteAnalytics: React.FC = () => {
 								Monthly incident volume trends by top sites
 							</CardHeaderDescription>
 						</CardHeader>
-					<CardContent>
+					<CardContent className="p-6">
 						{/* Enhanced Chart with Empty State */}
 						{siteTrendData.length > 0 ? (
-							<div className="w-full h-[260px]">
-								<ResponsiveContainer width="100%" height={260}>
+							<div className="w-full h-[260px] overflow-hidden relative">
+								<ResponsiveContainer width="100%" height="100%">
 									<AreaChart
 										data={siteTrendData}
 										margin={{ top: 30, right: 40, left: 10, bottom: 20 }}
@@ -1596,10 +1596,10 @@ export const SiteAnalytics: React.FC = () => {
 							Average resolution time trends by top sites
 						</CardHeaderDescription>
 					</CardHeader>
-					<CardContent>
+					<CardContent className="p-6">
 						{sitePerformanceData.length > 0 ? (
-						<div className="w-full h-[260px]">
-							<ResponsiveContainer width="100%" height={260}>
+						<div className="w-full h-[260px] overflow-hidden relative">
+							<ResponsiveContainer width="100%" height="100%">
 								<AreaChart
 									data={sitePerformanceData}
 									margin={{ top: 30, right: 40, left: 10, bottom: 20 }}
