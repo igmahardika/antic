@@ -191,7 +191,7 @@ export const uploadPhotoFile = async (file: File, agentName: string): Promise<st
  */
 export const deletePhotoFile = async (agentName: string): Promise<void> => {
   try {
-    const response = await fetch('/api/delete-agent-photo', {
+    const response = await fetch('http://localhost:3001/api/delete-agent-photo', {
       method: 'DELETE',
       headers: {
         'Content-Type': 'application/json',

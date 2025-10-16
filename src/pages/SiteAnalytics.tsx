@@ -927,14 +927,14 @@ export const SiteAnalytics: React.FC = () => {
 														<span className="text-xs font-semibold text-gray-600 dark:text-gray-400">
 																{siteData.count || 0}
 														</span>
-														</div>
+															</div>
 
 													{/* Duration */}
 													<div className="col-span-1 text-center flex items-center justify-center">
 														<span className="text-xs font-semibold text-gray-600 dark:text-gray-400">
 															{siteData.avgDuration ? formatDurationHMS(siteData.avgDuration) : 'N/A'}
 														</span>
-													</div>
+														</div>
 
 													{/* Action */}
 													<div className="col-span-1 flex items-center justify-center">
