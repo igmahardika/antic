@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { AgentPhoto, getAgentPhotoPath, checkPhotoExists, createPhotoFromFile, uploadPhotoFile, deletePhotoFile } from '@/utils/photoUtils';
+import { AgentPhoto, checkPhotoExists, createPhotoFromFile, uploadPhotoFile, deletePhotoFile } from '@/utils/photoUtils';
 
 /**
  * Hook for managing agent photos
@@ -17,13 +17,13 @@ export const useAgentPhotos = (allAgents: string[]) => {
       setError(null);
       
       const photoPromises = allAgents.map(async (agentName) => {
-        const photoPath = getAgentPhotoPath(agentName);
         const exists = await checkPhotoExists(agentName);
         
         if (exists) {
           // Get file info if possible
           let fileSize = 0;
           let uploadDate = new Date();
+          let fileName = `${agentName}.png`;
           
           try {
             // Try to get file info from the server
@@ -32,6 +32,7 @@ export const useAgentPhotos = (allAgents: string[]) => {
               const fileInfo = await response.json();
               fileSize = fileInfo.size || 0;
               uploadDate = new Date(fileInfo.uploadDate || Date.now());
+              fileName = fileInfo.fileName || fileName;
             }
           } catch (err) {
             // If we can't get file info, use defaults
@@ -41,8 +42,8 @@ export const useAgentPhotos = (allAgents: string[]) => {
           return {
             id: `photo-${agentName.replace(/\s+/g, '-').toLowerCase()}`,
             agentName,
-            fileName: fileInfo.fileName || `${agentName}.png`,
-            filePath: `/agent-photos/${fileInfo.fileName || `${agentName}.png`}`,
+            fileName: fileName,
+            filePath: `/agent-photos/${fileName}`,
             fileSize,
             uploadDate,
             lastModified: new Date(),
