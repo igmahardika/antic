@@ -121,7 +121,6 @@ export const SiteAnalytics: React.FC = () => {
 	const [selectedPeriod, setSelectedPeriod] = useState<
 		"3m" | "6m" | "1y" | "all"
 	>("6m");
-	const [showHighRiskDetails, setShowHighRiskDetails] = useState(false);
 	
 	// Performance monitoring
 	const metrics = usePerf('SiteAnalytics');
@@ -652,85 +651,6 @@ export const SiteAnalytics: React.FC = () => {
 					</div>
 				</div>
 
-				{/* Alert System for Critical Issues */}
-				{Object.values(siteStats.siteRiskScore).filter((site: any) => site.level === "High").length > 0 && (
-					<Alert className="border-l-4 border-l-red-500 bg-red-50 dark:bg-red-900/20 mb-6">
-						<ErrorOutlineIcon className="h-4 w-4 text-red-600" />
-						<AlertTitle className="text-red-800 dark:text-red-200">
-							High Risk Alert
-						</AlertTitle>
-						<AlertDescription className="text-red-700 dark:text-red-300">
-							{Object.values(siteStats.siteRiskScore).filter((site: any) => site.level === "High").length} sites require immediate attention. 
-							<Button 
-								variant="link" 
-								className="p-0 h-auto text-red-600 hover:text-red-800 ml-1"
-								onClick={() => setShowHighRiskDetails(!showHighRiskDetails)}
-							>
-								{showHighRiskDetails ? 'Hide Details' : 'View Details'} →
-							</Button>
-						</AlertDescription>
-					</Alert>
-				)}
-
-				{/* High Risk Details */}
-				{showHighRiskDetails && Object.values(siteStats.siteRiskScore).filter((site: any) => site.level === "High").length > 0 && (
-					<Card className="mb-6 border-red-200 dark:border-red-800">
-						<CardHeader className="pb-3">
-							<CardTitle className="flex items-center gap-2 text-red-800 dark:text-red-200">
-								<ErrorOutlineIcon className="w-5 h-5 text-red-600" />
-								High Risk Sites Details
-							</CardTitle>
-							<CardHeaderDescription className="text-red-700 dark:text-red-300">
-								Sites requiring immediate attention based on risk assessment
-							</CardHeaderDescription>
-						</CardHeader>
-						<CardContent>
-							<div className="space-y-3">
-								{Object.entries(siteStats.siteRiskScore || {})
-									.filter(([_, data]) => (data as any).level === "High")
-									.sort((a, b) => (b[1] as any).riskScore - (a[1] as any).riskScore)
-									.map(([site, data], index) => {
-										const siteData = data as any;
-										return (
-											<div
-												key={site}
-												className="p-4 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800"
-											>
-												<div className="flex items-center justify-between mb-2">
-													<div className="flex items-center gap-3">
-														<div className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold text-white bg-red-500">
-															{index + 1}
-														</div>
-														<div>
-															<h4 className="font-semibold text-red-900 dark:text-red-100">{site}</h4>
-															<p className="text-sm text-red-700 dark:text-red-300">
-																Risk Score: {siteData.riskScore.toFixed(1)}
-															</p>
-														</div>
-													</div>
-													<Badge variant="danger" className="text-xs">
-														HIGH RISK
-													</Badge>
-												</div>
-												<div className="grid grid-cols-2 gap-4 text-sm">
-													<div>
-														<span className="text-red-600 dark:text-red-400 font-medium">Incidents:</span>
-														<span className="ml-2 text-red-800 dark:text-red-200">{siteData.count || 0}</span>
-													</div>
-													<div>
-														<span className="text-red-600 dark:text-red-400 font-medium">Avg Duration:</span>
-														<span className="ml-2 text-red-800 dark:text-red-200">
-															{siteData.avgDuration ? formatDurationHMS(siteData.avgDuration) : 'N/A'}
-														</span>
-													</div>
-												</div>
-											</div>
-										);
-									})}
-							</div>
-						</CardContent>
-					</Card>
-				)}
 
 				{/* Performance Warning Alert */}
 				{siteStats.siteReliability < 80 && (
@@ -917,9 +837,9 @@ export const SiteAnalytics: React.FC = () => {
 						<CardHeader className="pb-3">
 							<div className="flex items-center justify-between">
 								<CardTitle className="flex items-center gap-2">
-									<WarningAmberIcon className="w-5 h-5 text-amber-500" />
+									<ErrorOutlineIcon className="w-5 h-5 text-red-500" />
 									<CardHeaderTitle className="text-base md:text-lg">
-										Risk Assessment
+										High Risk Alert
 									</CardHeaderTitle>
 								</CardTitle>
 								{Object.values(siteStats.siteRiskScore).filter((site: any) => site.level === "High").length > 0 && (
@@ -929,44 +849,24 @@ export const SiteAnalytics: React.FC = () => {
 								)}
 							</div>
 							<CardHeaderDescription className="text-xs">
-								Risk levels based on incident frequency, duration, and resolution patterns
+								Sites requiring immediate attention based on high risk scores
 							</CardHeaderDescription>
 							
-							{/* Risk Distribution - Compact */}
-							<div className="mt-3 p-2 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
+							{/* High Risk Summary - Compact */}
+							<div className="mt-3 p-2 bg-red-50 dark:bg-red-900/20 rounded-lg">
 								<div className="flex items-center justify-between mb-2">
-									<span className="text-xs font-medium">Risk Distribution</span>
-									<span className="text-xs text-muted-foreground">{siteStats.totalSites} sites</span>
+									<span className="text-xs font-medium text-red-800 dark:text-red-200">High Risk Sites</span>
+									<span className="text-xs text-red-600 dark:text-red-400">
+										{Object.values(siteStats.siteRiskScore).filter((site: any) => site.level === "High").length} sites
+									</span>
 								</div>
-								<div className="flex h-2 bg-gray-200 rounded-full overflow-hidden">
-									<div 
-										className="bg-rose-500 h-full" 
-										style={{ 
-											width: `${siteStats.totalSites > 0 ? (Object.values(siteStats.siteRiskScore).filter((site: any) => site.level === "High").length / siteStats.totalSites) * 100 : 0}%` 
-										}}
-									/>
-									<div 
-										className="bg-amber-500 h-full" 
-										style={{ 
-											width: `${siteStats.totalSites > 0 ? (Object.values(siteStats.siteRiskScore).filter((site: any) => site.level === "Medium").length / siteStats.totalSites) * 100 : 0}%` 
-										}}
-									/>
-									<div 
-										className="bg-emerald-500 h-full" 
-										style={{ 
-											width: `${siteStats.totalSites > 0 ? (Object.values(siteStats.siteRiskScore).filter((site: any) => site.level === "Low").length / siteStats.totalSites) * 100 : 0}%` 
-										}}
-									/>
-								</div>
-								<div className="flex justify-between text-xs text-muted-foreground mt-1">
-									<span>High: {Object.values(siteStats.siteRiskScore).filter((site: any) => site.level === "High").length}</span>
-									<span>Medium: {Object.values(siteStats.siteRiskScore).filter((site: any) => site.level === "Medium").length}</span>
-									<span>Low: {Object.values(siteStats.siteRiskScore).filter((site: any) => site.level === "Low").length}</span>
+								<div className="text-xs text-red-700 dark:text-red-300">
+									These sites require immediate attention due to high risk scores
 								</div>
 							</div>
 						</CardHeader>
 						<CardContent>
-								{Object.keys(siteStats.siteRiskScore || {}).length > 0 ? (
+								{Object.values(siteStats.siteRiskScore || {}).filter((site: any) => site.level === "High").length > 0 ? (
 								<div className="space-y-2">
 									{/* Risk Table Header */}
 									<div className="grid grid-cols-12 gap-2 py-2 px-3 bg-gray-50 dark:bg-gray-800 rounded-lg text-xs font-medium text-muted-foreground">
@@ -979,10 +879,10 @@ export const SiteAnalytics: React.FC = () => {
 										<div className="col-span-1 text-center">Action</div>
 									</div>
 									
-									{/* Risk Table Rows */}
+									{/* Risk Table Rows - Show All High Risk Sites */}
 									{Object.entries(siteStats.siteRiskScore || {})
+										.filter(([, data]) => (data as any).level === "High")
 										.sort((a, b) => (b[1] as any).riskScore - (a[1] as any).riskScore)
-										.slice(0, 6)
 										.map(([site, data], index) => {
 											const siteData = data as any;
 											return (
@@ -1077,9 +977,9 @@ export const SiteAnalytics: React.FC = () => {
 								) : (
 									<div className="text-center py-8 text-gray-500 dark:text-gray-400">
 										<div className="flex flex-col items-center gap-3">
-											<WarningAmberIcon className="w-12 h-12 text-gray-400" />
-											<div className="text-sm font-medium">No Risk Assessment Data</div>
-											<div className="text-xs">Available for the selected period</div>
+											<ErrorOutlineIcon className="w-12 h-12 text-gray-400" />
+											<div className="text-sm font-medium">No High Risk Sites</div>
+											<div className="text-xs">All sites are operating within normal risk parameters</div>
 											<Button variant="outline" size="sm" className="mt-2">
 												Refresh Data
 											</Button>
