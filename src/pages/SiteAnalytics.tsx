@@ -1456,7 +1456,7 @@ export const SiteAnalytics: React.FC = () => {
 											strokeWidth={1}
 											label={{ 
 												value: "Average", 
-												position: "topRight",
+												position: "top",
 												offset: 10,
 												style: { 
 													fill: "#6b7280", 
