@@ -1102,6 +1102,147 @@ app.listen(PORT, () => {
   console.log(`🔧 ENV        : ${process.env.NODE_ENV || 'development'}`);
 });
 
+// Agent Photo Upload Endpoint
+app.post('/api/upload-agent-photo', async (req, res) => {
+  try {
+    const multer = await import('multer');
+    const path = await import('path');
+    const fs = await import('fs');
+    
+    // Configure multer for file upload
+    const storage = multer.default.diskStorage({
+      destination: (req, file, cb) => {
+        const uploadDir = path.join(process.cwd(), 'public', 'agent-photos');
+        const distDir = path.join(process.cwd(), 'dist', 'agent-photos');
+        
+        // Create directories if they don't exist
+        if (!fs.default.existsSync(uploadDir)) {
+          fs.default.mkdirSync(uploadDir, { recursive: true });
+        }
+        if (!fs.default.existsSync(distDir)) {
+          fs.default.mkdirSync(distDir, { recursive: true });
+        }
+        
+        cb(null, uploadDir);
+      },
+      filename: (req, file, cb) => {
+        const agentName = req.body.agentName || 'unknown';
+        const normalizedName = agentName
+          .trim()
+          .replace(/[^\w\s'-]/g, '')
+          .replace(/\s+/g, ' ')
+          .trim();
+        cb(null, `${normalizedName}.png`);
+      }
+    });
+    
+    const upload = multer.default({
+      storage: storage,
+      limits: {
+        fileSize: 5 * 1024 * 1024 // 5MB limit
+      },
+      fileFilter: (req, file, cb) => {
+        const allowedTypes = ['image/png', 'image/jpeg', 'image/jpg'];
+        if (allowedTypes.includes(file.mimetype)) {
+          cb(null, true);
+        } else {
+          cb(new Error('File must be PNG, JPEG, or JPG'), false);
+        }
+      }
+    });
+    
+    upload.single('photo')(req, res, (err) => {
+      if (err) {
+        console.error('Upload error:', err);
+        return res.status(400).json({ 
+          error: err.message || 'Upload failed' 
+        });
+      }
+      
+      if (!req.file) {
+        return res.status(400).json({ error: 'No file uploaded' });
+      }
+      
+      const agentName = req.body.agentName || 'unknown';
+      const normalizedName = agentName
+        .trim()
+        .replace(/[^\w\s'-]/g, '')
+        .replace(/\s+/g, ' ')
+        .trim();
+      
+      // Copy file to dist folder for production
+      const sourcePath = req.file.path;
+      const distPath = path.join(process.cwd(), 'dist', 'agent-photos', `${normalizedName}.png`);
+      
+      try {
+        fs.default.copyFileSync(sourcePath, distPath);
+      } catch (copyError) {
+        console.error('Error copying to dist folder:', copyError);
+      }
+      
+      res.json({
+        success: true,
+        filePath: `/agent-photos/${normalizedName}.png`,
+        fileName: `${normalizedName}.png`,
+        agentName: normalizedName
+      });
+    });
+    
+  } catch (error) {
+    console.error('Upload endpoint error:', error);
+    res.status(500).json({ 
+      error: 'Failed to upload photo',
+      details: error.message 
+    });
+  }
+});
+
+// Agent Photo Delete Endpoint
+app.delete('/api/delete-agent-photo', async (req, res) => {
+  try {
+    const { agentName } = req.body;
+    
+    if (!agentName) {
+      return res.status(400).json({ error: 'No agent name provided' });
+    }
+    
+    const path = await import('path');
+    const fs = await import('fs');
+    
+    const normalizedName = agentName
+      .trim()
+      .replace(/[^\w\s'-]/g, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+    
+    const fileName = `${normalizedName}.png`;
+    
+    // Delete from public folder
+    const publicFilePath = path.join(process.cwd(), 'public', 'agent-photos', fileName);
+    if (fs.default.existsSync(publicFilePath)) {
+      fs.default.unlinkSync(publicFilePath);
+    }
+    
+    // Delete from dist folder
+    const distFilePath = path.join(process.cwd(), 'dist', 'agent-photos', fileName);
+    if (fs.default.existsSync(distFilePath)) {
+      fs.default.unlinkSync(distFilePath);
+    }
+    
+    res.json({
+      success: true,
+      message: 'Photo deleted successfully'
+    });
+    
+  } catch (error) {
+    console.error('Delete endpoint error:', error);
+    res.status(500).json({ 
+      error: 'Failed to delete photo',
+      details: error.message 
+    });
+  }
+});
+
 // PDF Generation Endpoint
 app.post('/api/generate-pdf', async (req, res) => {
   try {
