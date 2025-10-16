@@ -1218,26 +1218,28 @@ export const SiteAnalytics: React.FC = () => {
 						</div>
 
 						{/* Enhanced NCAL Summary */}
-						<div className="mb-6 p-4 bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20 rounded-lg border border-purple-200 dark:border-purple-800">
-							<div className="flex items-center justify-between mb-3">
+						<div className="mb-6 p-5 bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20 rounded-lg border border-purple-200 dark:border-purple-800">
+							<div className="flex items-center justify-between mb-4">
 								<div className="flex items-center gap-2">
 									<TrackChangesIcon className="w-5 h-5 text-purple-600" />
 									<div className="text-sm font-semibold text-purple-800 dark:text-purple-200">
 										Overall NCAL Performance
 									</div>
 								</div>
-								<Badge 
-									variant={ncalPerformanceData.filter((item) => {
-										const target = NCAL_TARGETS[item.name as keyof typeof NCAL_TARGETS] || 0;
-										return item.avgDuration <= target;
-									}).length >= 3 ? "default" : "danger"}
-									className="text-xs"
-								>
-									{ncalPerformanceData.filter((item) => {
-										const target = NCAL_TARGETS[item.name as keyof typeof NCAL_TARGETS] || 0;
-										return item.avgDuration <= target;
-									}).length >= 3 ? "Good Performance" : "Needs Improvement"}
-								</Badge>
+								<div className="flex-shrink-0 ml-4">
+									<Badge 
+										variant={ncalPerformanceData.filter((item) => {
+											const target = NCAL_TARGETS[item.name as keyof typeof NCAL_TARGETS] || 0;
+											return item.avgDuration <= target;
+										}).length >= 3 ? "default" : "danger"}
+										className="text-xs"
+									>
+										{ncalPerformanceData.filter((item) => {
+											const target = NCAL_TARGETS[item.name as keyof typeof NCAL_TARGETS] || 0;
+											return item.avgDuration <= target;
+										}).length >= 3 ? "Good Performance" : "Needs Improvement"}
+									</Badge>
+								</div>
 							</div>
 							
 							<div className="grid grid-cols-3 gap-4 text-center">
@@ -1283,7 +1285,7 @@ export const SiteAnalytics: React.FC = () => {
 								return (
 									<div
 										key={item.name}
-										className="p-4 bg-gradient-to-br from-gray-50 to-blue-50 dark:from-zinc-800 dark:to-blue-900/20 rounded-xl shadow-sm border border-blue-200 dark:border-blue-800"
+										className="p-5 bg-gradient-to-br from-gray-50 to-blue-50 dark:from-zinc-800 dark:to-blue-900/20 rounded-xl shadow-sm border border-blue-200 dark:border-blue-800"
 									>
 										<div className="flex items-center justify-between mb-3">
 											<div className="flex items-center gap-2">
@@ -1310,8 +1312,8 @@ export const SiteAnalytics: React.FC = () => {
 										</div>
 
 										{/* Enhanced Target vs Actual Comparison */}
-										<div className="mb-3">
-											<div className="flex justify-between text-xs text-muted-foreground mb-2">
+										<div className="mb-4">
+											<div className="flex justify-between text-xs text-muted-foreground mb-2 px-1">
 												<span>Target: {formatDurationHMS(target)}</span>
 												<span>Actual: {formatDurationHMS(avgDuration)}</span>
 											</div>
@@ -1350,8 +1352,8 @@ export const SiteAnalytics: React.FC = () => {
 										</div>
 
 										{/* Progress Bar */}
-										<div className="mt-3">
-											<div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 mb-1">
+										<div className="mt-4">
+											<div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 mb-1 px-1">
 												<span>Performance vs Target</span>
 												<span>
 													{isCompliant ? "Compliant" : "Non-Compliant"}
@@ -1405,7 +1407,7 @@ export const SiteAnalytics: React.FC = () => {
 								<ResponsiveContainer width="100%" height={260}>
 									<AreaChart
 										data={siteTrendData}
-										margin={{ top: 20, right: 30, left: 0, bottom: 0 }}
+										margin={{ top: 30, right: 40, left: 10, bottom: 20 }}
 									>
 										<defs>
 											<linearGradient
@@ -1449,9 +1451,19 @@ export const SiteAnalytics: React.FC = () => {
 										{/* Enhanced Reference Lines */}
 										<ReferenceLine 
 											y={siteTrendData.reduce((sum, item) => sum + item.incidents, 0) / siteTrendData.length} 
-											stroke="#ef4444" 
-											strokeDasharray="5 5" 
-											label={{ value: "Average", position: "top" }}
+											stroke="#6b7280" 
+											strokeDasharray="3 3" 
+											strokeWidth={1}
+											label={{ 
+												value: "Average", 
+												position: "topRight",
+												offset: 10,
+												style: { 
+													fill: "#6b7280", 
+													fontSize: 12,
+													fontWeight: 500
+												}
+											}}
 										/>
 										
 										<XAxis
@@ -1590,7 +1602,7 @@ export const SiteAnalytics: React.FC = () => {
 							<ResponsiveContainer width="100%" height={260}>
 								<AreaChart
 									data={sitePerformanceData}
-									margin={{ top: 20, right: 30, left: 0, bottom: 0 }}
+									margin={{ top: 30, right: 40, left: 10, bottom: 20 }}
 								>
 										<defs>
 											<linearGradient
