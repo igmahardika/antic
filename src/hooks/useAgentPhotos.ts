@@ -21,13 +21,30 @@ export const useAgentPhotos = (allAgents: string[]) => {
         const exists = await checkPhotoExists(agentName);
         
         if (exists) {
+          // Get file info if possible
+          let fileSize = 0;
+          let uploadDate = new Date();
+          
+          try {
+            // Try to get file info from the server
+            const response = await fetch(`/api/photo-info?agentName=${encodeURIComponent(agentName)}`);
+            if (response.ok) {
+              const fileInfo = await response.json();
+              fileSize = fileInfo.size || 0;
+              uploadDate = new Date(fileInfo.uploadDate || Date.now());
+            }
+          } catch (err) {
+            // If we can't get file info, use defaults
+            console.log('Could not get file info for', agentName);
+          }
+          
           return {
             id: `photo-${agentName.replace(/\s+/g, '-').toLowerCase()}`,
             agentName,
-            fileName: `${agentName}.png`,
-            filePath: photoPath,
-            fileSize: 0, // Will be updated when file is loaded
-            uploadDate: new Date(), // Will be updated with actual file date
+            fileName: fileInfo.fileName || `${agentName}.png`,
+            filePath: `/agent-photos/${fileInfo.fileName || `${agentName}.png`}`,
+            fileSize,
+            uploadDate,
             lastModified: new Date(),
             isActive: true
           } as AgentPhoto;
@@ -39,6 +56,7 @@ export const useAgentPhotos = (allAgents: string[]) => {
       const photoResults = await Promise.all(photoPromises);
       const validPhotos = photoResults.filter((photo): photo is AgentPhoto => photo !== null);
       
+      console.log('Loaded photos:', validPhotos.length, 'out of', allAgents.length, 'agents');
       setPhotos(validPhotos);
     } catch (err) {
       setError('Gagal memuat foto agent');
@@ -62,11 +80,11 @@ export const useAgentPhotos = (allAgents: string[]) => {
         
         try {
           // Upload file to server
-          const filePath = await uploadPhotoFile(file, agentName);
+          const result = await uploadPhotoFile(file, agentName);
           
           // Create photo object with actual file path
           const photo = createPhotoFromFile(file, agentName);
-          photo.filePath = filePath;
+          photo.filePath = result;
           newPhotos.push(photo);
           
         } catch (uploadError) {

@@ -149,9 +149,13 @@ const PhotoGrid: React.FC<PhotoGridProps> = ({
                     alt={photo.agentName}
                     className="w-full h-full object-cover"
                     onError={(e) => {
+                      console.error('Failed to load image:', photo.filePath, 'for agent:', photo.agentName);
                       const target = e.target as HTMLImageElement;
                       target.style.display = 'none';
                       target.nextElementSibling?.classList.remove('hidden');
+                    }}
+                    onLoad={() => {
+                      console.log('Image loaded successfully:', photo.filePath);
                     }}
                   />
                   <div className="hidden absolute inset-0 flex items-center justify-center">
