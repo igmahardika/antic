@@ -121,6 +121,7 @@ export const SiteAnalytics: React.FC = () => {
 	const [selectedPeriod, setSelectedPeriod] = useState<
 		"3m" | "6m" | "1y" | "all"
 	>("6m");
+	const [showHighRiskDetails, setShowHighRiskDetails] = useState(false);
 	
 	// Performance monitoring
 	const metrics = usePerf('SiteAnalytics');
@@ -660,11 +661,75 @@ export const SiteAnalytics: React.FC = () => {
 						</AlertTitle>
 						<AlertDescription className="text-red-700 dark:text-red-300">
 							{Object.values(siteStats.siteRiskScore).filter((site: any) => site.level === "High").length} sites require immediate attention. 
-							<Button variant="link" className="p-0 h-auto text-red-600 hover:text-red-800 ml-1">
-								View Details →
+							<Button 
+								variant="link" 
+								className="p-0 h-auto text-red-600 hover:text-red-800 ml-1"
+								onClick={() => setShowHighRiskDetails(!showHighRiskDetails)}
+							>
+								{showHighRiskDetails ? 'Hide Details' : 'View Details'} →
 							</Button>
 						</AlertDescription>
 					</Alert>
+				)}
+
+				{/* High Risk Details */}
+				{showHighRiskDetails && Object.values(siteStats.siteRiskScore).filter((site: any) => site.level === "High").length > 0 && (
+					<Card className="mb-6 border-red-200 dark:border-red-800">
+						<CardHeader className="pb-3">
+							<CardTitle className="flex items-center gap-2 text-red-800 dark:text-red-200">
+								<ErrorOutlineIcon className="w-5 h-5 text-red-600" />
+								High Risk Sites Details
+							</CardTitle>
+							<CardHeaderDescription className="text-red-700 dark:text-red-300">
+								Sites requiring immediate attention based on risk assessment
+							</CardHeaderDescription>
+						</CardHeader>
+						<CardContent>
+							<div className="space-y-3">
+								{Object.entries(siteStats.siteRiskScore || {})
+									.filter(([_, data]) => (data as any).level === "High")
+									.sort((a, b) => (b[1] as any).riskScore - (a[1] as any).riskScore)
+									.map(([site, data], index) => {
+										const siteData = data as any;
+										return (
+											<div
+												key={site}
+												className="p-4 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800"
+											>
+												<div className="flex items-center justify-between mb-2">
+													<div className="flex items-center gap-3">
+														<div className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold text-white bg-red-500">
+															{index + 1}
+														</div>
+														<div>
+															<h4 className="font-semibold text-red-900 dark:text-red-100">{site}</h4>
+															<p className="text-sm text-red-700 dark:text-red-300">
+																Risk Score: {siteData.riskScore.toFixed(1)}
+															</p>
+														</div>
+													</div>
+													<Badge variant="danger" className="text-xs">
+														HIGH RISK
+													</Badge>
+												</div>
+												<div className="grid grid-cols-2 gap-4 text-sm">
+													<div>
+														<span className="text-red-600 dark:text-red-400 font-medium">Incidents:</span>
+														<span className="ml-2 text-red-800 dark:text-red-200">{siteData.count || 0}</span>
+													</div>
+													<div>
+														<span className="text-red-600 dark:text-red-400 font-medium">Avg Duration:</span>
+														<span className="ml-2 text-red-800 dark:text-red-200">
+															{siteData.avgDuration ? formatDurationHMS(siteData.avgDuration) : 'N/A'}
+														</span>
+													</div>
+												</div>
+											</div>
+										);
+									})}
+							</div>
+						</CardContent>
+					</Card>
 				)}
 
 				{/* Performance Warning Alert */}
