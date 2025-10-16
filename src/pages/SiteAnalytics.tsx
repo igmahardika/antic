@@ -906,10 +906,11 @@ export const SiteAnalytics: React.FC = () => {
 									{/* Risk Table Header */}
 									<div className="grid grid-cols-12 gap-2 py-2 px-3 bg-gray-50 dark:bg-gray-800 rounded-lg text-xs font-medium text-muted-foreground">
 										<div className="col-span-1">#</div>
-										<div className="col-span-4">Site</div>
+										<div className="col-span-3">Site</div>
 										<div className="col-span-2 text-center">Score</div>
 										<div className="col-span-2 text-center">Level</div>
 										<div className="col-span-2 text-center">Incidents</div>
+										<div className="col-span-1 text-center">Duration</div>
 										<div className="col-span-1 text-center">Action</div>
 									</div>
 									
@@ -932,7 +933,7 @@ export const SiteAnalytics: React.FC = () => {
 													</div>
 													
 													{/* Site Name */}
-													<div className="col-span-4 flex items-center min-w-0">
+													<div className="col-span-3 flex items-center min-w-0">
 														<div className="truncate font-medium text-sm text-gray-900 dark:text-gray-100">
 																	{site}
 																</div>
@@ -962,6 +963,13 @@ export const SiteAnalytics: React.FC = () => {
 																{siteData.count || 0}
 														</span>
 														</div>
+
+													{/* Duration */}
+													<div className="col-span-1 text-center flex items-center justify-center">
+														<span className="text-xs font-semibold text-gray-600 dark:text-gray-400">
+															{siteData.avgDuration ? formatDurationHMS(siteData.avgDuration) : 'N/A'}
+														</span>
+													</div>
 
 													{/* Action */}
 													<div className="col-span-1 flex items-center justify-center">
