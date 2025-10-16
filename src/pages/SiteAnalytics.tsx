@@ -738,7 +738,7 @@ export const SiteAnalytics: React.FC = () => {
 							</CardHeaderDescription>
 						</CardHeader>
 						<CardContent>
-							{topAffectedSitesData.length > 0 ? (
+								{topAffectedSitesData.length > 0 ? (
 								<div className="space-y-2">
 									{/* Table Header */}
 									<div className="grid grid-cols-12 gap-2 py-2 px-3 bg-gray-50 dark:bg-gray-800 rounded-lg text-xs font-medium text-muted-foreground">
@@ -759,29 +759,29 @@ export const SiteAnalytics: React.FC = () => {
 											{/* Rank */}
 											<div className="col-span-1 flex items-center">
 												<div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium text-white bg-gray-500">
-													{index + 1}
-												</div>
-											</div>
-											
+															{index + 1}
+														</div>
+													</div>
+													
 											{/* Site Name */}
 											<div className="col-span-4 flex items-center min-w-0">
 												<div className="truncate font-medium text-sm text-gray-900 dark:text-gray-100">
-													{site.name}
+															{site.name}
+													</div>
 												</div>
-											</div>
-											
+												
 											{/* Incidents */}
 											<div className="col-span-2 text-center flex items-center justify-center">
 												<span className="font-semibold text-gray-700 dark:text-gray-300">{site.count}</span>
 											</div>
-											
+
 											{/* Avg Duration */}
 											<div className="col-span-2 text-center flex items-center justify-center">
 												<span className="text-xs font-mono text-gray-600 dark:text-gray-400">
 													{formatDurationHMS(site.avgDuration)}
 												</span>
 											</div>
-											
+
 											{/* Resolution Rate */}
 											<div className="col-span-2 text-center flex items-center justify-center">
 												<span className={`text-xs font-medium ${
@@ -791,8 +791,8 @@ export const SiteAnalytics: React.FC = () => {
 												}`}>
 													{site.resolutionRate.toFixed(0)}%
 												</span>
-											</div>
-											
+												</div>
+
 											{/* Status Badge */}
 											<div className="col-span-1 flex items-center justify-center">
 												<Badge 
@@ -801,8 +801,8 @@ export const SiteAnalytics: React.FC = () => {
 												>
 													{site.avgDuration < siteStats.avgSiteRecovery ? "✓" : "⚠"}
 												</Badge>
-											</div>
-										</div>
+													</div>
+													</div>
 									))}
 									
 									{/* Summary Stats */}
@@ -811,9 +811,9 @@ export const SiteAnalytics: React.FC = () => {
 											<div>
 												<div className="text-lg font-bold text-gray-700 dark:text-gray-300">
 													{topAffectedSitesData.slice(0, 3).reduce((sum, site) => sum + site.count, 0)}
-												</div>
+													</div>
 												<div className="text-xs text-muted-foreground">Top 3 Incidents</div>
-											</div>
+													</div>
 											<div>
 												<div className="text-lg font-bold text-gray-700 dark:text-gray-300">
 													{formatDurationHMS(
@@ -825,24 +825,24 @@ export const SiteAnalytics: React.FC = () => {
 											<div>
 												<div className="text-lg font-bold text-gray-700 dark:text-gray-300">
 													{(topAffectedSitesData.slice(0, 6).reduce((sum, site) => sum + site.resolutionRate, 0) / 6).toFixed(0)}%
-												</div>
+													</div>
 												<div className="text-xs text-muted-foreground">Avg Rate</div>
-											</div>
+												</div>
+												</div>
+														</div>
+													</div>
+								) : (
+									<div className="text-center py-8 text-gray-500 dark:text-gray-400">
+										<div className="flex flex-col items-center gap-3">
+											<LocationOnIcon className="w-12 h-12 text-gray-400" />
+											<div className="text-sm font-medium">No Site Data Available</div>
+											<div className="text-xs">For the selected period</div>
+											<Button variant="outline" size="sm" className="mt-2">
+												Refresh Data
+											</Button>
 										</div>
 									</div>
-								</div>
-							) : (
-								<div className="text-center py-8 text-gray-500 dark:text-gray-400">
-									<div className="flex flex-col items-center gap-3">
-										<LocationOnIcon className="w-12 h-12 text-gray-400" />
-										<div className="text-sm font-medium">No Site Data Available</div>
-										<div className="text-xs">For the selected period</div>
-										<Button variant="outline" size="sm" className="mt-2">
-											Refresh Data
-										</Button>
-									</div>
-								</div>
-							)}
+								)}
 						</CardContent>
 					</Card>
 
@@ -857,9 +857,9 @@ export const SiteAnalytics: React.FC = () => {
 									</CardHeaderTitle>
 								</CardTitle>
 								{Object.values(siteStats.siteRiskScore).filter((site: any) => site.level === "High").length > 0 && (
-									<Badge variant="danger" className="text-xs">
+								<Badge variant="danger" className="text-xs">
 										HIGH RISK
-									</Badge>
+								</Badge>
 								)}
 							</div>
 							<CardHeaderDescription className="text-xs">
@@ -900,7 +900,7 @@ export const SiteAnalytics: React.FC = () => {
 							</div>
 						</CardHeader>
 						<CardContent>
-							{Object.keys(siteStats.siteRiskScore || {}).length > 0 ? (
+								{Object.keys(siteStats.siteRiskScore || {}).length > 0 ? (
 								<div className="space-y-2">
 									{/* Risk Table Header */}
 									<div className="grid grid-cols-12 gap-2 py-2 px-3 bg-gray-50 dark:bg-gray-800 rounded-lg text-xs font-medium text-muted-foreground">
@@ -926,23 +926,23 @@ export const SiteAnalytics: React.FC = () => {
 													{/* Rank */}
 													<div className="col-span-1 flex items-center">
 														<div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium text-white bg-gray-500">
-															{index + 1}
-														</div>
+																{index + 1}
+															</div>
 													</div>
 													
 													{/* Site Name */}
 													<div className="col-span-4 flex items-center min-w-0">
 														<div className="truncate font-medium text-sm text-gray-900 dark:text-gray-100">
-															{site}
-														</div>
-													</div>
+																	{site}
+																</div>
+																</div>
 													
 													{/* Risk Score */}
 													<div className="col-span-2 text-center flex items-center justify-center">
 														<span className="font-semibold text-gray-700 dark:text-gray-300">
 															{siteData.riskScore.toFixed(1)}
 														</span>
-													</div>
+															</div>
 													
 													{/* Risk Level */}
 													<div className="col-span-2 text-center flex items-center justify-center">
@@ -954,14 +954,14 @@ export const SiteAnalytics: React.FC = () => {
 															{siteData.level}
 														</Badge>
 													</div>
-													
+
 													{/* Incidents */}
 													<div className="col-span-2 text-center flex items-center justify-center">
 														<span className="text-xs font-semibold text-gray-600 dark:text-gray-400">
-															{siteData.count || 0}
+																{siteData.count || 0}
 														</span>
-													</div>
-													
+														</div>
+
 													{/* Action */}
 													<div className="col-span-1 flex items-center justify-center">
 														{siteData.level === "High" ? (
@@ -971,8 +971,8 @@ export const SiteAnalytics: React.FC = () => {
 														) : (
 															<CheckCircleIcon className="w-4 h-4 text-emerald-500" />
 														)}
-													</div>
-												</div>
+															</div>
+															</div>
 											);
 										})}
 									
@@ -982,36 +982,36 @@ export const SiteAnalytics: React.FC = () => {
 											<div>
 												<div className="text-lg font-bold text-gray-700 dark:text-gray-300">
 													{Object.values(siteStats.siteRiskScore).filter((site: any) => site.level === "High").length}
-												</div>
+															</div>
 												<div className="text-xs text-muted-foreground">High Risk</div>
-											</div>
+															</div>
 											<div>
 												<div className="text-lg font-bold text-gray-700 dark:text-gray-300">
 													{Object.values(siteStats.siteRiskScore).filter((site: any) => site.level === "Medium").length}
-												</div>
+															</div>
 												<div className="text-xs text-muted-foreground">Medium Risk</div>
-											</div>
+														</div>
 											<div>
 												<div className="text-lg font-bold text-gray-700 dark:text-gray-300">
 													{Object.values(siteStats.siteRiskScore).filter((site: any) => site.level === "Low").length}
-												</div>
+													</div>
 												<div className="text-xs text-muted-foreground">Low Risk</div>
-											</div>
+														</div>
+														</div>
+													</div>
+												</div>
+								) : (
+									<div className="text-center py-8 text-gray-500 dark:text-gray-400">
+										<div className="flex flex-col items-center gap-3">
+											<WarningAmberIcon className="w-12 h-12 text-gray-400" />
+											<div className="text-sm font-medium">No Risk Assessment Data</div>
+											<div className="text-xs">Available for the selected period</div>
+											<Button variant="outline" size="sm" className="mt-2">
+												Refresh Data
+											</Button>
 										</div>
 									</div>
-								</div>
-							) : (
-								<div className="text-center py-8 text-gray-500 dark:text-gray-400">
-									<div className="flex flex-col items-center gap-3">
-										<WarningAmberIcon className="w-12 h-12 text-gray-400" />
-										<div className="text-sm font-medium">No Risk Assessment Data</div>
-										<div className="text-xs">Available for the selected period</div>
-										<Button variant="outline" size="sm" className="mt-2">
-											Refresh Data
-										</Button>
-									</div>
-								</div>
-							)}
+								)}
 						</CardContent>
 					</Card>
 				</div>
@@ -1158,8 +1158,8 @@ export const SiteAnalytics: React.FC = () => {
 					<CardContent>
 						{/* Summary Stats */}
 						<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-							<div className="text-center p-3 bg-green-50 dark:bg-green-900/20 rounded-xl shadow-sm">
-								<div className="text-lg font-bold text-green-600">
+							<div className="text-center p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
+								<div className="text-lg font-bold text-gray-700 dark:text-gray-300">
 									{
 										ncalPerformanceData.filter((item) => {
 											const target =
@@ -1174,8 +1174,8 @@ export const SiteAnalytics: React.FC = () => {
 								</div>
 							</div>
 
-							<div className="text-center p-3 bg-red-50 dark:bg-red-900/20 rounded-xl  shadow-sm">
-								<div className="text-lg font-bold text-red-600">
+							<div className="text-center p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
+								<div className="text-lg font-bold text-gray-700 dark:text-gray-300">
 									{
 										ncalPerformanceData.filter((item) => {
 											const target =
@@ -1190,8 +1190,8 @@ export const SiteAnalytics: React.FC = () => {
 								</div>
 							</div>
 
-							<div className="text-center p-3 bg-blue-50 dark:bg-blue-900/20 rounded-xl shadow-sm">
-								<div className="text-lg font-bold text-blue-600">
+							<div className="text-center p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
+								<div className="text-lg font-bold text-gray-700 dark:text-gray-300">
 									{ncalPerformanceData.reduce(
 										(sum, item) => sum + item.count,
 										0,
@@ -1202,8 +1202,8 @@ export const SiteAnalytics: React.FC = () => {
 								</div>
 							</div>
 
-							<div className="text-center p-3 bg-orange-50 dark:bg-orange-900/20 rounded-xl shadow-sm">
-								<div className="text-lg font-bold text-orange-600">
+							<div className="text-center p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
+								<div className="text-lg font-bold text-gray-700 dark:text-gray-300">
 									{formatDurationHMS(
 										ncalPerformanceData.reduce(
 											(sum, item) => sum + item.avgDuration,
@@ -1218,7 +1218,7 @@ export const SiteAnalytics: React.FC = () => {
 						</div>
 
 						{/* Enhanced NCAL Summary */}
-						<div className="mb-6 p-5 bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20 rounded-lg border border-purple-200 dark:border-purple-800">
+						<div className="mb-6 p-5 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
 							<div className="flex items-center justify-between mb-4">
 								<div className="flex items-center gap-2">
 									<TrackChangesIcon className="w-5 h-5 text-purple-600" />
@@ -1227,18 +1227,18 @@ export const SiteAnalytics: React.FC = () => {
 									</div>
 								</div>
 								<div className="flex-shrink-0 ml-4">
-									<Badge 
-										variant={ncalPerformanceData.filter((item) => {
-											const target = NCAL_TARGETS[item.name as keyof typeof NCAL_TARGETS] || 0;
-											return item.avgDuration <= target;
-										}).length >= 3 ? "default" : "danger"}
-										className="text-xs"
-									>
-										{ncalPerformanceData.filter((item) => {
-											const target = NCAL_TARGETS[item.name as keyof typeof NCAL_TARGETS] || 0;
-											return item.avgDuration <= target;
-										}).length >= 3 ? "Good Performance" : "Needs Improvement"}
-									</Badge>
+								<Badge 
+									variant={ncalPerformanceData.filter((item) => {
+										const target = NCAL_TARGETS[item.name as keyof typeof NCAL_TARGETS] || 0;
+										return item.avgDuration <= target;
+									}).length >= 3 ? "default" : "danger"}
+									className="text-xs"
+								>
+									{ncalPerformanceData.filter((item) => {
+										const target = NCAL_TARGETS[item.name as keyof typeof NCAL_TARGETS] || 0;
+										return item.avgDuration <= target;
+									}).length >= 3 ? "Good Performance" : "Needs Improvement"}
+								</Badge>
 								</div>
 							</div>
 							
@@ -1285,7 +1285,7 @@ export const SiteAnalytics: React.FC = () => {
 								return (
 									<div
 										key={item.name}
-										className="p-5 bg-gradient-to-br from-gray-50 to-blue-50 dark:from-zinc-800 dark:to-blue-900/20 rounded-xl shadow-sm border border-blue-200 dark:border-blue-800"
+										className="p-5 bg-gray-50 dark:bg-gray-800/50 rounded-lg"
 									>
 										<div className="flex items-center justify-between mb-3">
 											<div className="flex items-center gap-2">
@@ -1386,7 +1386,7 @@ export const SiteAnalytics: React.FC = () => {
 				</Card>
 
 				{/* Site Incident Trend Analysis */}
-				<div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+				<div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
 					{/* Site Incident Volume Trend */}
 					<Card>
 						<CardHeader className="pb-3">
@@ -1555,18 +1555,18 @@ export const SiteAnalytics: React.FC = () => {
 							</div>
 							
 							{/* Enhanced Chart Insights */}
-							<div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+							<div className="mt-4 p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
 								<div className="flex items-center gap-2 mb-2">
-									<TimelineIcon className="w-4 h-4 text-blue-600" />
-									<div className="text-sm font-medium text-blue-800 dark:text-blue-200">
+									<TimelineIcon className="w-4 h-4 text-gray-600" />
+									<div className="text-sm font-medium text-gray-800 dark:text-gray-200">
 										Trend Analysis
 									</div>
 								</div>
-								<div className="text-xs text-blue-700 dark:text-blue-300">
+								<div className="text-xs text-gray-700 dark:text-gray-300">
 									Incident volume shows an upward trend with 12% increase compared to previous period. 
 									Unique sites affected increased by 8%, indicating broader impact across infrastructure.
 								</div>
-							</div>
+								</div>
 							</div>
 						) : (
 							<div className="text-center py-8 text-gray-500 dark:text-gray-400">
@@ -1709,11 +1709,11 @@ export const SiteAnalytics: React.FC = () => {
 											name="Resolution Rate (%)"
 											strokeWidth={1.5}
 										/>
-								</AreaChart>
-							</ResponsiveContainer>
+									</AreaChart>
+								</ResponsiveContainer>
 						
-						{/* Enhanced Chart Legend */}
-						<div className="mt-4 flex justify-center gap-6">
+							{/* Enhanced Chart Legend */}
+							<div className="mt-4 flex justify-center gap-6">
 								<div className="flex items-center gap-2">
 									<div className="w-3 h-3 bg-blue-500 rounded-full"></div>
 									<span className="text-sm text-muted-foreground">
@@ -1731,19 +1731,19 @@ export const SiteAnalytics: React.FC = () => {
 							</div>
 							
 							{/* Enhanced Chart Insights */}
-							<div className="mt-4 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
+							<div className="mt-4 p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
 								<div className="flex items-center gap-2 mb-2">
-									<CheckCircleIcon className="w-4 h-4 text-green-600" />
-									<div className="text-sm font-medium text-green-800 dark:text-green-200">
+									<CheckCircleIcon className="w-4 h-4 text-gray-600" />
+									<div className="text-sm font-medium text-gray-800 dark:text-gray-200">
 										Performance Insights
 									</div>
 								</div>
-								<div className="text-xs text-green-700 dark:text-green-300">
+								<div className="text-xs text-gray-700 dark:text-gray-300">
 									Resolution times improved by 15 minutes on average, while resolution rates increased by 5%. 
 									This indicates better incident management and faster response times.
 								</div>
+								</div>
 							</div>
-						</div>
 						) : (
 							<div className="text-center py-8 text-gray-500 dark:text-gray-400">
 								<div className="flex flex-col items-center gap-3">
