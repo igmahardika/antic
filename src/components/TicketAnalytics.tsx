@@ -332,6 +332,7 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
 	// State untuk Classification Analytics filtering dan sorting
 	const [classificationSortBy, setClassificationSortBy] = useState<"count" | "trend" | "priority">("count");
 	const [classificationFilter, setClassificationFilter] = useState<"all" | "critical" | "at-risk">("all");
+	
 	const {
 		ticketAnalyticsData,
 		gridData, // filtered tickets
@@ -809,6 +810,7 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
 			a.month.localeCompare(b.month),
 		);
 	}, [gridData]);
+
 
 	// VALIDASI DISTRIBUSI SHIFT DAN PARSING OPENTIME
 	if (typeof window !== "undefined" && process.env.NODE_ENV !== "production") {
@@ -5527,6 +5529,7 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
 					</div>
 				</div>
 			</div>
+
 		</PageWrapper>
 	);
 };

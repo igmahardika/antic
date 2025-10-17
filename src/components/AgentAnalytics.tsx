@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import "ag-grid-community/styles/ag-theme-quartz.css";
 import "./AgentAnalytics.css";
 import EmojiEventsIcon from "@mui/icons-material/EmojiEvents";
@@ -7,7 +7,10 @@ import GroupIcon from "@mui/icons-material/Group";
 import HowToRegIcon from "@mui/icons-material/HowToReg";
 import MoveToInboxIcon from "@mui/icons-material/MoveToInbox";
 import BarChartIcon from "@mui/icons-material/BarChart";
+import TrendingUpIcon from "@mui/icons-material/TrendingUp";
+import SupportIcon from "@mui/icons-material/Support";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
+import ConfirmationNumberIcon from "@mui/icons-material/ConfirmationNumber";
 import FlashOnIcon from "@mui/icons-material/FlashOn";
 import MenuBookIcon from "@mui/icons-material/MenuBook";
 import LightbulbIcon from "@mui/icons-material/Lightbulb";
@@ -16,6 +19,7 @@ import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import InfoIcon from "@mui/icons-material/Info";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 import { useAgentStore } from "@/store/agentStore";
 import { useAgentAnalytics } from "./AgentAnalyticsContext";
@@ -24,7 +28,6 @@ import SummaryCard from "./ui/SummaryCard";
 import TimeFilter from "./TimeFilter";
 import {
 	ListAlt as ListAltIcon,
-	TrendingUp as TrendingUpIcon,
 	Download as DownloadIcon,
 } from "@mui/icons-material";
 import PageWrapper from "./PageWrapper";
@@ -45,8 +48,11 @@ import {
 	ResponsiveContainer,
 	Legend as RechartsLegend,
 	Tooltip,
+	BarChart,
+	Bar,
 } from "recharts";
 import { Badge } from "@/components/ui/badge";
+import { CardHeaderTitle, CardHeaderDescription } from "@/components/ui/CardTypography";
 import * as RadixDialog from "@radix-ui/react-dialog";
 import { logger } from "@/lib/logger";
 import { 
@@ -126,6 +132,16 @@ function toRechartsAgentTrend(
 // Custom Tooltip for AreaChart with improved typography and spacing
 const CustomTooltip = ({ active = false, payload = [], label = "" } = {}) => {
 	if (!active || !payload || !payload.length) return null;
+	
+	// Helper function to format duration values
+	const formatValue = (name, value) => {
+		if (name && name.toLowerCase().includes('duration')) {
+			// Format duration to 2 decimal places
+			return parseFloat(value).toFixed(2);
+		}
+		return value;
+	};
+	
 	return (
 		<div
 			className="bg-card text-card-foreground rounded-xl shadow-lg p-4 max-h-64 overflow-y-auto min-w-[280px] max-w-[350px] text-xs border"
@@ -152,7 +168,7 @@ const CustomTooltip = ({ active = false, payload = [], label = "" } = {}) => {
 							{entry.name}:
 						</span>
 						<span className="ml-auto font-mono text-card-foreground font-medium flex-shrink-0">
-							{entry.value}
+							{formatValue(entry.name, entry.value)}
 						</span>
 					</li>
 				))}
@@ -236,6 +252,284 @@ const AgentAnalytics = () => {
 	const [modalOpen, setModalOpen] = useState(false);
 
 	const [exportYear, setExportYear] = useState("all");
+
+	// ====================== AGENT PERFORMANCE ANALYTICS DATA ======================
+	
+	// Get time-filtered tickets from AgentAnalyticsContext
+	const timeFilteredTickets = useMemo(() => {
+		// Use the same time filtering logic as AgentAnalyticsContext
+		if (!allTickets) return [];
+		if (!startMonth || !endMonth || !selectedYear) return allTickets;
+		if (selectedYear === "ALL") return allTickets;
+		
+		const y = Number(selectedYear);
+		const mStart = Number(startMonth) - 1;
+		const mEnd = Number(endMonth) - 1;
+		const cutoffStart = new Date(y, mStart, 1, 0, 0, 0, 0);
+		const cutoffEnd = new Date(y, mEnd + 1, 0, 23, 59, 59, 999);
+		
+		return allTickets.filter((t) => {
+			if (!t.openTime) return false;
+			const d = new Date(t.openTime);
+			if (isNaN(d.getTime())) return false;
+			return d >= cutoffStart && d <= cutoffEnd;
+		});
+	}, [allTickets, startMonth, endMonth, selectedYear]);
+	
+	// Available agents from time-filtered data
+	const availableAgents = useMemo(() => {
+		if (!Array.isArray(timeFilteredTickets)) return [];
+		const agents = new Set<string>();
+		timeFilteredTickets.forEach((t) => {
+			if (t.openBy && t.openBy.trim()) {
+				agents.add(t.openBy.trim());
+			}
+		});
+		return Array.from(agents).sort();
+	}, [timeFilteredTickets]);
+
+	// Filter data by selected agent (from time-filtered data)
+	const filteredAgentData = useMemo(() => {
+		if (!Array.isArray(timeFilteredTickets)) return [];
+		if (!selectedAgent) return timeFilteredTickets;
+		return timeFilteredTickets.filter((t) => t.openBy === selectedAgent);
+	}, [timeFilteredTickets, selectedAgent]);
+
+	// Helper functions for date parsing and shift detection
+	const parseDateSafe = (dt?: string | Date | null): Date | null => {
+		if (!dt) return null;
+		if (dt instanceof Date) return isNaN(dt.getTime()) ? null : dt;
+		const isoish = dt.includes("T") || dt.includes("Z") ? dt : dt.replace(" ", "T");
+		const d = new Date(isoish);
+		return isNaN(d.getTime()) ? null : d;
+	};
+
+	const toRawHours = (t: any): number | null => {
+		if (t?.duration && typeof t.duration.rawHours === "number")
+			return t.duration.rawHours;
+		const open = parseDateSafe(t?.openTime);
+		const close = parseDateSafe(t?.closeTime);
+		if (!open || !close) return null;
+		const diffH = (close.getTime() - open.getTime()) / 3_600_000;
+		return Number.isFinite(diffH) ? Math.max(0, diffH) : null;
+	};
+
+	const getShift = (dateStr: string) => {
+		const d = parseDateSafe(dateStr);
+		if (!d) return "Unknown";
+		const h = d.getHours();
+		// Malam (01:00–07:59)
+		if (h >= 1 && h < 8) return "Malam";
+		// Pagi (08:00–16:59)
+		if (h >= 8 && h < 17) return "Pagi";
+		// Sore (00:00–00:59 & 17:00–23:59)
+		if (h === 0 || (h >= 17 && h <= 23)) return "Sore";
+		return "Unknown";
+	};
+
+	const formatDurationHMS = (hours: number): string => {
+		const h = Math.floor(hours);
+		const m = Math.floor((hours - h) * 60);
+		const s = Math.floor(((hours - h) * 60 - m) * 60);
+		const pad = (num: number) => num.toString().padStart(2, "0");
+		return `${pad(h)}:${pad(m)}:${pad(s)}`;
+	};
+
+	// Helper function to get shift color
+	const getShiftColor = (shift: string) => {
+		switch (shift) {
+			case "Pagi":
+				return "bg-yellow-100 text-yellow-800 border-yellow-200";
+			case "Sore":
+				return "bg-blue-100 text-blue-800 border-blue-200";
+			case "Malam":
+				return "bg-purple-100 text-purple-800 border-purple-200";
+			default:
+				return "bg-gray-100 text-gray-800 border-gray-200";
+		}
+	};
+
+	// Agent performance data for charts
+	const agentPerformanceData = useMemo(() => {
+		if (!Array.isArray(filteredAgentData)) return [];
+		
+		// Group by month
+		const monthlyData: Record<string, { tickets: number; totalDuration: number; count: number }> = {};
+		
+		filteredAgentData.forEach((t) => {
+			if (!t.openTime) return;
+			const d = new Date(t.openTime);
+			if (isNaN(d.getTime())) return;
+			const month = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+			
+			if (!monthlyData[month]) {
+				monthlyData[month] = { tickets: 0, totalDuration: 0, count: 0 };
+			}
+			
+			monthlyData[month].tickets += 1;
+			const duration = toRawHours(t);
+			if (duration !== null) {
+				monthlyData[month].totalDuration += duration;
+				monthlyData[month].count += 1;
+			}
+		});
+		
+		return Object.entries(monthlyData)
+			.map(([month, data]) => ({
+				month,
+				tickets: data.tickets,
+				avgDuration: data.count > 0 ? data.totalDuration / data.count : 0,
+			}))
+			.sort((a, b) => a.month.localeCompare(b.month));
+	}, [filteredAgentData]);
+
+	// Agent shift data
+	const agentShiftData = useMemo(() => {
+		if (!Array.isArray(filteredAgentData)) return [];
+		
+		const shiftCount: Record<string, { Pagi: number; Sore: number; Malam: number }> = {};
+		
+		filteredAgentData.forEach((t) => {
+			if (!t.openTime) return;
+			const shift = getShift(t.openTime);
+			const agent = t.openBy || "Unknown";
+			
+			if (!shiftCount[agent]) {
+				shiftCount[agent] = { Pagi: 0, Sore: 0, Malam: 0 };
+			}
+			
+			if (shift === "Pagi") shiftCount[agent].Pagi += 1;
+			else if (shift === "Sore") shiftCount[agent].Sore += 1;
+			else if (shift === "Malam") shiftCount[agent].Malam += 1;
+		});
+		
+		return Object.entries(shiftCount).map(([agent, shifts]) => ({
+			agent,
+			...shifts,
+		}));
+	}, [filteredAgentData]);
+
+	// Agent performance table data
+	const agentPerformanceTable = useMemo(() => {
+		if (!Array.isArray(filteredAgentData)) return [];
+		
+		const agentStats: Record<string, {
+			totalTickets: number;
+			totalDuration: number;
+			shifts: { Pagi: number; Sore: number; Malam: number };
+			firstTicket: Date | null;
+			lastTicket: Date | null;
+		}> = {};
+		
+		filteredAgentData.forEach((t) => {
+			if (!t.openBy) return;
+			const agent = t.openBy;
+			
+			if (!agentStats[agent]) {
+				agentStats[agent] = {
+					totalTickets: 0,
+					totalDuration: 0,
+					shifts: { Pagi: 0, Sore: 0, Malam: 0 },
+					firstTicket: null,
+					lastTicket: null,
+				};
+			}
+			
+			agentStats[agent].totalTickets += 1;
+			
+			const duration = toRawHours(t);
+			if (duration !== null) {
+				agentStats[agent].totalDuration += duration;
+			}
+			
+			const shift = getShift(t.openTime);
+			if (shift === "Pagi") agentStats[agent].shifts.Pagi += 1;
+			else if (shift === "Sore") agentStats[agent].shifts.Sore += 1;
+			else if (shift === "Malam") agentStats[agent].shifts.Malam += 1;
+			
+			const openDate = parseDateSafe(t.openTime);
+			if (openDate) {
+				if (!agentStats[agent].firstTicket || openDate < agentStats[agent].firstTicket) {
+					agentStats[agent].firstTicket = openDate;
+				}
+				if (!agentStats[agent].lastTicket || openDate > agentStats[agent].lastTicket) {
+					agentStats[agent].lastTicket = openDate;
+				}
+			}
+		});
+		
+		return Object.entries(agentStats).map(([name, stats]) => {
+			const avgDuration = stats.totalTickets > 0 ? stats.totalDuration / stats.totalTickets : 0;
+			
+			// Calculate working days between first and last ticket
+			const workingDays = stats.firstTicket && stats.lastTicket 
+				? Math.max(1, Math.ceil((stats.lastTicket.getTime() - stats.firstTicket.getTime()) / (1000 * 60 * 60 * 24)))
+				: 1;
+			
+			const avgDaily = stats.totalTickets / workingDays;
+			const avgMonthly = avgDaily * 30;
+			
+			// Find best shift
+			const bestShift = Object.entries(stats.shifts).reduce((a, b) => 
+				stats.shifts[a[0] as keyof typeof stats.shifts] > stats.shifts[b[0] as keyof typeof stats.shifts] ? a : b
+			)[0];
+			
+			// Calculate performance score (0-100)
+			const performanceScore = Math.min(100, Math.max(0, 
+				(stats.totalTickets * 0.3) + 
+				((100 - Math.min(avgDuration, 48)) * 0.4) + // Lower duration is better
+				((stats.shifts.Pagi + stats.shifts.Sore + stats.shifts.Malam > 0 ? 30 : 0) * 0.3) // Bonus for multi-shift
+			));
+			
+			return {
+				name,
+				totalTickets: stats.totalTickets,
+				avgDaily: avgDaily,
+				avgMonthly: avgMonthly,
+				avgDuration: avgDuration,
+				bestShift: bestShift,
+				performanceScore: performanceScore,
+			};
+		}).sort((a, b) => b.performanceScore - a.performanceScore);
+	}, [filteredAgentData]);
+
+	// Agent summary cards
+	const agentSummaryCards = useMemo(() => {
+		if (!Array.isArray(filteredAgentData)) return [];
+		
+		const totalTickets = filteredAgentData.length;
+		const totalAgents = new Set(filteredAgentData.map(t => t.openBy)).size;
+		const avgTicketsPerAgent = totalAgents > 0 ? totalTickets / totalAgents : 0;
+		
+		const totalDuration = filteredAgentData.reduce((sum, t) => {
+			const duration = toRawHours(t);
+			return sum + (duration || 0);
+		}, 0);
+		const avgDuration = totalTickets > 0 ? totalDuration / totalTickets : 0;
+		
+		return [
+			{
+				title: "Total Tickets",
+				value: totalTickets.toLocaleString(),
+				icon: <ConfirmationNumberIcon className="w-6 h-6" />
+			},
+			{
+				title: "Active Agents",
+				value: totalAgents.toString(),
+				icon: <HowToRegIcon className="w-6 h-6" />
+			},
+			{
+				title: "Avg per Agent",
+				value: avgTicketsPerAgent.toFixed(1),
+				icon: <BarChartIcon className="w-6 h-6" />
+			},
+			{
+				title: "Avg Duration",
+				value: formatDurationHMS(avgDuration),
+				icon: <AccessTimeIcon className="w-6 h-6" />
+			}
+		];
+	}, [filteredAgentData]);
 
 	useEffect(() => {
 		logger.info("Agent Metrics DEBUG:", agentMetrics);
@@ -383,7 +677,7 @@ const AgentAnalytics = () => {
 
 			// ===== GET AGENT DATA =====
 			const agentTickets =
-				allTickets?.filter((t) => t.openBy === selectedAgent) || [];
+				timeFilteredTickets?.filter((t) => t.openBy === selectedAgent) || [];
 			let filteredTickets = agentTickets;
 
 			if (exportYear !== "all") {
@@ -1600,100 +1894,6 @@ const AgentAnalytics = () => {
 				})}
 			</div>
 
-			{/* Agent Performance Trends Section - Professional Design */}
-			{debouncedTrendData.length > 0 && (
-				<div className="mb-12">
-					<div className="mb-6">
-						<h2 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-100 mb-2">
-							Agent Performance Trends
-						</h2>
-						<p className="text-sm text-zinc-600 dark:text-zinc-400">
-							Performance analysis through monthly ticket volume trends
-						</p>
-					</div>
-
-					<Card className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-sm">
-						<CardHeader className="pb-4 pt-6 px-6">
-							<CardTitle className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">
-								Monthly Trends
-							</CardTitle>
-						</CardHeader>
-						<CardContent className="px-6 pb-6">
-							<ResponsiveContainer width="100%" height={320}>
-								<AreaChart
-									data={debouncedTrendData}
-									margin={{ top: 20, right: 30, left: 15, bottom: 20 }}
-								>
-									{/* Clean Grid */}
-									<CartesianGrid
-										strokeDasharray="3 3"
-										vertical={false}
-										stroke="#f3f4f6"
-										strokeOpacity={0.5}
-										className="dark:stroke-zinc-800"
-									/>
-
-									{/* Clean X-Axis */}
-									<XAxis
-										dataKey="label"
-										tickLine={false}
-										axisLine={false}
-										tickMargin={10}
-										minTickGap={25}
-										tick={{ fontSize: 10, fontWeight: 400, fill: "#9ca3af" }}
-										className="dark:text-zinc-500"
-									/>
-
-									{/* Clean Y-Axis */}
-									<YAxis
-										tickLine={false}
-										axisLine={false}
-										tickMargin={10}
-										minTickGap={35}
-										tick={{ fontSize: 10, fontWeight: 400, fill: "#9ca3af" }}
-										className="dark:text-zinc-500"
-									/>
-
-									{/* Enhanced Tooltip */}
-									<RechartsTooltip
-										content={<CustomTooltip />}
-										cursor={{ fill: "#f3f4f6", fillOpacity: 0.3 }}
-									/>
-
-									{/* Clean Legend */}
-									<RechartsLegend
-										verticalAlign="bottom"
-										height={40}
-										iconType="circle"
-										iconSize={6}
-										wrapperStyle={{
-											paddingTop: "12px",
-											fontSize: "10px",
-											fontWeight: "400",
-										}}
-									/>
-
-									{/* Clean Area Charts */}
-									{debouncedDatasets.map((ds, idx) => (
-										<Area
-											key={ds.label}
-											type="monotone"
-											dataKey={ds.label}
-											stroke={
-												ds.color || TREND_COLORS[idx % TREND_COLORS.length]
-											}
-											fill={`url(#colorAgent${idx})`}
-											name={ds.label}
-											strokeWidth={1.5}
-											fillOpacity={0.2}
-										/>
-									))}
-								</AreaChart>
-							</ResponsiveContainer>
-						</CardContent>
-					</Card>
-				</div>
-			)}
 
 			{/* Modal drilldown agent with improved typography */}
 			<RadixDialog.Root
@@ -2231,7 +2431,7 @@ const AgentAnalytics = () => {
 											{(() => {
 												// Calculate overview metrics using all career data
 												const agentTickets =
-													allTickets?.filter(
+													timeFilteredTickets?.filter(
 														(t) => t.openBy === selectedAgent,
 													) || [];
 
@@ -2696,7 +2896,7 @@ const AgentAnalytics = () => {
 											{(() => {
 												// Calculate career metrics with proper validation
 												const agentTickets =
-													allTickets?.filter(
+													timeFilteredTickets?.filter(
 														(t) => t.openBy === selectedAgent,
 													) || [];
 
@@ -3194,7 +3394,7 @@ const AgentAnalytics = () => {
 											{(() => {
 												// Calculate CPI (Career Performance Index)
 												const agentTickets =
-													allTickets?.filter(
+													timeFilteredTickets?.filter(
 														(t) => t.openBy === selectedAgent,
 													) || [];
 												const totalTickets = agentTickets.length;
@@ -3860,7 +4060,7 @@ const AgentAnalytics = () => {
 										<TabsContent value="insights" className="mt-4">
 											{(() => {
 												const agentTickets =
-													allTickets?.filter(
+													timeFilteredTickets?.filter(
 														(t) => t.openBy === selectedAgent,
 													) || [];
 												const totalTickets = agentTickets.length;
@@ -4221,7 +4421,7 @@ const AgentAnalytics = () => {
 																<tbody className="space-y-2">
 																	{(() => {
 																		const agentTickets =
-																			allTickets?.filter(
+																			timeFilteredTickets?.filter(
 																				(t) => t.openBy === selectedAgent,
 																			) || [];
 																		const totalTickets = agentTickets.length;
@@ -4391,6 +4591,398 @@ const AgentAnalytics = () => {
 					</RadixDialog.Content>
 				</RadixDialog.Portal>
 			</RadixDialog.Root>
+
+			{/* ====================== AGENT PERFORMANCE ANALYTICS SECTION ====================== */}
+			<div className="mb-10">
+				<Card className="border-0">
+					<CardHeader className="flex flex-col gap-1 pb-1">
+						<CardTitle className="flex items-center gap-2">
+							<HowToRegIcon className="w-6 h-6 text-green-600" />
+							<CardHeaderTitle className="text-base md:text-lg">
+								Agent Performance Analytics
+							</CardHeaderTitle>
+						</CardTitle>
+						<CardHeaderDescription className="text-xs">
+							Detailed analysis of agent performance, workload distribution, and shift patterns
+						</CardHeaderDescription>
+					</CardHeader>
+					<CardContent>
+						{/* Time Filter Info & Agent Filter Section */}
+						<div className="mb-6">
+							{/* Time Filter Info */}
+							<Card className="mb-4 border-0">
+								<CardContent className="p-4">
+									<div className="flex items-center gap-2 text-sm">
+										<CalendarTodayIcon className="w-4 h-4 text-blue-600" />
+										<span className="font-medium text-foreground">
+											Time Filter Active:
+										</span>
+										<span className="text-muted-foreground">
+											{selectedYear === "ALL" 
+												? "All Years" 
+												: `${startMonth && endMonth ? `${startMonth}/${selectedYear} - ${endMonth}/${selectedYear}` : 'No filter'}`}
+										</span>
+										<span className="text-blue-600 dark:text-blue-400">
+											({timeFilteredTickets.length} tickets)
+										</span>
+									</div>
+								</CardContent>
+							</Card>
+							
+							{/* Agent Filter */}
+							<div className="flex flex-wrap gap-4 items-center">
+								<div className="flex items-center gap-2">
+									<label className="text-sm font-medium text-muted-foreground">
+										Filter Agent:
+									</label>
+									<Select 
+										value={selectedAgent || "all"} 
+										onValueChange={(value) => setSelectedAgent(value === "all" ? null : value)}
+									>
+										<SelectTrigger className="w-[200px]">
+											<SelectValue placeholder="Select agent" />
+										</SelectTrigger>
+										<SelectContent>
+											<SelectItem value="all">All Agents</SelectItem>
+											{availableAgents.map((agent) => (
+												<SelectItem key={agent} value={agent}>
+													{agent}
+												</SelectItem>
+											))}
+										</SelectContent>
+									</Select>
+								</div>
+								<div className="text-sm text-muted-foreground">
+									Showing: {selectedAgent ? `1 agent` : `${availableAgents.length} agents`}
+									{selectedAgent && ` (${filteredAgentData.length} tickets)`}
+								</div>
+							</div>
+						</div>
+
+						{/* Agent Performance Summary Cards */}
+						<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+							{agentSummaryCards.map((card, index) => (
+								<Card key={index} className="border-0">
+									<CardContent className="p-6">
+										<div className="flex items-center justify-between">
+											<div>
+												<p className="text-sm font-medium text-muted-foreground">
+													{card.title}
+												</p>
+												<p className="text-2xl font-bold text-foreground">
+													{card.value}
+												</p>
+											</div>
+											<div className="text-muted-foreground">
+												{card.icon}
+											</div>
+										</div>
+									</CardContent>
+								</Card>
+							))}
+						</div>
+
+						{/* Agent Performance Chart */}
+						<div className="mb-6">
+							<Card className="border-0">
+								<CardHeader className="flex flex-col gap-1 pb-1">
+									<CardTitle className="flex items-center gap-2">
+										<TrendingUpIcon className="w-6 h-6 text-blue-600" />
+										<CardHeaderTitle className="text-base md:text-lg">
+											Agent Performance Over Time
+										</CardHeaderTitle>
+									</CardTitle>
+									<CardHeaderDescription className="text-xs">
+										Ticket volume and performance metrics by agent
+									</CardHeaderDescription>
+								</CardHeader>
+								<CardContent className="p-6">
+									<div className="w-full h-[400px]">
+										<ResponsiveContainer width="100%" height={400}>
+											<AreaChart data={agentPerformanceData}>
+												<defs>
+													<linearGradient id="colorTickets" x1="0" y1="0" x2="0" y2="1">
+														<stop offset="5%" stopColor="#3b82f6" stopOpacity={0.8}/>
+														<stop offset="95%" stopColor="#3b82f6" stopOpacity={0.1}/>
+													</linearGradient>
+													<linearGradient id="colorAvgDuration" x1="0" y1="0" x2="0" y2="1">
+														<stop offset="5%" stopColor="#10b981" stopOpacity={0.8}/>
+														<stop offset="95%" stopColor="#10b981" stopOpacity={0.1}/>
+													</linearGradient>
+												</defs>
+												<CartesianGrid strokeDasharray="3 3" className="opacity-30" />
+												<XAxis 
+													dataKey="month" 
+													tick={{ fontSize: 12 }}
+												/>
+												<YAxis yAxisId="left" tick={{ fontSize: 12 }} />
+												<YAxis yAxisId="right" orientation="right" tick={{ fontSize: 12 }} />
+												<RechartsTooltip 
+													content={<CustomTooltip />}
+													wrapperStyle={{ outline: 'none' }}
+												/>
+												<RechartsLegend />
+												<Area
+													yAxisId="left"
+													type="monotone"
+													dataKey="tickets"
+													stroke="#3b82f6"
+													fill="url(#colorTickets)"
+													name="Tickets Handled"
+												/>
+												<Area
+													yAxisId="right"
+													type="monotone"
+													dataKey="avgDuration"
+													stroke="#10b981"
+													fill="url(#colorAvgDuration)"
+													name="Avg Duration (hours)"
+												/>
+											</AreaChart>
+										</ResponsiveContainer>
+									</div>
+								</CardContent>
+							</Card>
+						</div>
+
+						{/* Agent Shift Analysis */}
+						<div className="mb-6">
+							<Card className="border-0">
+								<CardHeader className="flex flex-col gap-1 pb-1">
+									<CardTitle className="flex items-center gap-2">
+										<BarChartIcon className="w-6 h-6 text-green-600" />
+										<CardHeaderTitle className="text-base md:text-lg">
+											Agent Workload by Shift
+										</CardHeaderTitle>
+									</CardTitle>
+									<CardHeaderDescription className="text-xs">
+										Distribution of ticket handling across different shifts
+									</CardHeaderDescription>
+								</CardHeader>
+								<CardContent className="p-6">
+									<div className="space-y-4">
+										<div className="w-full h-[300px]">
+											<ResponsiveContainer width="100%" height={300}>
+												<BarChart
+													accessibilityLayer
+													data={agentShiftData}
+												>
+													<CartesianGrid vertical={false} stroke="#e5e7eb" />
+													<XAxis
+														dataKey="agent"
+														tickLine={false}
+														tickMargin={10}
+														axisLine={false}
+														tick={{ fill: "#6b7280", fontSize: 12 }}
+														tickFormatter={(value) => value.length > 10 ? value.substring(0, 10) + "..." : value}
+													/>
+													<YAxis
+														tickLine={false}
+														axisLine={false}
+														tickMargin={8}
+														tick={{ fill: "#6b7280", fontSize: 12 }}
+													/>
+													<RechartsTooltip
+														cursor={false}
+														content={<CustomTooltip />}
+														wrapperStyle={{ outline: 'none' }}
+													/>
+													<RechartsLegend />
+													<Bar dataKey="Pagi" fill="#fbbf24" radius={4} name="Pagi (08:00-16:59)" />
+													<Bar dataKey="Sore" fill="#3b82f6" radius={4} name="Sore (00:00-00:59 & 17:00-23:59)" />
+													<Bar dataKey="Malam" fill="#8b5cf6" radius={4} name="Malam (01:00-07:59)" />
+												</BarChart>
+											</ResponsiveContainer>
+										</div>
+									</div>
+								</CardContent>
+							</Card>
+						</div>
+
+						{/* Monthly Trends */}
+						{debouncedTrendData.length > 0 && (
+							<div className="mb-6">
+								<Card className="border-0">
+									<CardHeader className="flex flex-col gap-1 pb-1">
+										<CardTitle className="flex items-center gap-2">
+											<TrendingUpIcon className="w-6 h-6 text-indigo-600" />
+											<CardHeaderTitle className="text-base md:text-lg">
+												Monthly Trends
+											</CardHeaderTitle>
+										</CardTitle>
+										<CardHeaderDescription className="text-xs">
+											Performance analysis through monthly ticket volume trends
+										</CardHeaderDescription>
+									</CardHeader>
+									<CardContent className="p-6">
+										<ResponsiveContainer width="100%" height={320}>
+											<AreaChart
+												data={debouncedTrendData}
+												margin={{ top: 20, right: 30, left: 15, bottom: 20 }}
+											>
+												{/* Clean Grid */}
+												<CartesianGrid
+													strokeDasharray="3 3"
+													vertical={false}
+													stroke="#f3f4f6"
+													strokeOpacity={0.5}
+													className="dark:stroke-zinc-800"
+												/>
+
+												{/* Clean X-Axis */}
+												<XAxis
+													dataKey="label"
+													tickLine={false}
+													axisLine={false}
+													tickMargin={10}
+													minTickGap={25}
+													tick={{ fontSize: 10, fontWeight: 400, fill: "#9ca3af" }}
+													className="dark:text-zinc-500"
+												/>
+
+												{/* Clean Y-Axis */}
+												<YAxis
+													tickLine={false}
+													axisLine={false}
+													tickMargin={10}
+													minTickGap={35}
+													tick={{ fontSize: 10, fontWeight: 400, fill: "#9ca3af" }}
+													className="dark:text-zinc-500"
+												/>
+
+												{/* Enhanced Tooltip */}
+												<RechartsTooltip
+													content={<CustomTooltip />}
+													cursor={{ fill: "#f3f4f6", fillOpacity: 0.3 }}
+												/>
+
+												{/* Clean Legend */}
+												<RechartsLegend
+													verticalAlign="bottom"
+													height={40}
+													iconType="circle"
+													iconSize={6}
+													wrapperStyle={{
+														paddingTop: "12px",
+														fontSize: "10px",
+														fontWeight: "400",
+													}}
+												/>
+
+												{/* Clean Area Charts */}
+												{debouncedDatasets.map((ds, idx) => (
+													<Area
+														key={ds.label}
+														type="monotone"
+														dataKey={ds.label}
+														stroke={
+															ds.color || TREND_COLORS[idx % TREND_COLORS.length]
+														}
+														fill={`url(#colorAgent${idx})`}
+														name={ds.label}
+														strokeWidth={1.5}
+														fillOpacity={0.2}
+													/>
+												))}
+											</AreaChart>
+										</ResponsiveContainer>
+									</CardContent>
+								</Card>
+							</div>
+						)}
+
+						{/* Agent Performance Table */}
+						<div className="mb-6">
+							<Card className="border-0">
+								<CardHeader className="flex flex-col gap-1 pb-1">
+									<CardTitle className="flex items-center gap-2">
+										<SupportIcon className="w-6 h-6 text-purple-600" />
+										<CardHeaderTitle className="text-base md:text-lg">
+											Agent Performance Summary
+										</CardHeaderTitle>
+									</CardTitle>
+									<CardHeaderDescription className="text-xs">
+										Detailed metrics and performance indicators for each agent
+									</CardHeaderDescription>
+								</CardHeader>
+								<CardContent className="p-6">
+									<div className="overflow-x-auto">
+										<table className="w-full border-collapse">
+											<thead>
+												<tr className="border-b border-border">
+													<th className="text-left p-3 font-medium text-muted-foreground">
+														Agent
+													</th>
+													<th className="text-center p-3 font-medium text-muted-foreground">
+														Total Tickets
+													</th>
+													<th className="text-center p-3 font-medium text-muted-foreground">
+														Avg Daily
+													</th>
+													<th className="text-center p-3 font-medium text-muted-foreground">
+														Avg Monthly
+													</th>
+													<th className="text-center p-3 font-medium text-muted-foreground">
+														Avg Duration
+													</th>
+													<th className="text-center p-3 font-medium text-muted-foreground">
+														Best Shift
+													</th>
+													<th className="text-center p-3 font-medium text-muted-foreground">
+														Performance Score
+													</th>
+												</tr>
+											</thead>
+											<tbody>
+												{agentPerformanceTable.map((agent, index) => (
+													<tr key={index} className="border-b border-border hover:bg-muted/50">
+														<td className="p-3 font-medium text-card-foreground">
+															{agent.name}
+														</td>
+														<td className="text-center p-3 text-card-foreground">
+															{agent.totalTickets}
+														</td>
+														<td className="text-center p-3 text-card-foreground">
+															{agent.avgDaily.toFixed(1)}
+														</td>
+														<td className="text-center p-3 text-card-foreground">
+															{agent.avgMonthly.toFixed(1)}
+														</td>
+														<td className="text-center p-3 text-card-foreground">
+															{formatDurationHMS(agent.avgDuration)}
+														</td>
+														<td className="text-center p-3">
+															<Badge 
+																variant="secondary" 
+																className={`text-xs border ${getShiftColor(agent.bestShift)}`}
+															>
+																{agent.bestShift}
+															</Badge>
+														</td>
+														<td className="text-center p-3">
+															<div className="flex items-center justify-center gap-2">
+																<div className="w-16 bg-muted rounded-full h-2">
+																	<div 
+																		className="bg-green-500 h-2 rounded-full transition-all duration-300"
+																		style={{ width: `${agent.performanceScore}%` }}
+																	/>
+																</div>
+																<span className="text-sm font-medium">
+																	{agent.performanceScore.toFixed(0)}%
+																</span>
+															</div>
+														</td>
+													</tr>
+												))}
+											</tbody>
+										</table>
+									</div>
+								</CardContent>
+							</Card>
+						</div>
+					</CardContent>
+				</Card>
+			</div>
 		</PageWrapper>
 	);
 };
