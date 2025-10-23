@@ -97,7 +97,6 @@
     "tailwind-merge": "^2.5.2",
     "tailwindcss-animate": "^1.0.7",
     "tunnel-rat": "^0.1.2",
-    "xlsx": "^0.18.5",
     "zustand": "^5.0.6"
   },
   "devDependencies": {

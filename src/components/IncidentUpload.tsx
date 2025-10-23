@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from "react";
 import { useDropzone } from "react-dropzone";
-import * as XLSX from "xlsx";
+import * as ExcelJS from "exceljs";
 import { Incident } from "@/types/incident";
 import {
 	mkId,
@@ -399,11 +399,9 @@ export const IncidentUpload: React.FC = () => {
 			// Create upload session for tracking
 			session = await createUploadSession(file, 'incidents');
 			
-			// Penting: cellDates:true agar tanggal jadi Date, bukan angka
-			const workbook = XLSX.read(await file.arrayBuffer(), {
-				type: "array",
-				cellDates: true,
-			});
+			// Read workbook using ExcelJS
+			const workbook = new ExcelJS.Workbook();
+			await workbook.xlsx.load(await file.arrayBuffer());
 
 			const allRows: Incident[] = [];
 			const errors: string[] = [];
@@ -414,6 +412,8 @@ export const IncidentUpload: React.FC = () => {
 			let totalRowsProcessed = 0;
 			let skippedRows = 0;
 
+			const sheetNames = workbook.worksheets.map(ws => ws.name);
+			
 			uploadLog.push({
 				type: "info",
 				row: 0,
@@ -422,19 +422,31 @@ export const IncidentUpload: React.FC = () => {
 				details: {
 					fileSize: file.size,
 					fileType: file.type,
-					sheets: workbook.SheetNames,
+					sheets: sheetNames,
 				},
 			});
 
-			for (const sheetName of workbook.SheetNames) {
-				const ws = workbook.Sheets[sheetName];
-				if (!ws) continue;
-				// raw:true → nilai asli (Date untuk tanggal jika cellDates:true)
-				// defval:null → cell kosong jadi null, bukan undefined
-				const rows: any[][] = XLSX.utils.sheet_to_json(ws, {
-					header: 1,
-					raw: true,
-					defval: null,
+			for (const worksheet of workbook.worksheets) {
+				const sheetName = worksheet.name;
+				
+				// Convert worksheet to array of arrays
+				const rows: any[][] = [];
+				worksheet.eachRow((row, _rowNumber) => {
+					const rowValues: any[] = [];
+					row.eachCell({ includeEmpty: true }, (cell, colNumber) => {
+						// Get cell value, handle dates properly
+						let value = cell.value;
+						if (value instanceof Date) {
+							// Keep as Date object
+							rowValues[colNumber - 1] = value;
+						} else if (cell.type === ExcelJS.ValueType.Date) {
+							// Convert Excel date number to Date
+							rowValues[colNumber - 1] = new Date(cell.value as number);
+						} else {
+							rowValues[colNumber - 1] = value ?? null;
+						}
+					});
+					rows.push(rowValues);
 				});
 				if (!rows || rows.length === 0) {
 					uploadLog.push({
@@ -861,10 +873,9 @@ export const IncidentUpload: React.FC = () => {
 					}
 				}
 
+				const sheetIndex = workbook.worksheets.findIndex(ws => ws.name === sheetName);
 				setProgress(
-					((workbook.SheetNames.indexOf(sheetName) + 1) /
-						workbook.SheetNames.length) *
-						50,
+					((sheetIndex + 1) / workbook.worksheets.length) * 50,
 				);
 			}
 
