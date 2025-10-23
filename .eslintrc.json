@@ -1,0 +1,9 @@
+{
+  "extends": ["react-app", "plugin:@typescript-eslint/recommended"],
+  "plugins": ["react-hooks", "import", "sonarjs"],
+  "rules": {
+    "react-hooks/exhaustive-deps": "warn",
+    "import/no-duplicates": "error",
+    "sonarjs/no-duplicate-string": ["warn", { "threshold": 5 }]
+  }
+}

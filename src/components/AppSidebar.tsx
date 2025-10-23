@@ -97,11 +97,11 @@ export default function AppSidebar() {
 					path: "/incident/ts-analytics",
 					icon: <ScienceIcon sx={{ fontSize: 16 }} />,
 				},
-				{
-					name: "Site Analytics",
-					path: "/incident/site-analytics",
-					icon: <GroupIcon sx={{ fontSize: 16 }} />,
-				},
+			{
+				name: "Site Analytics",
+				path: "/incident/site-analytics",
+				icon: <GroupIcon sx={{ fontSize: 16 }} />,
+			},
 			],
 		},
 		// Escalation menus removed as requested

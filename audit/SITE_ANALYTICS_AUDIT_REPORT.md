@@ -228,3 +228,5 @@ Risk Score = (Incident Count × 10) + (Avg Duration in hours × 2) + (100 - Reso
 
 SiteAnalytics.tsx adalah komponen yang sudah sangat optimal dan tidak memerlukan perubahan. Semua fitur berfungsi dengan sempurna dan memberikan nilai bisnis yang tinggi.
 
+
+

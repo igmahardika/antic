@@ -220,11 +220,11 @@ function AppLayout() {
 									path="/incident/ts-analytics"
 									element={<TSAnalytics />}
 								/>
-								<Route
-									path="/incident/site-analytics"
-									element={<SiteAnalytics />}
-								/>
-								{/* Escalation routes removed */}
+				<Route
+					path="/incident/site-analytics"
+					element={<SiteAnalytics />}
+				/>
+				{/* Escalation routes removed */}
 								<Route
 									path="/documentation/admin-rumus"
 									element={<Formulas />}
