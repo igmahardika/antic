@@ -474,9 +474,9 @@ export async function computeStats(range?: {
 }): Promise<IncidentStats> {
 	const rows = range
 		? await db.incidents
-				.where("startTime")
-				.between(range.from, range.to, true, true)
-				.toArray()
+			.where("startTime")
+			.between(range.from, range.to, true, true)
+			.toArray()
 		: await db.incidents.toArray();
 
 	const total = rows.length;
@@ -487,16 +487,16 @@ export async function computeStats(range?: {
 	const closed = rows.filter((r) => r.endTime && (r.durationMin ?? 0) > 0);
 	const mttrMin = closed.length
 		? Math.round(
-				closed.reduce((a, b) => a + (b.durationMin || 0), 0) / closed.length,
-			)
+			closed.reduce((a, b) => a + (b.durationMin || 0), 0) / closed.length,
+		)
 		: 0;
 
 	const withVendor = rows.filter((r) => (r.durationVendorMin ?? 0) > 0);
 	const avgVendorMin = withVendor.length
 		? Math.round(
-				withVendor.reduce((a, b) => a + (b.durationVendorMin || 0), 0) /
-					withVendor.length,
-			)
+			withVendor.reduce((a, b) => a + (b.durationVendorMin || 0), 0) /
+			withVendor.length,
+		)
 		: 0;
 
 	const durSum = rows.reduce((a, b) => a + (b.durationMin || 0), 0);
@@ -712,7 +712,7 @@ export async function validateAndRepairDatabase(): Promise<{
 			`[validateAndRepairDatabase] Found ${allIncidents.length} incidents in database`,
 		);
 
-		const incidentsToUpdate: any[] = [];
+		const incidentsToUpdate: Incident[] = [];
 		const incidentsToDelete: string[] = [];
 
 		for (const incident of allIncidents) {
@@ -820,7 +820,7 @@ export async function validateAndRepairDatabase(): Promise<{
 						incident.startPause1 = null;
 						needsUpdate = true;
 					}
-				} catch (error) {
+				} catch {
 					incident.startPause1 = null;
 					needsUpdate = true;
 				}
@@ -833,7 +833,7 @@ export async function validateAndRepairDatabase(): Promise<{
 						incident.endPause1 = null;
 						needsUpdate = true;
 					}
-				} catch (error) {
+				} catch {
 					incident.endPause1 = null;
 					needsUpdate = true;
 				}
@@ -846,7 +846,7 @@ export async function validateAndRepairDatabase(): Promise<{
 						incident.startPause2 = null;
 						needsUpdate = true;
 					}
-				} catch (error) {
+				} catch {
 					incident.startPause2 = null;
 					needsUpdate = true;
 				}
@@ -859,7 +859,7 @@ export async function validateAndRepairDatabase(): Promise<{
 						incident.endPause2 = null;
 						needsUpdate = true;
 					}
-				} catch (error) {
+				} catch {
 					incident.endPause2 = null;
 					needsUpdate = true;
 				}
@@ -965,7 +965,7 @@ export async function validateAndRepairDatabase(): Promise<{
 }
 
 // Fungsi perhitungan durasi yang tidak bergantung pada IndexedDB
-export const calculateCustomDuration = (incident: any): number => {
+export const calculateCustomDuration = (incident: Incident): number => {
 	// Use the corrected durationMin that was fixed by our automatic fix
 	if (incident.durationMin && incident.durationMin > 0) {
 		return incident.durationMin;
@@ -985,19 +985,19 @@ export const calculateCustomDuration = (incident: any): number => {
 };
 
 // Fungsi perhitungan durasi net (durasi dikurangi pause time)
-export const calculateNetDuration = (incident: any): number => {
+export const calculateNetDuration = (incident: Incident): number => {
 	const baseDuration = calculateCustomDuration(incident);
 	const pauseTime = safeMinutes(
 		incident.totalDurationPauseMin ||
-			incident.pauseDuration ||
-			incident.pauseTime ||
-			0,
+		incident.pauseDuration ||
+		incident.pauseTime ||
+		0,
 	);
 	return Math.max(0, baseDuration - pauseTime);
 };
 
 // Fungsi perhitungan durasi Waneda (untuk TS Analytics)
-export const getWanedaDuration = (incident: any): number => {
+export const getWanedaDuration = (incident: Incident): number => {
 	// Waneda formula: Duration Vendor - Total Duration Pause - Total Duration Vendor
 	let duration = 0;
 	if (incident.durationVendorMin && incident.durationVendorMin > 0) {
@@ -1016,7 +1016,7 @@ export const getWanedaDuration = (incident: any): number => {
 export const safeMinutes = (m?: number | null) => (m && m > 0 ? m : 0);
 
 // Fungsi perhitungan statistik yang tidak bergantung pada IndexedDB
-export const calculateIncidentStats = (incidents: any[]) => {
+export const calculateIncidentStats = (incidents: Incident[]) => {
 	if (!incidents || incidents.length === 0) {
 		return {
 			total: 0,
@@ -1046,9 +1046,9 @@ export const calculateIncidentStats = (incidents: any[]) => {
 	const avgDuration =
 		incidentsWithDuration.length > 0
 			? incidentsWithDuration.reduce(
-					(sum, i) => sum + calculateCustomDuration(i),
-					0,
-				) / incidentsWithDuration.length
+				(sum, i) => sum + calculateCustomDuration(i),
+				0,
+			) / incidentsWithDuration.length
 			: 0;
 
 	// Calculate average net duration
@@ -1058,9 +1058,9 @@ export const calculateIncidentStats = (incidents: any[]) => {
 	const avgNetDuration =
 		incidentsWithNetDuration.length > 0
 			? incidentsWithNetDuration.reduce(
-					(sum, i) => sum + calculateNetDuration(i),
-					0,
-				) / incidentsWithNetDuration.length
+				(sum, i) => sum + calculateNetDuration(i),
+				0,
+			) / incidentsWithNetDuration.length
 			: 0;
 
 	// Calculate NCAL distribution
@@ -1137,7 +1137,7 @@ export const normalizeNCAL = (ncal: string | null | undefined): string => {
 };
 
 // Fungsi filter incidents yang tidak bergantung pada IndexedDB
-export const filterIncidents = (incidents: any[], filter: any) => {
+export const filterIncidents = (incidents: Incident[], filter: IncidentFilter) => {
 	let filtered = [...incidents];
 
 	// Filter by date range
@@ -1203,7 +1203,7 @@ export const filterIncidents = (incidents: any[], filter: any) => {
 
 // Fungsi pagination yang tidak bergantung pada IndexedDB
 export const paginateIncidents = (
-	incidents: any[],
+	incidents: Incident[],
 	page: number = 1,
 	limit: number = 50,
 ) => {
