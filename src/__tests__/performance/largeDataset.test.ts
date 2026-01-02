@@ -1,9 +1,38 @@
 import { describe, test, expect } from 'vitest';
 
+interface Ticket {
+  id: number;
+  openTime: string;
+  closeTime?: string | null;
+  status: string;
+  customerId?: string;
+  name?: string;
+  category: string;
+  description?: string;
+  handlingDuration?: {
+    rawHours: number;
+  };
+}
+
+interface Customer {
+  customerId: string;
+  name: string;
+  ticketCount: number;
+  totalHandlingDuration: number;
+  riskLevel: string;
+}
+
+interface TestItem {
+  id: number;
+  value: number;
+  processed?: boolean;
+  timestamp?: number;
+}
+
 // Test for handling large datasets
 describe('Large Dataset Performance', () => {
   test('processes 10000 tickets without memory issues', () => {
-    const generateLargeDataset = (count: number) => {
+    const generateLargeDataset = (count: number): Ticket[] => {
       return Array.from({ length: count }, (_, i) => ({
         id: i,
         openTime: new Date(2024, Math.floor(Math.random() * 12), Math.floor(Math.random() * 28) + 1).toISOString(),
@@ -19,23 +48,23 @@ describe('Large Dataset Performance', () => {
       }));
     };
 
-    const processTickets = (tickets: any[]) => {
+    const processTickets = (tickets: Ticket[]) => {
       const start = performance.now();
-      
+
       // Simulate processing
       const processed = tickets.map(ticket => ({
         ...ticket,
         isValid: !!ticket.openTime && !!ticket.customerId,
         duration: ticket.handlingDuration?.rawHours || 0
       }));
-      
+
       const end = performance.now();
       return { processed, processingTime: end - start };
     };
 
     const largeDataset = generateLargeDataset(10000);
     const result = processTickets(largeDataset);
-    
+
     expect(result.processed).toHaveLength(10000);
     expect(result.processingTime).toBeLessThan(1000); // Should complete in under 1 second
   });
@@ -51,7 +80,7 @@ describe('Large Dataset Performance', () => {
       }));
     };
 
-    const paginateCustomers = (customers: any[], pageSize: number, currentPage: number) => {
+    const paginateCustomers = (customers: Customer[], pageSize: number, currentPage: number) => {
       const startIndex = (currentPage - 1) * pageSize;
       const endIndex = startIndex + pageSize;
       return customers.slice(startIndex, endIndex);
@@ -60,11 +89,11 @@ describe('Large Dataset Performance', () => {
     const largeCustomerDataset = generateCustomers(50000);
     const pageSize = 100;
     const currentPage = 1;
-    
+
     const start = performance.now();
     const paginatedCustomers = paginateCustomers(largeCustomerDataset, pageSize, currentPage);
     const end = performance.now();
-    
+
     expect(paginatedCustomers).toHaveLength(pageSize);
     expect(end - start).toBeLessThan(100); // Should be very fast
   });
@@ -79,7 +108,7 @@ describe('Large Dataset Performance', () => {
       }));
     };
 
-    const filterTickets = (tickets: any[], filters: { status?: string; category?: string }) => {
+    const filterTickets = (tickets: Partial<Ticket>[], filters: { status?: string; category?: string }) => {
       return tickets.filter(ticket => {
         if (filters.status && ticket.status !== filters.status) return false;
         if (filters.category && ticket.category !== filters.category) return false;
@@ -89,11 +118,11 @@ describe('Large Dataset Performance', () => {
 
     const largeTicketDataset = generateTickets(20000);
     const filters = { status: 'Open', category: 'Network' };
-    
+
     const start = performance.now();
     const filteredTickets = filterTickets(largeTicketDataset, filters);
     const end = performance.now();
-    
+
     expect(filteredTickets.length).toBeGreaterThan(0);
     expect(end - start).toBeLessThan(500); // Should complete in under 500ms
   });
@@ -102,28 +131,29 @@ describe('Large Dataset Performance', () => {
 // Test for memory usage
 describe('Memory Usage', () => {
   test('does not leak memory with repeated operations', () => {
-    const processData = (data: any[]) => {
+    const processData = (data: TestItem[]) => {
       // Simulate data processing that might cause memory leaks
       const processed = data.map(item => ({
         ...item,
         processed: true,
         timestamp: Date.now()
       }));
-      
+
       // Clean up references
       return processed.map(item => {
-        const { processed, timestamp, ...cleanItem } = item;
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { processed: _p, timestamp: _t, ...cleanItem } = item;
         return cleanItem;
       });
     };
 
     const testData = Array.from({ length: 1000 }, (_, i) => ({ id: i, value: Math.random() }));
-    
+
     // Run multiple iterations to test for memory leaks
     for (let i = 0; i < 10; i++) {
       const result = processData(testData);
       expect(result).toHaveLength(1000);
-      
+
       // Force garbage collection if available
       if (global.gc) {
         global.gc();
@@ -133,7 +163,7 @@ describe('Memory Usage', () => {
 
   test('handles large objects efficiently', () => {
     const createLargeObject = (size: number) => {
-      const obj: any = {};
+      const obj: Record<string, any> = {};
       for (let i = 0; i < size; i++) {
         obj[`key${i}`] = {
           id: i,
@@ -149,18 +179,18 @@ describe('Memory Usage', () => {
 
     const largeObject = createLargeObject(1000);
     const start = performance.now();
-    
+
     // Simulate processing the large object
     const keys = Object.keys(largeObject);
-    const values = Object.values(largeObject);
+    // const values = Object.values(largeObject); // Unused
     const processed = keys.map(key => ({
       key,
       hasData: !!largeObject[key].data,
       arrayLength: largeObject[key].nested.array.length
     }));
-    
+
     const end = performance.now();
-    
+
     expect(processed).toHaveLength(1000);
     expect(end - start).toBeLessThan(200); // Should complete quickly
   });
@@ -169,7 +199,7 @@ describe('Memory Usage', () => {
 // Test for concurrent operations
 describe('Concurrent Operations', () => {
   test('handles multiple concurrent data processing', async () => {
-    const processDataAsync = async (data: any[], delay: number) => {
+    const processDataAsync = async (data: { id: number, type: string }[], delay: number) => {
       await new Promise(resolve => setTimeout(resolve, delay));
       return data.map(item => ({ ...item, processed: true }));
     };
@@ -181,14 +211,14 @@ describe('Concurrent Operations', () => {
     ];
 
     const start = performance.now();
-    
-    const promises = datasets.map((dataset, index) => 
+
+    const promises = datasets.map((dataset, index) =>
       processDataAsync(dataset, index * 10)
     );
-    
+
     const results = await Promise.all(promises);
     const end = performance.now();
-    
+
     expect(results).toHaveLength(3);
     expect(results[0]).toHaveLength(100);
     expect(results[1]).toHaveLength(100);
@@ -205,13 +235,13 @@ describe('Concurrent Operations', () => {
     };
 
     const start = performance.now();
-    
+
     // Simulate concurrent updates
-    const promises = Array.from({ length: 100 }, (_, i) => updateCounter(1));
+    const promises = Array.from({ length: 100 }, () => updateCounter(1));
     await Promise.all(promises);
-    
+
     const end = performance.now();
-    
+
     // Note: This test might fail due to race conditions, which is expected
     // In real code, you would use proper synchronization mechanisms
     expect(counter).toBeGreaterThan(0);
