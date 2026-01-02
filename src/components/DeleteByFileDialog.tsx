@@ -29,22 +29,19 @@ export default function DeleteByFileDialog({ dataType, onClose, onDeleted }: Pro
       try {
         // Clean up empty sessions first
         await cleanupEmptySessions(dataType);
-        
+
         let sessions = await listUploadHistory(dataType);
-        console.log('Upload history for', dataType, ':', sessions);
-        
+
         // If no sessions found but data exists, create a legacy session
         if (sessions.length === 0) {
-          console.log('No upload sessions found, checking for existing data...');
           try {
             const legacySession = await createUploadSessionForExistingData(dataType, 'legacy-data');
-            console.log('Created legacy session:', legacySession);
             sessions = [legacySession];
           } catch (error) {
             console.error('Failed to create legacy session:', error);
           }
         }
-        
+
         setHistory(sessions);
       } catch (error) {
         console.error('Error loading upload history:', error);
@@ -59,17 +56,17 @@ export default function DeleteByFileDialog({ dataType, onClose, onDeleted }: Pro
     setLoading(true); setErr(null);
     try {
       const { deletedCount, session } = await deleteByFile(selected, dataType);
-      
+
       // Clean up empty sessions and refresh the history list after successful deletion
       await cleanupEmptySessions(dataType);
       const updatedHistory = await listUploadHistory(dataType);
       setHistory(updatedHistory);
-      
+
       // Reset selection
       setSelected('');
-      
+
       onDeleted?.({ fileName: session.fileName, deletedCount });
-      
+
       // Only close if no more files available, otherwise keep dialog open
       if (updatedHistory.length === 0) {
         onClose();

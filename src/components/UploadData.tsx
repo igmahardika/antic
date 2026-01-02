@@ -141,7 +141,6 @@ const UploadData = ({ onUploadComplete }: UploadProcessProps) => {
 		let session;
 		try {
 			session = await createUploadSession(file, 'tickets');
-			console.log('Created upload session:', session);
 		} catch (error) {
 			console.error('Failed to create upload session:', error);
 		}
@@ -222,7 +221,7 @@ const UploadData = ({ onUploadComplete }: UploadProcessProps) => {
 			}
 		} catch (error) {
 			logger.error("Error processing file:", error);
-			
+
 			// Finalize upload session with error status
 			if (session) {
 				try {
@@ -235,7 +234,7 @@ const UploadData = ({ onUploadComplete }: UploadProcessProps) => {
 					console.error('Failed to finalize upload session:', finalizeError);
 				}
 			}
-			
+
 			alert(
 				`Error processing file: ${error instanceof Error ? error.message : "Unknown error"}`,
 			);
@@ -278,9 +277,9 @@ const UploadData = ({ onUploadComplete }: UploadProcessProps) => {
 				batchId: session ? session.id : null,
 				uploadSessionId: session ? session.id : null
 			}));
-			
+
 			await db.tickets.bulkPut(enrichedTickets);
-			
+
 			// Finalize upload session
 			if (session) {
 				await finalizeUploadSession(session.id, {

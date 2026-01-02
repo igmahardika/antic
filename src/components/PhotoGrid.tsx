@@ -2,11 +2,11 @@ import React, { useState } from 'react';
 import { Button } from './ui/button';
 import { Card, CardContent } from './ui/card';
 import { Badge } from './ui/badge';
-import { 
-  Trash2, 
-  Edit3, 
-  Image as ImageIcon, 
-  User, 
+import {
+  Trash2,
+  Edit3,
+  Image as ImageIcon,
+  User,
   AlertCircle,
   CheckCircle,
   XCircle
@@ -31,11 +31,11 @@ interface PhotoGridProps {
   loading?: boolean;
 }
 
-const PhotoGrid: React.FC<PhotoGridProps> = ({ 
-  photos, 
-  onDelete, 
-  onReplace, 
-  loading = false 
+const PhotoGrid: React.FC<PhotoGridProps> = ({
+  photos,
+  onDelete,
+  onReplace,
+  loading = false
 }) => {
   const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null);
   const [replaceFile, setReplaceFile] = useState<File | null>(null);
@@ -133,13 +133,12 @@ const PhotoGrid: React.FC<PhotoGridProps> = ({
         {photos.map((photo) => {
           const status = getPhotoStatus(photo);
           const isSelected = selectedPhoto === photo.id;
-          
+
           return (
-            <Card 
-              key={photo.id} 
-              className={`relative group transition-all duration-200 hover:shadow-lg ${
-                isSelected ? 'ring-2 ring-blue-500' : ''
-              }`}
+            <Card
+              key={photo.id}
+              className={`relative group transition-all duration-200 hover:shadow-lg ${isSelected ? 'ring-2 ring-blue-500' : ''
+                }`}
             >
               <CardContent className="p-4">
                 {/* Photo Preview */}
@@ -154,14 +153,11 @@ const PhotoGrid: React.FC<PhotoGridProps> = ({
                       target.style.display = 'none';
                       target.nextElementSibling?.classList.remove('hidden');
                     }}
-                    onLoad={() => {
-                      console.log('Image loaded successfully:', photo.filePath);
-                    }}
                   />
                   <div className="hidden absolute inset-0 flex items-center justify-center">
                     <User className="w-8 h-8 text-gray-400" />
                   </div>
-                  
+
                   {/* Status Badge */}
                   <div className="absolute top-2 right-2">
                     <Badge className={`text-xs ${getStatusColor(status)}`}>
@@ -175,7 +171,7 @@ const PhotoGrid: React.FC<PhotoGridProps> = ({
                   <h4 className="font-semibold text-sm text-gray-900 dark:text-gray-100 truncate">
                     {photo.agentName}
                   </h4>
-                  
+
                   <div className="text-xs text-gray-500 dark:text-gray-400 space-y-1">
                     <p>{formatFileSize(photo.fileSize)}</p>
                     <p>Upload: {formatDate(photo.uploadDate)}</p>
@@ -216,7 +212,7 @@ const PhotoGrid: React.FC<PhotoGridProps> = ({
             <h4 className="font-semibold mb-3 text-gray-900 dark:text-gray-100">
               Replace Photo
             </h4>
-            
+
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -229,7 +225,7 @@ const PhotoGrid: React.FC<PhotoGridProps> = ({
                   className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
                 />
               </div>
-              
+
               {replaceFile && (
                 <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
                   <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
@@ -240,7 +236,7 @@ const PhotoGrid: React.FC<PhotoGridProps> = ({
                   </p>
                 </div>
               )}
-              
+
               <div className="flex justify-end space-x-2">
                 <Button
                   variant="outline"
