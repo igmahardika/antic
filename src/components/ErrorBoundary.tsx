@@ -1,4 +1,4 @@
-```
+
 import React from 'react';
 
 interface ErrorBoundaryProps {
@@ -14,7 +14,7 @@ interface ErrorBoundaryState {
 export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
   constructor(props: ErrorBoundaryProps) {
     super(props);
-    this.state = { 
+    this.state = {
       hasError: false,
       error: null,
       errorInfo: null
@@ -50,11 +50,11 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
                 </svg>
               </div>
             </div>
-            
+
             <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">
               Something went wrong
             </h2>
-            
+
             <p className="text-gray-600 dark:text-gray-400 mb-6">
               We're sorry, but an unexpected error occurred. Please try reloading the page.
             </p>
@@ -88,4 +88,3 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
     return this.props.children;
   }
 }
-```

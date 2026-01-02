@@ -989,8 +989,8 @@ export const calculateNetDuration = (incident: Incident): number => {
 	const baseDuration = calculateCustomDuration(incident);
 	const pauseTime = safeMinutes(
 		incident.totalDurationPauseMin ||
-		incident.pauseDuration ||
-		incident.pauseTime ||
+		(incident as any).pauseDuration ||
+		(incident as any).pauseTime ||
 		0,
 	);
 	return Math.max(0, baseDuration - pauseTime);
