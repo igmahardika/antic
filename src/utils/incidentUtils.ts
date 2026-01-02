@@ -989,7 +989,9 @@ export const calculateNetDuration = (incident: Incident): number => {
 	const baseDuration = calculateCustomDuration(incident);
 	const pauseTime = safeMinutes(
 		incident.totalDurationPauseMin ||
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
 		(incident as any).pauseDuration ||
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
 		(incident as any).pauseTime ||
 		0,
 	);
