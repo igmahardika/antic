@@ -4,6 +4,10 @@ import ReactDOM from "react-dom/client";
 import App from "./App.tsx";
 import "./index.css";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { initPerformanceMonitoring } from "@/lib/performance";
+
+// Initialize performance monitoring
+initPerformanceMonitoring();
 
 // No-flash script to prevent theme flashing
 const noFlashScript = `
@@ -23,9 +27,9 @@ script.innerHTML = noFlashScript;
 document.head.appendChild(script);
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
-	<React.StrictMode>
-		<ErrorBoundary>
-			<App />
-		</ErrorBoundary>
-	</React.StrictMode>,
+  <React.StrictMode>
+    <ErrorBoundary>
+      <App />
+    </ErrorBoundary>
+  </React.StrictMode>,
 );
