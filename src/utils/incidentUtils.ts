@@ -2,7 +2,9 @@ import { Incident, IncidentStats, IncidentFilter } from "@/types/incident";
 import { db } from "@/lib/db";
 import { logger } from "@/lib/logger";
 
-// Helper untuk konversi Excel serial date ke JavaScript Date
+/**
+ * Convert Excel serial date to JavaScript Date
+ */
 const excelSerialToDate = (serial: number): Date => {
 	// Excel serial date: days since January 1, 1900
 	// JavaScript Date: milliseconds since January 1, 1970 (Unix epoch)
@@ -467,7 +469,9 @@ export async function saveIncidentsChunked(rows: Incident[], chunkSize = 2000) {
 	return finalCount;
 }
 
-// Compute stats dari data incident
+/**
+ * Compute statistics from incident data
+ */
 export async function computeStats(range?: {
 	from: string;
 	to: string;
@@ -532,7 +536,9 @@ export async function computeStats(range?: {
 	};
 }
 
-// Query incidents dengan filter
+/**
+ * Query incidents with filters
+ */
 export async function queryIncidents(
 	filter: IncidentFilter,
 ): Promise<{ rows: Incident[]; total: number }> {
@@ -581,7 +587,9 @@ export async function queryIncidents(
 	return { rows, total };
 }
 
-// Format durasi dari menit ke HH:MM:SS
+/**
+ * Format duration from minutes to HH:MM:SS
+ */
 export const formatDurationHMS = (minutes: number): string => {
 	if (!minutes || isNaN(minutes) || minutes < 0) return "00:00:00";
 	const totalSeconds = Math.floor(minutes * 60);
@@ -964,7 +972,9 @@ export async function validateAndRepairDatabase(): Promise<{
 	}
 }
 
-// Fungsi perhitungan durasi yang tidak bergantung pada IndexedDB
+/**
+ * Calculate duration not depending on IndexedDB
+ */
 export const calculateCustomDuration = (incident: Incident): number => {
 	// Use the corrected durationMin that was fixed by our automatic fix
 	if (incident.durationMin && incident.durationMin > 0) {
@@ -984,7 +994,9 @@ export const calculateCustomDuration = (incident: Incident): number => {
 	return 0;
 };
 
-// Fungsi perhitungan durasi net (durasi dikurangi pause time)
+/**
+ * Calculate net duration (duration minus pause time)
+ */
 export const calculateNetDuration = (incident: Incident): number => {
 	const baseDuration = calculateCustomDuration(incident);
 	const pauseTime = safeMinutes(
