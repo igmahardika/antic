@@ -3,7 +3,7 @@ import { describe, it, expect, vi } from 'vitest';
 import TicketData from '../../components/TicketData';
 import { ITicket } from '@/lib/db';
 import { BrowserRouter } from 'react-router-dom';
-import React from 'react';
+
 
 // Mock AnalyticsContext
 vi.mock('../../components/AnalyticsContext', () => ({
@@ -12,7 +12,8 @@ vi.mock('../../components/AnalyticsContext', () => ({
 
 // Mock Dexie hooks
 vi.mock('dexie-react-hooks', () => ({
-    useLiveQuery: (fn: any, deps: any, defaultVal: any) => defaultVal || []
+    useLiveQuery: (_fn: any, _deps: any, defaultVal: any) => defaultVal || []
+
 }));
 
 // Mock DB
