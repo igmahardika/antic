@@ -1,9 +1,17 @@
 import { describe, test, expect } from 'vitest';
 
+interface Ticket {
+  openTime?: string;
+  status?: string;
+  duration?: {
+    rawHours: number;
+  };
+}
+
 // Test for date parsing functionality
 describe('Date Parsing', () => {
   test('parses dates correctly', () => {
-    const parseDateSafe = (dateString: string): Date | null => {
+    const parseDateSafe = (dateString: string | null): Date | null => {
       if (!dateString) return null;
       const date = new Date(dateString);
       return isNaN(date.getTime()) ? null : date;
@@ -14,7 +22,7 @@ describe('Date Parsing', () => {
     expect(parseDateSafe('01/01/2024')).toBeInstanceOf(Date);
     expect(parseDateSafe('invalid-date')).toBeNull();
     expect(parseDateSafe('')).toBeNull();
-    expect(parseDateSafe(null as any)).toBeNull();
+    expect(parseDateSafe(null)).toBeNull();
   });
 
   test('extracts month and year from date string', () => {
@@ -31,12 +39,12 @@ describe('Date Parsing', () => {
           year = String(date.getFullYear());
           return { month, year };
         }
-      } catch (error) {
+      } catch {
         // Continue to string parsing
       }
 
       // Try to extract from string patterns
-      const isoMatch = dateString.match(/(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})/);
+      const isoMatch = dateString.match(/(\d{4})[\-\/](\d{1,2})[\-\/](\d{1,2})/);
       if (isoMatch) {
         year = isoMatch[1];
         month = isoMatch[2].padStart(2, '0');
@@ -92,7 +100,7 @@ describe('Duration Validation', () => {
 // Test for data filtering
 describe('Data Filtering', () => {
   test('filters tickets by date range', () => {
-    const filterTicketsByDateRange = (tickets: any[], startDate: Date, endDate: Date) => {
+    const filterTicketsByDateRange = (tickets: Ticket[], startDate: Date, endDate: Date) => {
       return tickets.filter(ticket => {
         if (!ticket.openTime) return false;
         const ticketDate = new Date(ticket.openTime);
@@ -116,8 +124,8 @@ describe('Data Filtering', () => {
   });
 
   test('filters tickets by status', () => {
-    const filterTicketsByStatus = (tickets: any[], status: string) => {
-      return tickets.filter(ticket => 
+    const filterTicketsByStatus = (tickets: Ticket[], status: string) => {
+      return tickets.filter(ticket =>
         (ticket.status || '').toLowerCase() === status.toLowerCase()
       );
     };
@@ -144,7 +152,7 @@ describe('Pagination', () => {
       const totalPages = Math.ceil(totalItems / itemsPerPage);
       const startIndex = (currentPage - 1) * itemsPerPage;
       const endIndex = Math.min(startIndex + itemsPerPage, totalItems);
-      
+
       return {
         totalPages,
         startIndex,
@@ -155,7 +163,7 @@ describe('Pagination', () => {
     };
 
     const result = calculatePagination(100, 10, 3);
-    
+
     expect(result.totalPages).toBe(10);
     expect(result.startIndex).toBe(20);
     expect(result.endIndex).toBe(30);
@@ -168,7 +176,7 @@ describe('Pagination', () => {
       const totalPages = Math.ceil(totalItems / itemsPerPage);
       const startIndex = (currentPage - 1) * itemsPerPage;
       const endIndex = Math.min(startIndex + itemsPerPage, totalItems);
-      
+
       return {
         totalPages,
         startIndex,
@@ -195,11 +203,11 @@ describe('Pagination', () => {
 // Test for data sorting
 describe('Data Sorting', () => {
   test('sorts tickets by date', () => {
-    const sortTicketsByDate = (tickets: any[], ascending = true) => {
+    const sortTicketsByDate = (tickets: Ticket[], ascending = true) => {
       return tickets.sort((a, b) => {
         const dateA = new Date(a.openTime);
         const dateB = new Date(b.openTime);
-        
+
         if (ascending) {
           return dateA.getTime() - dateB.getTime();
         } else {
@@ -224,11 +232,11 @@ describe('Data Sorting', () => {
   });
 
   test('sorts tickets by duration', () => {
-    const sortTicketsByDuration = (tickets: any[], ascending = true) => {
+    const sortTicketsByDuration = (tickets: Ticket[], ascending = true) => {
       return tickets.sort((a, b) => {
         const durationA = a.duration?.rawHours || 0;
         const durationB = b.duration?.rawHours || 0;
-        
+
         if (ascending) {
           return durationA - durationB;
         } else {
