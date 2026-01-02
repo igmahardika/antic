@@ -32,7 +32,6 @@ const allMenus = [
 
 	// Documentation & Tools
 	"Formulas",
-	"Formulas Temp",
 
 	// Administration
 	"Admin Panel",

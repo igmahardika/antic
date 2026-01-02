@@ -11,6 +11,10 @@ import session from 'express-session';
 import { createPool } from 'mysql2/promise';
 import fetch from 'node-fetch';
 import redisManager from './config/redis.mjs';
+import multer from 'multer';
+import path from 'path';
+import fs from 'fs';
+import { fileURLToPath } from 'url';
 import {
   securityHeaders,
   rateLimits,
@@ -23,6 +27,9 @@ import {
 } from './middleware/security.mjs';
 import { body } from 'express-validator';
 import { generateCustomerReportPDF } from './pdfGenerator.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // -----------------------------------------------------------------------------
 // 1. App & basic helpers
@@ -1094,104 +1101,158 @@ app.get('/api/migration/status',
 );
 
 // -----------------------------------------------------------------------------
-// 9. Start server
+// Agent Photo Management Endpoints
 // -----------------------------------------------------------------------------
-const PORT = Number(process.env.PORT) || 3001;
-app.listen(PORT, () => {
-  console.log(`🚀 Helpdesk Management System API  → http://localhost:${PORT}`);
-  console.log(`🔧 ENV        : ${process.env.NODE_ENV || 'development'}`);
+
+// Configure multer for file upload
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    // Get project root (go up from helpdesk-backend to project root)
+    const projectRoot = path.resolve(__dirname, '..');
+    const uploadDir = path.join(projectRoot, 'public', 'agent-photos');
+    const distDir = path.join(projectRoot, 'dist', 'agent-photos');
+    
+    // Create directories if they don't exist
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+    if (!fs.existsSync(distDir)) {
+      fs.mkdirSync(distDir, { recursive: true });
+    }
+    
+    cb(null, uploadDir);
+  },
+  filename: (req, file, cb) => {
+    const agentName = req.body.agentName || 'unknown';
+    const normalizedName = agentName
+      .trim()
+      .replace(/[^\w\s'-]/g, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+    // Preserve original file extension
+    const originalExt = path.extname(file.originalname) || '.png';
+    cb(null, `${normalizedName}${originalExt}`);
+  }
+});
+
+const upload = multer({
+  storage: storage,
+  limits: {
+    fileSize: 5 * 1024 * 1024 // 5MB limit
+  },
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = ['image/png', 'image/jpeg', 'image/jpg'];
+    if (allowedTypes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error('File must be PNG, JPEG, or JPG'), false);
+    }
+  }
 });
 
 // Agent Photo Upload Endpoint
-app.post('/api/upload-agent-photo', async (req, res) => {
+app.post('/api/upload-agent-photo', upload.single('photo'), async (req, res) => {
   try {
-    const multer = await import('multer');
-    const path = await import('path');
-    const fs = await import('fs');
+    if (!req.file) {
+      return res.status(400).json({ error: 'No file uploaded' });
+    }
     
-    // Configure multer for file upload
-    const storage = multer.default.diskStorage({
-      destination: (req, file, cb) => {
-        const uploadDir = path.join(process.cwd(), 'public', 'agent-photos');
-        const distDir = path.join(process.cwd(), 'dist', 'agent-photos');
-        
-        // Create directories if they don't exist
-        if (!fs.default.existsSync(uploadDir)) {
-          fs.default.mkdirSync(uploadDir, { recursive: true });
-        }
-        if (!fs.default.existsSync(distDir)) {
-          fs.default.mkdirSync(distDir, { recursive: true });
-        }
-        
-        cb(null, uploadDir);
-      },
-      filename: (req, file, cb) => {
-        const agentName = req.body.agentName || 'unknown';
-        const normalizedName = agentName
-          .trim()
-          .replace(/[^\w\s'-]/g, '')
-          .replace(/\s+/g, ' ')
-          .trim();
-        cb(null, `${normalizedName}.png`);
-      }
-    });
+    const agentName = req.body.agentName || 'unknown';
+    const normalizedName = agentName
+      .trim()
+      .replace(/[^\w\s'-]/g, '')
+      .replace(/\s+/g, ' ')
+      .trim();
     
-    const upload = multer.default({
-      storage: storage,
-      limits: {
-        fileSize: 5 * 1024 * 1024 // 5MB limit
-      },
-      fileFilter: (req, file, cb) => {
-        const allowedTypes = ['image/png', 'image/jpeg', 'image/jpg'];
-        if (allowedTypes.includes(file.mimetype)) {
-          cb(null, true);
-        } else {
-          cb(new Error('File must be PNG, JPEG, or JPG'), false);
-        }
-      }
-    });
+    // Get project root
+    const projectRoot = path.resolve(__dirname, '..');
     
-    upload.single('photo')(req, res, (err) => {
-      if (err) {
-        console.error('Upload error:', err);
-        return res.status(400).json({ 
-          error: err.message || 'Upload failed' 
-        });
+    // Get the actual filename that was saved
+    const savedFileName = req.file.filename;
+    const fileExt = path.extname(savedFileName);
+    
+    // Copy file to dist folder for production
+    const sourcePath = req.file.path;
+    const distPath = path.join(projectRoot, 'dist', 'agent-photos', savedFileName);
+    
+    try {
+      // Ensure dist directory exists
+      const distDir = path.dirname(distPath);
+      if (!fs.existsSync(distDir)) {
+        fs.mkdirSync(distDir, { recursive: true });
       }
-      
-      if (!req.file) {
-        return res.status(400).json({ error: 'No file uploaded' });
-      }
-      
-      const agentName = req.body.agentName || 'unknown';
-      const normalizedName = agentName
-        .trim()
-        .replace(/[^\w\s'-]/g, '')
-        .replace(/\s+/g, ' ')
-        .trim();
-      
-      // Copy file to dist folder for production
-      const sourcePath = req.file.path;
-      const distPath = path.join(process.cwd(), 'dist', 'agent-photos', `${normalizedName}.png`);
-      
-      try {
-        fs.default.copyFileSync(sourcePath, distPath);
-      } catch (copyError) {
-        console.error('Error copying to dist folder:', copyError);
-      }
-      
-      res.json({
-        success: true,
-        filePath: `/agent-photos/${normalizedName}.png`,
-        fileName: `${normalizedName}.png`,
-        agentName: normalizedName
-      });
+      fs.copyFileSync(sourcePath, distPath);
+    } catch (copyError) {
+      console.error('Error copying to dist folder:', copyError);
+      // Don't fail the request if dist copy fails
+    }
+    
+    res.json({
+      success: true,
+      filePath: `/agent-photos/${savedFileName}`,
+      fileName: savedFileName,
+      agentName: normalizedName,
+      message: 'Photo uploaded successfully'
     });
     
   } catch (error) {
     console.error('Upload endpoint error:', error);
     res.status(500).json({ 
       error: 'Failed to upload photo',
+      details: error.message 
+    });
+  }
+});
+
+// Agent Photo Info Endpoint
+app.get('/api/photo-info', async (req, res) => {
+  try {
+    const { agentName } = req.query;
+    
+    if (!agentName) {
+      return res.status(400).json({ error: 'No agent name provided' });
+    }
+    
+    const projectRoot = path.resolve(__dirname, '..');
+    const normalizedName = agentName
+      .trim()
+      .replace(/[^\w\s'-]/g, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+    
+    // Try multiple extensions
+    const possibleExtensions = ['.png', '.jpg', '.jpeg'];
+    let fileName = null;
+    let filePath = null;
+    
+    for (const ext of possibleExtensions) {
+      const testPath = path.join(projectRoot, 'public', 'agent-photos', `${normalizedName}${ext}`);
+      if (fs.existsSync(testPath)) {
+        fileName = `${normalizedName}${ext}`;
+        filePath = testPath;
+        break;
+      }
+    }
+    
+    if (!filePath || !fileName) {
+      return res.status(404).json({ error: 'Photo not found' });
+    }
+    
+    const stats = fs.statSync(filePath);
+    
+    res.json({
+      success: true,
+      fileName: fileName,
+      filePath: `/agent-photos/${fileName}`,
+      size: stats.size,
+      uploadDate: stats.birthtime,
+      lastModified: stats.mtime
+    });
+    
+  } catch (error) {
+    console.error('Photo info endpoint error:', error);
+    res.status(500).json({ 
+      error: 'Failed to get photo info',
       details: error.message 
     });
   }
@@ -1206,8 +1267,7 @@ app.delete('/api/delete-agent-photo', async (req, res) => {
       return res.status(400).json({ error: 'No agent name provided' });
     }
     
-    const path = await import('path');
-    const fs = await import('fs');
+    const projectRoot = path.resolve(__dirname, '..');
     
     const normalizedName = agentName
       .trim()
@@ -1215,18 +1275,23 @@ app.delete('/api/delete-agent-photo', async (req, res) => {
       .replace(/\s+/g, ' ')
       .trim();
     
-    const fileName = `${normalizedName}.png`;
+    // Try to delete files with multiple extensions
+    const possibleExtensions = ['.png', '.jpg', '.jpeg'];
     
-    // Delete from public folder
-    const publicFilePath = path.join(process.cwd(), 'public', 'agent-photos', fileName);
-    if (fs.default.existsSync(publicFilePath)) {
-      fs.default.unlinkSync(publicFilePath);
-    }
-    
-    // Delete from dist folder
-    const distFilePath = path.join(process.cwd(), 'dist', 'agent-photos', fileName);
-    if (fs.default.existsSync(distFilePath)) {
-      fs.default.unlinkSync(distFilePath);
+    for (const ext of possibleExtensions) {
+      const fileName = `${normalizedName}${ext}`;
+      
+      // Delete from public folder
+      const publicFilePath = path.join(projectRoot, 'public', 'agent-photos', fileName);
+      if (fs.existsSync(publicFilePath)) {
+        fs.unlinkSync(publicFilePath);
+      }
+      
+      // Delete from dist folder
+      const distFilePath = path.join(projectRoot, 'dist', 'agent-photos', fileName);
+      if (fs.existsSync(distFilePath)) {
+        fs.unlinkSync(distFilePath);
+      }
     }
     
     res.json({
@@ -1241,6 +1306,15 @@ app.delete('/api/delete-agent-photo', async (req, res) => {
       details: error.message 
     });
   }
+});
+
+// -----------------------------------------------------------------------------
+// 9. Start server
+// -----------------------------------------------------------------------------
+const PORT = Number(process.env.PORT) || 3001;
+app.listen(PORT, () => {
+  console.log(`🚀 Helpdesk Management System API  → http://localhost:${PORT}`);
+  console.log(`🔧 ENV        : ${process.env.NODE_ENV || 'development'}`);
 });
 
 // PDF Generation Endpoint

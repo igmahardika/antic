@@ -43,6 +43,7 @@ import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "@/lib/db";
 import { calculateIncidentStats, normalizeNCAL } from "@/utils/incidentUtils";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { getAgentPhotoPath } from "@/utils/photoUtils";
 
 const SummaryDashboard = ({
 	ticketAnalyticsData,
@@ -411,16 +412,6 @@ const SummaryDashboard = ({
 		}));
 	}
 
-	// Helper: normalize agent name for photo lookup
-	function getAgentPhotoPath(agentName: string): string {
-		// Special handling for Difa' Fathir Aditya
-		if (agentName.includes("Difa")) {
-			return `/agent-photos/Difa' Fathir Aditya.png`;
-		}
-
-		// For other agents, use the original name
-		return `/agent-photos/${agentName}.png`;
-	}
 
 	// Helper: get agent initials for avatar fallback
 	function getAgentInitials(agentName: string): string {

@@ -2,7 +2,13 @@ import React from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
+import {
+	BrowserRouter,
+	Routes,
+	Route,
+	useLocation,
+	useNavigate,
+} from "react-router-dom";
 import Dashboard from "./pages/Dashboard";
 import NotFound from "./pages/NotFound";
 import { ThemeProvider } from "@/components/theme-provider";
@@ -68,6 +74,7 @@ const queryClient = new QueryClient();
 
 function AppLayout() {
 	const location = useLocation();
+	const navigate = useNavigate();
 	const user = JSON.parse(localStorage.getItem("user") || "{}");
 
 	// const hour = new Date().getHours();
@@ -83,16 +90,18 @@ function AppLayout() {
 		const user = localStorage.getItem("user");
 
 		// If not authenticated and not on login page, redirect to login
-		if ((!authToken || !user) && location.pathname !== "/login") {
-			// Only redirect if trying to access protected routes
-			if (
-				location.pathname === "/admin" ||
-				location.pathname.startsWith("/admin")
-			) {
-				window.location.href = "/login";
+		if (!authToken || !user) {
+			if (location.pathname !== "/login") {
+				navigate("/login", { replace: true });
 			}
+			return;
 		}
-	}, [location.pathname]);
+
+		// If already authenticated and visiting login page, redirect to main dashboard
+		if (location.pathname === "/login") {
+			navigate("/summary-dashboard", { replace: true });
+		}
+	}, [location.pathname, navigate]);
 
 	return (
 		<div className="relative min-h-screen">

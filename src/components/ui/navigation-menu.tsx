@@ -287,11 +287,6 @@ export function SidebarNav({
 					path: "/documentation/admin-rumus",
 					icon: <ScienceIcon sx={{ fontSize: 16 }} />,
 				},
-				{
-					name: "Formulas Temp",
-					path: "/admin-rumus-temp",
-					icon: <ScienceIcon sx={{ fontSize: 16 }} />,
-				},
 			],
 		},
 		{

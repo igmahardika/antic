@@ -26,8 +26,14 @@ export const useAgentPhotos = (allAgents: string[]) => {
           let fileName = `${agentName}.png`;
           
           try {
+            // Get API base URL
+            const API_BASE_URL = import.meta.env.VITE_API_URL || '';
+            const photoInfoUrl = API_BASE_URL 
+              ? `${API_BASE_URL}/api/photo-info?agentName=${encodeURIComponent(agentName)}`
+              : `/api/photo-info?agentName=${encodeURIComponent(agentName)}`;
+            
             // Try to get file info from the server
-            const response = await fetch(`/api/photo-info?agentName=${encodeURIComponent(agentName)}`);
+            const response = await fetch(photoInfoUrl);
             if (response.ok) {
               const fileInfo = await response.json();
               fileSize = fileInfo.size || 0;

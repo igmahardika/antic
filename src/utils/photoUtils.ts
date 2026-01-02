@@ -16,6 +16,8 @@ export interface AgentPhoto {
 
 /**
  * Get photo path for agent - checks multiple sources
+ * Returns path with proper encoding for URL
+ * Note: Browser will automatically encode spaces and special chars in URL
  */
 export const getAgentPhotoPath = (agentName: string): string => {
   if (!agentName) return '/agent-photos/placeholder.png';
@@ -23,7 +25,9 @@ export const getAgentPhotoPath = (agentName: string): string => {
   // Normalize agent name for file lookup
   const normalizedName = normalizeAgentName(agentName);
   
-  // Check if photo exists in public folder
+  // Return path - browser will handle URL encoding automatically
+  // Use PNG as default (most common format)
+  // The actual file might have different extension, but browser will try to load it
   return `/agent-photos/${normalizedName}.png`;
 };
 
@@ -167,26 +171,46 @@ export const uploadPhotoFile = async (file: File, agentName: string): Promise<st
       throw new Error('File size must be less than 5MB');
     }
     
+    // Get API base URL
+    const API_BASE_URL = import.meta.env.VITE_API_URL || '';
+    // In development, use relative path (will be proxied by Vite)
+    // In production, use full API URL
+    const uploadUrl = API_BASE_URL 
+      ? `${API_BASE_URL}/api/upload-agent-photo`
+      : '/api/upload-agent-photo';
+    
     // Create FormData for upload
     const formData = new FormData();
     formData.append('photo', file);
     formData.append('agentName', agentName);
     
     // Upload to server
-    const response = await fetch('/api/upload-agent-photo', {
+    const response = await fetch(uploadUrl, {
       method: 'POST',
       body: formData,
     });
     
+    // Check content type to ensure we got JSON
+    const contentType = response.headers.get('content-type');
+    if (!contentType || !contentType.includes('application/json')) {
+      const text = await response.text();
+      console.error('Non-JSON response:', text.substring(0, 200));
+      throw new Error(`Server returned non-JSON response (${response.status}). Please check if backend server is running.`);
+    }
+    
     if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || 'Upload failed');
+      const errorData = await response.json().catch(() => ({ error: 'Upload failed' }));
+      throw new Error(errorData.error || errorData.message || `Upload failed: ${response.status} ${response.statusText}`);
     }
     
     const result = await response.json();
+    if (!result.success) {
+      throw new Error(result.error || result.message || 'Upload failed');
+    }
+    
     return result.filePath;
     
-  } catch (error) {
+  } catch (error: any) {
     console.error('Upload error:', error);
     throw error;
   }
@@ -197,7 +221,15 @@ export const uploadPhotoFile = async (file: File, agentName: string): Promise<st
  */
 export const deletePhotoFile = async (agentName: string): Promise<void> => {
   try {
-    const response = await fetch('/api/delete-agent-photo', {
+    // Get API base URL
+    const API_BASE_URL = import.meta.env.VITE_API_URL || '';
+    // In development, use relative path (will be proxied by Vite)
+    // In production, use full API URL
+    const deleteUrl = API_BASE_URL 
+      ? `${API_BASE_URL}/api/delete-agent-photo`
+      : '/api/delete-agent-photo';
+    
+    const response = await fetch(deleteUrl, {
       method: 'DELETE',
       headers: {
         'Content-Type': 'application/json',
@@ -206,11 +238,11 @@ export const deletePhotoFile = async (agentName: string): Promise<void> => {
     });
     
     if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || 'Delete failed');
+      const errorData = await response.json().catch(() => ({ message: 'Delete failed' }));
+      throw new Error(errorData.error || errorData.message || 'Delete failed');
     }
     
-  } catch (error) {
+  } catch (error: any) {
     console.error('Delete error:', error);
     throw error;
   }

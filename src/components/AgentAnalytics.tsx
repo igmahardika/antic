@@ -59,6 +59,7 @@ import {
 	isBacklogTicket, 
 	isClosedTicket
 } from "@/utils/ticketStatus";
+import { getAgentPhotoPath } from "@/utils/photoUtils";
 
 // Define the structure of the data this component will receive
 export interface AgentAnalyticsData {
@@ -1344,17 +1345,6 @@ const AgentAnalytics = () => {
 		return delta > 0 ? "up" : "down";
 	}
 
-	// Helper: normalize agent name for photo lookup
-	function getAgentPhotoPath(agentName: string): string {
-		// Special handling for Difa' Fathir Aditya
-		if (agentName.includes("Difa")) {
-			// Try the exact filename first (with apostrophe)
-			return `/agent-photos/Difa' Fathir Aditya.png`;
-		}
-
-		// For other agents, use the original name
-		return `/agent-photos/${agentName}.png`;
-	}
 
 	// Helper: insight text per KPI
 	function generateKpiInsight(kpi: string, trend: "up" | "down" | "flat") {
