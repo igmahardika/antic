@@ -21,10 +21,10 @@ export interface AgentPhoto {
  */
 export const getAgentPhotoPath = (agentName: string): string => {
   if (!agentName) return '/agent-photos/placeholder.png';
-  
+
   // Normalize agent name for file lookup
   const normalizedName = normalizeAgentName(agentName);
-  
+
   // Return path - browser will handle URL encoding automatically
   // Use PNG as default (most common format)
   // The actual file might have different extension, but browser will try to load it
@@ -36,12 +36,12 @@ export const getAgentPhotoPath = (agentName: string): string => {
  */
 export const normalizeAgentName = (agentName: string): string => {
   if (!agentName) return '';
-  
+
   // Handle special cases
   if (agentName.includes("Difa")) {
     return "Difa' Fathir Aditya";
   }
-  
+
   // Remove special characters and normalize
   return agentName
     .trim()
@@ -56,7 +56,7 @@ export const normalizeAgentName = (agentName: string): string => {
 export const checkPhotoExists = async (agentName: string): Promise<boolean> => {
   try {
     const photoPath = getAgentPhotoPath(agentName);
-    
+
     // Try to load the image to check if it exists
     return new Promise((resolve) => {
       const img = new Image();
@@ -74,7 +74,7 @@ export const checkPhotoExists = async (agentName: string): Promise<boolean> => {
  */
 export const getAgentInitials = (agentName: string): string => {
   if (!agentName) return "?";
-  
+
   const names = agentName.split(" ");
   if (names.length >= 2) {
     return (names[0][0] + names[names.length - 1][0]).toUpperCase();
@@ -88,21 +88,21 @@ export const getAgentInitials = (agentName: string): string => {
 export const validatePhotoFile = (file: File): { valid: boolean; error?: string } => {
   const allowedTypes = ['image/png', 'image/jpeg', 'image/jpg'];
   const maxSize = 5 * 1024 * 1024; // 5MB
-  
+
   if (!allowedTypes.includes(file.type)) {
     return {
       valid: false,
       error: `File ${file.name} bukan format gambar yang didukung (PNG, JPG, JPEG)`
     };
   }
-  
+
   if (file.size > maxSize) {
     return {
       valid: false,
       error: `File ${file.name} terlalu besar (maksimal 5MB)`
     };
   }
-  
+
   return { valid: true };
 };
 
@@ -122,11 +122,11 @@ export const formatFileSize = (bytes: number): string => {
  */
 export const getPhotoStatus = (photo: AgentPhoto): 'active' | 'outdated' | 'inactive' => {
   if (!photo.isActive) return 'inactive';
-  
+
   const daysSinceUpload = Math.floor(
     (Date.now() - photo.uploadDate.getTime()) / (1000 * 60 * 60 * 24)
   );
-  
+
   if (daysSinceUpload > 30) return 'outdated';
   return 'active';
 };
@@ -136,7 +136,7 @@ export const getPhotoStatus = (photo: AgentPhoto): 'active' | 'outdated' | 'inac
  */
 export const createPhotoFromFile = (file: File, agentName: string): AgentPhoto => {
   const normalizedName = normalizeAgentName(agentName);
-  
+
   return {
     id: `photo-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
     agentName: normalizedName,
@@ -158,38 +158,38 @@ export const uploadPhotoFile = async (file: File, agentName: string): Promise<st
     if (!file) {
       throw new Error('No file provided');
     }
-    
+
     // Validate file type
     const allowedTypes = ['image/png', 'image/jpeg', 'image/jpg'];
     if (!allowedTypes.includes(file.type)) {
       throw new Error('File must be PNG, JPEG, or JPG');
     }
-    
+
     // Validate file size (max 5MB)
     const maxSize = 5 * 1024 * 1024; // 5MB
     if (file.size > maxSize) {
       throw new Error('File size must be less than 5MB');
     }
-    
+
     // Get API base URL
     const API_BASE_URL = import.meta.env.VITE_API_URL || '';
     // In development, use relative path (will be proxied by Vite)
     // In production, use full API URL
-    const uploadUrl = API_BASE_URL 
+    const uploadUrl = API_BASE_URL
       ? `${API_BASE_URL}/api/upload-agent-photo`
       : '/api/upload-agent-photo';
-    
+
     // Create FormData for upload
     const formData = new FormData();
     formData.append('photo', file);
     formData.append('agentName', agentName);
-    
+
     // Upload to server
     const response = await fetch(uploadUrl, {
       method: 'POST',
       body: formData,
     });
-    
+
     // Check content type to ensure we got JSON
     const contentType = response.headers.get('content-type');
     if (!contentType || !contentType.includes('application/json')) {
@@ -197,20 +197,20 @@ export const uploadPhotoFile = async (file: File, agentName: string): Promise<st
       console.error('Non-JSON response:', text.substring(0, 200));
       throw new Error(`Server returned non-JSON response (${response.status}). Please check if backend server is running.`);
     }
-    
+
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({ error: 'Upload failed' }));
       throw new Error(errorData.error || errorData.message || `Upload failed: ${response.status} ${response.statusText}`);
     }
-    
+
     const result = await response.json();
     if (!result.success) {
       throw new Error(result.error || result.message || 'Upload failed');
     }
-    
+
     return result.filePath;
-    
-  } catch (error: any) {
+
+  } catch (error: unknown) {
     console.error('Upload error:', error);
     throw error;
   }
@@ -225,10 +225,10 @@ export const deletePhotoFile = async (agentName: string): Promise<void> => {
     const API_BASE_URL = import.meta.env.VITE_API_URL || '';
     // In development, use relative path (will be proxied by Vite)
     // In production, use full API URL
-    const deleteUrl = API_BASE_URL 
+    const deleteUrl = API_BASE_URL
       ? `${API_BASE_URL}/api/delete-agent-photo`
       : '/api/delete-agent-photo';
-    
+
     const response = await fetch(deleteUrl, {
       method: 'DELETE',
       headers: {
@@ -236,13 +236,13 @@ export const deletePhotoFile = async (agentName: string): Promise<void> => {
       },
       body: JSON.stringify({ agentName }),
     });
-    
+
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({ message: 'Delete failed' }));
       throw new Error(errorData.error || errorData.message || 'Delete failed');
     }
-    
-  } catch (error: any) {
+
+  } catch (error: unknown) {
     console.error('Delete error:', error);
     throw error;
   }
@@ -253,13 +253,13 @@ export const deletePhotoFile = async (agentName: string): Promise<void> => {
  */
 export const getStatusColor = (status: string): string => {
   switch (status) {
-    case 'active': 
+    case 'active':
       return 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400';
-    case 'outdated': 
+    case 'outdated':
       return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400';
-    case 'inactive': 
+    case 'inactive':
       return 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400';
-    default: 
+    default:
       return 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400';
   }
 };
