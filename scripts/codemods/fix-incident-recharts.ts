@@ -2,11 +2,11 @@ import type { API, FileInfo, JSCodeshift, Collection } from 'jscodeshift';
 
 const LAZY_SRC = '@/charts/rechartsLazy';
 const NAMES = [
-  'ResponsiveContainer','CartesianGrid','XAxis','YAxis','Legend',
-  'LineChart','Line','ReferenceLine',
-  'BarChart','Bar','Cell',
-  'AreaChart','Area',
-  'PieChart','Pie'
+  'ResponsiveContainer', 'CartesianGrid', 'XAxis', 'YAxis', 'Legend',
+  'LineChart', 'Line', 'ReferenceLine',
+  'BarChart', 'Bar', 'Cell',
+  'AreaChart', 'Area',
+  'PieChart', 'Pie'
 ];
 
 function ensureReactSuspense(j: JSCodeshift, root: Collection) {
@@ -15,7 +15,7 @@ function ensureReactSuspense(j: JSCodeshift, root: Collection) {
     reactImp.forEach(p => {
       p.value.specifiers = p.value.specifiers || [];
       const hasDefault = p.value.specifiers.some(s => s.type === 'ImportDefaultSpecifier');
-      const hasSusp = p.value.specifiers.some(s => s.type === 'ImportSpecifier' && (s.imported as any).name==='Suspense');
+      const hasSusp = p.value.specifiers.some(s => s.type === 'ImportSpecifier' && s.imported.type === 'Identifier' && s.imported.name === 'Suspense');
       if (!hasDefault) p.value.specifiers.unshift(j.importDefaultSpecifier(j.identifier('React')));
       if (!hasSusp) p.value.specifiers.push(j.importSpecifier(j.identifier('Suspense')));
     });
@@ -73,12 +73,12 @@ function removeUnusedLoadRecharts(j: JSCodeshift, root: Collection) {
   // Hapus deklarasi function/const bernama loadRecharts
   root.find(j.FunctionDeclaration, { id: { name: 'loadRecharts' } }).remove();
   root.find(j.VariableDeclarator, { id: { type: 'Identifier', name: 'loadRecharts' } })
-      .forEach(d => {
-        const decl = d.parent && d.parent.parent;
-        if (decl && decl.value && decl.value.type === 'VariableDeclaration') {
-          j(decl).remove();
-        }
-      });
+    .forEach(d => {
+      const decl = d.parent && d.parent.parent;
+      if (decl && decl.value && decl.value.type === 'VariableDeclaration') {
+        j(decl).remove();
+      }
+    });
 }
 
 export default function transform(file: FileInfo, api: API) {
