@@ -1,5 +1,24 @@
 import { describe, test, expect } from 'vitest';
 
+interface Ticket {
+  customerId?: string;
+  name?: string;
+  description?: string;
+  cause?: string;
+  handling?: string;
+  handlingDuration?: {
+    rawHours: number;
+  };
+}
+
+interface CustomerSummary {
+  name: string;
+  ticketCount?: number;
+  totalHandlingDuration?: number;
+  customerId?: string;
+  tickets?: Ticket[];
+}
+
 // Test for risk classification
 describe('Risk Classification', () => {
   test('classifies customer risk correctly', () => {
@@ -47,13 +66,13 @@ describe('Risk Classification', () => {
 // Test for customer data aggregation
 describe('Customer Data Aggregation', () => {
   test('aggregates customer ticket data correctly', () => {
-    const aggregateCustomerData = (tickets: any[]) => {
+    const aggregateCustomerData = (tickets: Ticket[]) => {
       const customerMap: Record<string, any> = {};
-      
+
       tickets.forEach(ticket => {
         const customerId = ticket.customerId || 'Unknown Customer';
         if (customerId === 'Unknown Customer') return;
-        
+
         if (!customerMap[customerId]) {
           customerMap[customerId] = {
             name: ticket.name,
@@ -65,14 +84,14 @@ describe('Customer Data Aggregation', () => {
             handlings: []
           };
         }
-        
+
         customerMap[customerId].tickets.push(ticket);
         customerMap[customerId].totalHandlingDuration += ticket.handlingDuration?.rawHours || 0;
         customerMap[customerId].descriptions.push(ticket.description);
         customerMap[customerId].causes.push(ticket.cause);
         customerMap[customerId].handlings.push(ticket.handling);
       });
-      
+
       return Object.values(customerMap);
     };
 
@@ -104,7 +123,7 @@ describe('Customer Data Aggregation', () => {
     ];
 
     const result = aggregateCustomerData(tickets);
-    
+
     expect(result).toHaveLength(2);
     expect(result[0].customerId).toBe('CUST001');
     expect(result[0].tickets).toHaveLength(2);
@@ -118,20 +137,20 @@ describe('Keyword Analysis', () => {
   test('analyzes keywords from customer data', () => {
     const analyzeKeywords = (texts: string[], limit = 10) => {
       const wordCount: Record<string, number> = {};
-      
+
       texts.forEach(text => {
         if (!text) return;
-        
+
         const words = text.toLowerCase()
           .replace(/[^\w\s]/g, '')
           .split(/\s+/)
           .filter(word => word.length > 2);
-        
+
         words.forEach(word => {
           wordCount[word] = (wordCount[word] || 0) + 1;
         });
       });
-      
+
       return Object.entries(wordCount)
         .sort(([, a], [, b]) => (b as number) - (a as number))
         .slice(0, limit);
@@ -145,7 +164,7 @@ describe('Keyword Analysis', () => {
     ];
 
     const result = analyzeKeywords(descriptions, 5);
-    
+
     expect(result.length).toBeLessThanOrEqual(5);
     expect(result[0][0]).toBe('network');
     expect(result[0][1]).toBe(3);
@@ -155,8 +174,8 @@ describe('Keyword Analysis', () => {
 // Test for customer sorting
 describe('Customer Sorting', () => {
   test('sorts customers by ticket count', () => {
-    const sortCustomersByTicketCount = (customers: any[]) => {
-      return customers.sort((a, b) => b.ticketCount - a.ticketCount);
+    const sortCustomersByTicketCount = (customers: CustomerSummary[]) => {
+      return customers.sort((a, b) => (b.ticketCount || 0) - (a.ticketCount || 0));
     };
 
     const customers = [
@@ -166,7 +185,7 @@ describe('Customer Sorting', () => {
     ];
 
     const result = sortCustomersByTicketCount(customers);
-    
+
     expect(result[0].name).toBe('Customer B');
     expect(result[0].ticketCount).toBe(10);
     expect(result[2].name).toBe('Customer C');
@@ -174,8 +193,8 @@ describe('Customer Sorting', () => {
   });
 
   test('sorts customers by total duration', () => {
-    const sortCustomersByDuration = (customers: any[]) => {
-      return customers.sort((a, b) => b.totalHandlingDuration - a.totalHandlingDuration);
+    const sortCustomersByDuration = (customers: CustomerSummary[]) => {
+      return customers.sort((a, b) => (b.totalHandlingDuration || 0) - (a.totalHandlingDuration || 0));
     };
 
     const customers = [
@@ -185,7 +204,7 @@ describe('Customer Sorting', () => {
     ];
 
     const result = sortCustomersByDuration(customers);
-    
+
     expect(result[0].name).toBe('Customer B');
     expect(result[0].totalHandlingDuration).toBe(12.0);
     expect(result[2].name).toBe('Customer C');
@@ -196,14 +215,14 @@ describe('Customer Sorting', () => {
 // Test for data validation
 describe('Data Validation', () => {
   test('validates customer data structure', () => {
-    const validateCustomerData = (customer: any): boolean => {
+    const validateCustomerData = (customer: unknown): boolean => {
+      if (!customer || typeof customer !== 'object') return false;
+      const c = customer as CustomerSummary;
       return !!(
-        customer &&
-        typeof customer === 'object' &&
-        customer.customerId &&
-        customer.name &&
-        Array.isArray(customer.tickets) &&
-        typeof customer.totalHandlingDuration === 'number'
+        c.customerId &&
+        c.name &&
+        Array.isArray(c.tickets) &&
+        typeof c.totalHandlingDuration === 'number'
       );
     };
 
@@ -231,11 +250,11 @@ describe('Data Validation', () => {
 // Test for pagination with large datasets
 describe('Pagination for Large Datasets', () => {
   test('implements pagination for customer data', () => {
-    const paginateCustomers = (customers: any[], pageSize: number, currentPage: number) => {
+    const paginateCustomers = (customers: CustomerSummary[], pageSize: number, currentPage: number) => {
       const startIndex = (currentPage - 1) * pageSize;
       const endIndex = startIndex + pageSize;
       const paginatedCustomers = customers.slice(startIndex, endIndex);
-      
+
       return {
         customers: paginatedCustomers,
         totalPages: Math.ceil(customers.length / pageSize),
@@ -252,7 +271,7 @@ describe('Pagination for Large Datasets', () => {
     }));
 
     const result = paginateCustomers(customers, 10, 3);
-    
+
     expect(result.customers).toHaveLength(10);
     expect(result.totalPages).toBe(10);
     expect(result.currentPage).toBe(3);
