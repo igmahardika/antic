@@ -823,15 +823,25 @@ function parseExcelDate(value: any): string | undefined {
 	return undefined;
 }
 
-const calculateDuration = (start?: string, end?: string): number => {
+const calculateDuration = (start?: string, end?: string, maxHours: number = 720): number => {
 	if (!start || !end) return 0;
 	const startDate = new Date(start);
 	const endDate = new Date(end);
 	if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) return 0;
-	// Return 0 for negative durations (data invalid) instead of using Math.abs()
+
 	const diffMs = endDate.getTime() - startDate.getTime();
 	const diffHours = diffMs / (1000 * 60 * 60);
-	return diffHours >= 0 ? diffHours : 0;
+
+	// Return 0 for negative durations (data invalid)
+	if (diffHours < 0) return 0;
+
+	// Cap at maximum to prevent data quality issues
+	if (diffHours > maxHours) {
+		logger.warn(`[DURATION] Capping duration from ${diffHours.toFixed(2)} to ${maxHours} hours (${start} -> ${end})`);
+		return maxHours;
+	}
+
+	return diffHours;
 };
 
 const processAndAnalyzeData = (
@@ -967,24 +977,28 @@ const processAndAnalyzeData = (
 		const closeHandling4 = parseExcelDate(row["Close Penanganan 4"]);
 		const closeHandling5 = parseExcelDate(row["Close Penanganan 5"]);
 
-		const durationHours = calculateDuration(openTime, closeTime);
-		const handlingDurationHours = calculateDuration(openTime, closeHandling);
-		const handlingDuration1Hours = calculateDuration(openTime, closeHandling1);
+		const durationHours = calculateDuration(openTime, closeTime, 720); // Max 30 days for total duration
+		const handlingDurationHours = calculateDuration(openTime, closeHandling, 720); // Max 30 days for ART
+		const handlingDuration1Hours = calculateDuration(openTime, closeHandling1, 72); // Max 3 days for FRT
 		const handlingDuration2Hours = calculateDuration(
 			closeHandling1,
 			closeHandling2,
+			168, // Max 7 days per handling step
 		);
 		const handlingDuration3Hours = calculateDuration(
 			closeHandling2,
 			closeHandling3,
+			168,
 		);
 		const handlingDuration4Hours = calculateDuration(
 			closeHandling3,
 			closeHandling4,
+			168,
 		);
 		const handlingDuration5Hours = calculateDuration(
 			closeHandling4,
 			closeHandling5,
+			168,
 		);
 
 		const statusRaw = row["Status"];
