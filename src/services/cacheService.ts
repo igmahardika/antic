@@ -148,10 +148,14 @@ class CacheService {
             limit: 100000, // Get all for now
         });
 
-        // Store in cache
-        await this.set(cacheKey, tickets);
+        // Store in cache (as is from API for now, or mapped? Let's map it before caching so checks work)
+        // Actually typically we cache the API response. But our frontend ITicket expects mapped data.
+        // Let's map it here.
+        const mappedTickets = tickets.map(t => this.mapApiTicketToITicket(t));
 
-        return tickets;
+        await this.set(cacheKey, mappedTickets);
+
+        return mappedTickets;
     }
 
     /**
@@ -168,7 +172,8 @@ class CacheService {
                     ...filters,
                     limit: 100000,
                 });
-                await this.set(cacheKey, tickets);
+                const mappedTickets = tickets.map(t => this.mapApiTicketToITicket(t));
+                await this.set(cacheKey, mappedTickets);
                 console.log('[Cache] Refreshed in background:', cacheKey);
             }, 100);
         } catch (error) {
@@ -269,6 +274,68 @@ class CacheService {
      */
     async invalidateIncidents(): Promise<void> {
         await this.invalidatePattern('incidents');
+    }
+    /**
+     * Map API Ticket (snake_case) to Frontend ITicket (camelCase)
+     */
+    private mapApiTicketToITicket(apiTicket: any): any {
+        return {
+            id: apiTicket.id,
+            customerId: apiTicket.customer_id,
+            name: apiTicket.name,
+            category: apiTicket.category,
+            description: apiTicket.description,
+            cause: apiTicket.cause,
+            handling: apiTicket.handling,
+            openTime: apiTicket.open_time,
+            closeTime: apiTicket.close_time,
+            duration: {
+                rawHours: apiTicket.duration_raw_hours || 0,
+                formatted: apiTicket.duration_formatted || "",
+            },
+            closeHandling: apiTicket.close_handling,
+            handlingDuration: {
+                rawHours: apiTicket.handling_duration_raw_hours || 0,
+                formatted: apiTicket.handling_duration_formatted || "",
+            },
+            classification: apiTicket.classification,
+            subClassification: apiTicket.sub_classification,
+            status: apiTicket.status,
+            handling1: apiTicket.handling1,
+            closeHandling1: apiTicket.close_handling1,
+            handlingDuration1: {
+                rawHours: apiTicket.handling_duration1_raw_hours || 0,
+                formatted: apiTicket.handling_duration1_formatted || "",
+            },
+            handling2: apiTicket.handling2,
+            closeHandling2: apiTicket.close_handling2,
+            handlingDuration2: {
+                rawHours: apiTicket.handling_duration2_raw_hours || 0,
+                formatted: apiTicket.handling_duration2_formatted || "",
+            },
+            handling3: apiTicket.handling3,
+            closeHandling3: apiTicket.close_handling3,
+            handlingDuration3: {
+                rawHours: apiTicket.handling_duration3_raw_hours || 0,
+                formatted: apiTicket.handling_duration3_formatted || "",
+            },
+            handling4: apiTicket.handling4,
+            closeHandling4: apiTicket.close_handling4,
+            handlingDuration4: {
+                rawHours: apiTicket.handling_duration4_raw_hours || 0,
+                formatted: apiTicket.handling_duration4_formatted || "",
+            },
+            handling5: apiTicket.handling5,
+            closeHandling5: apiTicket.close_handling5,
+            handlingDuration5: {
+                rawHours: apiTicket.handling_duration5_raw_hours || 0,
+                formatted: apiTicket.handling_duration5_formatted || "",
+            },
+            openBy: apiTicket.open_by,
+            cabang: apiTicket.cabang,
+            uploadTimestamp: apiTicket.upload_timestamp,
+            repClass: apiTicket.rep_class,
+        };
     }
 }
 

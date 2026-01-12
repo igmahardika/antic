@@ -959,7 +959,7 @@ const processAndAnalyzeData = (
 			);
 		}
 
-		const closeTime = parseExcelDate(row["Waktu Close Ticket"]);
+		const closeTime = parseExcelDate(row["Waktu Close Ticket"] || row["Waktu Close Tiket"]);
 		const closeHandling = parseExcelDate(row["Close Penanganan"]);
 		const closeHandling1 = parseExcelDate(row["Close Penanganan 1"]);
 		const closeHandling2 = parseExcelDate(row["Close Penanganan 2"]);

@@ -55,15 +55,15 @@ export const normalizeAgentName = (agentName: string): string => {
  */
 export const checkPhotoExists = async (agentName: string): Promise<boolean> => {
   try {
-    const photoPath = getAgentPhotoPath(agentName);
-
-    // Try to load the image to check if it exists
-    return new Promise((resolve) => {
-      const img = new Image();
-      img.onload = () => resolve(true);
-      img.onerror = () => resolve(false);
-      img.src = photoPath;
-    });
+    // Check via API to avoid console 404 errors from image loading
+    const API_BASE_URL = import.meta.env.VITE_API_URL || '';
+    const response = await fetch(`${API_BASE_URL}/api/photo-info?agentName=${encodeURIComponent(agentName)}`);
+    if (response.ok) {
+      const data = await response.json();
+      // Backend now returns { success: false, found: false } for missing photos with 200 OK
+      return !!data.found || !!data.success;
+    }
+    return false;
   } catch {
     return false;
   }

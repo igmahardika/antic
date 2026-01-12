@@ -344,7 +344,9 @@ const SummaryDashboard = ({
 		}
 
 		// Gunakan perhitungan score yang sama dengan AgentAnalytics
-		const maxTicket = Math.max(...metrics.map((m) => m.vol || 0), 1);
+		const maxTicket = metrics.length > 0
+			? metrics.reduce((max, m) => (m.vol || 0) > max ? (m.vol || 0) : max, 0)
+			: 1;
 
 		function normalizePositive(actual: number, target: number) {
 			return Math.min((actual / target) * 100, 120);

@@ -59,9 +59,9 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
               We're sorry, but an unexpected error occurred. Please try reloading the page.
             </p>
 
-            {this.state.error && import.meta.env.DEV && (
+            {this.state.error && (
               <div className="mb-6 text-left p-4 bg-gray-100 dark:bg-gray-900 rounded text-xs font-mono overflow-auto max-h-40 text-red-600 dark:text-red-400">
-                {this.state.error.toString()}
+                <div className="font-bold mb-1">Error: {this.state.error.toString()}</div>
                 {this.state.errorInfo?.componentStack}
               </div>
             )}

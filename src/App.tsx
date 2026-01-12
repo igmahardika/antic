@@ -189,7 +189,7 @@ function AppLayout() {
 								<Route path="/admin" element={<AdminPanel />} />
 								<Route path="/login" element={<Login />} />
 								{/* Path lama tetap, tambahkan path baru nested sesuai sidebar */}
-								<Route path="/ticket/grid-view" element={<TicketData />} />
+								<Route path="/ticket/grid-view" element={<ErrorBoundary><TicketData /></ErrorBoundary>} />
 								<Route path="/ticket/kanban-board" element={<CustomerAnalytics />} />
 								<Route
 									path="/ticket/ticket-analytics"
@@ -209,7 +209,7 @@ function AppLayout() {
 								/>
 								<Route
 									path="/ticket/upload"
-									element={<UploadData onUploadComplete={() => {}} />}
+									element={<UploadData onUploadComplete={() => { }} />}
 								/>
 								<Route
 									path="/masterdata/data-agent"
@@ -229,11 +229,11 @@ function AppLayout() {
 									path="/incident/ts-analytics"
 									element={<TSAnalytics />}
 								/>
-				<Route
-					path="/incident/site-analytics"
-					element={<SiteAnalytics />}
-				/>
-				{/* Escalation routes removed */}
+								<Route
+									path="/incident/site-analytics"
+									element={<SiteAnalytics />}
+								/>
+								{/* Escalation routes removed */}
 								<Route
 									path="/documentation/admin-rumus"
 									element={<Formulas />}
@@ -261,7 +261,7 @@ function AppLayout() {
 								/>
 								<Route
 									path="/upload"
-									element={<UploadData onUploadComplete={() => {}} />}
+									element={<UploadData onUploadComplete={() => { }} />}
 								/>
 								<Route
 									path="/summary-dashboard"

@@ -292,7 +292,9 @@ export const ticketAPI = {
 			tickets: Ticket[];
 			pagination: any;
 		}>(`/api/tickets?${queryParams.toString()}`);
-		return { tickets: response.tickets, pagination: response.pagination };
+
+		if (!response) return { tickets: [], pagination: {} };
+		return { tickets: response.tickets || [], pagination: response.pagination || {} };
 	},
 
 	// Add new ticket

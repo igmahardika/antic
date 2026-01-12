@@ -96,7 +96,9 @@ const AgentData: React.FC = () => {
 					.filter((x) => typeof x === "number" && !isNaN(x))
 					.sort((a, b) => a - b);
 				const lastYear =
-					sortedYears.length > 0 ? Number(Math.max(...sortedYears)) : 0;
+					sortedYears.length > 0
+						? sortedYears.reduce((max, y) => y > max ? y : max, sortedYears[0])
+						: 0;
 				// Jumlah tiket
 				const ticketCount = tickets.length;
 				// Tiket pertama & terakhir

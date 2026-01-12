@@ -9,7 +9,17 @@ import { logger } from "@/lib/logger";
 const AgentAnalyticsContext = createContext(null);
 
 export function useAgentAnalytics() {
-	return useContext(AgentAnalyticsContext);
+	const context = useContext(AgentAnalyticsContext);
+	if (!context) {
+		return {
+			agentAnalyticsData: null,
+			allTickets: [],
+			allMonthsInData: [],
+			allYearsInData: [],
+			refresh: () => { },
+		};
+	}
+	return context;
 }
 
 export const AgentAnalyticsProvider = ({ children }) => {
@@ -59,88 +69,79 @@ export const AgentAnalyticsProvider = ({ children }) => {
 	}, [allTickets, cutoffStart, cutoffEnd, selectedYear]);
 
 	// --- Agent Analytics ---
+	// --- Agent Analytics ---
 	const masterAgentList = [
-		"Dea Destivica",
-		"Muhammad Lutfi Rosadi",
-		"Stefano Dewa Susanto",
-		"Fajar Juliantono",
-		"Priyo Ardi Nugroho",
-		"Fajar Nanda Ismono",
-		"Louis Bayu Krisna Redionando",
-		"Bandero Aldi Prasetya",
-		"Hamid Machfudin Sukardi",
-		"Difa' Fathir Aditya",
-		"Zakiyya Wulan Safitri",
+		"Dea Destivica", "Muhammad Lutfi Rosadi", "Stefano Dewa Susanto", "Fajar Juliantono",
+		"Priyo Ardi Nugroho", "Fajar Nanda Ismono", "Louis Bayu Krisna Redionando",
+		"Bandero Aldi Prasetya", "Hamid Machfudin Sukardi", "Difa' Fathir Aditya", "Zakiyya Wulan Safitri",
 	];
-	const agentPerformance = {};
-	masterAgentList.forEach((agent) => {
-		agentPerformance[agent] = { durations: [], closed: 0 };
-	});
-	// Helper function to validate duration data
-	const validateDuration = (duration: any): number => {
-		if (!duration?.rawHours || isNaN(duration.rawHours)) return 0;
-		return Math.max(0, duration.rawHours);
-	};
 
-	filteredTickets.forEach((t) => {
-		const validatedDuration = validateDuration(t.handlingDuration);
-		if (validatedDuration > 0) {
+	// Consolidate basic agent performance into useMemo
+	const agentPerformanceData = useMemo(() => {
+		if (!Array.isArray(filteredTickets)) return { agentAnalyticsData: [], summary: null };
+
+		const performance: Record<string, { durations: number[]; closed: number }> = {};
+		masterAgentList.forEach((agent) => {
+			performance[agent] = { durations: [], closed: 0 };
+		});
+
+		filteredTickets.forEach((t) => {
+			if (!t) return;
+			const validatedDuration = t?.handlingDuration?.rawHours || 0;
 			const agentName = t.openBy || "Unassigned";
-			if (!agentPerformance[agentName]) {
-				agentPerformance[agentName] = { durations: [], closed: 0 };
+			if (!performance[agentName]) {
+				performance[agentName] = { durations: [], closed: 0 };
 			}
-			agentPerformance[agentName].durations.push(validatedDuration);
-			if (t.status === "Closed") {
-				agentPerformance[agentName].closed++;
-			}
-		}
-	});
-	let busiestAgent = { name: "N/A", count: 0 };
-	let mostEfficientAgent = { name: "N/A", avg: Infinity };
-	let highestResolutionAgent = { name: "N/A", rate: 0 };
-	const agentAnalyticsData = Object.entries(agentPerformance)
-		.map(([agentName, data]) => {
-			const d = data as { durations: number[]; closed: number };
-			const ticketCount = d.durations.length;
-			if (ticketCount === 0) return null;
-			const totalDuration = Array.isArray(d.durations)
-				? d.durations
-					.map(Number)
-					.filter((v) => !isNaN(v))
-					.reduce((acc, curr) => acc + curr, 0)
-				: 0;
-			const avgDuration = totalDuration / ticketCount;
-			const minDuration = Math.min(...d.durations);
-			const maxDuration = Math.max(...d.durations);
-			const closedCount = d.closed;
-			const resolutionRate =
-				ticketCount > 0 ? (closedCount / ticketCount) * 100 : 0;
-			if (ticketCount > busiestAgent.count) {
-				busiestAgent = { name: agentName, count: ticketCount };
-			}
-			if (avgDuration < mostEfficientAgent.avg) {
-				mostEfficientAgent = { name: agentName, avg: avgDuration };
-			}
-			if (resolutionRate > highestResolutionAgent.rate) {
-				highestResolutionAgent = { name: agentName, rate: resolutionRate };
-			}
-			return {
-				agentName,
-				ticketCount,
-				totalDurationFormatted: formatDurationDHM(totalDuration),
-				avgDurationFormatted: formatDurationDHM(avgDuration),
-				minDurationFormatted: formatDurationDHM(minDuration),
-				maxDurationFormatted: formatDurationDHM(maxDuration),
-				closedCount,
-				closedPercent:
-					ticketCount > 0
-						? ((closedCount / ticketCount) * 100).toFixed(1)
-						: "0",
-				resolutionRate: resolutionRate.toFixed(1) + "%",
-			};
-		})
-		.filter(Boolean)
-		.sort((a, b) => (b?.ticketCount || 0) - (a?.ticketCount || 0));
+			if (validatedDuration > 0) performance[agentName].durations.push(validatedDuration);
+			if (t.status === "Closed") performance[agentName].closed++;
+		});
+
+		let busiestAgent = { name: "N/A", count: 0 };
+		let mostEfficientAgent = { name: "N/A", avg: Infinity };
+		let highestResolutionAgent = { name: "N/A", rate: 0 };
+
+		const list = Object.entries(performance)
+			.map(([agentName, data]) => {
+				const ticketCount = data.durations.length;
+				if (ticketCount === 0) return null;
+				const totalDuration = data.durations.reduce((acc, curr) => acc + curr, 0);
+				const avgDuration = totalDuration / ticketCount;
+				const minDuration = data.durations.reduce((min, v) => (v < min ? v : min), data.durations[0]);
+				const maxDuration = data.durations.reduce((max, v) => (v > max ? v : max), data.durations[0]);
+				const closedCount = data.closed;
+				const resolutionRate = (closedCount / ticketCount) * 100;
+
+				if (ticketCount > busiestAgent.count) busiestAgent = { name: agentName, count: ticketCount };
+				if (avgDuration < mostEfficientAgent.avg) mostEfficientAgent = { name: agentName, avg: avgDuration };
+				if (resolutionRate > highestResolutionAgent.rate) highestResolutionAgent = { name: agentName, rate: resolutionRate };
+
+				return {
+					agentName,
+					ticketCount,
+					totalDurationFormatted: formatDurationDHM(totalDuration),
+					avgDurationFormatted: formatDurationDHM(avgDuration),
+					minDurationFormatted: formatDurationDHM(minDuration),
+					maxDurationFormatted: formatDurationDHM(maxDuration),
+					closedCount,
+					closedPercent: ((closedCount / ticketCount) * 100).toFixed(1),
+					resolutionRate: resolutionRate.toFixed(1) + "%",
+				};
+			})
+			.filter(Boolean)
+			.sort((a, b) => (b?.ticketCount || 0) - (a?.ticketCount || 0));
+
+		return {
+			agentAnalyticsData: list,
+			summary: {
+				totalAgents: list.length,
+				busiestAgentName: busiestAgent.name,
+				mostEfficientAgentName: mostEfficientAgent.name,
+				highestResolutionAgentName: highestResolutionAgent.name,
+			},
+		};
+	}, [filteredTickets]);
+
+	const { agentAnalyticsData, summary } = agentPerformanceData;
 
 	useEffect(() => {
 		if (allTickets && allTickets.length > 0) {
@@ -188,10 +189,13 @@ export const AgentAnalyticsProvider = ({ children }) => {
 		) {
 			const dates = allTickets
 				.map((t) => t.openTime)
-				.filter(Boolean)
-				.map((d) => new Date(d));
+				.filter(Boolean);
 			if (dates.length > 0) {
-				const latest = new Date(Math.max(...dates.map((d) => d.getTime())));
+				const latestTime = dates.reduce((max, d) => {
+					const time = new Date(d).getTime();
+					return time > max ? time : max;
+				}, 0);
+				const latest = new Date(latestTime);
 				const month = String(latest.getMonth() + 1).padStart(2, "0");
 				const year = String(latest.getFullYear());
 				setStartMonth(month);
@@ -209,270 +213,112 @@ export const AgentAnalyticsProvider = ({ children }) => {
 		}
 	}, [agentAnalyticsData]);
 
-	// Utility untuk hitung KPI per tiket
-	function computeTicketKPI(ticket) {
-		const open = ticket.openTime ? new Date(ticket.openTime) : null;
-		const close = ticket.closeTime ? new Date(ticket.closeTime) : null;
-		const closePen = ticket.closeHandling
-			? new Date(ticket.closeHandling)
-			: null;
-		let frt = 0;
-		if (
-			open instanceof Date &&
-			closePen instanceof Date &&
-			!isNaN(open.getTime()) &&
-			!isNaN(closePen.getTime()) &&
-			closePen >= open
-		) {
-			frt = (closePen.getTime() - open.getTime()) / 60000;
-		}
-		let art = 0;
-		if (
-			open instanceof Date &&
-			close instanceof Date &&
-			!isNaN(open.getTime()) &&
-			!isNaN(close.getTime()) &&
-			close >= open
-		) {
-			art = (close.getTime() - open.getTime()) / 60000;
-		}
-		const fcr = !ticket.handling2 ? 100 : 0;
-		const sla = art > 0 && art <= 1440 ? 100 : 0;
-		return { ...ticket, frt, art, fcr, sla };
-	}
+	// --- Agent Monthly Processing ---
+	const agentMonthlyChartData = useMemo(() => {
+		if (!Array.isArray(filteredTickets)) return null;
 
-	// Map filteredTickets agar setiap tiket punya field frt, art, fcr, sla
-	const filteredTicketsWithKPI = filteredTickets.map(computeTicketKPI);
+		const monthlyPerformance: Record<string, Record<string, number>> = {};
+		const monthlyFRT: Record<string, Record<string, number[]>> = {};
+		const monthlyART: Record<string, Record<string, number[]>> = {};
+		const monthlyFCR: Record<string, Record<string, number[]>> = {};
+		const monthlySLA: Record<string, Record<string, number[]>> = {};
+		const monthlyBacklog: Record<string, Record<string, number>> = {};
+		const totalTicketsPerMonth: Record<string, number> = {};
+		const allMonths = new Set<string>();
 
-	// --- Agent Monthly Performance ---
-	const agentMonthlyPerformance = {};
-	const allMonths = new Set();
-	filteredTicketsWithKPI.forEach((ticket) => {
-		const agentName = ticket.openBy || "Unassigned";
-		try {
-			const dateObj = new Date(ticket.openTime);
+		filteredTickets.forEach((t) => {
+			if (!t?.openTime) return;
+			const agentName = t.openBy || "Unassigned";
+			const dateObj = new Date(t.openTime);
 			if (isNaN(dateObj.getTime())) return;
 			const monthYear = `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, "0")}`;
 			allMonths.add(monthYear);
-			if (!agentMonthlyPerformance[agentName]) {
-				agentMonthlyPerformance[agentName] = {};
-			}
-			agentMonthlyPerformance[agentName][monthYear] =
-				(agentMonthlyPerformance[agentName][monthYear] || 0) + 1;
-		} catch {
-			// Ignore invalid dates
-		}
-	});
-	// Filter sortedMonths sesuai cutoffStart dan cutoffEnd
-	const sortedMonths: string[] = Array.from(allMonths)
-		.map(String)
-		.sort(
-			(a, b) =>
-				new Date(String(a) + "-01").getTime() -
-				new Date(String(b) + "-01").getTime(),
-		)
-		.filter((month) => {
-			if (!cutoffStart || !cutoffEnd) return true;
-			if (typeof month !== "string") return false;
-			const [year, monthNum] = month.split("-");
-			const date = new Date(Number(year), Number(monthNum) - 1, 1);
-			return date >= cutoffStart && date <= cutoffEnd;
-		});
 
-	// Kumpulkan data bulanan per agent untuk FRT, ART, FCR, SLA
-	const agentMonthlyFRT = {};
-	const agentMonthlyART = {};
-	const agentMonthlyFCR = {};
-	const agentMonthlySLA = {};
-	filteredTicketsWithKPI.forEach((ticket) => {
-		const agentName = ticket.openBy || "Unassigned";
-		try {
-			const dateObj = new Date(ticket.openTime);
-			if (isNaN(dateObj.getTime())) return;
-			const monthYear = `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, "0")}`;
-			// FRT
-			if (!agentMonthlyFRT[agentName]) agentMonthlyFRT[agentName] = {};
-			if (!agentMonthlyFRT[agentName][monthYear])
-				agentMonthlyFRT[agentName][monthYear] = [];
-			agentMonthlyFRT[agentName][monthYear].push(ticket.frt);
-			// ART
-			if (!agentMonthlyART[agentName]) agentMonthlyART[agentName] = {};
-			if (!agentMonthlyART[agentName][monthYear])
-				agentMonthlyART[agentName][monthYear] = [];
-			agentMonthlyART[agentName][monthYear].push(ticket.art);
-			// FCR
-			if (!agentMonthlyFCR[agentName]) agentMonthlyFCR[agentName] = {};
-			if (!agentMonthlyFCR[agentName][monthYear])
-				agentMonthlyFCR[agentName][monthYear] = [];
-			agentMonthlyFCR[agentName][monthYear].push(ticket.fcr);
-			// SLA
-			if (!agentMonthlySLA[agentName]) agentMonthlySLA[agentName] = {};
-			if (!agentMonthlySLA[agentName][monthYear])
-				agentMonthlySLA[agentName][monthYear] = [];
-			agentMonthlySLA[agentName][monthYear].push(ticket.sla);
-		} catch {
-			// Ignore invalid dates
-		}
-	});
+			// Monthly count
+			if (!monthlyPerformance[agentName]) monthlyPerformance[agentName] = {};
+			monthlyPerformance[agentName][monthYear] = (monthlyPerformance[agentName][monthYear] || 0) + 1;
+			totalTicketsPerMonth[monthYear] = (totalTicketsPerMonth[monthYear] || 0) + 1;
 
-	// Hitung score bulanan per agent
-	const w1 = 0.4,
-		w2 = 0.4,
-		w3 = 0.2,
-		w4 = 0;
-	const agentMonthlyScore: Record<string, Record<string, number>> = {};
-	Object.keys(agentMonthlyPerformance).forEach((agentName) => {
-		agentMonthlyScore[agentName] = {};
-		sortedMonths.forEach((month) => {
-			// Ambil nilai bulanan
-			const fcrArr = agentMonthlyFCR[agentName]?.[month] || [];
-			const slaArr = agentMonthlySLA[agentName]?.[month] || [];
-			const artArr = agentMonthlyART[agentName]?.[month] || [];
-			const backlog = 0; // backlog bulanan (bisa diisi jika ada data)
-			// Rata-rata
-			const fcr = fcrArr.length
-				? fcrArr.reduce((a, b) => a + b, 0) / fcrArr.length
-				: 0;
-			const sla = slaArr.length
-				? slaArr.reduce((a, b) => a + b, 0) / slaArr.length
-				: 0;
-			const art = artArr.length
-				? artArr.reduce((a, b) => a + b, 0) / artArr.length
-				: 0;
-			// Normalisasi ART
-			const maxART = 1440; // 24 jam (bisa diganti sesuai kebutuhan)
-			const ART_norm = maxART ? (art / maxART) * 100 : 0;
-			// Score
-			const scoreRaw = w1 * fcr + w2 * sla - w3 * ART_norm - w4 * backlog;
-			const score = Math.max(0, Math.min(100, Math.round(scoreRaw)));
-			agentMonthlyScore[agentName][String(month)] = score;
-		});
-	});
+			// KPI metrics
+			const closePen = t.closeHandling ? new Date(t.closeHandling) : null;
+			const close = t.closeTime ? new Date(t.closeTime) : null;
+			const frt = (closePen && !isNaN(closePen.getTime())) ? (closePen.getTime() - dateObj.getTime()) / 60000 : 0;
+			const art = (close && !isNaN(close.getTime())) ? (close.getTime() - dateObj.getTime()) / 60000 : 0;
+			const fcr = !t.handling2 ? 100 : 0;
+			const sla = art > 0 && art <= 1440 ? 100 : 0;
 
-	const agentMonthlyChart =
-		sortedMonths.length === 0
-			? null
-			: {
-				labels: sortedMonths.map((month) => {
-					const [year, monthNum] = (month as string).split("-");
-					return `${monthNum}/${year}`;
-				}),
-				datasets: Object.entries(agentMonthlyPerformance).map(
-					([agentName, monthlyData]) => {
-						const md = monthlyData as Record<string, number>;
-						const color = "#3b82f6";
-						return {
-							label: agentName,
-							data: sortedMonths.map((month) => md[month as string] || 0),
-							backgroundColor: color + "CC",
-							borderColor: color,
-							borderRadius: 6,
-							maxBarThickness: 32,
-						};
-					},
-				),
-				datasetsFRT: Object.entries(agentMonthlyFRT).map(
-					([agentName, monthlyData]) => {
-						return {
-							label: agentName,
-							data: sortedMonths.map((month) => {
-								const arr = monthlyData[month as string] || [];
-								return arr.length
-									? arr.reduce((a, b) => a + b, 0) / arr.length
-									: 0;
-							}),
-						};
-					},
-				),
-				datasetsART: Object.entries(agentMonthlyART).map(
-					([agentName, monthlyData]) => {
-						return {
-							label: agentName,
-							data: sortedMonths.map((month) => {
-								const arr = monthlyData[month as string] || [];
-								return arr.length
-									? arr.reduce((a, b) => a + b, 0) / arr.length
-									: 0;
-							}),
-						};
-					},
-				),
-				datasetsFCR: Object.entries(agentMonthlyFCR).map(
-					([agentName, monthlyData]) => {
-						return {
-							label: agentName,
-							data: sortedMonths.map((month) => {
-								const arr = monthlyData[month as string] || [];
-								return arr.length
-									? arr.reduce((a, b) => a + b, 0) / arr.length
-									: 0;
-							}),
-						};
-					},
-				),
-				datasetsSLA: Object.entries(agentMonthlySLA).map(
-					([agentName, monthlyData]) => {
-						return {
-							label: agentName,
-							data: sortedMonths.map((month) => {
-								const arr = monthlyData[month as string] || [];
-								return arr.length
-									? arr.reduce((a, b) => a + b, 0) / arr.length
-									: 0;
-							}),
-						};
-					},
-				),
-				datasetsBacklog: Object.keys(agentMonthlyPerformance).map(
-					(agentName) => {
-						return {
-							label: agentName,
-							data: sortedMonths.map((month) => {
-								// Filter tickets for this agent and month
-								const agentTicketsForMonth = filteredTicketsWithKPI.filter(
-									(t) => {
-										if (t.openBy !== agentName) return false;
-										if (!t.openTime) return false;
-										const d = new Date(t.openTime);
-										if (isNaN(d.getTime())) return false;
-										const monthKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-										return monthKey === month;
-									},
-								);
-
-								// Calculate backlog count using the same logic as isBacklogTicket
-								const backlogCount = agentTicketsForMonth.filter((t) => {
-									const status = t.status?.trim()?.toLowerCase() || "";
-									if (status !== "open ticket") return false;
-									if (t.closeTime) return false;
-									return true;
-								}).length;
-
-								return backlogCount;
-							}),
-						};
-					},
-				),
-				datasetsScore: Object.entries(agentMonthlyScore).map(
-					([agentName, monthlyData]) => {
-						return {
-							label: agentName,
-							data: sortedMonths.map((month) => monthlyData[month] ?? 0),
-						};
-					},
-				),
-				// Add total tickets per month for percentage calculation
-				totalTicketsPerMonth: sortedMonths.map((month) => {
-					const monthTickets = filteredTicketsWithKPI.filter((t) => {
-						if (!t.openTime) return false;
-						const d = new Date(t.openTime);
-						if (isNaN(d.getTime())) return false;
-						const monthKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-						return monthKey === month;
-					});
-					return monthTickets.length;
-				}),
+			const updateMetric = (metricMap: Record<string, Record<string, number[]>>, val: number) => {
+				if (!metricMap[agentName]) metricMap[agentName] = {};
+				if (!metricMap[agentName][monthYear]) metricMap[agentName][monthYear] = [];
+				metricMap[agentName][monthYear].push(val);
 			};
+
+			updateMetric(monthlyFRT, Math.max(0, frt));
+			updateMetric(monthlyART, Math.max(0, art));
+			updateMetric(monthlyFCR, fcr);
+			updateMetric(monthlySLA, sla);
+
+			// Backlog (status open ticket and no closeTime)
+			const status = t.status?.trim()?.toLowerCase() || "";
+			if (status === "open ticket" && !t.closeTime) {
+				if (!monthlyBacklog[agentName]) monthlyBacklog[agentName] = {};
+				monthlyBacklog[agentName][monthYear] = (monthlyBacklog[agentName][monthYear] || 0) + 1;
+			}
+		});
+
+		const sortedMonths = Array.from(allMonths).sort().filter((month) => {
+			if (!cutoffStart || !cutoffEnd) return true;
+			const [year, m] = month.split("-");
+			const d = new Date(Number(year), Number(m) - 1, 1);
+			return d >= cutoffStart && d <= cutoffEnd;
+		});
+
+		if (sortedMonths.length === 0) return null;
+
+		const w1 = 0.4, w2 = 0.4, w3 = 0.2; //Weights
+		const mapToDataset = (metricMap: Record<string, Record<string, number[] | number>>) =>
+			Object.entries(metricMap).map(([agentName, data]) => ({
+				label: agentName,
+				data: sortedMonths.map((m) => {
+					const val = data[m];
+					if (Array.isArray(val)) return val.length ? val.reduce((a, b) => a + b, 0) / val.length : 0;
+					return val || 0;
+				}),
+			}));
+
+		const agentMonthlyScoreRaw: Record<string, Record<string, number>> = {};
+		Object.keys(monthlyPerformance).forEach((agent) => {
+			agentMonthlyScoreRaw[agent] = {};
+			sortedMonths.forEach((m) => {
+				const fcrArr = monthlyFCR[agent]?.[m] || [];
+				const slaArr = monthlySLA[agent]?.[m] || [];
+				const artArr = monthlyART[agent]?.[m] || [];
+				const fcrAvg = fcrArr.length ? fcrArr.reduce((a, b) => a + b, 0) / fcrArr.length : 0;
+				const slaAvg = slaArr.length ? slaArr.reduce((a, b) => a + b, 0) / slaArr.length : 0;
+				const artAvg = artArr.length ? artArr.reduce((a, b) => a + b, 0) / artArr.length : 0;
+				const score = Math.max(0, Math.min(100, Math.round(w1 * fcrAvg + w2 * slaAvg - w3 * (Math.min(artAvg, 1440) / 1440 * 100))));
+				agentMonthlyScoreRaw[agent][m] = score;
+			});
+		});
+
+		return {
+			labels: sortedMonths.map(m => { const [y, mon] = m.split("-"); return `${mon}/${y}`; }),
+			datasets: Object.entries(monthlyPerformance).map(([agent, data]) => ({
+				label: agent,
+				data: sortedMonths.map(m => data[m] || 0),
+				backgroundColor: "#3b82f6CC", borderColor: "#3b82f6", borderRadius: 6, maxBarThickness: 32,
+			})),
+			datasetsFRT: mapToDataset(monthlyFRT),
+			datasetsART: mapToDataset(monthlyART),
+			datasetsFCR: mapToDataset(monthlyFCR),
+			datasetsSLA: mapToDataset(monthlySLA),
+			datasetsBacklog: mapToDataset(monthlyBacklog),
+			datasetsScore: mapToDataset(agentMonthlyScoreRaw as any),
+			totalTicketsPerMonth: sortedMonths.map(m => totalTicketsPerMonth[m] || 0),
+		};
+	}, [filteredTickets, cutoffStart, cutoffEnd]);
+
+	const agentMonthlyChart = agentMonthlyChartData;
 
 	// Ambil semua bulan & tahun unik
 	const allMonthsInData = useMemo(() => {
@@ -513,13 +359,7 @@ export const AgentAnalyticsProvider = ({ children }) => {
 	}, [allTickets]);
 
 	// --- Tambahan: summary dan agentList agar sesuai ekspektasi AgentAnalytics.tsx ---
-	const agentList = agentAnalyticsData;
-	const summary = {
-		totalAgents: agentAnalyticsData.length,
-		busiestAgentName: busiestAgent.name,
-		mostEfficientAgentName: mostEfficientAgent.name,
-		highestResolutionAgentName: highestResolutionAgent.name,
-	};
+	const agentList = agentAnalyticsData || [];
 
 	// Provider value
 	const value = {

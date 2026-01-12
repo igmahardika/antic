@@ -12,16 +12,24 @@ import {
 	analyzeKeywords,
 	generateAnalysisConclusion,
 } from "@/lib/utils";
-import { logger } from "@/lib/logger";
-import { 
-	isClosedTicket
-} from "@/utils/ticketStatus";
+import { isClosedTicket } from "@/utils/ticketStatus";
+import { cacheService } from "@/services/cacheService";
 
 // Struktur context
 const AnalyticsContext = createContext(null);
 
 export function useAnalytics() {
-	return useContext(AnalyticsContext);
+	const context = useContext(AnalyticsContext);
+	if (!context) {
+		return {
+			gridData: [],
+			kanbanData: [],
+			agentAnalyticsData: null,
+			ticketAnalyticsData: null,
+			refresh: () => { },
+		};
+	}
+	return context;
 }
 
 export const AnalyticsProvider = ({ children }) => {
@@ -32,19 +40,30 @@ export const AnalyticsProvider = ({ children }) => {
 	const [refreshTrigger, setRefreshTrigger] = useState(0);
 	const [isLoading, setIsLoading] = useState(true);
 
-	// Data dari IndexedDB
-	const allTickets = useLiveQuery(() => db.tickets.toArray(), [refreshTrigger]);
+	// Data dari CacheService (menggantikan useLiveQuery db.tickets)
+	const [allTickets, setAllTickets] = useState<ITicket[]>([]);
+
 	useEffect(() => {
-		logger.info("[DEBUG] allTickets from IndexedDB:", allTickets);
-		if (allTickets) {
-			setIsLoading(false);
-		}
-	}, [allTickets]);
+		const fetchData = async () => {
+			setIsLoading(true);
+			try {
+				// Gunakan cacheService untuk mendapatkan tiket (otomatis fetch API jika cache kosong)
+				const tickets = await cacheService.getTickets();
+				setAllTickets(tickets as ITicket[]);
+			} catch (error) {
+				console.error("Failed to fetch tickets in AnalyticsContext:", error);
+			} finally {
+				setIsLoading(false);
+			}
+		};
+
+		fetchData();
+	}, [refreshTrigger]);
 
 	useEffect(() => {
 		if (
-			Array.isArray(allTickets) && 
-			allTickets.length > 0 && 
+			Array.isArray(allTickets) &&
+			allTickets.length > 0 &&
 			!isLoading &&
 			(!startMonth || !endMonth || !selectedYear)
 		) {
@@ -52,7 +71,11 @@ export const AnalyticsProvider = ({ children }) => {
 				.map((t) => t.openTime)
 				.filter(Boolean) as string[];
 			if (dates.length > 0) {
-				const latest = new Date(Math.max(...dates.map((d) => new Date(d).getTime())));
+				const latestTime = dates.reduce((max, d) => {
+					const time = new Date(d).getTime();
+					return time > max ? time : max;
+				}, 0);
+				const latest = new Date(latestTime);
 				const month = String(latest.getMonth() + 1).padStart(2, "0");
 				const year = String(latest.getFullYear());
 				setStartMonth(month);
@@ -124,56 +147,39 @@ export const AnalyticsProvider = ({ children }) => {
 		}
 		// --- Filtered Tickets ---
 		const filteredTickets = allTickets.filter((t) => {
+			if (!t) return false;
 			if (!cutoffStart || !cutoffEnd) return true;
 			if (!t.openTime) return false;
 			const d = new Date(t.openTime);
 			if (isNaN(d.getTime())) return false;
 			return d >= cutoffStart && d <= cutoffEnd;
 		});
-		// LOGGING: Show filter period and ticket/customer counts
-		const uniqueCustomers = new Set(
-			filteredTickets.map((t) => t.customerId || "Unknown"),
-		);
-		let filterRange = "ALL";
-		if (
-			cutoffStart instanceof Date &&
-			!isNaN(cutoffStart.getTime()) &&
-			cutoffEnd instanceof Date &&
-			!isNaN(cutoffEnd.getTime())
-		) {
-			filterRange = `${cutoffStart.toISOString()} - ${cutoffEnd.toISOString()}`;
-		}
-		logger.info("[AnalyticsContext] Filter:", {
-			cutoffStart,
-			cutoffEnd,
-			filteredTickets: filteredTickets.length,
-			uniqueCustomers: uniqueCustomers.size,
-			filterRange,
-		});
+
+		const gridData: ITicket[] = filteredTickets;
 
 		// --- Customer Master Map ---
-		const customerMasterMap = new Map();
-		if (allTickets) {
-			allTickets.forEach((ticket) => {
-				const customerId = ticket.customerId || "Unknown";
-				if (customerId === "Unknown") return;
-				if (!customerMasterMap.has(customerId)) {
-					customerMasterMap.set(customerId, []);
-				}
-				customerMasterMap.get(customerId).push(ticket);
-			});
-		}
+		const customerMasterMap = new Map<string, ITicket[]>();
+		allTickets.forEach((ticket) => {
+			if (!ticket) return;
+			const customerId = ticket.customerId || "Unknown";
+			if (customerId === "Unknown") return;
+			if (!customerMasterMap.has(customerId)) {
+				customerMasterMap.set(customerId, []);
+			}
+			customerMasterMap.get(customerId)!.push(ticket);
+		});
 
 		// --- Risk Classification ---
-		const periodTicketCounts = {};
+		const periodTicketCounts: Record<string, number> = {};
 		filteredTickets.forEach((t) => {
+			if (!t) return;
 			const customerId = t.customerId || "Unknown";
 			if (customerId !== "Unknown") {
-				periodTicketCounts[customerId] =
-					(periodTicketCounts[customerId] || 0) + 1;
+				periodTicketCounts[customerId] = (periodTicketCounts[customerId] || 0) + 1;
 			}
 		});
-		const customerClassMap = {};
+
+		const customerClassMap: Record<string, string> = {};
 		Object.keys(periodTicketCounts).forEach((customerId) => {
 			const count = periodTicketCounts[customerId];
 			if (count > 18) customerClassMap[customerId] = "Ekstrem";
@@ -182,500 +188,233 @@ export const AnalyticsProvider = ({ children }) => {
 			else customerClassMap[customerId] = "Normal";
 		});
 
-		// --- Grid Data & Kanban Data ---
-		const gridData: ITicket[] = filteredTickets;
-		function processKanbanData(tickets, classMap, masterMap) {
-			const customerMap = {};
-			const closedTickets = tickets.filter(isClosedTicket);
-			closedTickets.forEach((ticket) => {
-				const customerId = ticket.customerId || "Unknown Customer";
-				if (customerId === "Unknown Customer") return;
-				if (!customerMap[customerId]) {
-					customerMap[customerId] = {
-						name: ticket.name,
-						customerId: customerId,
-						tickets: [],
-						totalHandlingDuration: 0,
-						descriptions: [],
-						causes: [],
-						handlings: [],
-					};
-				}
-				customerMap[customerId].tickets.push(ticket);
-				customerMap[customerId].totalHandlingDuration +=
-					ticket.handlingDuration?.rawHours || 0;
-				customerMap[customerId].descriptions.push(ticket.description);
-				customerMap[customerId].causes.push(ticket.cause);
-				customerMap[customerId].handlings.push(ticket.handling);
-			});
-			return Object.values(customerMap)
-				.map((customer) => {
-					const c = customer as any;
-					const descriptionKeywords = analyzeKeywords(c.descriptions);
-					const causeKeywords = analyzeKeywords(c.causes);
-					const handlingKeywords = analyzeKeywords(c.handlings);
-					const analysisKeywords = {
-						description: descriptionKeywords.map((item) => item[0]),
-						cause: causeKeywords.map((item) => item[0]),
-						handling: handlingKeywords.map((item) => item[0]),
-					};
-					const repClass = classMap[c.customerId] || "Normal";
-					return {
-						id: c.customerId,
-						name: c.name,
-						customerId: c.customerId,
-						ticketCount: c.tickets.length,
-						totalHandlingDurationFormatted: formatDurationDHM(
-							c.totalHandlingDuration,
-						),
-						allTickets: c.tickets,
-						fullTicketHistory: masterMap.get(c.customerId) || [],
-						analysis: {
-							description: descriptionKeywords,
-							cause: causeKeywords,
-							handling: handlingKeywords,
-							conclusion: generateAnalysisConclusion(analysisKeywords),
-						},
-						repClass,
-					};
-				})
-				.sort((a, b) => b.ticketCount - a.ticketCount);
-		}
-		const kanbanData = processKanbanData(
-			gridData,
-			customerClassMap,
-			customerMasterMap,
-		);
+		// --- Kanban Data ---
+		const customerMap: Record<string, any> = {};
+		const closedTicketsList = gridData.filter(isClosedTicket);
+		closedTicketsList.forEach((ticket) => {
+			if (!ticket) return;
+			const customerId = ticket.customerId || "Unknown Customer";
+			if (customerId === "Unknown Customer") return;
+			if (!customerMap[customerId]) {
+				customerMap[customerId] = {
+					name: ticket.name,
+					customerId: customerId,
+					tickets: [],
+					totalHandlingDuration: 0,
+					descriptions: [],
+					causes: [],
+					handlings: [],
+				};
+			}
+			customerMap[customerId].tickets.push(ticket);
+			customerMap[customerId].totalHandlingDuration += ticket.handlingDuration?.rawHours || 0;
+			customerMap[customerId].descriptions.push(ticket.description || "");
+			customerMap[customerId].causes.push(ticket.cause || "");
+			customerMap[customerId].handlings.push(ticket.handling || "");
+		});
+
+		const kanbanData = Object.values(customerMap)
+			.map((c) => {
+				const descriptionKeywords = analyzeKeywords(c.descriptions);
+				const causeKeywords = analyzeKeywords(c.causes);
+				const handlingKeywords = analyzeKeywords(c.handlings);
+				const analysisKeywords = {
+					description: descriptionKeywords.map((item) => item[0]),
+					cause: causeKeywords.map((item) => item[0]),
+					handling: handlingKeywords.map((item) => item[0]),
+				};
+				const repClass = customerClassMap[c.customerId] || "Normal";
+				return {
+					id: c.customerId,
+					name: c.name,
+					customerId: c.customerId,
+					ticketCount: c.tickets.length,
+					totalHandlingDurationFormatted: formatDurationDHM(c.totalHandlingDuration),
+					allTickets: c.tickets,
+					fullTicketHistory: customerMasterMap.get(c.customerId) || [],
+					analysis: {
+						description: descriptionKeywords,
+						cause: causeKeywords,
+						handling: handlingKeywords,
+						conclusion: generateAnalysisConclusion(analysisKeywords),
+					},
+					repClass,
+				};
+			})
+			.sort((a, b) => b.ticketCount - a.ticketCount);
 
 		// --- Agent Analytics ---
 		const masterAgentList = [
-			"Dea Destivica",
-			"Muhammad Lutfi Rosadi",
-			"Stefano Dewa Susanto",
-			"Fajar Juliantono",
-			"Priyo Ardi Nugroho",
-			"Fajar Nanda Ismono",
-			"Louis Bayu Krisna Redionando",
-			"Bandero Aldi Prasetya",
-			"Hamid Machfudin Sukardi",
-			"Difa' Fathir Aditya",
-			"Zakiyya Wulan Safitri",
+			"Dea Destivica", "Muhammad Lutfi Rosadi", "Stefano Dewa Susanto", "Fajar Juliantono",
+			"Priyo Ardi Nugroho", "Fajar Nanda Ismono", "Louis Bayu Krisna Redionando",
+			"Bandero Aldi Prasetya", "Hamid Machfudin Sukardi", "Difa' Fathir Aditya", "Zakiyya Wulan Safitri",
 		];
-		const agentPerformance = {};
+		const agentPerformance: Record<string, { durations: number[]; closed: number }> = {};
 		masterAgentList.forEach((agent) => {
 			agentPerformance[agent] = { durations: [], closed: 0 };
 		});
+
 		gridData.forEach((t) => {
-			if (t.handlingDuration?.rawHours > 0) {
-				const agentName = t.openBy || "Unassigned";
-				if (!agentPerformance[agentName]) {
-					agentPerformance[agentName] = { durations: [], closed: 0 };
-				}
-				agentPerformance[agentName].durations.push(t.handlingDuration.rawHours);
-				if (t.status === "Closed") {
-					agentPerformance[agentName].closed++;
-				}
+			if (!t) return;
+			const duration = t.handlingDuration?.rawHours || 0;
+			const agentName = t.openBy || "Unassigned";
+			if (!agentPerformance[agentName]) {
+				agentPerformance[agentName] = { durations: [], closed: 0 };
 			}
+			if (duration > 0) agentPerformance[agentName].durations.push(duration);
+			if (t.status === "Closed") agentPerformance[agentName].closed++;
 		});
+
 		let busiestAgent = { name: "N/A", count: 0 };
 		let mostEfficientAgent = { name: "N/A", avg: Infinity };
 		let highestResolutionAgent = { name: "N/A", rate: 0 };
-		const agentAnalyticsData = Object.entries(agentPerformance)
+
+		const agentAnalyticsDataList = Object.entries(agentPerformance)
 			.map(([agentName, data]) => {
-				const d = data as any;
-				const ticketCount = d.durations.length;
+				const ticketCount = data.durations.length;
 				if (ticketCount === 0) return null;
-				const totalDuration = Array.isArray(d.durations)
-					? d.durations
-							.map(Number)
-							.filter((v) => !isNaN(v))
-							.reduce((acc, curr) => acc + curr, 0)
-					: 0;
-				const avgDuration = totalDuration / ticketCount;
-				const minDuration = Math.min(...d.durations);
-				const maxDuration = Math.max(...d.durations);
-				const closedCount = d.closed;
-				const resolutionRate =
-					ticketCount > 0 ? (closedCount / ticketCount) * 100 : 0;
-				if (ticketCount > busiestAgent.count) {
-					busiestAgent = { name: agentName, count: ticketCount };
-				}
-				if (avgDuration < mostEfficientAgent.avg) {
-					mostEfficientAgent = { name: agentName, avg: avgDuration };
-				}
-				if (resolutionRate > highestResolutionAgent.rate) {
-					highestResolutionAgent = { name: agentName, rate: resolutionRate };
-				}
+				const totalDur = data.durations.reduce((acc, curr) => acc + curr, 0);
+				const avgDur = totalDur / ticketCount;
+				const minDur = data.durations.reduce((min, v) => (v < min ? v : min), data.durations[0]);
+				const maxDur = data.durations.reduce((max, v) => (v > max ? v : max), data.durations[0]);
+				const resolutionRate = (data.closed / ticketCount) * 100;
+
+				if (ticketCount > busiestAgent.count) busiestAgent = { name: agentName, count: ticketCount };
+				if (avgDur < mostEfficientAgent.avg) mostEfficientAgent = { name: agentName, avg: avgDur };
+				if (resolutionRate > highestResolutionAgent.rate) highestResolutionAgent = { name: agentName, rate: resolutionRate };
+
 				return {
 					agentName,
 					ticketCount,
-					totalDurationFormatted: formatDurationDHM(totalDuration),
-					avgDurationFormatted: formatDurationDHM(avgDuration),
-					minDurationFormatted: formatDurationDHM(minDuration),
-					maxDurationFormatted: formatDurationDHM(maxDuration),
+					totalDurationFormatted: formatDurationDHM(totalDur),
+					avgDurationFormatted: formatDurationDHM(avgDur),
+					minDurationFormatted: formatDurationDHM(minDur),
+					maxDurationFormatted: formatDurationDHM(maxDur),
 					resolutionRate: resolutionRate.toFixed(1) + "%",
 				};
 			})
 			.filter(Boolean)
 			.sort((a, b) => (b?.ticketCount || 0) - (a?.ticketCount || 0));
 		// --- Agent Monthly Performance ---
-		const agentMonthlyPerformance = {};
-		const allMonths = new Set();
+		const agentMonthlyPerformance: Record<string, Record<string, number>> = {};
+		const allMonths = new Set<string>();
 		gridData.forEach((ticket) => {
+			if (!ticket?.openTime) return;
 			const agentName = ticket.openBy || "Unassigned";
-			try {
-				const dateObj = new Date(ticket.openTime);
-				if (isNaN(dateObj.getTime())) return;
-				const monthYear = `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, "0")}`;
-				allMonths.add(monthYear);
-				if (!agentMonthlyPerformance[agentName]) {
-					agentMonthlyPerformance[agentName] = {};
-				}
-				agentMonthlyPerformance[agentName][monthYear] =
-					(agentMonthlyPerformance[agentName][monthYear] || 0) + 1;
-			} catch (e) {}
+			const dateObj = new Date(ticket.openTime);
+			if (isNaN(dateObj.getTime())) return;
+			const monthYear = `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, "0")}`;
+			allMonths.add(monthYear);
+			if (!agentMonthlyPerformance[agentName]) {
+				agentMonthlyPerformance[agentName] = {};
+			}
+			agentMonthlyPerformance[agentName][monthYear] = (agentMonthlyPerformance[agentName][monthYear] || 0) + 1;
 		});
-		const sortedMonths = Array.from(allMonths).sort(
-			(a, b) =>
-				new Date((a as string) + "-01").getTime() -
-				new Date((b as string) + "-01").getTime(),
-		);
-		const agentMonthlyChartData =
-			sortedMonths.length === 0
-				? null
-				: {
-						labels: sortedMonths.map((month) => {
-							const [year, monthNum] = (month as string).split("-");
-							return `${monthNum}/${year}`;
-						}),
-						datasets: Object.entries(agentMonthlyPerformance).map(
-							([agentName, monthlyData], _index) => {
-								const md = monthlyData as any;
-								const color = "#3b82f6";
-								return {
-									label: agentName,
-									data: sortedMonths.map((month) => md[month as string] || 0),
-									backgroundColor: color + "CC",
-									borderColor: color,
-									borderRadius: 6,
-									maxBarThickness: 32,
-								};
-							},
-						),
-					};
-		// Hitung total response (jumlah tiket di gridData)
-		const totalResponses = gridData.length;
-		// Hitung rata-rata response time (dari agentPerformance, ambil semua durasi lalu rata-rata)
-		const allDurations = Object.values(agentPerformance).flatMap(
-			(d: any) => d.durations || [],
-		);
-		const avgResponseTime =
-			allDurations.length > 0
-				? formatDurationDHM(
-						allDurations.reduce((a, b) => a + b, 0) / allDurations.length,
-					)
-				: "00:00:00";
-		// Top performer: agent dengan ticketCount terbanyak (busiestAgent)
-		const topPerformer = busiestAgent.name;
-		// Active agents: agent yang menangani tiket di periode ini
-		const activeAgents = agentAnalyticsData.length;
+
+		const sortedMonths = Array.from(allMonths).sort().filter((m) => {
+			if (!cutoffStart || !cutoffEnd) return true;
+			const [y, mm] = m.split("-");
+			const d = new Date(Number(y), Number(mm) - 1, 1);
+			return d >= cutoffStart && d <= cutoffEnd;
+		});
+
+		const agentMonthlyChartData = sortedMonths.length === 0 ? null : {
+			labels: sortedMonths.map(m => { const [y, mon] = m.split("-"); return `${mon}/${y}`; }),
+			datasets: Object.entries(agentMonthlyPerformance).map(([agent, data]) => ({
+				label: agent,
+				data: sortedMonths.map(m => data[m] || 0),
+				backgroundColor: "#3b82f6CC", borderColor: "#3b82f6", borderRadius: 6, maxBarThickness: 32,
+			})),
+		};
+
 		const finalAgentData = {
-			agentList: agentAnalyticsData,
+			agentList: agentAnalyticsDataList,
 			summary: {
-				totalAgents: agentAnalyticsData.length,
-				totalResponses,
-				avgResponseTime,
-				topPerformer,
-				activeAgents,
+				totalAgents: agentAnalyticsDataList.length,
+				totalResponses: gridData.length,
+				avgResponseTime: formatDurationDHM(Object.values(agentPerformance).flatMap(d => d.durations).reduce((a, b, _, arr) => a + b / arr.length, 0)),
+				topPerformer: busiestAgent.name,
+				activeAgents: agentAnalyticsDataList.length,
 				busiestAgentName: busiestAgent.name,
-				mostEfficientAgentName:
-					mostEfficientAgent.avg === Infinity ? "N/A" : mostEfficientAgent.name,
+				mostEfficientAgentName: mostEfficientAgent.avg === Infinity ? "N/A" : mostEfficientAgent.name,
 				highestResolutionAgentName: highestResolutionAgent.name,
 			},
 			agentMonthlyChart: agentMonthlyChartData,
 		};
 		// --- Ticket Analytics ---
-		// (Copy logic dari Dashboard agar ticketAnalyticsData tidak null)
-		// --- Ticket Analytics Processing (formerly analyticsData) ---
-		const totalTickets = gridData.length;
-		const totalDuration = Array.isArray(gridData)
-			? gridData
-					.map((t) => Number(t.duration?.rawHours || 0))
-					.filter((v) => !isNaN(v))
-					.reduce((acc, curr) => acc + curr, 0)
-			: 0;
-		const closedTickets = gridData.filter(isClosedTicket).length;
-		// Overdue: tiket dengan durasi > 24 jam
-		const overdueTickets = gridData.filter(
-			(t: ITicket) => Number(t.duration?.rawHours) > 24,
-		).length;
-		// Escalated: tiket dengan lebih dari 1 penanganan (ada closeHandling2, closeHandling3, closeHandling4, atau closeHandling5 yang tidak kosong)
-		const escalatedTickets = gridData.filter((t: ITicket) =>
-			[
-				t.closeHandling2,
-				t.closeHandling3,
-				t.closeHandling4,
-				t.closeHandling5,
-			].some((h) => h && h.trim() !== ""),
-		).length;
+		const totalTicks = gridData.length;
+		const totalDur = gridData.reduce((acc, t) => acc + (t.duration?.rawHours || 0), 0);
+		const closedTicksCount = gridData.filter(isClosedTicket).length;
+		const overdueTicksCount = gridData.filter(t => (t.duration?.rawHours || 0) > 24).length;
+		const escalatedTicksCount = gridData.filter(t => [t.closeHandling2, t.closeHandling3, t.closeHandling4, t.closeHandling5].some(h => h && h.trim() !== "")).length;
 
-		const complaints = {};
-		gridData.forEach((t) => {
-			const category = t.category || "Lainnya";
-			complaints[category] = (complaints[category] || 0) + 1;
-		});
-
-		// Palet warna untuk kategori komplain (donut chart)
-		const complaintColors = [
-			"#3b82f6", // blue
-			"#f59e42", // orange
-			"#22c55e", // green
-			"#a855f7", // purple
-			"#ef4444", // red
-			"#fbbf24", // yellow
-			"#0ea5e9", // sky
-			"#6366f1", // indigo
-			"#ec4899", // pink
-			"#14b8a6", // teal
-			"#eab308", // amber
-			"#f472b6", // rose
-		];
-
+		const complaints: Record<string, number> = {};
+		gridData.forEach(t => { const cat = t.category || "Lainnya"; complaints[cat] = (complaints[cat] || 0) + 1; });
 		const complaintsLabels = Object.keys(complaints);
 		const complaintsValues = Object.values(complaints);
+		const complaintColors = ["#3b82f6", "#f59e42", "#22c55e", "#a855f7", "#ef4444", "#fbbf24", "#0ea5e9", "#6366f1", "#ec4899", "#14b8a6", "#eab308", "#f472b6"];
 
-		// --- New: Classification & Sub-Classification Analysis ---
-		type ClassificationAnalysis = {
-			[key: string]: {
-				count: number;
-				sub: { [key: string]: number };
-				trendlineRaw?: { [month: string]: number };
-				trendline?: { labels: string[]; data: number[] };
-				trendPercent?: number | null;
-			};
-		};
-		const classificationAnalysis: ClassificationAnalysis = {};
-		gridData.forEach((t) => {
-			const classification = t.classification || "Unclassified";
-			const subClassification = t.subClassification || "Unclassified";
-			// Ambil bulan-tahun dari openTime (format: yyyy-MM)
-			let monthYear = "Unknown";
+		// --- Classification Analysis ---
+		const classificationAnalysis: Record<string, any> = {};
+		gridData.forEach(t => {
+			if (!t) return;
+			const cls = t.classification || "Unclassified";
+			const sub = t.subClassification || "Unclassified";
+			if (!classificationAnalysis[cls]) {
+				classificationAnalysis[cls] = { count: 0, sub: {}, trendlineRaw: {} };
+			}
+			classificationAnalysis[cls].count++;
+			classificationAnalysis[cls].sub[sub] = (classificationAnalysis[cls].sub[sub] || 0) + 1;
 			if (t.openTime) {
 				const d = new Date(t.openTime);
 				if (!isNaN(d.getTime())) {
-					const mm = String(d.getMonth() + 1).padStart(2, "0");
-					const yyyy = d.getFullYear();
-					monthYear = `${yyyy}-${mm}`;
+					const my = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+					classificationAnalysis[cls].trendlineRaw[my] = (classificationAnalysis[cls].trendlineRaw[my] || 0) + 1;
 				}
 			}
-
-			if (!classificationAnalysis[classification]) {
-				classificationAnalysis[classification] = {
-					count: 0,
-					sub: {},
-					trendlineRaw: {},
-				};
-			}
-			classificationAnalysis[classification].count++;
-
-			if (!classificationAnalysis[classification].sub[subClassification]) {
-				classificationAnalysis[classification].sub[subClassification] = 0;
-			}
-			classificationAnalysis[classification].sub[subClassification]++;
-
-			// Hitung trendline per bulan
-			if (!classificationAnalysis[classification].trendlineRaw) {
-				classificationAnalysis[classification].trendlineRaw = {};
-			}
-			if (!classificationAnalysis[classification].trendlineRaw![monthYear]) {
-				classificationAnalysis[classification].trendlineRaw![monthYear] = 0;
-			}
-			classificationAnalysis[classification].trendlineRaw![monthYear]!++;
 		});
 
-		// Setelah itu, ubah trendlineRaw menjadi array labels & data (urutkan bulan)
-		Object.values(classificationAnalysis).forEach((ca) => {
-			if (!ca.trendlineRaw) return;
-			const rawKeys = Object.keys(ca.trendlineRaw).sort(
-				(a, b) => new Date(a + "-01").getTime() - new Date(b + "-01").getTime(),
-			);
-			const monthNames = [
-				"Jan",
-				"Feb",
-				"Mar",
-				"Apr",
-				"May",
-				"Jun",
-				"Jul",
-				"Aug",
-				"Sep",
-				"Oct",
-				"Nov",
-				"Dec",
-			];
-			const labels = rawKeys.map((key) => {
-				const [yyyy, mm] = key.split("-");
-				return `${monthNames[parseInt(mm, 10) - 1]} ${yyyy}`;
-			});
-			const data = rawKeys.map((l) => ca.trendlineRaw![l]);
-			ca.trendline = { labels, data };
-			// Hitung trend percent
-			if (data.length >= 2) {
-				const prev = data[data.length - 2];
-				const curr = data[data.length - 1];
-				ca.trendPercent =
-					prev === 0 ? null : ((curr - prev) / Math.abs(prev)) * 100;
-			} else {
-				ca.trendPercent = null;
+		Object.values(classificationAnalysis).forEach(ca => {
+			const keys = Object.keys(ca.trendlineRaw).sort();
+			ca.trendline = { labels: keys.map(k => k.split("-")[1] + "/" + k.split("-")[0]), data: keys.map(k => ca.trendlineRaw[k]) };
+			if (ca.trendline.data.length >= 2) {
+				const p = ca.trendline.data[ca.trendline.data.length - 2];
+				const curr = ca.trendline.data[ca.trendline.data.length - 1];
+				ca.trendPercent = p === 0 ? null : ((curr - p) / p) * 100;
 			}
 			delete ca.trendlineRaw;
 		});
 
-		// --- Rewritten: Monthly Ticket Statistics ---
-		const monthNamesIndo = [
-			"Jan",
-			"Feb",
-			"Mar",
-			"Apr",
-			"Mei",
-			"Jun",
-			"Jul",
-			"Agu",
-			"Sep",
-			"Okt",
-			"Nov",
-			"Des",
-		];
-		const monthlyStats = {};
-		gridData.forEach((ticket) => {
-			try {
-				const d = new Date(ticket.openTime);
-				if (!isNaN(d.getTime())) {
-					const mm = String(d.getMonth() + 1).padStart(2, "0");
-					const yyyy = d.getFullYear();
-					const monthYear = `${yyyy}-${mm}`;
-					if (!monthlyStats[monthYear]) {
-						monthlyStats[monthYear] = { incoming: 0, closed: 0 };
-					}
-					monthlyStats[monthYear].incoming++;
-					if (ticket.status === "Closed") {
-						monthlyStats[monthYear].closed++;
-					}
-				}
-			} catch (e) {
-				/* ignore invalid dates */
-			}
+		// --- Monthly Ticket Statistics ---
+		const monthlyStats: Record<string, { incoming: number; closed: number }> = {};
+		gridData.forEach(t => {
+			if (!t.openTime) return;
+			const d = new Date(t.openTime);
+			if (isNaN(d.getTime())) return;
+			const my = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+			if (!monthlyStats[my]) monthlyStats[my] = { incoming: 0, closed: 0 };
+			monthlyStats[my].incoming++;
+			if (t.status === "Closed") monthlyStats[my].closed++;
 		});
 
-		const sortedMonthlyKeys = Object.keys(monthlyStats).sort((a, b) => {
-			return new Date(a + "-01").getTime() - new Date(b + "-01").getTime();
-		});
-
+		const sMonthlyKeys = Object.keys(monthlyStats).sort();
 		const monthlyStatsChartData = {
-			labels: sortedMonthlyKeys.map((key) => {
-				// key: yyyy-MM
-				const [yyyy, mm] = key.split("-");
-				const monthIdx = parseInt(mm, 10) - 1;
-				const monthName = monthNamesIndo[monthIdx] || mm;
-				return `${monthName} ${yyyy}`;
-			}),
+			labels: sMonthlyKeys.map(k => k.split("-")[1] + "/" + k.split("-")[0]),
 			datasets: [
-				{
-					label: "Incoming Tickets",
-					data: sortedMonthlyKeys.map((key) => monthlyStats[key].incoming),
-					borderColor: "rgb(59, 130, 246)",
-					backgroundColor: "rgba(59, 130, 246, 0.5)",
-				},
-				{
-					label: "Closed Tickets",
-					data: sortedMonthlyKeys.map((key) => monthlyStats[key].closed),
-					borderColor: "rgb(34, 197, 94)",
-					backgroundColor: "rgba(34, 197, 94, 0.5)",
-				},
-			],
+				{ label: "Incoming", data: sMonthlyKeys.map(k => monthlyStats[k].incoming), borderColor: "#3b82f6", backgroundColor: "#3b82f680" },
+				{ label: "Closed", data: sMonthlyKeys.map(k => monthlyStats[k].closed), borderColor: "#22c55e", backgroundColor: "#22c55e80" }
+			]
 		};
 
-		// --- New: Ticket Insights Processing ---
-		let busiestMonth = { month: "N/A", count: 0 };
-		if (monthlyStatsChartData && monthlyStatsChartData.labels.length > 0) {
-			const counts = monthlyStatsChartData.datasets[0].data;
-			if (counts.length > 0) {
-				const maxCount = Math.max(...counts);
-				const maxIndex = counts.indexOf(maxCount);
-				busiestMonth = {
-					month: monthlyStatsChartData.labels[maxIndex],
-					count: maxCount,
-				};
-			}
-		}
+		// --- Ticket Insights ---
+		const busiestMonth = sMonthlyKeys.length ? { month: sMonthlyKeys[0], count: monthlyStats[sMonthlyKeys[0]].incoming } : { month: "N/A", count: 0 };
+		const topComplaintCat = complaintsLabels.length ? complaintsLabels[0] : "N/A";
+		const topComplaintCount = complaintsLabels.length ? complaintsValues[0] as number : 0;
+		const topComplaint = { category: topComplaintCat, count: topComplaintCount, percentage: Math.round(topComplaintCount / (totalTicks || 1) * 100) };
 
-		let topComplaint = { category: "N/A", count: 0, percentage: 0 };
-		if (complaintsLabels.length > 0) {
-			const safeComplaintsValues = Array.isArray(complaintsValues)
-				? complaintsValues.map(Number).filter((v) => !isNaN(v))
-				: [];
-			const totalComplaints = safeComplaintsValues.reduce((a, b) => a + b, 0);
-			if (totalComplaints > 0) {
-				const maxCount = Math.max(...safeComplaintsValues);
-				const maxIndex = safeComplaintsValues.indexOf(maxCount);
-				topComplaint = {
-					category: complaintsLabels[maxIndex],
-					count: maxCount,
-					percentage: Math.round((maxCount / totalComplaints) * 100),
-				};
-			}
-		}
-
-		// Data for Top Complaints Table
-		type CategoryDetails = {
-			[category: string]: {
-				tickets: typeof gridData;
-				subCategories: { [sub: string]: number };
-			};
-		};
-		const categoryDetails: CategoryDetails = {};
-		gridData.forEach((t) => {
-			const category = t.category || "Lainnya";
-			if (!categoryDetails[category]) {
-				categoryDetails[category] = { tickets: [], subCategories: {} };
-			}
-			categoryDetails[category].tickets.push(t);
-
-			const subCategory = t.subClassification || "Lainnya";
-			categoryDetails[category].subCategories[subCategory] =
-				(categoryDetails[category].subCategories[subCategory] || 0) + 1;
-		});
-
-		const topComplaintsTableData = Object.entries(categoryDetails)
-			.map(([category, data]) => {
-				const totalDuration = Array.isArray(data.tickets)
-					? data.tickets
-							.map((t) => Number(t.duration?.rawHours || 0))
-							.filter((v) => !isNaN(v))
-							.reduce((acc, curr) => acc + curr, 0)
-					: 0;
-				const avgDuration =
-					data.tickets.length > 0 ? totalDuration / data.tickets.length : 0;
-				const impactScore = data.tickets.length * avgDuration;
-
-				const topSubCategory =
-					Object.keys(data.subCategories).length > 0
-						? Object.entries(data.subCategories).sort(
-								([, a], [, b]) => (b as number) - (a as number),
-							)[0][0]
-						: "-";
-
-				return {
-					category,
-					count: data.tickets.length,
-					avgDuration,
-					avgDurationFormatted: formatDurationDHM(avgDuration),
-					impactScore,
-					topSubCategory,
-				};
-			})
-			.sort((a, b) => b.impactScore - a.impactScore) // Sort by the new impact score
-			.slice(0, 10);
+		const topComplaintsTableData = Object.entries(complaints).map(([cat, count]) => ({
+			category: cat, count, avgDuration: 0, avgDurationFormatted: "0", impactScore: count, topSubCategory: "-"
+		})).sort((a, b) => b.count - a.count).slice(0, 10);
 
 		const allDescriptions = gridData.map((t) => t.description).filter(Boolean);
 		const keywordAnalysis = analyzeKeywords(allDescriptions, 20);
@@ -695,7 +434,7 @@ export const AnalyticsProvider = ({ children }) => {
 			countsArr.reduce((a, b) => a + b, 0) / (countsArr.length || 1);
 		const stddev = Math.sqrt(
 			countsArr.reduce((a, b) => a + Math.pow(b - meanVal, 2), 0) /
-				(countsArr.length || 1),
+			(countsArr.length || 1),
 		);
 		// 3. Assign class ke setiap customer
 		const customerClass: Record<string, string> = {};
@@ -718,74 +457,32 @@ export const AnalyticsProvider = ({ children }) => {
 
 		const ticketAnalyticsData = {
 			stats: [
-				{
-					title: "Total Tickets",
-					value: totalTickets?.toString?.() ?? "0",
-					description: `in the selected period`,
-				},
-				{
-					title: "Average Duration",
-					value: totalTickets
-						? formatDurationDHM(totalDuration / totalTickets) || "00:00:00"
-						: "00:00:00",
-					description: "average ticket resolution time",
-				},
-				{
-					title: "Closed Tickets",
-					value: closedTickets?.toString?.() ?? "0",
-					description: `${((closedTickets / totalTickets || 0) * 100).toFixed(0)}% resolution rate`,
-				},
-				{
-					title: "Open",
-					value: (totalTickets - closedTickets).toString(),
-					description: "Tiket yang masih terbuka",
-				},
-				{
-					title: "Overdue",
-					value: overdueTickets.toString(),
-					description: "Tiket yang melewati batas waktu",
-				},
-				{
-					title: "Escalated",
-					value: escalatedTickets.toString(),
-					description: "Tiket yang di-escalate",
-				},
-				{
-					title: "Active Agents",
-					value: finalAgentData?.summary?.totalAgents?.toString?.() ?? "0",
-					description: "handling tickets",
-				},
+				{ title: "Total Tickets", value: totalTicks.toString(), description: "in selected period" },
+				{ title: "Average Duration", value: formatDurationDHM(totalTicks ? totalDur / totalTicks : 0), description: "avg resolution time" },
+				{ title: "Closed Tickets", value: closedTicksCount.toString(), description: `${((closedTicksCount / totalTicks || 0) * 100).toFixed(0)}% resolution` },
+				{ title: "Open", value: (totalTicks - closedTicksCount).toString(), description: "Still active" },
+				{ title: "Overdue", value: overdueTicksCount.toString(), description: "> 24h duration" },
+				{ title: "Escalated", value: escalatedTicksCount.toString(), description: "Multi-handling" },
+				{ title: "Active Agents", value: agentAnalyticsDataList.length.toString(), description: "handling tickets" },
 			],
 			complaintsData: {
-				labels: complaintsLabels || [],
-				datasets: [
-					{
-						label: "Complaint Count",
-						data: complaintsValues || [],
-						backgroundColor: (complaintsLabels || []).map(
-							(_, i) => complaintColors[i % complaintColors.length],
-						),
-						borderWidth: 1,
-					},
-				],
+				labels: complaintsLabels,
+				datasets: [{
+					label: "Complaints",
+					data: complaintsValues,
+					backgroundColor: complaintsLabels.map((_, i) => complaintColors[i % complaintColors.length])
+				}]
 			},
-			classificationAnalysis: classificationAnalysis || {},
-			monthlyStatsChartData: monthlyStatsChartData || {
-				labels: [],
-				datasets: [],
-			},
-			busiestMonth: busiestMonth || { month: "N/A", count: 0 },
-			topComplaint: topComplaint || {
-				category: "N/A",
-				count: 0,
-				percentage: 0,
-			},
-			topComplaintsTableData: topComplaintsTableData || [],
-			keywordAnalysis: keywordAnalysis || [],
+			classificationAnalysis,
+			monthlyStatsChartData,
+			busiestMonth,
+			topComplaint,
+			topComplaintsTableData,
+			keywordAnalysis,
 		};
 
 		return {
-			gridData,
+			gridData: filteredTickets,
 			kanbanData,
 			agentAnalyticsData: finalAgentData,
 			ticketAnalyticsData,
@@ -793,7 +490,7 @@ export const AnalyticsProvider = ({ children }) => {
 	}, [allTickets, cutoffStart, cutoffEnd]);
 
 	// Provider value
-	const value = {
+	const value = useMemo(() => ({
 		...analytics,
 		allTickets,
 		allMonthsInData,
@@ -807,15 +504,7 @@ export const AnalyticsProvider = ({ children }) => {
 		cutoffStart,
 		cutoffEnd,
 		refresh: () => setRefreshTrigger((t) => t + 1),
-	};
-
-	// Cleanup effect
-	useEffect(() => {
-		return () => {
-			// Cleanup subscription / timers
-			setRefreshTrigger?.(0);
-		};
-	}, []);
+	}), [analytics, allTickets, allMonthsInData, allYearsInData, startMonth, endMonth, selectedYear, cutoffStart, cutoffEnd]);
 
 	return (
 		<AnalyticsContext.Provider value={value}>

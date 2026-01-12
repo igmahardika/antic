@@ -129,19 +129,15 @@ const Dashboard = () => {
 
 	// Fetch tickets from CacheService (MySQL + IndexedDB Cache)
 	const [allTickets, setAllTickets] = useState<ITicket[]>([]);
-	const [isLoading, setIsLoading] = useState(true);
 
 	useEffect(() => {
 		const fetchTickets = async () => {
 			try {
-				setIsLoading(true);
 				// cacheService.getTickets returns Ticket[] which is compatible with ITicket
 				const tickets = await cacheService.getTickets();
-				setAllTickets(tickets as ITicket[]);
+				setAllTickets(tickets as any as ITicket[]);
 			} catch (error) {
 				console.error("Failed to fetch tickets:", error);
-			} finally {
-				setIsLoading(false);
 			}
 		};
 
@@ -285,8 +281,8 @@ const Dashboard = () => {
 					0,
 				);
 				const avgDuration = totalDuration / ticketCount;
-				const minDuration = Math.min(...data.durations);
-				const maxDuration = Math.max(...data.durations);
+				const minDuration = data.durations.reduce((min, v) => v < min ? v : min, data.durations[0]);
+				const maxDuration = data.durations.reduce((max, v) => v > max ? v : max, data.durations[0]);
 				const closedCount = data.closed;
 				const resolutionRate =
 					ticketCount > 0 ? (closedCount / ticketCount) * 100 : 0;
@@ -556,7 +552,7 @@ const Dashboard = () => {
 		if (monthlyStatsChartData && monthlyStatsChartData.labels.length > 0) {
 			const counts = monthlyStatsChartData.datasets[0].data;
 			if (counts.length > 0) {
-				const maxCount = Math.max(...counts);
+				const maxCount = counts.reduce((max, v) => v > max ? v : max, counts[0]);
 				const maxIndex = counts.indexOf(maxCount);
 				busiestMonth = {
 					month: monthlyStatsChartData.labels[maxIndex],
@@ -569,7 +565,7 @@ const Dashboard = () => {
 		if (complaintsLabels.length > 0) {
 			const totalComplaints = complaintsValues.reduce((a, b) => a + b, 0);
 			if (totalComplaints > 0) {
-				const maxCount = Math.max(...complaintsValues);
+				const maxCount = complaintsValues.reduce((max, v) => v > max ? v : max, complaintsValues[0]);
 				const maxIndex = complaintsValues.indexOf(maxCount);
 				topComplaint = {
 					category: complaintsLabels[maxIndex],

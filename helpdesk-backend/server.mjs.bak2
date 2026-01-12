@@ -1243,7 +1243,7 @@ app.get('/api/photo-info', async (req, res) => {
     }
     
     if (!filePath || !fileName) {
-      return res.json({ success: false, found: false, error: "Photo not found" });
+      return res.status(404).json({ error: 'Photo not found' });
     }
     
     const stats = fs.statSync(filePath);

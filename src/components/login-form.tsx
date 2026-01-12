@@ -65,6 +65,7 @@ export function LoginForm({
 									onChange={(e) => setUsername(e.target.value)}
 									required
 									autoFocus
+									autoComplete="username"
 									disabled={loading}
 									className="h-11"
 								/>
@@ -93,6 +94,7 @@ export function LoginForm({
 									value={password}
 									onChange={(e) => setPassword(e.target.value)}
 									required
+									autoComplete="current-password"
 									disabled={loading}
 									className="h-11"
 								/>
