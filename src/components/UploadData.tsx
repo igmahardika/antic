@@ -709,19 +709,21 @@ function parseExcelDate(value: any): string | undefined {
 	}
 
 	// 2. Handle Date objects (ExcelJS or JS Dates)
-	// Extract 'Face Value' components and force them to UTC
-	// This prevents local timezone offsets (e.g. UTC+7) from shifting the time
+	// EXTREMELY IMPORTANT: ExcelJS creates Date objects in Local Time.
+	// Example: Excel "10:00" -> JS Date "10:00 WIB" (which is 03:00 UTC).
+	// We want to preserve the "face value" "10:00" as "10:00 UTC".
+	// Solution: Extract components using LOCAL getters (get 10), then rebuild as UTC.
 	if (value instanceof Date) {
 		try {
 			if (!isNaN(value.getTime())) {
 				const customDate = new Date(
 					Date.UTC(
-						value.getUTCFullYear(),
-						value.getUTCMonth(),
-						value.getUTCDate(),
-						value.getUTCHours(),
-						value.getUTCMinutes(),
-						value.getUTCSeconds(),
+						value.getFullYear(),
+						value.getMonth(),
+						value.getDate(),
+						value.getHours(),
+						value.getMinutes(),
+						value.getSeconds(),
 					),
 				);
 				return customDate.toISOString();
