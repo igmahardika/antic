@@ -682,164 +682,106 @@ const ErrorLogTable = ({ errors }: { errors: IErrorLog[] }) => {
 	);
 };
 
-function parseExcelDate(value: any): string | undefined {
+// Helper to get formatted string YYYY-MM-DD HH:mm:ss from any date-like input
+// This extracts the "Face Value" assuming the input encapsulates the desired local time.
+function getFaceValueString(value: any): string | undefined {
 	if (value === null || value === undefined || value === "") return undefined;
 
-	// 1. Handle Excel's numeric date format
-	// Force strict UTC interpretation to prevent timezone shifts
-	if (typeof value === "number" && !isNaN(value)) {
-		try {
-			if (value > 0 && value < 100000) {
-				// Use UTC Epoch to ensure we calculate in UTC domain
-				const excelEpoch = new Date(Date.UTC(1900, 0, 1));
-				const dateInMs = (value - 2) * 24 * 60 * 60 * 1000;
-				const date = new Date(excelEpoch.getTime() + dateInMs);
+	let year, month, day, hours, minutes, seconds;
 
-				if (
-					!isNaN(date.getTime()) &&
-					date.getUTCFullYear() > 1900 &&
-					date.getUTCFullYear() < 2100
-				) {
-					return date.toISOString();
-				}
-			}
-		} catch (error) {
-			logger.warn(`[DEBUG] Failed to parse Excel numeric date:`, value, error);
-		}
-	}
-
-	// 2. Handle Date objects (ExcelJS or JS Dates)
-	// EXTREMELY IMPORTANT: ExcelJS creates Date objects in Local Time.
-	// Example: Excel "10:00" -> JS Date "10:00 WIB" (which is 03:00 UTC).
-	// We want to preserve the "face value" "10:00" as "10:00 UTC".
-	// Solution: Extract components using LOCAL getters (get 10), then rebuild as UTC.
 	if (value instanceof Date) {
-		try {
-			if (!isNaN(value.getTime())) {
-				const customDate = new Date(
-					Date.UTC(
-						value.getFullYear(),
-						value.getMonth(),
-						value.getDate(),
-						value.getHours(),
-						value.getMinutes(),
-						value.getSeconds(),
-					),
-				);
-				return customDate.toISOString();
-			}
-		} catch (error) {
-			logger.warn(`[DEBUG] Failed to convert Date object:`, value, error);
-		}
+		if (isNaN(value.getTime())) return undefined;
+		// Extract local components (Face Value) from the Date object
+		year = value.getFullYear();
+		month = value.getMonth() + 1;
+		day = value.getDate();
+		hours = value.getHours();
+		minutes = value.getMinutes();
+		seconds = value.getSeconds();
+	} else if (typeof value === "number") {
+		// Excel Serial Date -> JS Date (Local)
+		if (value <= 0 || value >= 100000) return undefined;
+		const excelEpoch = new Date(1900, 0, 1);
+		const dateInMs = (value - 2) * 24 * 60 * 60 * 1000;
+		const date = new Date(excelEpoch.getTime() + dateInMs);
+
+		if (isNaN(date.getTime())) return undefined;
+		year = date.getFullYear();
+		month = date.getMonth() + 1;
+		day = date.getDate();
+		hours = date.getHours();
+		minutes = date.getMinutes();
+		seconds = date.getSeconds();
+	} else if (typeof value === "string") {
+		// Return strictly trimmed string for regex parsing
+		return value.trim();
+	} else {
+		return undefined;
 	}
 
-	// 3. Handle string date formats
-	if (typeof value === "string") {
-		const trimmedValue = value.trim();
-		if (trimmedValue === "") return undefined;
+	// Pad and format
+	const pad = (n: number) => n.toString().padStart(2, '0');
+	return `${year}-${pad(month)}-${pad(day)} ${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
+}
 
-		// Try multiple date formats
-		const formats = [
-			// DD/MM/YYYY HH:MM:SS
-			/^([0-3]?\d)\/([01]?\d)\/(\d{2,4})\s+([0-2]?\d):([0-5]?\d):([0-5]?\d)$/,
-			// DD/MM/YYYY
-			/^([0-3]?\d)\/([01]?\d)\/(\d{2,4})$/,
-			// MM/DD/YYYY HH:MM:SS
-			/^([01]?\d)\/([0-3]?\d)\/(\d{2,4})\s+([0-2]?\d):([0-5]?\d):([0-5]?\d)$/,
-			// MM/DD/YYYY
-			/^([01]?\d)\/([0-3]?\d)\/(\d{2,4})$/,
-			// YYYY-MM-DD HH:MM:SS
-			/^(\d{4})-([01]?\d)-([0-3]?\d)\s+([0-2]?\d):([0-5]?\d):([0-5]?\d)$/,
-			// YYYY-MM-DD
-			/^(\d{4})-([01]?\d)-([0-3]?\d)$/,
-		];
+function parseExcelDate(value: any): string | undefined {
+	const faceValueStr = getFaceValueString(value);
+	if (!faceValueStr) return undefined;
 
-		for (let i = 0; i < formats.length; i++) {
-			const parts = trimmedValue.match(formats[i]);
-			if (parts) {
-				let day,
-					month,
-					year,
-					hours = 0,
-					minutes = 0,
-					seconds = 0;
+	// Now parse strictly as UTC
+	// Supported formats: YYYY-MM-DD HH:mm:ss, DD/MM/YYYY HH:mm:ss, etc.
+	const formats = [
+		// YYYY-MM-DD HH:mm:ss (Standard Output from helper)
+		/^(\d{4})-(\d{1,2})-(\d{1,2})\s+(\d{1,2}):(\d{1,2}):(\d{1,2})$/,
+		// DD/MM/YYYY HH:MM:SS
+		/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})\s+(\d{1,2}):(\d{1,2}):(\d{1,2})$/,
+		// DD/MM/YYYY
+		/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/,
+		// YYYY-MM-DD
+		/^(\d{4})-(\d{1,2})-(\d{1,2})$/,
+	];
 
-				if (i < 2) {
-					// DD/MM/YYYY formats
-					day = parseInt(parts[1], 10);
-					month = parseInt(parts[2], 10);
-					year = parseInt(parts[3], 10);
-					if (parts[4]) hours = parseInt(parts[4], 10);
-					if (parts[5]) minutes = parseInt(parts[5], 10);
-					if (parts[6]) seconds = parseInt(parts[6], 10);
-				} else if (i < 4) {
-					// MM/DD/YYYY formats
-					month = parseInt(parts[1], 10);
-					day = parseInt(parts[2], 10);
-					year = parseInt(parts[3], 10);
-					if (parts[4]) hours = parseInt(parts[4], 10);
-					if (parts[5]) minutes = parseInt(parts[5], 10);
-					if (parts[6]) seconds = parseInt(parts[6], 10);
-				} else {
-					// YYYY-MM-DD formats
-					year = parseInt(parts[1], 10);
-					month = parseInt(parts[2], 10);
-					day = parseInt(parts[3], 10);
-					if (parts[4]) hours = parseInt(parts[4], 10);
-					if (parts[5]) minutes = parseInt(parts[5], 10);
-					if (parts[6]) seconds = parseInt(parts[6], 10);
-				}
+	for (let i = 0; i < formats.length; i++) {
+		const parts = faceValueStr.match(formats[i]);
+		if (parts) {
+			let year, month, day, hours = 0, minutes = 0, seconds = 0;
 
-				if (year < 100) year += 2000;
-
-				if (
-					year > 1900 &&
-					year < 2100 &&
-					month > 0 &&
-					month <= 12 &&
-					day > 0 &&
-					day <= 31
-				) {
-					try {
-						// Always use Date.UTC to prevent local timezone logic
-						const customDate = new Date(
-							Date.UTC(year, month - 1, day, hours, minutes, seconds),
-						);
-						if (!isNaN(customDate.getTime())) {
-							return customDate.toISOString();
-						}
-					} catch (error) {
-						logger.warn(
-							`[DEBUG] Failed to create date from:`,
-							trimmedValue,
-							error,
-						);
-					}
-				}
+			// Handle format differences
+			if (i === 0) { // YYYY-MM-DD HH:mm:ss
+				year = parseInt(parts[1], 10);
+				month = parseInt(parts[2], 10);
+				day = parseInt(parts[3], 10);
+				hours = parseInt(parts[4], 10);
+				minutes = parseInt(parts[5], 10);
+				seconds = parseInt(parts[6], 10);
+			} else if (i === 1) { // DD/MM/YYYY HH:mm:ss
+				day = parseInt(parts[1], 10);
+				month = parseInt(parts[2], 10);
+				year = parseInt(parts[3], 10);
+				hours = parseInt(parts[4], 10);
+				minutes = parseInt(parts[5], 10);
+				seconds = parseInt(parts[6], 10);
+			} else if (i === 2) { // DD/MM/YYYY
+				day = parseInt(parts[1], 10);
+				month = parseInt(parts[2], 10);
+				year = parseInt(parts[3], 10);
+			} else if (i === 3) { // YYYY-MM-DD
+				year = parseInt(parts[1], 10);
+				month = parseInt(parts[2], 10);
+				day = parseInt(parts[3], 10);
 			}
-		}
 
-		// Fallback: Use native parse but try to preserve face value if possible
-		// Note: Native parse new Date("string") uses local time usually.
-		try {
-			const nativeDate = new Date(trimmedValue);
-			if (!isNaN(nativeDate.getTime())) {
-				// Convert the resulting Local Time back to Face Value UTC
-				// Assumption: The string was parsed as Local, so getFullYear() returns Face Value
-				const customDate = new Date(
-					Date.UTC(
-						nativeDate.getFullYear(),
-						nativeDate.getMonth(),
-						nativeDate.getDate(),
-						nativeDate.getHours(),
-						nativeDate.getMinutes(),
-						nativeDate.getSeconds(),
-					),
-				);
-				return customDate.toISOString();
+			if (year! < 100) year! += 2000;
+
+			// Construct strictly as UTC
+			try {
+				const utcDate = new Date(Date.UTC(year!, month! - 1, day!, hours, minutes, seconds));
+				if (!isNaN(utcDate.getTime())) {
+					return utcDate.toISOString();
+				}
+			} catch (e) {
+				// Ignore
 			}
-		} catch (error) {
-			logger.warn(`[DEBUG] Native date parsing failed:`, trimmedValue, error);
 		}
 	}
 
@@ -1000,63 +942,30 @@ const processAndAnalyzeData = (
 		const closeHandling4 = parseExcelDate(row["Close Penanganan 4"]);
 		const closeHandling5 = parseExcelDate(row["Close Penanganan 5"]);
 
-		// Helper to parse duration from Excel value (Number = days fraction, String = HH:MM:SS)
-		const parseDurationFromExcel = (val: any): number | null => {
-			if (typeof val === 'number') {
-				// Excel time is fraction of day. 1 = 24h.
-				return val * 24;
-			}
-			if (typeof val === 'string') {
-				// Try parsing HH:MM:SS
-				const parts = val.split(':');
-				if (parts.length === 3) {
-					const h = parseInt(parts[0], 10);
-					const m = parseInt(parts[1], 10);
-					const s = parseInt(parts[2], 10);
-					if (!isNaN(h)) return h + (m || 0) / 60 + (s || 0) / 3600;
-				}
-			}
-			return null;
-		};
-
-		// 1. Durasi Total
-		let durationHours = parseDurationFromExcel(row["Durasi"]);
-		if (durationHours === null) {
-			durationHours = calculateDuration(openTime, closeTime, 720);
-		}
-
-		// 2. Durasi Penanganan (ART)
-		let handlingDurationHours = parseDurationFromExcel(row["Durasi Penanganan"]);
-		if (handlingDurationHours === null) {
-			handlingDurationHours = calculateDuration(openTime, closeHandling, 720);
-		}
-
-		// 3. Durasi Penanganan 1 (FRT)
-		let handlingDuration1Hours = parseDurationFromExcel(row["Durasi Penanganan 1"]);
-		if (handlingDuration1Hours === null) {
-			handlingDuration1Hours = calculateDuration(openTime, closeHandling1, 72);
-		}
-
-		// 4. Handling Steps 2-5
-		let handlingDuration2Hours = parseDurationFromExcel(row["Durasi Penanganan 2"]);
-		if (handlingDuration2Hours === null) {
-			handlingDuration2Hours = calculateDuration(closeHandling1, closeHandling2, 168);
-		}
-
-		let handlingDuration3Hours = parseDurationFromExcel(row["Durasi Penanganan 3"]);
-		if (handlingDuration3Hours === null) {
-			handlingDuration3Hours = calculateDuration(closeHandling2, closeHandling3, 168);
-		}
-
-		let handlingDuration4Hours = parseDurationFromExcel(row["Durasi Penanganan 4"]);
-		if (handlingDuration4Hours === null) {
-			handlingDuration4Hours = calculateDuration(closeHandling3, closeHandling4, 168);
-		}
-
-		let handlingDuration5Hours = parseDurationFromExcel(row["Durasi Penanganan 5"]);
-		if (handlingDuration5Hours === null) {
-			handlingDuration5Hours = calculateDuration(closeHandling4, closeHandling5, 168);
-		}
+		// Calculate durations (always calculate as per user request)
+		const durationHours = calculateDuration(openTime, closeTime, 720); // Max 30 days for total duration
+		const handlingDurationHours = calculateDuration(openTime, closeHandling, 720); // Max 30 days for ART
+		const handlingDuration1Hours = calculateDuration(openTime, closeHandling1, 72); // Max 3 days for FRT
+		const handlingDuration2Hours = calculateDuration(
+			closeHandling1,
+			closeHandling2,
+			168, // Max 7 days per handling step
+		);
+		const handlingDuration3Hours = calculateDuration(
+			closeHandling2,
+			closeHandling3,
+			168,
+		);
+		const handlingDuration4Hours = calculateDuration(
+			closeHandling3,
+			closeHandling4,
+			168,
+		);
+		const handlingDuration5Hours = calculateDuration(
+			closeHandling4,
+			closeHandling5,
+			168,
+		);
 
 		const statusRaw = row["Status"];
 		let status = "Open";
