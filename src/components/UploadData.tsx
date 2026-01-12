@@ -699,43 +699,43 @@ function getFaceValueString(value: any): string | undefined {
 		minutes = value.getMinutes();
 		seconds = value.getSeconds();
 	} else if (typeof value === "number") {
-		// Excel Serial Date -> JS Date (Local)
-		if (value <= 0 || value >= 100000) return undefined;
-		const excelEpoch = new Date(1900, 0, 1);
-		const dateInMs = (value - 2) * 24 * 60 * 60 * 1000;
-		const date = new Date(excelEpoch.getTime() + dateInMs);
+		// Excel Serial Date -> JS Date (UTC)
+		// Excel base date: Dec 30, 1899. Unix base date: Jan 1, 1970.
+		// Difference: 25569 days.
+		if (value <= 0 || value >= 2958465) return undefined; // Valid range
+		const dateInMs = Math.round((value - 25569) * 86400 * 1000);
+		const date = new Date(dateInMs);
 
 		if (isNaN(date.getTime())) return undefined;
-		year = date.getFullYear();
-		month = date.getMonth() + 1;
-		day = date.getDate();
-		hours = date.getHours();
-		minutes = date.getMinutes();
-		seconds = date.getSeconds();
+
+		// Use UTC getters because we calculated the UTC timestamp directly
+		year = date.getUTCFullYear();
+		month = date.getUTCMonth() + 1;
+		day = date.getUTCDate();
+		hours = date.getUTCHours();
+		minutes = date.getUTCMinutes();
+		seconds = date.getUTCSeconds();
 	} else if (typeof value === "string") {
-		const trimmed = value.trim();
+		let trimmed = value.trim();
 
-		// Strategy: Extract time components DIRECTLY from the string using Regex
-		// This bypasses "new Date()" ambiguity and timezone shifts entirely.
+		// Aggressively strip timezone info to force "Local/Face Value" parsing
+		// Support: GMT+0700, GMT+07:00, UTC+7, +07:00, +0700, Z
+		trimmed = trimmed.replace(/(GMT|UTC).*$/, "").trim(); // Remove "GMT..." or "UTC..." and everything after
+		trimmed = trimmed.replace(/\(.*\)$/, "").trim(); // Remove (...)
+		trimmed = trimmed.replace(/Z$/, "").trim(); // Remove trailing Z
+		trimmed = trimmed.replace(/[+-]\d{2}:?\d{2}$/, "").trim(); // Remove ISO offsets like +07:00 or +0700 at end
 
-		// 1. Matches "Mon Jan 01 2020 20:50:00 ..."
-		const verboseMatch = trimmed.match(/\w{3}\s+\w{3}\s+\d{1,2}\s+\d{4}\s+(\d{1,2}):(\d{1,2}):(\d{1,2})/);
-		if (verboseMatch) {
-			// Parse the DATE part as well to be safe, or assume standard structure?
-			// Let's parse full structure to be safe: RegEx: Wed Jan 01 2020 ...
-			const fullMatch = trimmed.match(/(\w{3})\s+(\w{3})\s+(\d{1,2})\s+(\d{4})\s+(\d{1,2}):(\d{1,2}):(\d{1,2})/);
-			if (fullMatch) {
-				const monthStr = fullMatch[2];
-				const months: { [key: string]: number } = { Jan: 1, Feb: 2, Mar: 3, Apr: 4, May: 5, Jun: 6, Jul: 7, Aug: 8, Sep: 9, Oct: 10, Nov: 11, Dec: 12 };
-
-				year = parseInt(fullMatch[4], 10);
-				month = months[monthStr] || 1;
-				day = parseInt(fullMatch[3], 10);
-				hours = parseInt(fullMatch[5], 10);
-				minutes = parseInt(fullMatch[6], 10);
-				seconds = parseInt(fullMatch[7], 10);
+		// If string contains letters (e.g. "Wed Jan ..."), try parsing as Date to extract face value
+		if (/[a-zA-Z]/.test(trimmed)) {
+			const d = new Date(trimmed);
+			if (!isNaN(d.getTime())) {
+				year = d.getFullYear();
+				month = d.getMonth() + 1;
+				day = d.getDate();
+				hours = d.getHours();
+				minutes = d.getMinutes();
+				seconds = d.getSeconds();
 			} else {
-				// Fallback to strict regex for simpler ISO/Excel formats
 				return trimmed;
 			}
 		} else {
@@ -838,6 +838,12 @@ const calculateDuration = (start?: string, end?: string, maxHours: number = 720)
 
 	const diffMs = endDate.getTime() - startDate.getTime();
 	const diffHours = diffMs / (1000 * 60 * 60);
+
+	// Log first few calculations to debug 7h discrepancy
+	// Only log if duration is significant to avoid spam, or if it looks like the specific issue (7h approx)
+	if (diffHours > 6 && diffHours < 8) {
+		logger.info(`[DURATION DEBUG] Start: ${start} (${startDate.toISOString()}) | End: ${end} (${endDate.toISOString()}) | Diff: ${diffHours.toFixed(2)}h`);
+	}
 
 	// Return 0 for negative durations (data invalid)
 	if (diffHours < 0) return 0;
