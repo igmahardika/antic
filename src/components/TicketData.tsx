@@ -93,28 +93,28 @@ const renderHandlingDuration = (duration: any) => {
 
 const columns = [
 	{ key: "customerId", label: "Customer ID", width: "120px" },
-	{ key: "name", label: "Name", width: "150px" },
-	{ key: "category", label: "Category", width: "120px" },
-	{ key: "description", label: "Description", width: "200px" },
-	{ key: "cause", label: "Cause", width: "180px" },
-	{ key: "handling", label: "Handling", width: "180px" },
+	{ key: "name", label: "Nama", width: "150px" },
+	{ key: "category", label: "Kategori", width: "120px" },
+	{ key: "description", label: "Deskripsi", width: "200px" },
+	{ key: "cause", label: "Penyebab", width: "180px" },
+	{ key: "handling", label: "Penanganan", width: "180px" },
 	{
 		key: "openTime",
-		label: "Open Time",
+		label: "Waktu Open",
 		width: "140px",
 		render: (v: any) =>
 			v ? <span className="text-xs">{formatDateTimeDDMMYYYY(v)}</span> : "",
 	},
 	{
 		key: "closeTime",
-		label: "Close Time",
+		label: "Waktu Close Tiket",
 		width: "140px",
 		render: (v: any) =>
 			v ? <span className="text-xs">{formatDateTimeDDMMYYYY(v)}</span> : "",
 	},
 	{
 		key: "duration",
-		label: "Duration",
+		label: "Durasi",
 		width: "120px",
 		render: (_v: any, row: any) => renderDuration(row.duration),
 	},
@@ -156,7 +156,7 @@ const columns = [
 	{
 		key: "handlingDuration2",
 		label: "Durasi Penanganan 2",
-		width: "140px",
+		width: "160px",
 		render: (_v: any, row: any) => renderHandlingDuration(row.handlingDuration2),
 	},
 	{ key: "handling3", label: "Penanganan 3", width: "180px" },
@@ -170,7 +170,7 @@ const columns = [
 	{
 		key: "handlingDuration3",
 		label: "Durasi Penanganan 3",
-		width: "140px",
+		width: "160px",
 		render: (_v: any, row: any) => renderHandlingDuration(row.handlingDuration3),
 	},
 	{ key: "handling4", label: "Penanganan 4", width: "180px" },
@@ -184,7 +184,7 @@ const columns = [
 	{
 		key: "handlingDuration4",
 		label: "Durasi Penanganan 4",
-		width: "140px",
+		width: "160px",
 		render: (_v: any, row: any) => renderHandlingDuration(row.handlingDuration4),
 	},
 	{ key: "handling5", label: "Penanganan 5", width: "180px" },
@@ -198,7 +198,7 @@ const columns = [
 	{
 		key: "handlingDuration5",
 		label: "Durasi Penanganan 5",
-		width: "140px",
+		width: "160px",
 		render: (_v: any, row: any) => renderHandlingDuration(row.handlingDuration5),
 	},
 	{ key: "openBy", label: "Open By", width: "120px" },
