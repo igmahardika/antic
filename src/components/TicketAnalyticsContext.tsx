@@ -5,15 +5,16 @@ import React, {
 	useState,
 	useEffect,
 } from "react";
-import { useLiveQuery } from "dexie-react-hooks";
+// import { useLiveQuery } from "dexie-react-hooks";
 import { db, ITicket } from "@/lib/db";
+import { cacheService } from "@/services/cacheService";
 import {
 	formatDurationDHM,
 	analyzeKeywords,
 	generateAnalysisConclusion,
 } from "@/lib/utils";
 import { logger } from "@/lib/logger";
-import { 
+import {
 	isOpenTicket,
 	isClosedTicket
 } from "@/utils/ticketStatus";
@@ -31,11 +32,21 @@ export const TicketAnalyticsProvider = ({ children }) => {
 	const [selectedYear, setSelectedYear] = useState(null);
 	const [refreshTrigger, setRefreshTrigger] = useState(0);
 
-	// Data dari IndexedDB
-	const allTickets = useLiveQuery(() => db.tickets.toArray(), [refreshTrigger]);
+	// Data dari CacheService (MySQL + IndexedDB Cache)
+	const [allTickets, setAllTickets] = useState<ITicket[]>([]);
+
 	useEffect(() => {
-		logger.info("[DEBUG] allTickets from IndexedDB (Ticket):", allTickets);
-	}, [allTickets]);
+		const fetchTickets = async () => {
+			try {
+				const tickets = await cacheService.getTickets();
+				setAllTickets(tickets as ITicket[]);
+				logger.info("[DEBUG] allTickets fetched via CacheService:", tickets.length);
+			} catch (error) {
+				logger.error("[DEBUG] Failed to fetch tickets:", error);
+			}
+		};
+		fetchTickets();
+	}, [refreshTrigger]);
 
 	// Set default filter waktu otomatis jika belum dipilih dan data tersedia
 	useEffect(() => {
@@ -127,9 +138,9 @@ export const TicketAnalyticsProvider = ({ children }) => {
 	const totalTickets = gridData.length;
 	const totalDuration = Array.isArray(gridData)
 		? gridData
-				.map((t) => Number(t.duration?.rawHours || 0))
-				.filter((v) => !isNaN(v))
-				.reduce((acc, curr) => acc + curr, 0)
+			.map((t) => Number(t.duration?.rawHours || 0))
+			.filter((v) => !isNaN(v))
+			.reduce((acc, curr) => acc + curr, 0)
 		: 0;
 
 	// Menentukan tiket closed berdasarkan status yang mengandung 'close'
@@ -158,13 +169,13 @@ export const TicketAnalyticsProvider = ({ children }) => {
 	const finalOpenTickets =
 		closedTickets === 0 && openTickets === 0
 			? gridData.filter((t) => {
-					const status = (t.status || "").trim().toLowerCase();
-					return !(
-						status === "closed" ||
-						status === "close ticket" ||
-						status === "close"
-					);
-				}).length
+				const status = (t.status || "").trim().toLowerCase();
+				return !(
+					status === "closed" ||
+					status === "close ticket" ||
+					status === "close"
+				);
+			}).length
 			: openTickets;
 
 	const overdueTickets = gridData.filter(
@@ -476,9 +487,9 @@ export const TicketAnalyticsProvider = ({ children }) => {
 		.map(([category, data]) => {
 			const totalDuration = Array.isArray(data.tickets)
 				? data.tickets
-						.map((t) => Number(t.duration?.rawHours || 0))
-						.filter((v) => !isNaN(v))
-						.reduce((acc, curr) => acc + curr, 0)
+					.map((t) => Number(t.duration?.rawHours || 0))
+					.filter((v) => !isNaN(v))
+					.reduce((acc, curr) => acc + curr, 0)
 				: 0;
 			const avgDuration =
 				data.tickets.length > 0 ? totalDuration / data.tickets.length : 0;
@@ -486,8 +497,8 @@ export const TicketAnalyticsProvider = ({ children }) => {
 			const topSubCategory =
 				Object.keys(data.subCategories).length > 0
 					? Object.entries(data.subCategories).sort(
-							([, a], [, b]) => (b as number) - (a as number),
-						)[0][0]
+						([, a], [, b]) => (b as number) - (a as number),
+					)[0][0]
 					: "-";
 			return {
 				category,

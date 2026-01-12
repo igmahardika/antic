@@ -1,0 +1,22 @@
+
+/var/www/hms/antic/src/components/Dashboard.tsx
+  341:13  warning  'e' is defined but never used  @typescript-eslint/no-unused-vars
+  523:13  warning  'e' is defined but never used  @typescript-eslint/no-unused-vars
+
+/var/www/hms/antic/src/components/IncidentUpload.tsx
+  437:29  warning  '_rowNumber' is defined but never used  @typescript-eslint/no-unused-vars
+
+/var/www/hms/antic/src/components/SummaryDashboard.tsx
+  311:32  error    Unexpected any. Specify a different type                                                                        @typescript-eslint/no-explicit-any
+  395:5   warning  React Hook useMemo has an unnecessary dependency: 'allYears'. Either exclude it or remove the dependency array  react-hooks/exhaustive-deps
+
+/var/www/hms/antic/src/components/TicketAnalytics.tsx
+    63:6   warning  'TicketAnalyticsProps' is defined but never used  @typescript-eslint/no-unused-vars
+  4237:16  warning  '_name' is defined but never used                 @typescript-eslint/no-unused-vars
+
+/var/www/hms/antic/src/components/TicketAnalyticsContext.tsx
+  92:1  warning  Unused eslint-disable directive (no problems were reported from 'react-refresh/only-export-components')
+
+✖ 8 problems (1 error, 7 warnings)
+  0 errors and 1 warning potentially fixable with the `--fix` option.
+

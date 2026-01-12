@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from "react";
-import { useLiveQuery } from "dexie-react-hooks";
-import { db } from "@/lib/db";
+// import { useLiveQuery } from "dexie-react-hooks";
+// import { db } from "@/lib/db";
+import { cacheService } from "@/services/cacheService";
 import PageWrapper from "./PageWrapper";
 import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
@@ -56,7 +57,19 @@ function formatMasaAktif(
 
 const AgentData: React.FC = () => {
 	const [activeTab, setActiveTab] = useState<'data' | 'photos'>('data');
-	const allTickets = useLiveQuery(() => db.tickets.toArray(), []);
+	const [allTickets, setAllTickets] = useState<any[]>([]);
+
+	React.useEffect(() => {
+		const fetchTickets = async () => {
+			try {
+				const tickets = await cacheService.getTickets();
+				setAllTickets(tickets);
+			} catch (error) {
+				console.error("Failed to fetch tickets in AgentData:", error);
+			}
+		};
+		fetchTickets();
+	}, []);
 
 	const { activeAgents, nonActiveAgents } = useMemo(() => {
 		if (!allTickets) return { activeAgents: [], nonActiveAgents: [] };
@@ -99,9 +112,9 @@ const AgentData: React.FC = () => {
 				const avgHandling =
 					tickets.length > 0
 						? tickets.reduce(
-								(acc, t) => acc + (t.handlingDuration?.rawHours || 0),
-								0,
-							) / tickets.length
+							(acc, t) => acc + (t.handlingDuration?.rawHours || 0),
+							0,
+						) / tickets.length
 						: 0;
 				// Jumlah customer unik
 				const uniqueCustomers = new Set(
@@ -136,19 +149,19 @@ const AgentData: React.FC = () => {
 					ticketCount,
 					masaAktif:
 						firstTicket &&
-						lastTicket &&
-						firstTicket.openTime &&
-						lastTicket.openTime
+							lastTicket &&
+							firstTicket.openTime &&
+							lastTicket.openTime
 							? formatMasaAktif(
-									typeof firstTicket.openTime === "number" ||
-										typeof firstTicket.openTime === "string"
-										? firstTicket.openTime
-										: String(firstTicket.openTime),
-									typeof lastTicket.openTime === "number" ||
-										typeof lastTicket.openTime === "string"
-										? lastTicket.openTime
-										: String(lastTicket.openTime),
-								)
+								typeof firstTicket.openTime === "number" ||
+									typeof firstTicket.openTime === "string"
+									? firstTicket.openTime
+									: String(firstTicket.openTime),
+								typeof lastTicket.openTime === "number" ||
+									typeof lastTicket.openTime === "string"
+									? lastTicket.openTime
+									: String(lastTicket.openTime),
+							)
 							: "-",
 					avgHandling,
 					uniqueCustomers,

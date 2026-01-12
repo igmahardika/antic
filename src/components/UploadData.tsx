@@ -20,6 +20,8 @@ import Papa from "papaparse";
 import * as ExcelJS from "exceljs";
 import { saveAs } from "file-saver";
 import { db, ITicket } from "@/lib/db";
+import { ticketAPI } from "@/lib/api";
+import { cacheService } from "@/services/cacheService";
 import { formatDurationDHM } from "@/lib/utils";
 import SummaryCard from "./ui/SummaryCard";
 import { useLiveQuery } from "dexie-react-hooks";
@@ -278,7 +280,18 @@ const UploadData = ({ onUploadComplete }: UploadProcessProps) => {
 				uploadSessionId: session ? session.id : null
 			}));
 
-			await db.tickets.bulkPut(enrichedTickets);
+			// Send to backend API (MySQL)
+			await ticketAPI.bulkInsertTickets(enrichedTickets, {
+				batchId: session?.id,
+				fileName: file.name,
+				uploadTimestamp: session?.uploadTimestamp || Date.now()
+			});
+
+			// Invalidate cache so fresh data is fetched next time
+			await cacheService.invalidateTickets();
+
+			// Optional: Update local cache immediately for better UX
+			// await db.tickets.bulkPut(enrichedTickets);
 
 			// Finalize upload session
 			if (session) {
@@ -320,14 +333,25 @@ const UploadData = ({ onUploadComplete }: UploadProcessProps) => {
 	};
 
 	const handleReset = async () => {
+		// Confirmation dialog
+		if (!window.confirm("⚠️ PERINGATAN: Semua data tiket akan dihapus PERMANEN dari server dan lokal!\n\nApakah Anda yakin ingin melanjutkan?")) {
+			return; // User cancelled
+		}
+
 		try {
-			await db.tickets.clear();
+			// Menggunakan service untuk menghapus data di Server API & IndexedDB
+			await import("../services/uploadSessions").then(m => m.deleteAllData("tickets"));
+
 			setUploadSummary(null);
 			setErrorLog([]);
 			logger.info("Cache & Database Dihapus");
 			onUploadComplete();
+
+			// Success feedback
+			alert("✅ BERHASIL: Semua data tiket telah dihapus dari server dan lokal!");
 		} catch (error) {
 			logger.error("Error clearing database:", error);
+			alert(`❌ GAGAL: ${error instanceof Error ? error.message : 'Terjadi kesalahan saat menghapus data'}`);
 		}
 	};
 
@@ -702,14 +726,14 @@ function parseExcelDate(value: any): string | undefined {
 
 		// Try multiple date formats
 		const formats = [
-			// DD/MM/YYYY HH:MM:SS
-			/^([0-3]?\d)\/([01]?\d)\/(\d{4})\s+([0-2]?\d):([0-5]?\d):([0-5]?\d)$/,
-			// DD/MM/YYYY
-			/^([0-3]?\d)\/([01]?\d)\/(\d{4})$/,
-			// MM/DD/YYYY HH:MM:SS
-			/^([01]?\d)\/([0-3]?\d)\/(\d{4})\s+([0-2]?\d):([0-5]?\d):([0-5]?\d)$/,
-			// MM/DD/YYYY
-			/^([01]?\d)\/([0-3]?\d)\/(\d{4})$/,
+			// DD/MM/YYYY HH:MM:SS or DD/MM/YY HH:MM:SS (Support 2-4 digit year)
+			/^([0-3]?\d)\/([01]?\d)\/(\d{2,4})\s+([0-2]?\d):([0-5]?\d):([0-5]?\d)$/,
+			// DD/MM/YYYY or DD/MM/YY
+			/^([0-3]?\d)\/([01]?\d)\/(\d{2,4})$/,
+			// MM/DD/YYYY HH:MM:SS or MM/DD/YY ...
+			/^([01]?\d)\/([0-3]?\d)\/(\d{2,4})\s+([0-2]?\d):([0-5]?\d):([0-5]?\d)$/,
+			// MM/DD/YYYY or MM/DD/YY
+			/^([01]?\d)\/([0-3]?\d)\/(\d{2,4})$/,
 			// YYYY-MM-DD HH:MM:SS
 			/^(\d{4})-([01]?\d)-([0-3]?\d)\s+([0-2]?\d):([0-5]?\d):([0-5]?\d)$/,
 			// YYYY-MM-DD
@@ -750,6 +774,11 @@ function parseExcelDate(value: any): string | undefined {
 					if (parts[4]) hours = parseInt(parts[4], 10);
 					if (parts[5]) minutes = parseInt(parts[5], 10);
 					if (parts[6]) seconds = parseInt(parts[6], 10);
+				}
+
+				// Adjust 2-digit year to 4-digit year (assume 20xx)
+				if (year < 100) {
+					year += 2000;
 				}
 
 				// Validate date components
@@ -930,7 +959,7 @@ const processAndAnalyzeData = (
 			);
 		}
 
-		const closeTime = parseExcelDate(row["Waktu Close Tiket"]);
+		const closeTime = parseExcelDate(row["Waktu Close Ticket"]);
 		const closeHandling = parseExcelDate(row["Close Penanganan"]);
 		const closeHandling1 = parseExcelDate(row["Close Penanganan 1"]);
 		const closeHandling2 = parseExcelDate(row["Close Penanganan 2"]);
@@ -968,9 +997,9 @@ const processAndAnalyzeData = (
 
 		const ticket: ITicket = {
 			id: crypto.randomUUID(),
-			customerId: String(customerId),
-			name: row["Nama"] || "N/A",
-			category: row["Kategori"] || "Uncategorized",
+			customerId: customerId,
+			name: row["Site Name"] || row["Nama Site"] || "",
+			category: row["Kategori"] || "",
 			description: row["Deskripsi"] || "",
 			cause: row["Penyebab"] || "",
 			handling: row["Penanganan"] || "",

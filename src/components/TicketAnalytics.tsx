@@ -52,11 +52,11 @@ import {
 } from "@react-pdf/renderer";
 import { ChartContainer, ChartTooltip } from "@/components/ui/chart";
 import { Badge } from "./ui/badge";
-import { db } from "@/lib/db";
-import { useLiveQuery } from "dexie-react-hooks";
+// import { db } from "@/lib/db";
+// import { useLiveQuery } from "dexie-react-hooks";
 import { logger } from "@/lib/logger";
-import { 
-	isBacklogTicket, 
+import {
+	isBacklogTicket,
 	getBacklogStats
 } from "@/utils/ticketStatus";
 
@@ -324,15 +324,15 @@ const pdfStatusBadge = (status) => {
 	};
 };
 
-const TicketAnalytics = ({}: TicketAnalyticsProps) => {
+const TicketAnalytics = ({ }: TicketAnalyticsProps) => {
 	// Semua hook harus di awal
 
 	const [normalizePer1000, setNormalizePer1000] = useState(false);
-	
+
 	// State untuk Classification Analytics filtering dan sorting
 	const [classificationSortBy, setClassificationSortBy] = useState<"count" | "trend" | "priority">("count");
 	const [classificationFilter, setClassificationFilter] = useState<"all" | "critical" | "at-risk">("all");
-	
+
 	const {
 		ticketAnalyticsData,
 		gridData, // filtered tickets
@@ -345,7 +345,20 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
 		allYearsInData,
 		refresh,
 	} = useTicketAnalytics() || {};
-	const allCustomers = useLiveQuery(() => db.customers.toArray(), []);
+	const [allCustomers, setAllCustomers] = useState<any[]>([]);
+
+	React.useEffect(() => {
+		const fetchCustomers = async () => {
+			try {
+				const { cacheService } = await import("@/services/cacheService");
+				const data = await cacheService.getCustomers();
+				setAllCustomers(data);
+			} catch (error) {
+				console.error("Failed to fetch customers in TicketAnalytics:", error);
+			}
+		};
+		fetchCustomers();
+	}, []);
 	const customerJenisKlienMap = useMemo(() => {
 		// Normalize various labels/typos to canonical buckets
 		const normalizeType = (val: string): string => {
@@ -616,16 +629,16 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
 		() =>
 			Array.isArray(gridData)
 				? gridData.filter((t) => {
-						const classification = (t.classification || "")
-							.trim()
-							.toLowerCase();
-						return (
-							t.openTime &&
-							t.openTime.startsWith("2025") &&
-							classification !== "gangguan diluar layanan" &&
-							classification !== "request"
-						);
-					})
+					const classification = (t.classification || "")
+						.trim()
+						.toLowerCase();
+					return (
+						t.openTime &&
+						t.openTime.startsWith("2025") &&
+						classification !== "gangguan diluar layanan" &&
+						classification !== "request"
+					);
+				})
 				: [],
 		[gridData],
 	);
@@ -1243,15 +1256,15 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
 	} =
 		maxAvg && typeof maxAvg === "object" && "shift" in maxAvg
 			? {
-					shift: maxAvg.shift || "",
-					avg: maxAvg.avg || 0,
-					median: typeof maxAvg.median === "number" ? maxAvg.median : 0,
-					count: maxAvg.count || 0,
-					formattedAvg:
-						(maxAvg as any).formattedAvg ||
-						formatDurationHMS(maxAvg.avg || 0) ||
-						"00:00:00",
-				}
+				shift: maxAvg.shift || "",
+				avg: maxAvg.avg || 0,
+				median: typeof maxAvg.median === "number" ? maxAvg.median : 0,
+				count: maxAvg.count || 0,
+				formattedAvg:
+					(maxAvg as any).formattedAvg ||
+					formatDurationHMS(maxAvg.avg || 0) ||
+					"00:00:00",
+			}
 			: { shift: "", avg: 0, median: 0, count: 0, formattedAvg: "00:00:00" };
 	const safeMaxAvgCat: {
 		cat: string;
@@ -1262,15 +1275,15 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
 	} =
 		maxAvgCat && typeof maxAvgCat === "object" && "cat" in maxAvgCat
 			? {
-					cat: maxAvgCat.cat || "",
-					avg: maxAvgCat.avg || 0,
-					median: typeof maxAvgCat.median === "number" ? maxAvgCat.median : 0,
-					count: maxAvgCat.count || 0,
-					formattedAvg:
-						(maxAvgCat as any).formattedAvg ||
-						formatDurationHMS(maxAvgCat.avg || 0) ||
-						"00:00:00",
-				}
+				cat: maxAvgCat.cat || "",
+				avg: maxAvgCat.avg || 0,
+				median: typeof maxAvgCat.median === "number" ? maxAvgCat.median : 0,
+				count: maxAvgCat.count || 0,
+				formattedAvg:
+					(maxAvgCat as any).formattedAvg ||
+					formatDurationHMS(maxAvgCat.avg || 0) ||
+					"00:00:00",
+			}
 			: { cat: "", avg: 0, median: 0, count: 0, formattedAvg: "00:00:00" };
 
 	// Guard clause for when data tidak tersedia
@@ -1528,11 +1541,10 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
 										</div>
 										{insights.busiestMonth.trend && (
 											<div
-												className={`text-xs font-medium ${
-													insights.busiestMonth.trend > 0
-														? "text-green-600 dark:text-green-400"
-														: "text-red-600 dark:text-red-400"
-												}`}
+												className={`text-xs font-medium ${insights.busiestMonth.trend > 0
+													? "text-green-600 dark:text-green-400"
+													: "text-red-600 dark:text-red-400"
+													}`}
 											>
 												{insights.busiestMonth.trend > 0 ? (
 													<TrendingUpIcon className="w-3 h-3 inline mr-1" />
@@ -1574,11 +1586,10 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
 										</div>
 										{typeof insights.topCategory.trend === "number" && (
 											<div
-												className={`text-xs font-medium ${
-													insights.topCategory.trend > 0
-														? "text-green-600 dark:text-green-400"
-														: "text-red-600 dark:text-red-400"
-												}`}
+												className={`text-xs font-medium ${insights.topCategory.trend > 0
+													? "text-green-600 dark:text-green-400"
+													: "text-red-600 dark:text-red-400"
+													}`}
 											>
 												{insights.topCategory.trend > 0 ? (
 													<TrendingUpIcon className="w-3 h-3 inline mr-1" />
@@ -1716,23 +1727,21 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
 									{insightCards.map((card, index) => (
 										<div
 											key={index}
-											className={`p-2 rounded-lg transition-all duration-200 ${
-												card.type === "warning"
-													? "bg-red-50 dark:bg-red-900/20"
-													: card.type === "success"
-														? "bg-green-50 dark:bg-green-900/20"
-														: "bg-blue-50 dark:bg-blue-900/20"
-											}`}
+											className={`p-2 rounded-lg transition-all duration-200 ${card.type === "warning"
+												? "bg-red-50 dark:bg-red-900/20"
+												: card.type === "success"
+													? "bg-green-50 dark:bg-green-900/20"
+													: "bg-blue-50 dark:bg-blue-900/20"
+												}`}
 										>
 											<div className="flex items-start gap-1">
 												<span
-													className={`text-xs ${
-														card.type === "warning"
-															? "text-red-500"
-															: card.type === "success"
-																? "text-green-500"
-																: "text-blue-500"
-													}`}
+													className={`text-xs ${card.type === "warning"
+														? "text-red-500"
+														: card.type === "success"
+															? "text-green-500"
+															: "text-blue-500"
+														}`}
 												>
 													{card.icon}
 												</span>
@@ -2692,14 +2701,14 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
 														tiketPerJenisKlienPerBulan[month]?.[jk] || 0;
 													const val = normalizePer1000
 														? (() => {
-																const denom =
-																	customerMonthRowCountByType.get(month)?.[
-																		jk
-																	] || 0;
-																return denom > 0
-																	? `${((tickets / denom) * 1000).toFixed(2)}`
-																	: "0";
-															})()
+															const denom =
+																customerMonthRowCountByType.get(month)?.[
+																jk
+																] || 0;
+															return denom > 0
+																? `${((tickets / denom) * 1000).toFixed(2)}`
+																: "0";
+														})()
 														: `${tickets}`;
 													return (
 														<td
@@ -2902,14 +2911,14 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
 														tiketPerKategoriPerBulan[month]?.[kat] || 0;
 													const val = normalizePer1000
 														? (() => {
-																const denom =
-																	customerMonthRowCountByCategory.get(month)?.[
-																		kat
-																	] || 0;
-																return denom > 0
-																	? `${((tickets / denom) * 1000).toFixed(2)}`
-																	: "0";
-															})()
+															const denom =
+																customerMonthRowCountByCategory.get(month)?.[
+																kat
+																] || 0;
+															return denom > 0
+																? `${((tickets / denom) * 1000).toFixed(2)}`
+																: "0";
+														})()
 														: `${tickets}`;
 													return (
 														<td
@@ -4501,11 +4510,11 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
 								const computedImpact = Number.isFinite(item?.impactScore)
 									? item.impactScore
 									: impactScore({
-											tickets: item.count || 0,
-											p90Hours: catP90Map[item.category] || 0,
-											escalRate: catEscalationRate[item.category] || 0,
-											severityScore: 2, // fallback: P3
-										});
+										tickets: item.count || 0,
+										p90Hours: catP90Map[item.category] || 0,
+										escalRate: catEscalationRate[item.category] || 0,
+										severityScore: 2, // fallback: P3
+									});
 
 								// --- Trend Calculation (MoM) ---
 								let trendValue: number | null = null;
@@ -4713,13 +4722,12 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
 																{item.avgDuration.toFixed(2)} jam
 															</span>
 															<span
-																className={`text-xs font-medium ${
-																	impactColor.includes("red")
-																		? "text-red-600 dark:text-red-400"
-																		: impactColor.includes("yellow")
-																			? "text-yellow-600 dark:text-yellow-400"
-																			: "text-green-600 dark:text-green-400"
-																}`}
+																className={`text-xs font-medium ${impactColor.includes("red")
+																	? "text-red-600 dark:text-red-400"
+																	: impactColor.includes("yellow")
+																		? "text-yellow-600 dark:text-yellow-400"
+																		: "text-green-600 dark:text-green-400"
+																	}`}
 															>
 																{impactColor.includes("red")
 																	? "High Impact"
@@ -4782,7 +4790,7 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
 						const kronisCount = Number((classificationData.kronis as any)?.count) || 0;
 						const ekstremCount = Number((classificationData.ekstrem as any)?.count) || 0;
 						const atRiskCount = persistenCount + kronisCount + ekstremCount;
-						
+
 						return (
 							<div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
 								<SummaryCard
@@ -4820,34 +4828,34 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
 					{/* Sorting and Filtering Controls */}
 					<div className="flex items-center justify-between mb-4">
 						<div className="flex items-center gap-4">
-						<div className="flex items-center gap-2">
-							<LabelIcon className="w-4 h-4 text-muted-foreground" />
-							<span className="text-sm text-muted-foreground">Sort by:</span>
-							<select 
-								className="text-xs bg-background border border-gray-200 dark:border-gray-700 rounded px-2 py-1"
-								value={classificationSortBy}
-								onChange={(e) => setClassificationSortBy(e.target.value as "count" | "trend" | "priority")}
-							>
-								<option value="count">Count</option>
-								<option value="trend">Trend</option>
-								<option value="priority">Priority</option>
-							</select>
+							<div className="flex items-center gap-2">
+								<LabelIcon className="w-4 h-4 text-muted-foreground" />
+								<span className="text-sm text-muted-foreground">Sort by:</span>
+								<select
+									className="text-xs bg-background border border-gray-200 dark:border-gray-700 rounded px-2 py-1"
+									value={classificationSortBy}
+									onChange={(e) => setClassificationSortBy(e.target.value as "count" | "trend" | "priority")}
+								>
+									<option value="count">Count</option>
+									<option value="trend">Trend</option>
+									<option value="priority">Priority</option>
+								</select>
+							</div>
+							<div className="flex items-center gap-2">
+								<BarChartIcon className="w-4 h-4 text-muted-foreground" />
+								<span className="text-sm text-muted-foreground">Show:</span>
+								<select
+									className="text-xs bg-background border border-gray-200 dark:border-gray-700 rounded px-2 py-1"
+									value={classificationFilter}
+									onChange={(e) => setClassificationFilter(e.target.value as "all" | "critical" | "at-risk")}
+								>
+									<option value="all">All Classifications</option>
+									<option value="critical">Critical Only</option>
+									<option value="at-risk">At Risk Only</option>
+								</select>
+							</div>
 						</div>
-						<div className="flex items-center gap-2">
-							<BarChartIcon className="w-4 h-4 text-muted-foreground" />
-							<span className="text-sm text-muted-foreground">Show:</span>
-							<select 
-								className="text-xs bg-background border border-gray-200 dark:border-gray-700 rounded px-2 py-1"
-								value={classificationFilter}
-								onChange={(e) => setClassificationFilter(e.target.value as "all" | "critical" | "at-risk")}
-							>
-								<option value="all">All Classifications</option>
-								<option value="critical">Critical Only</option>
-								<option value="at-risk">At Risk Only</option>
-							</select>
-						</div>
-						</div>
-						
+
 						{/* Active Filter Indicator */}
 						<div className="flex items-center gap-2">
 							{(classificationFilter !== "all" || classificationSortBy !== "count") && (
@@ -4872,25 +4880,25 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
 						{(() => {
 							// Filter data berdasarkan kriteria
 							let filteredData = Object.entries(classificationData);
-							
+
 							if (classificationFilter === "critical") {
-								filteredData = filteredData.filter(([classification]) => 
-									classification.toLowerCase() === "kronis" || 
+								filteredData = filteredData.filter(([classification]) =>
+									classification.toLowerCase() === "kronis" ||
 									classification.toLowerCase() === "ekstrem"
 								);
 							} else if (classificationFilter === "at-risk") {
-								filteredData = filteredData.filter(([classification]) => 
-									classification.toLowerCase() === "persisten" || 
-									classification.toLowerCase() === "kronis" || 
+								filteredData = filteredData.filter(([classification]) =>
+									classification.toLowerCase() === "persisten" ||
+									classification.toLowerCase() === "kronis" ||
 									classification.toLowerCase() === "ekstrem"
 								);
 							}
-							
+
 							// Sort data berdasarkan kriteria yang dipilih
 							filteredData = filteredData.sort(([aClassification, a], [bClassification, b]) => {
 								const aData = a as any;
 								const bData = b as any;
-								
+
 								switch (classificationSortBy) {
 									case "count":
 										return bData.count - aData.count;
@@ -4909,7 +4917,7 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
 										return bData.count - aData.count;
 								}
 							});
-							
+
 							return filteredData;
 						})().map(
 							([classification, details]) => {
@@ -4921,12 +4929,12 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
 								const trend =
 									d.trendline && d.trendline.data.length > 1
 										? d.trendline.data.map((val, i, arr) => {
-												if (i === 0) return null;
-												const prev = arr[i - 1];
-												if (prev === 0) return null;
-												const percent = ((val - prev) / Math.abs(prev)) * 100;
-												return percent;
-											})
+											if (i === 0) return null;
+											const prev = arr[i - 1];
+											if (prev === 0) return null;
+											const percent = ((val - prev) / Math.abs(prev)) * 100;
+											return percent;
+										})
 										: [];
 
 								// Color mapping untuk setiap klasifikasi
@@ -5028,13 +5036,12 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
 													</div>
 													{trend.length > 0 && trend[trend.length - 1] !== null && (
 														<div
-															className={`flex items-center gap-1 text-xs font-medium ${
-																trend[trend.length - 1]! > 0
-																	? "text-green-600 dark:text-green-400"
-																	: trend[trend.length - 1]! < 0
-																		? "text-red-600 dark:text-red-400"
-																		: "text-muted-foreground"
-															}`}
+															className={`flex items-center gap-1 text-xs font-medium ${trend[trend.length - 1]! > 0
+																? "text-green-600 dark:text-green-400"
+																: trend[trend.length - 1]! < 0
+																	? "text-red-600 dark:text-red-400"
+																	: "text-muted-foreground"
+																}`}
 														>
 															<span>
 																{trend[trend.length - 1]! > 0 ? (
@@ -5074,7 +5081,7 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
 																	</span>
 																	<div className="flex items-center gap-2 flex-shrink-0">
 																		<div className="w-16 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-																			<div 
+																			<div
 																				className="h-full bg-blue-500 transition-all duration-300"
 																				style={{ width: `${Math.min(percentage, 100)}%` }}
 																			></div>
@@ -5248,18 +5255,16 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
 									return (
 										<div
 											key={shift.shift}
-											className={`p-4 rounded-lg transition-all duration-200 ${
-												isOutlier
-													? "bg-red-50 dark:bg-red-900/20"
-													: "bg-gray-50 dark:bg-zinc-800/50"
-											}`}
+											className={`p-4 rounded-lg transition-all duration-200 ${isOutlier
+												? "bg-red-50 dark:bg-red-900/20"
+												: "bg-gray-50 dark:bg-zinc-800/50"
+												}`}
 										>
 											<div className="flex items-center justify-between mb-2">
 												<div className="flex items-center gap-3">
 													<div
-														className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm ${
-															isOutlier ? "bg-red-500" : "bg-blue-500"
-														}`}
+														className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm ${isOutlier ? "bg-red-500" : "bg-blue-500"
+															}`}
 													>
 														{shift.shift.charAt(0)}
 													</div>
@@ -5449,18 +5454,16 @@ const TicketAnalytics = ({}: TicketAnalyticsProps) => {
 									return (
 										<div
 											key={cat.cat}
-											className={`p-4 rounded-lg transition-all duration-200 ${
-												isOutlier
-													? "bg-red-50 dark:bg-red-900/20"
-													: "bg-gray-50 dark:bg-zinc-800/50"
-											}`}
+											className={`p-4 rounded-lg transition-all duration-200 ${isOutlier
+												? "bg-red-50 dark:bg-red-900/20"
+												: "bg-gray-50 dark:bg-zinc-800/50"
+												}`}
 										>
 											<div className="flex items-center justify-between mb-2">
 												<div className="flex items-center gap-3">
 													<div
-														className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm ${
-															isOutlier ? "bg-red-500" : "bg-purple-500"
-														}`}
+														className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm ${isOutlier ? "bg-red-500" : "bg-purple-500"
+															}`}
 													>
 														<AssignmentIcon className="text-white text-xs" />
 													</div>

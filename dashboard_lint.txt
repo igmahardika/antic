@@ -1,0 +1,12 @@
+
+/var/www/hms/antic/src/components/Dashboard.tsx
+  176:37  error    React Hook "useMemo" is called conditionally. React Hooks must be called in the exact same order in every component render                                                                   react-hooks/rules-of-hooks
+  187:44  error    React Hook "useMemo" is called conditionally. React Hooks must be called in the exact same order in every component render                                                                   react-hooks/rules-of-hooks
+  344:13  warning  'e' is defined but never used                                                                                                                                                                @typescript-eslint/no-unused-vars
+  526:13  warning  'e' is defined but never used                                                                                                                                                                @typescript-eslint/no-unused-vars
+  721:2   error    React Hook "useEffect" is called conditionally. React Hooks must be called in the exact same order in every component render                                                                 react-hooks/rules-of-hooks
+  750:15  error    React Hook "useMemo" is called conditionally. React Hooks must be called in the exact same order in every component render. Did you accidentally call a React Hook after an early return?    react-hooks/rules-of-hooks
+  770:2   error    React Hook "useEffect" is called conditionally. React Hooks must be called in the exact same order in every component render. Did you accidentally call a React Hook after an early return?  react-hooks/rules-of-hooks
+
+✖ 7 problems (5 errors, 2 warnings)
+

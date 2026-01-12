@@ -81,6 +81,7 @@ export class TicketDB extends Dexie {
 	incidents!: Table<Incident, string>; // pk = id
 	vendors!: Table<IVendor, number>;
 	uploadSessions!: Table<any, string>; // uploadSessions table
+	cache!: Table<any, string>; // cache table for API responses
 
 	constructor() {
 		super("InsightTicketDatabase");
@@ -125,6 +126,17 @@ export class TicketDB extends Dexie {
         klasifikasiGangguan, level, ncal, noCase
       `,
 			vendors: "++id, name, isActive, createdAt, updatedAt",
+		});
+		// Version 7: Add cache table for API response caching
+		this.version(7).stores({
+			tickets: "id, openTime, name, uploadTimestamp, cabang",
+			users: "++id, username, role",
+			menuPermissions: "++id, role",
+			customers: "id, nama, jenisKlien, layanan, kategori",
+			incidents: `id, startTime, status, priority, site, klasifikasiGangguan, level, ncal, noCase`,
+			vendors: "++id, name, isActive, createdAt, updatedAt",
+			uploadSessions: "id, uploadTimestamp, dataType, fileName",
+			cache: "key, timestamp",
 		});
 	}
 }

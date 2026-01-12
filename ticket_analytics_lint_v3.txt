@@ -1,0 +1,17 @@
+
+/var/www/hms/antic/src/components/TicketAnalytics.tsx
+    63:6   warning  'TicketAnalyticsProps' is defined but never used                                                                     @typescript-eslint/no-unused-vars
+   666:5   warning  React Hook useMemo has a missing dependency: 'jenisKlienList'. Either include it or remove the dependency array      react-hooks/exhaustive-deps
+   756:5   warning  React Hook useMemo has a missing dependency: 'slaHoursBySeverity'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  2545:22  error    Unexpected any. Specify a different type                                                                             @typescript-eslint/no-explicit-any
+  2783:22  error    Unexpected any. Specify a different type                                                                             @typescript-eslint/no-explicit-any
+  2982:22  error    Unexpected any. Specify a different type                                                                             @typescript-eslint/no-explicit-any
+  3266:23  error    Unexpected any. Specify a different type                                                                             @typescript-eslint/no-explicit-any
+  3520:23  error    Unexpected any. Specify a different type                                                                             @typescript-eslint/no-explicit-any
+  3775:22  error    Unexpected any. Specify a different type                                                                             @typescript-eslint/no-explicit-any
+  4237:16  warning  '_name' is defined but never used                                                                                    @typescript-eslint/no-unused-vars
+  4904:28  error    Unexpected any. Specify a different type                                                                             @typescript-eslint/no-explicit-any
+  4905:28  error    Unexpected any. Specify a different type                                                                             @typescript-eslint/no-explicit-any
+
+✖ 12 problems (8 errors, 4 warnings)
+

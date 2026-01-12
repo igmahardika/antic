@@ -1,6 +1,7 @@
 import { createContext, useContext, useMemo, useState, useEffect } from "react";
-import { useLiveQuery } from "dexie-react-hooks";
-import { db } from "@/lib/db";
+// import { useLiveQuery } from "dexie-react-hooks";
+// import { db } from "@/lib/db";
+import { cacheService } from "@/services/cacheService";
 import { formatDurationDHM } from "@/lib/utils";
 import { useAgentStore } from "@/store/agentStore";
 import { logger } from "@/lib/logger";
@@ -18,11 +19,20 @@ export const AgentAnalyticsProvider = ({ children }) => {
 	const [selectedYear, setSelectedYear] = useState(null);
 	const [refreshTrigger, setRefreshTrigger] = useState(0);
 
-	// Data dari IndexedDB
-	const allTickets = useLiveQuery(() => db.tickets.toArray(), [refreshTrigger]);
+	// Data dari CacheService (MySQL + IndexedDB Cache)
+	const [allTickets, setAllTickets] = useState([]);
 	useEffect(() => {
-		logger.info("[DEBUG] allTickets from IndexedDB (Agent):", allTickets);
-	}, [allTickets]);
+		const fetchTickets = async () => {
+			try {
+				const tickets = await cacheService.getTickets();
+				setAllTickets(tickets);
+				logger.info("[DEBUG] allTickets fetched via CacheService (Agent):", tickets.length);
+			} catch (error) {
+				logger.error("[DEBUG] Failed to fetch tickets for agent analytics:", error);
+			}
+		};
+		fetchTickets();
+	}, [refreshTrigger]);
 
 	// Filter waktu
 	const { cutoffStart, cutoffEnd } = useMemo(() => {
@@ -95,9 +105,9 @@ export const AgentAnalyticsProvider = ({ children }) => {
 			if (ticketCount === 0) return null;
 			const totalDuration = Array.isArray(d.durations)
 				? d.durations
-						.map(Number)
-						.filter((v) => !isNaN(v))
-						.reduce((acc, curr) => acc + curr, 0)
+					.map(Number)
+					.filter((v) => !isNaN(v))
+					.reduce((acc, curr) => acc + curr, 0)
 				: 0;
 			const avgDuration = totalDuration / ticketCount;
 			const minDuration = Math.min(...d.durations);
@@ -343,126 +353,126 @@ export const AgentAnalyticsProvider = ({ children }) => {
 		sortedMonths.length === 0
 			? null
 			: {
-					labels: sortedMonths.map((month) => {
-						const [year, monthNum] = (month as string).split("-");
-						return `${monthNum}/${year}`;
-					}),
-					datasets: Object.entries(agentMonthlyPerformance).map(
-						([agentName, monthlyData]) => {
-							const md = monthlyData as Record<string, number>;
-							const color = "#3b82f6";
-							return {
-								label: agentName,
-								data: sortedMonths.map((month) => md[month as string] || 0),
-								backgroundColor: color + "CC",
-								borderColor: color,
-								borderRadius: 6,
-								maxBarThickness: 32,
-							};
-						},
-					),
-					datasetsFRT: Object.entries(agentMonthlyFRT).map(
-						([agentName, monthlyData]) => {
-							return {
-								label: agentName,
-								data: sortedMonths.map((month) => {
-									const arr = monthlyData[month as string] || [];
-									return arr.length
-										? arr.reduce((a, b) => a + b, 0) / arr.length
-										: 0;
-								}),
-							};
-						},
-					),
-					datasetsART: Object.entries(agentMonthlyART).map(
-						([agentName, monthlyData]) => {
-							return {
-								label: agentName,
-								data: sortedMonths.map((month) => {
-									const arr = monthlyData[month as string] || [];
-									return arr.length
-										? arr.reduce((a, b) => a + b, 0) / arr.length
-										: 0;
-								}),
-							};
-						},
-					),
-					datasetsFCR: Object.entries(agentMonthlyFCR).map(
-						([agentName, monthlyData]) => {
-							return {
-								label: agentName,
-								data: sortedMonths.map((month) => {
-									const arr = monthlyData[month as string] || [];
-									return arr.length
-										? arr.reduce((a, b) => a + b, 0) / arr.length
-										: 0;
-								}),
-							};
-						},
-					),
-					datasetsSLA: Object.entries(agentMonthlySLA).map(
-						([agentName, monthlyData]) => {
-							return {
-								label: agentName,
-								data: sortedMonths.map((month) => {
-									const arr = monthlyData[month as string] || [];
-									return arr.length
-										? arr.reduce((a, b) => a + b, 0) / arr.length
-										: 0;
-								}),
-							};
-						},
-					),
-					datasetsBacklog: Object.keys(agentMonthlyPerformance).map(
-						(agentName) => {
-							return {
-								label: agentName,
-								data: sortedMonths.map((month) => {
-									// Filter tickets for this agent and month
-									const agentTicketsForMonth = filteredTicketsWithKPI.filter(
-										(t) => {
-											if (t.openBy !== agentName) return false;
-											if (!t.openTime) return false;
-											const d = new Date(t.openTime);
-											if (isNaN(d.getTime())) return false;
-											const monthKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-											return monthKey === month;
-										},
-									);
+				labels: sortedMonths.map((month) => {
+					const [year, monthNum] = (month as string).split("-");
+					return `${monthNum}/${year}`;
+				}),
+				datasets: Object.entries(agentMonthlyPerformance).map(
+					([agentName, monthlyData]) => {
+						const md = monthlyData as Record<string, number>;
+						const color = "#3b82f6";
+						return {
+							label: agentName,
+							data: sortedMonths.map((month) => md[month as string] || 0),
+							backgroundColor: color + "CC",
+							borderColor: color,
+							borderRadius: 6,
+							maxBarThickness: 32,
+						};
+					},
+				),
+				datasetsFRT: Object.entries(agentMonthlyFRT).map(
+					([agentName, monthlyData]) => {
+						return {
+							label: agentName,
+							data: sortedMonths.map((month) => {
+								const arr = monthlyData[month as string] || [];
+								return arr.length
+									? arr.reduce((a, b) => a + b, 0) / arr.length
+									: 0;
+							}),
+						};
+					},
+				),
+				datasetsART: Object.entries(agentMonthlyART).map(
+					([agentName, monthlyData]) => {
+						return {
+							label: agentName,
+							data: sortedMonths.map((month) => {
+								const arr = monthlyData[month as string] || [];
+								return arr.length
+									? arr.reduce((a, b) => a + b, 0) / arr.length
+									: 0;
+							}),
+						};
+					},
+				),
+				datasetsFCR: Object.entries(agentMonthlyFCR).map(
+					([agentName, monthlyData]) => {
+						return {
+							label: agentName,
+							data: sortedMonths.map((month) => {
+								const arr = monthlyData[month as string] || [];
+								return arr.length
+									? arr.reduce((a, b) => a + b, 0) / arr.length
+									: 0;
+							}),
+						};
+					},
+				),
+				datasetsSLA: Object.entries(agentMonthlySLA).map(
+					([agentName, monthlyData]) => {
+						return {
+							label: agentName,
+							data: sortedMonths.map((month) => {
+								const arr = monthlyData[month as string] || [];
+								return arr.length
+									? arr.reduce((a, b) => a + b, 0) / arr.length
+									: 0;
+							}),
+						};
+					},
+				),
+				datasetsBacklog: Object.keys(agentMonthlyPerformance).map(
+					(agentName) => {
+						return {
+							label: agentName,
+							data: sortedMonths.map((month) => {
+								// Filter tickets for this agent and month
+								const agentTicketsForMonth = filteredTicketsWithKPI.filter(
+									(t) => {
+										if (t.openBy !== agentName) return false;
+										if (!t.openTime) return false;
+										const d = new Date(t.openTime);
+										if (isNaN(d.getTime())) return false;
+										const monthKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+										return monthKey === month;
+									},
+								);
 
-									// Calculate backlog count using the same logic as isBacklogTicket
-									const backlogCount = agentTicketsForMonth.filter((t) => {
-										const status = t.status?.trim()?.toLowerCase() || "";
-										if (status !== "open ticket") return false;
-										if (t.closeTime) return false;
-										return true;
-									}).length;
+								// Calculate backlog count using the same logic as isBacklogTicket
+								const backlogCount = agentTicketsForMonth.filter((t) => {
+									const status = t.status?.trim()?.toLowerCase() || "";
+									if (status !== "open ticket") return false;
+									if (t.closeTime) return false;
+									return true;
+								}).length;
 
-									return backlogCount;
-								}),
-							};
-						},
-					),
-					datasetsScore: Object.entries(agentMonthlyScore).map(
-						([agentName, monthlyData]) => {
-							return {
-								label: agentName,
-								data: sortedMonths.map((month) => monthlyData[month] ?? 0),
-							};
-						},
-					),
-					// Add total tickets per month for percentage calculation
-					totalTicketsPerMonth: sortedMonths.map((month) => {
-						const monthTickets = filteredTicketsWithKPI.filter((t) => {
-							if (!t.openTime) return false;
-							const d = new Date(t.openTime);
-							if (isNaN(d.getTime())) return false;
-							const monthKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-							return monthKey === month;
-						});
-						return monthTickets.length;
-					}),
-				};
+								return backlogCount;
+							}),
+						};
+					},
+				),
+				datasetsScore: Object.entries(agentMonthlyScore).map(
+					([agentName, monthlyData]) => {
+						return {
+							label: agentName,
+							data: sortedMonths.map((month) => monthlyData[month] ?? 0),
+						};
+					},
+				),
+				// Add total tickets per month for percentage calculation
+				totalTicketsPerMonth: sortedMonths.map((month) => {
+					const monthTickets = filteredTicketsWithKPI.filter((t) => {
+						if (!t.openTime) return false;
+						const d = new Date(t.openTime);
+						if (isNaN(d.getTime())) return false;
+						const monthKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+						return monthKey === month;
+					});
+					return monthTickets.length;
+				}),
+			};
 
 	// Ambil semua bulan & tahun unik
 	const allMonthsInData = useMemo(() => {

@@ -39,8 +39,8 @@ import {
 	Ticket as AgentTicket,
 	rank as rankBand,
 } from "@/utils/agentKpi";
-import { useLiveQuery } from "dexie-react-hooks";
-import { db } from "@/lib/db";
+// import { useLiveQuery } from "dexie-react-hooks";
+// import { db } from "@/lib/db";
 import { calculateIncidentStats, normalizeNCAL } from "@/utils/incidentUtils";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { getAgentPhotoPath } from "@/utils/photoUtils";
@@ -51,7 +51,20 @@ const SummaryDashboard = ({
 	standalone = false,
 }: any) => {
 	// Get incident data for comprehensive dashboard
-	const allIncidents = useLiveQuery(() => db.incidents.toArray(), []);
+	const [allIncidents, setAllIncidents] = useState<any[]>([]);
+
+	React.useEffect(() => {
+		const fetchIncidents = async () => {
+			try {
+				const { cacheService } = await import("@/services/cacheService");
+				const data = await cacheService.getIncidents();
+				setAllIncidents(data);
+			} catch (error) {
+				console.error("Failed to fetch incidents in SummaryDashboard:", error);
+			}
+		};
+		fetchIncidents();
+	}, []);
 
 	// Prepare monthly data
 	const monthlyStatsData = ticketAnalyticsData?.monthlyStatsData;
@@ -113,7 +126,7 @@ const SummaryDashboard = ({
 			{} as Record<string, any[]>,
 		);
 
-		const siteReliabilityScores = Object.values(siteGroups).map((incidents) => {
+		const siteReliabilityScores = Object.values(siteGroups).map((incidents: any[]) => {
 			const resolved = incidents.filter(
 				(inc) => inc.status?.toLowerCase() === "done",
 			).length;
@@ -123,7 +136,7 @@ const SummaryDashboard = ({
 		const siteReliability =
 			siteReliabilityScores.length > 0
 				? siteReliabilityScores.reduce((a, b) => a + b, 0) /
-					siteReliabilityScores.length
+				siteReliabilityScores.length
 				: 0;
 
 		return {
@@ -316,7 +329,7 @@ const SummaryDashboard = ({
 			}));
 		const sanitized = sanitizeTickets(raw);
 		const metrics = calcAllMetrics(sanitized);
-		
+
 		// Debug logging for FRT/ART calculation
 		if (metrics.length > 0) {
 			logger.info("[SummaryDashboard] Agent metrics sample:", {
@@ -456,12 +469,12 @@ const SummaryDashboard = ({
 		);
 
 		return Object.values(monthlyData)
-			.map((item) => ({
+			.map((item: any) => ({
 				...item,
 				avgDuration:
 					item.durations.length > 0
 						? item.durations.reduce((a: number, b: number) => a + b, 0) /
-							item.durations.length
+						item.durations.length
 						: 0,
 				resolutionRate:
 					item.incidents > 0 ? (item.resolved / item.incidents) * 100 : 0,
@@ -472,14 +485,14 @@ const SummaryDashboard = ({
 					'Jan': 0, 'Feb': 1, 'Mar': 2, 'Apr': 3, 'May': 4, 'Jun': 5,
 					'Jul': 6, 'Aug': 7, 'Sep': 8, 'Oct': 9, 'Nov': 10, 'Dec': 11
 				};
-				
+
 				const parseMonth = (monthStr: string) => {
 					const [month, year] = monthStr.split(' ');
 					const monthNum = monthNames[month as keyof typeof monthNames];
 					const yearNum = parseInt(year);
 					return new Date(yearNum, monthNum, 1).getTime();
 				};
-				
+
 				return parseMonth(a.month) - parseMonth(b.month);
 			});
 	}, [allIncidents]);
@@ -621,8 +634,8 @@ const SummaryDashboard = ({
 					</CardHeader>
 					<CardContent className="p-6">
 						{filteredMonthlyStatsData &&
-						filteredMonthlyStatsData.labels &&
-						filteredMonthlyStatsData.labels.length > 0 ? (
+							filteredMonthlyStatsData.labels &&
+							filteredMonthlyStatsData.labels.length > 0 ? (
 							<div className="h-64">
 								<ResponsiveContainer width="100%" height="100%">
 									<AreaChart
@@ -770,11 +783,11 @@ const SummaryDashboard = ({
 								Avg Rate:{" "}
 								{incidentTrendsData.length > 0
 									? (
-											incidentTrendsData.reduce(
-												(sum, item) => sum + item.resolutionRate,
-												0,
-											) / incidentTrendsData.length
-										).toFixed(1)
+										incidentTrendsData.reduce(
+											(sum, item) => sum + item.resolutionRate,
+											0,
+										) / incidentTrendsData.length
+									).toFixed(1)
 									: 0}
 								%
 							</Badge>
@@ -925,8 +938,8 @@ const SummaryDashboard = ({
 					</CardHeader>
 					<CardContent className="p-6">
 						{yearlyStatsData &&
-						yearlyStatsData.labels &&
-						yearlyStatsData.labels.length > 0 ? (
+							yearlyStatsData.labels &&
+							yearlyStatsData.labels.length > 0 ? (
 							<div className="h-64">
 								<ResponsiveContainer width="100%" height="100%">
 									<AreaChart
@@ -1244,15 +1257,14 @@ const SummaryDashboard = ({
 						{agentLeaderboard.map((row, i) => (
 							<div
 								key={row.agent}
-								className={`relative bg-gradient-to-br rounded-xl p-4 shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:scale-105 cursor-pointer ${
-									i === 0
-										? "from-amber-500 to-orange-600 text-white"
-										: i === 1
-											? "from-gray-500 to-gray-700 text-white"
-											: i === 2
-												? "from-orange-500 to-red-600 text-white"
-												: "from-white to-gray-50 dark:from-zinc-800 dark:to-zinc-700 text-gray-900 dark:text-gray-100"
-								}`}
+								className={`relative bg-gradient-to-br rounded-xl p-4 shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:scale-105 cursor-pointer ${i === 0
+									? "from-amber-500 to-orange-600 text-white"
+									: i === 1
+										? "from-gray-500 to-gray-700 text-white"
+										: i === 2
+											? "from-orange-500 to-red-600 text-white"
+											: "from-white to-gray-50 dark:from-zinc-800 dark:to-zinc-700 text-gray-900 dark:text-gray-100"
+									}`}
 							>
 								{/* Rank Badge */}
 								<div className="absolute top-2 right-2 flex items-center gap-1">
@@ -1268,11 +1280,10 @@ const SummaryDashboard = ({
 								{/* Agent Info */}
 								<div className="flex items-center gap-3 mb-3">
 									<Avatar
-										className={`w-12 h-12 border-2 ${
-											i < 3
-												? "border-white/30"
-												: "border-gray-200 dark:border-gray-600"
-										}`}
+										className={`w-12 h-12 border-2 ${i < 3
+											? "border-white/30"
+											: "border-gray-200 dark:border-gray-600"
+											}`}
 									>
 										<AvatarImage
 											src={getAgentPhotoPath(row.agent)}
@@ -1280,31 +1291,28 @@ const SummaryDashboard = ({
 											className="object-cover"
 										/>
 										<AvatarFallback
-											className={`font-semibold text-lg ${
-												i < 3
-													? "bg-white/20 text-white"
-													: "bg-gradient-to-br from-blue-500 to-purple-600 text-white"
-											}`}
+											className={`font-semibold text-lg ${i < 3
+												? "bg-white/20 text-white"
+												: "bg-gradient-to-br from-blue-500 to-purple-600 text-white"
+												}`}
 										>
 											{getAgentInitials(row.agent)}
 										</AvatarFallback>
 									</Avatar>
 									<div className="flex-1 min-w-0">
 										<h3
-											className={`font-bold text-xs leading-tight break-words line-clamp-2 ${
-												i < 3
-													? "text-white"
-													: "text-gray-900 dark:text-gray-100"
-											}`}
+											className={`font-bold text-xs leading-tight break-words line-clamp-2 ${i < 3
+												? "text-white"
+												: "text-gray-900 dark:text-gray-100"
+												}`}
 										>
 											{row.agent}
 										</h3>
 										<p
-											className={`text-xs opacity-80 leading-tight mt-1 ${
-												i < 3
-													? "text-white/80"
-													: "text-gray-500 dark:text-gray-400"
-											}`}
+											className={`text-xs opacity-80 leading-tight mt-1 ${i < 3
+												? "text-white/80"
+												: "text-gray-500 dark:text-gray-400"
+												}`}
 										>
 											{row.tickets} tickets • {row.slaPct.toFixed(1)}% SLA
 										</p>
@@ -1315,92 +1323,84 @@ const SummaryDashboard = ({
 								<div className="grid grid-cols-2 gap-1">
 									<div className="text-center">
 										<div
-											className={`text-sm font-bold leading-tight ${
-												i < 3
-													? "text-white"
-													: "text-gray-900 dark:text-gray-100"
-											}`}
+											className={`text-sm font-bold leading-tight ${i < 3
+												? "text-white"
+												: "text-gray-900 dark:text-gray-100"
+												}`}
 										>
 											{row.tickets.toLocaleString()}
 										</div>
 										<div
-											className={`text-xs opacity-80 leading-tight ${
-												i < 3
-													? "text-white/80"
-													: "text-gray-500 dark:text-gray-400"
-											}`}
+											className={`text-xs opacity-80 leading-tight ${i < 3
+												? "text-white/80"
+												: "text-gray-500 dark:text-gray-400"
+												}`}
 										>
 											Tickets
 										</div>
 									</div>
 									<div className="text-center">
 										<div
-											className={`text-sm font-bold leading-tight ${
-												i < 3
-													? "text-white"
-													: row.slaPct >= 85
-														? "text-green-600"
-														: row.slaPct >= 70
-															? "text-amber-600"
-															: "text-red-600"
-											}`}
+											className={`text-sm font-bold leading-tight ${i < 3
+												? "text-white"
+												: row.slaPct >= 85
+													? "text-green-600"
+													: row.slaPct >= 70
+														? "text-amber-600"
+														: "text-red-600"
+												}`}
 										>
 											{row.slaPct.toFixed(1)}%
 										</div>
 										<div
-											className={`text-xs opacity-80 leading-tight ${
-												i < 3
-													? "text-white/80"
-													: "text-gray-500 dark:text-gray-400"
-											}`}
+											className={`text-xs opacity-80 leading-tight ${i < 3
+												? "text-white/80"
+												: "text-gray-500 dark:text-gray-400"
+												}`}
 										>
 											SLA
 										</div>
 									</div>
 									<div className="text-center">
 										<div
-											className={`text-xs font-bold leading-tight ${
-												i < 3
-													? "text-white"
-													: row.frtAvg <= 120
-														? "text-green-600"
-														: row.frtAvg <= 240
-															? "text-amber-600"
-															: "text-red-600"
-											}`}
+											className={`text-xs font-bold leading-tight ${i < 3
+												? "text-white"
+												: row.frtAvg <= 120
+													? "text-green-600"
+													: row.frtAvg <= 240
+														? "text-amber-600"
+														: "text-red-600"
+												}`}
 										>
 											{formatDurationDHM(row.frtAvg)}
 										</div>
 										<div
-											className={`text-xs opacity-80 leading-tight ${
-												i < 3
-													? "text-white/80"
-													: "text-gray-500 dark:text-gray-400"
-											}`}
+											className={`text-xs opacity-80 leading-tight ${i < 3
+												? "text-white/80"
+												: "text-gray-500 dark:text-gray-400"
+												}`}
 										>
 											FRT
 										</div>
 									</div>
 									<div className="text-center">
 										<div
-											className={`text-xs font-bold leading-tight ${
-												i < 3
-													? "text-white"
-													: row.artAvg <= 1440
-														? "text-green-600"
-														: row.artAvg <= 2880
-															? "text-amber-600"
-															: "text-red-600"
-											}`}
+											className={`text-xs font-bold leading-tight ${i < 3
+												? "text-white"
+												: row.artAvg <= 1440
+													? "text-green-600"
+													: row.artAvg <= 2880
+														? "text-amber-600"
+														: "text-red-600"
+												}`}
 										>
 											{formatDurationDHM(row.artAvg)}
 										</div>
 										<div
-											className={`text-xs opacity-80 leading-tight ${
-												i < 3
-													? "text-white/80"
-													: "text-gray-500 dark:text-gray-400"
-											}`}
+											className={`text-xs opacity-80 leading-tight ${i < 3
+												? "text-white/80"
+												: "text-gray-500 dark:text-gray-400"
+												}`}
 										>
 											ART
 										</div>
@@ -1411,48 +1411,44 @@ const SummaryDashboard = ({
 								<div className="mt-2 flex items-center justify-between">
 									<div className="text-center">
 										<div
-											className={`text-sm font-bold leading-tight ${
-												i < 3
-													? "text-white"
-													: row.score >= 80
-														? "text-green-600"
-														: row.score >= 60
-															? "text-amber-600"
-															: "text-red-600"
-											}`}
+											className={`text-sm font-bold leading-tight ${i < 3
+												? "text-white"
+												: row.score >= 80
+													? "text-green-600"
+													: row.score >= 60
+														? "text-amber-600"
+														: "text-red-600"
+												}`}
 										>
 											{row.score.toFixed(1)}
 										</div>
 										<div
-											className={`text-xs opacity-80 leading-tight ${
-												i < 3
-													? "text-white/80"
-													: "text-gray-500 dark:text-gray-400"
-											}`}
+											className={`text-xs opacity-80 leading-tight ${i < 3
+												? "text-white/80"
+												: "text-gray-500 dark:text-gray-400"
+												}`}
 										>
 											Score
 										</div>
 									</div>
 									<div className="text-center">
 										<span
-											className={`inline-flex items-center justify-center w-8 h-8 rounded-full text-xs font-bold ${
-												row.grade === "A"
-													? "bg-green-600 text-white"
-													: row.grade === "B"
-														? "bg-blue-600 text-white"
-														: row.grade === "C"
-															? "bg-amber-600 text-white"
-															: "bg-red-600 text-white"
-											}`}
+											className={`inline-flex items-center justify-center w-8 h-8 rounded-full text-xs font-bold ${row.grade === "A"
+												? "bg-green-600 text-white"
+												: row.grade === "B"
+													? "bg-blue-600 text-white"
+													: row.grade === "C"
+														? "bg-amber-600 text-white"
+														: "bg-red-600 text-white"
+												}`}
 										>
 											{row.grade}
 										</span>
 										<div
-											className={`text-xs opacity-80 mt-1 leading-tight ${
-												i < 3
-													? "text-white/80"
-													: "text-gray-500 dark:text-gray-400"
-											}`}
+											className={`text-xs opacity-80 mt-1 leading-tight ${i < 3
+												? "text-white/80"
+												: "text-gray-500 dark:text-gray-400"
+												}`}
 										>
 											Grade
 										</div>
@@ -1462,20 +1458,18 @@ const SummaryDashboard = ({
 								{/* Performance Bar */}
 								<div className="mt-2">
 									<div
-										className={`w-full bg-opacity-20 rounded-full h-1 ${
-											i < 3 ? "bg-white/30" : "bg-gray-200 dark:bg-gray-600"
-										}`}
+										className={`w-full bg-opacity-20 rounded-full h-1 ${i < 3 ? "bg-white/30" : "bg-gray-200 dark:bg-gray-600"
+											}`}
 									>
 										<div
-											className={`h-1 rounded-full transition-all duration-500 ${
-												i < 3
-													? "bg-white/80"
-													: row.score >= 80
-														? "bg-green-600"
-														: row.score >= 60
-															? "bg-amber-600"
-															: "bg-red-600"
-											}`}
+											className={`h-1 rounded-full transition-all duration-500 ${i < 3
+												? "bg-white/80"
+												: row.score >= 80
+													? "bg-green-600"
+													: row.score >= 60
+														? "bg-amber-600"
+														: "bg-red-600"
+												}`}
 											style={{ width: `${Math.min(row.score, 100)}%` }}
 										></div>
 									</div>

@@ -1,8 +1,10 @@
 import React, { useState, useMemo, useEffect } from "react";
 // import { Listbox } from '@headlessui/react';
 // import { Calendar } from 'react-feather';
-import { useLiveQuery } from "dexie-react-hooks";
-import { db, ITicket } from "@/lib/db";
+// import { Calendar } from 'react-feather';
+// import { useLiveQuery } from "dexie-react-hooks";
+import { ITicket } from "@/lib/db";
+import { cacheService } from "@/services/cacheService";
 import { analyzeKeywords, formatDurationDHM } from "@/lib/utils";
 // import { Button } from '@/components/ui/button';
 // import { ModeToggle } from './mode-toggle';
@@ -27,7 +29,7 @@ import UserCheckIcon from "@mui/icons-material/HowToReg";
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 import UsersIcon from "@mui/icons-material/People";
 import { logger } from "@/lib/logger";
-import { 
+import {
 	isClosedTicket
 } from "@/utils/ticketStatus";
 
@@ -125,8 +127,26 @@ const Dashboard = () => {
 
 	// const handleUploadComplete = () => { /* not used here */ };
 
-	// Live query to get data from IndexedDB based on the filter
-	const allTickets = useLiveQuery(() => db.tickets.toArray(), [refreshTrigger]);
+	// Fetch tickets from CacheService (MySQL + IndexedDB Cache)
+	const [allTickets, setAllTickets] = useState<ITicket[]>([]);
+	const [isLoading, setIsLoading] = useState(true);
+
+	useEffect(() => {
+		const fetchTickets = async () => {
+			try {
+				setIsLoading(true);
+				// cacheService.getTickets returns Ticket[] which is compatible with ITicket
+				const tickets = await cacheService.getTickets();
+				setAllTickets(tickets as ITicket[]);
+			} catch (error) {
+				console.error("Failed to fetch tickets:", error);
+			} finally {
+				setIsLoading(false);
+			}
+		};
+
+		fetchTickets();
+	}, [refreshTrigger]);
 
 	// Wire agent KPI store
 	React.useEffect(() => {
@@ -331,24 +351,24 @@ const Dashboard = () => {
 			sortedMonths.length === 0
 				? null
 				: {
-						labels: sortedMonths.map((month) => {
-							const [year, monthNum] = month.split("-");
-							return `${monthNum}/${year}`; // Format label to mm/yyyy
-						}),
-						datasets: Object.entries(agentMonthlyPerformance).map(
-							([agentName, monthlyData], index) => {
-								const color = agentChartColors[index % agentChartColors.length];
-								return {
-									label: agentName,
-									data: sortedMonths.map((month) => monthlyData[month] || 0),
-									backgroundColor: color + "CC", // pastel/soft
-									borderColor: color,
-									borderRadius: 6,
-									maxBarThickness: 32,
-								};
-							},
-						),
-					};
+					labels: sortedMonths.map((month) => {
+						const [year, monthNum] = month.split("-");
+						return `${monthNum}/${year}`; // Format label to mm/yyyy
+					}),
+					datasets: Object.entries(agentMonthlyPerformance).map(
+						([agentName, monthlyData], index) => {
+							const color = agentChartColors[index % agentChartColors.length];
+							return {
+								label: agentName,
+								data: sortedMonths.map((month) => monthlyData[month] || 0),
+								backgroundColor: color + "CC", // pastel/soft
+								borderColor: color,
+								borderRadius: 6,
+								maxBarThickness: 32,
+							};
+						},
+					),
+				};
 
 		// Create final object to pass down, including summary stats
 		const finalAgentData = {
@@ -591,8 +611,8 @@ const Dashboard = () => {
 				const topSubCategory =
 					Object.keys(data.subCategories).length > 0
 						? Object.entries(data.subCategories).sort(
-								([, a], [, b]) => b - a,
-							)[0][0]
+							([, a], [, b]) => b - a,
+						)[0][0]
 						: "-";
 
 				return {
@@ -623,7 +643,7 @@ const Dashboard = () => {
 		const mean = countsArr.reduce((a, b) => a + b, 0) / (countsArr.length || 1);
 		const stddev = Math.sqrt(
 			countsArr.reduce((a, b) => a + Math.pow(b - mean, 2), 0) /
-				(countsArr.length || 1),
+			(countsArr.length || 1),
 		);
 		// 3. Assign class ke setiap customer
 		const customerClass: Record<string, string> = {};

@@ -2,9 +2,9 @@ import { nanoid } from "nanoid";
 import { create } from "zustand";
 import type {
 	Escalation,
-	EscalationStatus,
 	EscalationHistory,
 } from "@/types/escalation";
+import { EscalationStatus } from "@/types/escalation";
 import { escalationDB, lsGet, lsSet } from "@/lib/db/escalation";
 import { logger } from "@/lib/logger";
 
@@ -59,7 +59,7 @@ export const useEscalationStore = create<State & Actions>((set, get) => ({
 		const now = new Date().toISOString();
 		const row: Escalation = {
 			id: nanoid(),
-			status: payload.status ?? "active",
+			status: payload.status ?? EscalationStatus.Active,
 			createdAt: now,
 			updatedAt: now,
 			...payload,
@@ -113,9 +113,6 @@ export const useEscalationStore = create<State & Actions>((set, get) => ({
 
 			// Track changes in history only if not skipped
 			if (!skipHistory) {
-				const user = JSON.parse(
-					localStorage.getItem("user") || '{"username":"System"}',
-				);
 				for (const [field, newValue] of Object.entries(patch)) {
 					if (
 						field !== "updatedAt" &&
@@ -157,17 +154,17 @@ export const useEscalationStore = create<State & Actions>((set, get) => ({
 		if (!currentRow) return;
 
 		const now = new Date().toISOString();
-		const rows = get().rows.map((r) =>
-			r.id === id ? { ...r, status: "closed", updatedAt: now } : r,
+		const rows: Escalation[] = get().rows.map((r) =>
+			r.id === id ? { ...r, status: EscalationStatus.Closed, updatedAt: now } : r,
 		);
 
 		try {
 			await escalationDB.escalations.update(id, {
-				status: "closed",
+				status: EscalationStatus.Closed,
 				updatedAt: now,
 			});
 			// Add close history
-			await get().addHistory(id, "status", "active", "closed", "closed");
+			await get().addHistory(id, "status", EscalationStatus.Active, EscalationStatus.Closed, "closed");
 			set({ rows });
 
 			// Dispatch custom event for real-time updates

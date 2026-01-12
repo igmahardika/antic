@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from "react";
-import { useLiveQuery } from "dexie-react-hooks";
-import { db } from "@/lib/db";
+// import { useLiveQuery } from "dexie-react-hooks";
+// import { db } from "@/lib/db";
 import { usePerf } from "@/hooks/usePerf";
 import {
 	calculateCustomDuration,
@@ -358,10 +358,10 @@ const IncidentAnalytics: React.FC = () => {
 	const [selectedPeriod, setSelectedPeriod] = useState<
 		"3m" | "6m" | "1y" | "all"
 	>("6m");
-	
+
 	// Performance monitoring
 	const metrics = usePerf('IncidentAnalytics');
-	
+
 	// Log performance metrics
 	React.useEffect(() => {
 		if (metrics.length > 0) {
@@ -369,43 +369,48 @@ const IncidentAnalytics: React.FC = () => {
 		}
 	}, [metrics]);
 
-	// Get all incidents with robust database connection
-	const allIncidents = useLiveQuery(async () => {
-		try {
-			const incidents = await db.incidents.toArray();
-			logger.info(
-				"✅ IncidentAnalytics: Successfully loaded",
-				incidents.length,
-				"incidents from database",
-			);
+	// Get all incidents with robust database connection (via CacheService)
+	const [allIncidents, setAllIncidents] = useState<any[]>([]);
 
-			// Validate data integrity
-			const validIncidents = incidents.filter((incident) => {
-				if (!incident.id || !incident.noCase) {
+	React.useEffect(() => {
+		const fetchIncidents = async () => {
+			try {
+				const { cacheService } = await import("@/services/cacheService");
+				const incidents = await cacheService.getIncidents();
+				logger.info(
+					"✅ IncidentAnalytics: Successfully loaded",
+					incidents.length,
+					"incidents from CacheService",
+				);
+
+				// Validate data integrity
+				const validIncidents = incidents.filter((incident) => {
+					if (!incident.id || !incident.noCase) {
+						logger.warn(
+							"❌ IncidentAnalytics: Found invalid incident:",
+							incident,
+						);
+						return false;
+					}
+					return true;
+				});
+
+				if (validIncidents.length !== incidents.length) {
 					logger.warn(
-						"❌ IncidentAnalytics: Found invalid incident:",
-						incident,
+						`❌ IncidentAnalytics: Filtered out ${incidents.length - validIncidents.length} invalid incidents`,
 					);
-					return false;
 				}
-				return true;
-			});
 
-			if (validIncidents.length !== incidents.length) {
-				logger.warn(
-					`❌ IncidentAnalytics: Filtered out ${incidents.length - validIncidents.length} invalid incidents`,
+				setAllIncidents(validIncidents);
+			} catch (error) {
+				logger.error(
+					"❌ IncidentAnalytics: Failed to load incidents from CacheService:",
+					error,
 				);
 			}
-
-			return validIncidents;
-		} catch (error) {
-			logger.error(
-				"❌ IncidentAnalytics: Failed to load incidents from database:",
-				error,
-			);
-			return [];
-		}
-	}, []); // Empty dependency array to ensure stable reference
+		};
+		fetchIncidents();
+	}, []);
 
 	// Debug: Check if incidents data exists
 	logger.info("IncidentAnalytics Debug:", {
@@ -693,40 +698,40 @@ const IncidentAnalytics: React.FC = () => {
 				Blue:
 					row.Blue > 0
 						? `${Math.floor(row.Blue / 60)}:${Math.floor(row.Blue % 60)
-								.toString()
-								.padStart(2, "0")}:${Math.floor((row.Blue % 1) * 60)
+							.toString()
+							.padStart(2, "0")}:${Math.floor((row.Blue % 1) * 60)
 								.toString()
 								.padStart(2, "0")}`
 						: "0:00:00",
 				Yellow:
 					row.Yellow > 0
 						? `${Math.floor(row.Yellow / 60)}:${Math.floor(row.Yellow % 60)
-								.toString()
-								.padStart(2, "0")}:${Math.floor((row.Yellow % 1) * 60)
+							.toString()
+							.padStart(2, "0")}:${Math.floor((row.Yellow % 1) * 60)
 								.toString()
 								.padStart(2, "0")}`
 						: "0:00:00",
 				Orange:
 					row.Orange > 0
 						? `${Math.floor(row.Orange / 60)}:${Math.floor(row.Orange % 60)
-								.toString()
-								.padStart(2, "0")}:${Math.floor((row.Orange % 1) * 60)
+							.toString()
+							.padStart(2, "0")}:${Math.floor((row.Orange % 1) * 60)
 								.toString()
 								.padStart(2, "0")}`
 						: "0:00:00",
 				Red:
 					row.Red > 0
 						? `${Math.floor(row.Red / 60)}:${Math.floor(row.Red % 60)
-								.toString()
-								.padStart(2, "0")}:${Math.floor((row.Red % 1) * 60)
+							.toString()
+							.padStart(2, "0")}:${Math.floor((row.Red % 1) * 60)
 								.toString()
 								.padStart(2, "0")}`
 						: "0:00:00",
 				Black:
 					row.Black > 0
 						? `${Math.floor(row.Black / 60)}:${Math.floor(row.Black % 60)
-								.toString()
-								.padStart(2, "0")}:${Math.floor((row.Black % 1) * 60)
+							.toString()
+							.padStart(2, "0")}:${Math.floor((row.Black % 1) * 60)
 								.toString()
 								.padStart(2, "0")}`
 						: "0:00:00",
@@ -1332,11 +1337,10 @@ const IncidentAnalytics: React.FC = () => {
 									variant={selectedPeriod === key ? "default" : "ghost"}
 									size="sm"
 									onClick={() => setSelectedPeriod(key as any)}
-									className={`text-xs rounded-xl ${
-										selectedPeriod === key
-											? "bg-blue-600 hover:bg-blue-700 text-white"
-											: "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-zinc-800"
-									}`}
+									className={`text-xs rounded-xl ${selectedPeriod === key
+										? "bg-blue-600 hover:bg-blue-700 text-white"
+										: "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-zinc-800"
+										}`}
 								>
 									{label}
 								</Button>
@@ -1763,9 +1767,9 @@ const IncidentAnalytics: React.FC = () => {
 									const avgDur =
 										ncalInc.length > 0
 											? ncalInc.reduce(
-													(s, i) => s + calculateCustomDuration(i),
-													0,
-												) / ncalInc.length
+												(s, i) => s + calculateCustomDuration(i),
+												0,
+											) / ncalInc.length
 											: 0;
 									const perf =
 										target > 0 ? ((target - avgDur) / target) * 100 : 0;
@@ -2054,8 +2058,8 @@ const IncidentAnalytics: React.FC = () => {
 												const trend =
 													priorityTrendData.length > 1
 														? priorityTrendData[priorityTrendData.length - 1][
-																priority.name
-															] - priorityTrendData[0][priority.name]
+														priority.name
+														] - priorityTrendData[0][priority.name]
 														: 0;
 												const trendIcon =
 													trend > 0 ? (
@@ -2329,10 +2333,10 @@ const IncidentAnalytics: React.FC = () => {
 												const avgBreachTime =
 													ncalBreachIncidents.length > 0
 														? ncalBreachIncidents.reduce(
-																(sum, inc) =>
-																	sum + calculateCustomDuration(inc),
-																0,
-															) / ncalBreachIncidents.length
+															(sum, inc) =>
+																sum + calculateCustomDuration(inc),
+															0,
+														) / ncalBreachIncidents.length
 														: 0;
 
 												return (

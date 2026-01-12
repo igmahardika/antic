@@ -1,0 +1,8 @@
+
+/var/www/hms/antic/src/components/AgentData.tsx
+  4:10  warning  'useAgentStore' is defined but never used  @typescript-eslint/no-unused-vars
+  5:10  warning  'logger' is defined but never used         @typescript-eslint/no-unused-vars
+  6:10  warning  'AgentMetric' is defined but never used    @typescript-eslint/no-unused-vars
+
+✖ 3 problems (0 errors, 3 warnings)
+

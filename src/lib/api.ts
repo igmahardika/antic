@@ -1,6 +1,11 @@
 // API service untuk komunikasi dengan backend MySQL
+// Allow empty string for relative paths (proxied)
 const API_BASE_URL =
-	import.meta.env.VITE_API_URL || "https://api.hms.nexa.net.id";
+	import.meta.env.VITE_API_URL !== undefined
+		? import.meta.env.VITE_API_URL
+		: "https://api.hms.nexa.net.id";
+
+console.log("🔌 [API] Base URL initialized:", API_BASE_URL);
 
 // Helper function untuk mengambil auth token
 const getAuthToken = (): string | null => {
@@ -8,6 +13,7 @@ const getAuthToken = (): string | null => {
 };
 
 // Helper function untuk membuat headers dengan auth
+/*
 const getAuthHeaders = (): HeadersInit => {
 	const token = getAuthToken();
 	return {
@@ -15,6 +21,7 @@ const getAuthHeaders = (): HeadersInit => {
 		...(token && { Authorization: `Bearer ${token}` }),
 	};
 };
+*/
 
 // Mock authentication for disabled login
 const getMockAuthHeaders = (): HeadersInit => {
@@ -33,13 +40,13 @@ const getMockAuthHeaders = (): HeadersInit => {
 };
 
 // Generic API call function with retry mechanism
-async function apiCall<T>(
+export async function apiCall<T>(
 	endpoint: string,
 	options: RequestInit = {},
 	retries: number = 3,
 ): Promise<T> {
 	const url = `${API_BASE_URL}${endpoint}`;
-	
+
 	for (let attempt = 1; attempt <= retries; attempt++) {
 		try {
 			const response = await fetch(url, {
@@ -82,7 +89,7 @@ async function apiCall<T>(
 				await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
 				continue;
 			}
-			
+
 			// Handle CORS preflight errors
 			if (error instanceof TypeError && error.message.includes('Preflight response is not successful')) {
 				if (attempt === retries) {
@@ -92,12 +99,12 @@ async function apiCall<T>(
 				await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
 				continue;
 			}
-			
+
 			// For other errors, don't retry
 			throw error;
 		}
 	}
-	
+
 	throw new Error(`API call failed after ${retries} attempts`);
 }
 
@@ -296,12 +303,36 @@ export const ticketAPI = {
 		});
 	},
 
-	// Bulk insert tickets
-	async bulkInsertTickets(tickets: any[]): Promise<void> {
-		await apiCall("/api/tickets/bulk", {
-			method: "POST",
-			body: JSON.stringify({ tickets }),
-		});
+	// Bulk insert tickets with metadata support
+	async bulkInsertTickets(
+		tickets: any[],
+		metadata?: {
+			batchId?: string;
+			fileName?: string;
+			uploadTimestamp?: number;
+		},
+	): Promise<{ success: number; failed: number }> {
+		try {
+			const response = await apiCall<{
+				success: boolean;
+				message: string;
+				created: number;
+			}>("/api/tickets/bulk", {
+				method: "POST",
+				body: JSON.stringify({
+					tickets,
+					metadata: metadata || {},
+				}),
+			});
+
+			return {
+				success: response.created || tickets.length,
+				failed: 0,
+			};
+		} catch (error) {
+			console.error("Bulk insert failed:", error);
+			throw error;
+		}
 	},
 };
 
@@ -346,10 +377,81 @@ export const customerAPI = {
 	},
 
 	// Bulk insert customers
-	async bulkInsertCustomers(customers: any[]): Promise<void> {
+	async bulkInsertCustomers(
+		customers: any[],
+		metadata?: {
+			batchId?: string;
+			fileName?: string;
+		},
+	): Promise<{ success: number; failed: number }> {
 		await apiCall("/api/customers/bulk", {
 			method: "POST",
-			body: JSON.stringify({ customers }),
+			body: JSON.stringify({ customers, metadata }),
+		});
+		return { success: customers.length, failed: 0 };
+	},
+};
+
+export interface Incident {
+	id: string;
+	ticket_id?: string;
+	subject?: string;
+	description?: string;
+	status?: string;
+	priority?: string;
+	created_at?: string;
+	updated_at?: string;
+	// Add other fields as needed based on DB schema
+}
+
+export const incidentAPI = {
+	// Get all incidents
+	async getIncidents(params?: {
+		page?: number;
+		limit?: number;
+		search?: string;
+	}): Promise<{ incidents: Incident[]; pagination: any }> {
+		const queryParams = new URLSearchParams();
+		if (params?.page) queryParams.append("page", params.page.toString());
+		if (params?.limit) queryParams.append("limit", params.limit.toString());
+		if (params?.search) queryParams.append("search", params.search);
+
+		const response = await apiCall<{
+			success: boolean;
+			incidents: Incident[];
+			pagination: any;
+		}>(`/api/incidents?${queryParams.toString()}`);
+		return { incidents: response.incidents, pagination: response.pagination };
+	},
+
+	// Bulk insert incidents
+	async bulkInsertIncidents(
+		incidents: any[],
+		metadata?: {
+			batchId?: string;
+			fileName?: string;
+			uploadSessionId?: string;
+		},
+	): Promise<{ success: number; failed: number }> {
+		await apiCall("/api/incidents/bulk", {
+			method: "POST",
+			body: JSON.stringify({ incidents, metadata }),
+		});
+		return { success: incidents.length, failed: 0 };
+	},
+};
+
+export const uploadSessionAPI = {
+	async createSession(session: any): Promise<void> {
+		await apiCall("/api/upload-sessions", {
+			method: "POST",
+			body: JSON.stringify(session),
+		});
+	},
+	async updateSession(id: string, updates: any): Promise<void> {
+		await apiCall(`/api/upload-sessions/${id}`, {
+			method: "PUT",
+			body: JSON.stringify(updates),
 		});
 	},
 };
@@ -360,4 +462,6 @@ export default {
 	authAPI,
 	ticketAPI,
 	customerAPI,
+	incidentAPI,
+	uploadSessionAPI,
 };

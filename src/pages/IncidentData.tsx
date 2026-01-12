@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useLiveQuery } from "dexie-react-hooks";
+// import { useLiveQuery } from "dexie-react-hooks";
 import { Incident, IncidentFilter } from "@/types/incident";
 import {
 	queryIncidents,
@@ -11,7 +11,7 @@ import {
 	paginateIncidents,
 } from "@/utils/incidentUtils";
 import { IncidentUpload } from "@/components/IncidentUpload";
-import { db } from "@/lib/db";
+import { db } from "@/lib/db"; // Still used for bulkPut updates?
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -108,23 +108,30 @@ export const IncidentData: React.FC = () => {
 	};
 
 	// Get unique values for filter options with error handling
-	const allIncidents = useLiveQuery(async () => {
-		try {
-			const incidents = await db.incidents.toArray();
-			logger.info(
-				"✅ IncidentData: Successfully loaded",
-				incidents.length,
-				"incidents from database",
-			);
-			return incidents;
-		} catch (error) {
-			logger.error(
-				"❌ IncidentData: Failed to load incidents from database:",
-				error,
-			);
-			return [];
-		}
-	});
+	// const allIncidents = useLiveQuery(async () => { ... });
+	// Replace with CacheService
+	const [allIncidents, setAllIncidents] = useState<Incident[]>([]);
+
+	useEffect(() => {
+		const fetchIncidents = async () => {
+			try {
+				const { cacheService } = await import("@/services/cacheService");
+				const data = await cacheService.getIncidents();
+				setAllIncidents(data);
+				logger.info(
+					"✅ IncidentData: Successfully loaded",
+					data.length,
+					"incidents from CacheService",
+				);
+			} catch (error) {
+				logger.error(
+					"❌ IncidentData: Failed to load incidents from CacheService:",
+					error,
+				);
+			}
+		};
+		fetchIncidents();
+	}, []);
 
 	// Debug: Log when allIncidents changes
 	React.useEffect(() => {
@@ -374,7 +381,7 @@ export const IncidentData: React.FC = () => {
 				// 4. Recalculate Total Duration Vendor (Duration Vendor - Total Duration Pause)
 				const totalVendorDuration = Math.max(
 					updatedIncident.durationVendorMin -
-						updatedIncident.totalDurationPauseMin,
+					updatedIncident.totalDurationPauseMin,
 					0,
 				);
 				updatedIncident.totalDurationVendorMin =
@@ -683,194 +690,194 @@ export const IncidentData: React.FC = () => {
 		render?: (value: any) => React.ReactNode;
 		width?: string;
 	}> = [
-		{ key: "noCase", label: "No Case", width: "w-24" },
-		{
-			key: "priority",
-			label: "Priority",
-			width: "w-20",
-			render: (v: string) =>
-				v ? (
-					<Badge
-						variant={getPriorityBadgeVariant(v)}
-						className="text-xs font-medium"
-					>
-						{v.toUpperCase()}
-					</Badge>
-				) : (
-					"-"
-				),
-		},
-		{ key: "site", label: "Site", width: "w-32" },
-		{
-			key: "ncal",
-			label: "NCAL",
-			width: "w-20",
-			render: (v: string) =>
-				v ? (
-					<Badge
-						variant={getNCALBadgeVariant(v)}
-						className="text-xs font-medium"
-					>
-						{v}
-					</Badge>
-				) : (
-					"-"
-				),
-		},
-		{
-			key: "status",
-			label: "Status",
-			width: "w-24",
-			render: (v: string) =>
-				v ? (
-					<div className="flex items-center gap-2">
-						{getStatusIcon(v)}
+			{ key: "noCase", label: "No Case", width: "w-24" },
+			{
+				key: "priority",
+				label: "Priority",
+				width: "w-20",
+				render: (v: string) =>
+					v ? (
 						<Badge
-							variant={getStatusBadgeVariant(v)}
+							variant={getPriorityBadgeVariant(v)}
+							className="text-xs font-medium"
+						>
+							{v.toUpperCase()}
+						</Badge>
+					) : (
+						"-"
+					),
+			},
+			{ key: "site", label: "Site", width: "w-32" },
+			{
+				key: "ncal",
+				label: "NCAL",
+				width: "w-20",
+				render: (v: string) =>
+					v ? (
+						<Badge
+							variant={getNCALBadgeVariant(v)}
 							className="text-xs font-medium"
 						>
 							{v}
 						</Badge>
-					</div>
-				) : (
-					"-"
+					) : (
+						"-"
+					),
+			},
+			{
+				key: "status",
+				label: "Status",
+				width: "w-24",
+				render: (v: string) =>
+					v ? (
+						<div className="flex items-center gap-2">
+							{getStatusIcon(v)}
+							<Badge
+								variant={getStatusBadgeVariant(v)}
+								className="text-xs font-medium"
+							>
+								{v}
+							</Badge>
+						</div>
+					) : (
+						"-"
+					),
+			},
+			{ key: "level", label: "Level", width: "w-16" },
+			{ key: "ts", label: "TS", width: "w-28" },
+			{ key: "odpBts", label: "ODP/BTS", width: "w-24" },
+			{
+				key: "startTime",
+				label: "Start Time",
+				width: "w-32",
+				render: (v: string) => (
+					<div className="text-xs font-mono">{formatDate(v)}</div>
 				),
-		},
-		{ key: "level", label: "Level", width: "w-16" },
-		{ key: "ts", label: "TS", width: "w-28" },
-		{ key: "odpBts", label: "ODP/BTS", width: "w-24" },
-		{
-			key: "startTime",
-			label: "Start Time",
-			width: "w-32",
-			render: (v: string) => (
-				<div className="text-xs font-mono">{formatDate(v)}</div>
-			),
-		},
-		{
-			key: "startEscalationVendor",
-			label: "Start Escalation Vendor",
-			width: "w-32",
-			render: (v: string) => (
-				<div className="text-xs font-mono">{formatDate(v)}</div>
-			),
-		},
-		{
-			key: "endTime",
-			label: "End Time",
-			width: "w-32",
-			render: (v: string) => (
-				<div className="text-xs font-mono">{formatDate(v)}</div>
-			),
-		},
-		{
-			key: "durationMin",
-			label: "Duration",
-			width: "w-20",
-			// Render akan dihandle di level tabel untuk perhitungan real-time
-		},
-		{
-			key: "durationVendorMin",
-			label: "Duration Vendor",
-			width: "w-24",
-			// Render akan dihandle di level tabel untuk perhitungan real-time
-		},
-		{ key: "problem", label: "Problem", width: "w-40" },
-		{ key: "penyebab", label: "Penyebab", width: "w-40" },
-		{ key: "actionTerakhir", label: "Action Terakhir", width: "w-40" },
-		{ key: "note", label: "Note", width: "w-40" },
-		{
-			key: "klasifikasiGangguan",
-			label: "Klasifikasi Gangguan",
-			width: "w-32",
-		},
-		{
-			key: "powerBefore",
-			label: "Power Before (dBm)",
-			width: "w-24",
-			render: (v: number) =>
-				v ? (
-					<div className="text-xs font-mono text-orange-600 dark:text-orange-400">
-						{v} dBm
-					</div>
-				) : (
-					"-"
+			},
+			{
+				key: "startEscalationVendor",
+				label: "Start Escalation Vendor",
+				width: "w-32",
+				render: (v: string) => (
+					<div className="text-xs font-mono">{formatDate(v)}</div>
 				),
-		},
-		{
-			key: "powerAfter",
-			label: "Power After (dBm)",
-			width: "w-24",
-			render: (v: number) =>
-				v ? (
-					<div className="text-xs font-mono text-purple-600 dark:text-purple-400">
-						{v} dBm
-					</div>
-				) : (
-					"-"
+			},
+			{
+				key: "endTime",
+				label: "End Time",
+				width: "w-32",
+				render: (v: string) => (
+					<div className="text-xs font-mono">{formatDate(v)}</div>
 				),
-		},
-		{
-			key: "startPause1",
-			label: "Start Pause 1",
-			width: "w-32",
-			render: (v: string) => (
-				<div className="text-xs font-mono text-gray-600 dark:text-gray-400">
-					{formatDate(v)}
-				</div>
-			),
-		},
-		{
-			key: "endPause1",
-			label: "End Pause 1",
-			width: "w-32",
-			render: (v: string) => (
-				<div className="text-xs font-mono text-gray-600 dark:text-gray-400">
-					{formatDate(v)}
-				</div>
-			),
-		},
-		{
-			key: "startPause2",
-			label: "Start Pause 2",
-			width: "w-32",
-			render: (v: string) => (
-				<div className="text-xs font-mono text-gray-600 dark:text-gray-400">
-					{formatDate(v)}
-				</div>
-			),
-		},
-		{
-			key: "endPause2",
-			label: "End Pause 2",
-			width: "w-32",
-			render: (v: string) => (
-				<div className="text-xs font-mono text-gray-600 dark:text-gray-400">
-					{formatDate(v)}
-				</div>
-			),
-		},
-		{
-			key: "totalDurationPauseMin",
-			label: "Total Duration Pause",
-			width: "w-28",
-			render: (v: number) => (
-				<div className="text-xs font-mono font-medium text-red-600 dark:text-red-400">
-					{formatDuration(v)}
-				</div>
-			),
-		},
-		{
-			key: "totalDurationVendorMin",
-			label: "Total Duration Vendor",
-			width: "w-32",
-			render: (v: number) => (
-				<div className="text-xs font-mono font-medium text-indigo-600 dark:text-indigo-400">
-					{formatDuration(v)}
-				</div>
-			),
-		},
-	];
+			},
+			{
+				key: "durationMin",
+				label: "Duration",
+				width: "w-20",
+				// Render akan dihandle di level tabel untuk perhitungan real-time
+			},
+			{
+				key: "durationVendorMin",
+				label: "Duration Vendor",
+				width: "w-24",
+				// Render akan dihandle di level tabel untuk perhitungan real-time
+			},
+			{ key: "problem", label: "Problem", width: "w-40" },
+			{ key: "penyebab", label: "Penyebab", width: "w-40" },
+			{ key: "actionTerakhir", label: "Action Terakhir", width: "w-40" },
+			{ key: "note", label: "Note", width: "w-40" },
+			{
+				key: "klasifikasiGangguan",
+				label: "Klasifikasi Gangguan",
+				width: "w-32",
+			},
+			{
+				key: "powerBefore",
+				label: "Power Before (dBm)",
+				width: "w-24",
+				render: (v: number) =>
+					v ? (
+						<div className="text-xs font-mono text-orange-600 dark:text-orange-400">
+							{v} dBm
+						</div>
+					) : (
+						"-"
+					),
+			},
+			{
+				key: "powerAfter",
+				label: "Power After (dBm)",
+				width: "w-24",
+				render: (v: number) =>
+					v ? (
+						<div className="text-xs font-mono text-purple-600 dark:text-purple-400">
+							{v} dBm
+						</div>
+					) : (
+						"-"
+					),
+			},
+			{
+				key: "startPause1",
+				label: "Start Pause 1",
+				width: "w-32",
+				render: (v: string) => (
+					<div className="text-xs font-mono text-gray-600 dark:text-gray-400">
+						{formatDate(v)}
+					</div>
+				),
+			},
+			{
+				key: "endPause1",
+				label: "End Pause 1",
+				width: "w-32",
+				render: (v: string) => (
+					<div className="text-xs font-mono text-gray-600 dark:text-gray-400">
+						{formatDate(v)}
+					</div>
+				),
+			},
+			{
+				key: "startPause2",
+				label: "Start Pause 2",
+				width: "w-32",
+				render: (v: string) => (
+					<div className="text-xs font-mono text-gray-600 dark:text-gray-400">
+						{formatDate(v)}
+					</div>
+				),
+			},
+			{
+				key: "endPause2",
+				label: "End Pause 2",
+				width: "w-32",
+				render: (v: string) => (
+					<div className="text-xs font-mono text-gray-600 dark:text-gray-400">
+						{formatDate(v)}
+					</div>
+				),
+			},
+			{
+				key: "totalDurationPauseMin",
+				label: "Total Duration Pause",
+				width: "w-28",
+				render: (v: number) => (
+					<div className="text-xs font-mono font-medium text-red-600 dark:text-red-400">
+						{formatDuration(v)}
+					</div>
+				),
+			},
+			{
+				key: "totalDurationVendorMin",
+				label: "Total Duration Vendor",
+				width: "w-32",
+				render: (v: number) => (
+					<div className="text-xs font-mono font-medium text-indigo-600 dark:text-indigo-400">
+						{formatDuration(v)}
+					</div>
+				),
+			},
+		];
 
 	const getStatusBadgeVariant = (status: string | null | undefined) => {
 		if (!status || typeof status !== "string") return "secondary";
@@ -1088,10 +1095,10 @@ export const IncidentData: React.FC = () => {
 
 				{/* Filter Status Information */}
 				{filter.dateFrom ||
-				filter.status ||
-				filter.priority ||
-				filter.site ||
-				filter.search ? (
+					filter.status ||
+					filter.priority ||
+					filter.site ||
+					filter.search ? (
 					<div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4">
 						<div className="flex items-center gap-2 mb-2">
 							<Filter className="w-4 h-4 text-blue-600 dark:text-blue-400" />
@@ -1300,52 +1307,52 @@ export const IncidentData: React.FC = () => {
 							selectedMonth ||
 							filter.ncal ||
 							filter.priority) && (
-							<div className="mt-3 pt-3 border-t ">
-								<div className="flex items-center gap-2 flex-wrap">
-									<span className="text-xs text-gray-500 dark:text-gray-400">
-										Active filters:
-									</span>
-									{filter.search && (
-										<span className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-xs rounded-full">
-											Search: {filter.search}
-											<X
-												className="w-3 h-3 cursor-pointer hover:text-blue-900 dark:hover:text-blue-100"
-												onClick={() => handleFilterChange("search", "")}
-											/>
+								<div className="mt-3 pt-3 border-t ">
+									<div className="flex items-center gap-2 flex-wrap">
+										<span className="text-xs text-gray-500 dark:text-gray-400">
+											Active filters:
 										</span>
-									)}
-									{selectedMonth && (
-										<span className="inline-flex items-center gap-1 px-2 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 text-xs rounded-full">
-											Month: {formatMonthLabel(selectedMonth)}
-											<X
-												className="w-3 h-3 cursor-pointer hover:text-green-900 dark:hover:text-green-100"
-												onClick={() => handleMonthChange("")}
-											/>
-										</span>
-									)}
-									{filter.ncal && (
-										<span className="inline-flex items-center gap-1 px-2 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 text-xs rounded-full">
-											NCAL: {filter.ncal}
-											<X
-												className="w-3 h-3 cursor-pointer hover:text-purple-900 dark:hover:text-purple-100"
-												onClick={() => handleFilterChange("ncal", undefined)}
-											/>
-										</span>
-									)}
-									{filter.priority && (
-										<span className="inline-flex items-center gap-1 px-2 py-1 bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 text-xs rounded-full">
-											Priority: {filter.priority}
-											<X
-												className="w-3 h-3 cursor-pointer hover:text-orange-900 dark:hover:text-orange-100"
-												onClick={() =>
-													handleFilterChange("priority", undefined)
-												}
-											/>
-										</span>
-									)}
+										{filter.search && (
+											<span className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-xs rounded-full">
+												Search: {filter.search}
+												<X
+													className="w-3 h-3 cursor-pointer hover:text-blue-900 dark:hover:text-blue-100"
+													onClick={() => handleFilterChange("search", "")}
+												/>
+											</span>
+										)}
+										{selectedMonth && (
+											<span className="inline-flex items-center gap-1 px-2 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 text-xs rounded-full">
+												Month: {formatMonthLabel(selectedMonth)}
+												<X
+													className="w-3 h-3 cursor-pointer hover:text-green-900 dark:hover:text-green-100"
+													onClick={() => handleMonthChange("")}
+												/>
+											</span>
+										)}
+										{filter.ncal && (
+											<span className="inline-flex items-center gap-1 px-2 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 text-xs rounded-full">
+												NCAL: {filter.ncal}
+												<X
+													className="w-3 h-3 cursor-pointer hover:text-purple-900 dark:hover:text-purple-100"
+													onClick={() => handleFilterChange("ncal", undefined)}
+												/>
+											</span>
+										)}
+										{filter.priority && (
+											<span className="inline-flex items-center gap-1 px-2 py-1 bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 text-xs rounded-full">
+												Priority: {filter.priority}
+												<X
+													className="w-3 h-3 cursor-pointer hover:text-orange-900 dark:hover:text-orange-100"
+													onClick={() =>
+														handleFilterChange("priority", undefined)
+													}
+												/>
+											</span>
+										)}
+									</div>
 								</div>
-							</div>
-						)}
+							)}
 					</CardContent>
 				</Card>
 
@@ -1726,7 +1733,7 @@ export const IncidentData: React.FC = () => {
 																		className="max-w-full truncate"
 																		title={String(
 																			incident[col.key as keyof Incident] ||
-																				"-",
+																			"-",
 																		)}
 																	>
 																		{displayValue}

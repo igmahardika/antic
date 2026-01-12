@@ -5,11 +5,11 @@ import { Incident } from "@/types/incident";
 import {
 	mkId,
 	generateBatchId,
-	saveIncidentsChunked,
 	parseDateSafe,
 } from "@/utils/incidentUtils";
 import { fixAllMissingEndTime } from "@/utils/durationFixUtils";
 import { db } from "@/lib/db";
+import { incidentAPI } from "@/lib/api";
 
 import {
 	Card,
@@ -390,15 +390,15 @@ export const IncidentUpload: React.FC = () => {
 		setIsUploading(true);
 		setProgress(0);
 		setUploadResult(null);
-		
+
 		let session: any = null;
 
 		try {
 			const file = acceptedFiles[0];
-			
+
 			// Create upload session for tracking
 			session = await createUploadSession(file, 'incidents');
-			
+
 			// Read workbook using ExcelJS
 			const workbook = new ExcelJS.Workbook();
 			await workbook.xlsx.load(await file.arrayBuffer());
@@ -413,7 +413,7 @@ export const IncidentUpload: React.FC = () => {
 			let skippedRows = 0;
 
 			const sheetNames = workbook.worksheets.map(ws => ws.name);
-			
+
 			uploadLog.push({
 				type: "info",
 				row: 0,
@@ -428,7 +428,7 @@ export const IncidentUpload: React.FC = () => {
 
 			for (const worksheet of workbook.worksheets) {
 				const sheetName = worksheet.name;
-				
+
 				// Convert worksheet to array of arrays
 				const rows: any[][] = [];
 				worksheet.eachRow((row, _rowNumber) => {
@@ -993,7 +993,7 @@ export const IncidentUpload: React.FC = () => {
 					sheet: "DATABASE",
 					message: `Saving ${finalIncidents.length} incidents...`,
 				});
-				
+
 				// Add upload session metadata to incidents
 				const enrichedIncidents = finalIncidents.map(incident => ({
 					...incident,
@@ -1003,16 +1003,21 @@ export const IncidentUpload: React.FC = () => {
 					batchId: session.id,
 					uploadSessionId: session.id
 				}));
-				
-				await saveIncidentsChunked(enrichedIncidents);
-				
+
+				// Save to MySQL via API
+				await incidentAPI.bulkInsertIncidents(enrichedIncidents, {
+					batchId: session?.id,
+					fileName: file.name,
+					uploadSessionId: session?.id
+				});
+
 				// Finalize upload session
 				await finalizeUploadSession(session.id, {
 					status: 'completed',
 					recordCount: enrichedIncidents.length,
 					successCount: enrichedIncidents.length
 				});
-				
+
 				uploadLog.push({
 					type: "success",
 					row: 0,
@@ -1052,7 +1057,7 @@ export const IncidentUpload: React.FC = () => {
 			setParsedIncidents(allRows);
 		} catch (error: any) {
 			const errorMsg = `Upload failed: ${error?.message || error}`;
-			
+
 			// Finalize upload session as failed
 			try {
 				if (session) {
@@ -1065,7 +1070,7 @@ export const IncidentUpload: React.FC = () => {
 			} catch (sessionError) {
 				console.error('Failed to finalize upload session:', sessionError);
 			}
-			
+
 			setUploadResult({
 				success: 0,
 				failed: 1,
@@ -1207,11 +1212,10 @@ export const IncidentUpload: React.FC = () => {
 
 							<div
 								{...getRootProps()}
-								className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${
-									isDragActive
-										? "border-blue-500 bg-blue-50 dark:bg-blue-900/20"
-										: " hover:border-gray-400 dark:hover:border-gray-500"
-								}`}
+								className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${isDragActive
+									? "border-blue-500 bg-blue-50 dark:bg-blue-900/20"
+									: " hover:border-gray-400 dark:hover:border-gray-500"
+									}`}
 							>
 								<input {...getInputProps()} />
 								<CloudUploadIcon className="w-12 h-12 mx-auto mb-4 text-gray-400" />
@@ -1348,17 +1352,16 @@ export const IncidentUpload: React.FC = () => {
 														{uploadResult.uploadLog.map((log, i) => (
 															<div
 																key={i}
-																className={`text-xs p-2 rounded ${
-																	log.type === "success"
-																		? "bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300"
-																		: log.type === "error"
-																			? "bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300"
-																			: log.type === "skipped"
-																				? "bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-300"
-																				: log.type === "warning"
-																					? "bg-orange-50 dark:bg-orange-900/20 text-orange-700 dark:text-orange-300"
-																					: "bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300"
-																}`}
+																className={`text-xs p-2 rounded ${log.type === "success"
+																	? "bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300"
+																	: log.type === "error"
+																		? "bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300"
+																		: log.type === "skipped"
+																			? "bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-300"
+																			: log.type === "warning"
+																				? "bg-orange-50 dark:bg-orange-900/20 text-orange-700 dark:text-orange-300"
+																				: "bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300"
+																	}`}
 															>
 																<div className="flex items-center gap-2">
 																	{log.type === "success" && (
@@ -1546,8 +1549,8 @@ export const IncidentUpload: React.FC = () => {
 																		<td className="px-3 py-2">
 																			{inc.startTime
 																				? new Date(
-																						inc.startTime,
-																					).toLocaleString("id-ID")
+																					inc.startTime,
+																				).toLocaleString("id-ID")
 																				: "-"}
 																		</td>
 																	</tr>
@@ -1576,7 +1579,7 @@ export const IncidentUpload: React.FC = () => {
 					</Tabs>
 				</CardContent>
 			</Card>
-			
+
 			{/* Delete by File Button */}
 			<div className="mt-6 flex justify-center">
 				<Button
@@ -1588,7 +1591,7 @@ export const IncidentUpload: React.FC = () => {
 					Delete by File
 				</Button>
 			</div>
-			
+
 			{/* Delete by File Dialog */}
 			{showDeleteDialog && (
 				<DeleteByFileDialog

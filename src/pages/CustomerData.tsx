@@ -15,11 +15,13 @@ import {
 } from "../components/ui/table";
 import { Card, CardContent } from "../components/ui/card";
 import { db } from "../lib/db";
+import { customerAPI } from "../lib/api";
 import { usePageUrlState } from "../hooks/usePageUrlState";
 import { PaginationControls } from "../components";
 import { logger } from "@/lib/logger";
 import DeleteByFileDialog from "../components/DeleteByFileDialog";
 import { createUploadSession, finalizeUploadSession } from '../services/uploadSessions';
+import { cacheService } from "@/services/cacheService";
 
 const CUSTOMER_HEADERS = ["Nama", "Jenis Klien", "Layanan", "Kategori"];
 
@@ -46,19 +48,19 @@ const CustomerData: React.FC = () => {
 		totalItems:
 			bulanDipilih && dataPerBulan[bulanDipilih]
 				? dataPerBulan[bulanDipilih].filter(
-						(row) => {
-							// Apply jenis klien filter
-							const jenisKlienMatch = jenisKlienFilter === "ALL" || row["Jenis Klien"] === jenisKlienFilter;
-							
-							// Apply search filter
-							const searchMatch = !searchQuery.trim() || 
-								Object.values(row).some(value => 
-									value && value.toString().toLowerCase().includes(searchQuery.toLowerCase())
-								);
-							
-							return jenisKlienMatch && searchMatch;
-						}
-					).length
+					(row) => {
+						// Apply jenis klien filter
+						const jenisKlienMatch = jenisKlienFilter === "ALL" || row["Jenis Klien"] === jenisKlienFilter;
+
+						// Apply search filter
+						const searchMatch = !searchQuery.trim() ||
+							Object.values(row).some(value =>
+								value && value.toString().toLowerCase().includes(searchQuery.toLowerCase())
+							);
+
+						return jenisKlienMatch && searchMatch;
+					}
+				).length
 				: 0,
 		allowedPageSizes: [25, 50, 100, 200],
 		resetOnDeps: [bulanDipilih, jenisKlienFilter, searchQuery],
@@ -83,13 +85,13 @@ const CustomerData: React.FC = () => {
 			(row) => {
 				// Apply jenis klien filter
 				const jenisKlienMatch = jenisKlienFilter === "ALL" || row["Jenis Klien"] === jenisKlienFilter;
-				
+
 				// Apply search filter
-				const searchMatch = !searchQuery.trim() || 
-					Object.values(row).some(value => 
+				const searchMatch = !searchQuery.trim() ||
+					Object.values(row).some(value =>
 						value && value.toString().toLowerCase().includes(searchQuery.toLowerCase())
 					);
-				
+
 				return jenisKlienMatch && searchMatch;
 			}
 		);
@@ -101,27 +103,35 @@ const CustomerData: React.FC = () => {
 		return { data: paged, total: filtered.length };
 	}, [dataPerBulan, bulanDipilih, jenisKlienFilter, searchQuery, page, pageSize]);
 
-	// Saat komponen mount, baca ulang data customer dari IndexedDB jika ada
+	// Load customers using CacheService (MySQL-First)
 	useEffect(() => {
 		(async () => {
-			const customers = await db.customers.toArray();
-			if (customers && customers.length > 0) {
-				// Group by bulan (ambil dari id: format "bulan-idx-nama")
-				const dataPerBulan: { [bulan: string]: any[] } = {};
-				customers.forEach((c) => {
-					const bulan = (c.id || "").split("-")[0];
-					if (!dataPerBulan[bulan]) dataPerBulan[bulan] = [];
-					dataPerBulan[bulan].push({
-						Nama: c.nama,
-						"Jenis Klien": c.jenisKlien,
-						Layanan: c.layanan,
-						Kategori: c.kategori,
+			try {
+				const customers = await cacheService.getCustomers();
+				if (customers && customers.length > 0) {
+					const dataPerBulan: { [bulan: string]: any[] } = {};
+					customers.forEach((c: any) => {
+						const bulan = (c.id || "").split("-")[0];
+						const key = bulan || "Data";
+						if (!dataPerBulan[key]) dataPerBulan[key] = [];
+						dataPerBulan[key].push({
+							Nama: c.nama,
+							// API returns snake_case usually but cacheService might map it?
+							// Actually API returns camelCase in api.ts types.
+							// But need to ensure backend saves it correctly. 
+							// Backend INSERT uses snake_case, but SELECT usually returns snake_case unless aliased.
+							"Jenis Klien": c.jenis_klien || c.jenisKlien,
+							Layanan: c.layanan,
+							Kategori: c.kategori,
+						});
 					});
-				});
-				const bulanList = Object.keys(dataPerBulan);
-				setDataPerBulan(dataPerBulan);
-				setBulanList(bulanList);
-				setBulanDipilih(bulanList[0] || "");
+					const bulanList = Object.keys(dataPerBulan);
+					setDataPerBulan(dataPerBulan);
+					setBulanList(bulanList);
+					if (bulanList.length > 0) setBulanDipilih(bulanList[0]);
+				}
+			} catch (err) {
+				console.error("Failed to load customers:", err);
 			}
 		})();
 	}, []);
@@ -130,7 +140,7 @@ const CustomerData: React.FC = () => {
 		const file = e.target.files?.[0];
 		if (file) {
 			setFileName(file.name);
-			
+
 			// Create upload session for tracking
 			let session;
 			createUploadSession(file, 'customers').then(s => {
@@ -139,7 +149,7 @@ const CustomerData: React.FC = () => {
 			}).catch(error => {
 				console.error('Failed to create upload session:', error);
 			});
-			
+
 			const reader = new FileReader();
 			reader.onload = async (evt) => {
 				const data = evt.target?.result;
@@ -204,19 +214,30 @@ const CustomerData: React.FC = () => {
 								});
 							});
 							await db.customers.clear();
-							if (allCustomers.length > 0) {
-								// Add upload session metadata to customers
-								const enrichedCustomers = allCustomers.map(customer => ({
-									...customer,
-									uploadTimestamp: session ? session.uploadTimestamp : Date.now(),
-									fileName: file.name,
-									fileHash: session ? session.fileHash : null,
-									batchId: session ? session.id : null,
-									uploadSessionId: session ? session.id : null
-								}));
-								
+							// Add upload session metadata to customers
+							const enrichedCustomers = allCustomers.map(customer => ({
+								...customer,
+								uploadTimestamp: session ? session.uploadTimestamp : Date.now(),
+								fileName: file.name,
+								fileHash: session ? session.fileHash : null,
+								batchId: session ? session.id : null,
+								uploadSessionId: session ? session.id : null
+							}));
+
+							// SIMPAN KE MYSQL via API
+							try {
+								await customerAPI.bulkInsertCustomers(enrichedCustomers, {
+									batchId: session?.id,
+									fileName: file.name
+								});
+
+								// Invalidate cache so fresh data is fetched next time
+								await cacheService.invalidateCustomers();
+
+								// Update local cache optionally (or just rely on refetch)
+								await db.customers.clear();
 								await db.customers.bulkAdd(enrichedCustomers);
-								
+
 								// Finalize upload session
 								if (session) {
 									await finalizeUploadSession(session.id, {
@@ -226,8 +247,11 @@ const CustomerData: React.FC = () => {
 										errorCount: 0
 									});
 								}
+								alert("Data customer berhasil disimpan ke Server MySQL.");
+							} catch (err) {
+								console.error("Failed to upload customers to server:", err);
+								alert("Gagal menyimpan data ke server. Cek console log.");
 							}
-							alert("Data customer berhasil disimpan ke IndexedDB.");
 						},
 						error: (error) => {
 							logger.error("Papa Parse error:", error);
@@ -290,7 +314,7 @@ const CustomerData: React.FC = () => {
 							setBulanList(Object.keys(dataBulan));
 							setBulanDipilih(Object.keys(dataBulan)[0] || "");
 
-							// SIMPAN KE INDEXEDDB
+							// SIMPAN KE MYSQL via API
 							const allCustomers: any[] = [];
 							Object.keys(dataBulan).forEach((bulan) => {
 								dataBulan[bulan].forEach((row: any, idx: number) => {
@@ -303,9 +327,8 @@ const CustomerData: React.FC = () => {
 									});
 								});
 							});
-							await db.customers.clear();
+
 							if (allCustomers.length > 0) {
-								// Add upload session metadata to customers
 								const enrichedCustomers = allCustomers.map(customer => ({
 									...customer,
 									uploadTimestamp: session ? session.uploadTimestamp : Date.now(),
@@ -314,20 +337,32 @@ const CustomerData: React.FC = () => {
 									batchId: session ? session.id : null,
 									uploadSessionId: session ? session.id : null
 								}));
-								
-								await db.customers.bulkAdd(enrichedCustomers);
-								
-								// Finalize upload session
-								if (session) {
-									await finalizeUploadSession(session.id, {
-										status: 'completed',
-										recordCount: enrichedCustomers.length,
-										successCount: enrichedCustomers.length,
-										errorCount: 0
+
+								try {
+									await customerAPI.bulkInsertCustomers(enrichedCustomers, {
+										batchId: session?.id,
+										fileName: file.name
 									});
+
+									await cacheService.invalidateCustomers();
+
+									await db.customers.clear();
+									await db.customers.bulkAdd(enrichedCustomers); // Keep local sync
+
+									if (session) {
+										await finalizeUploadSession(session.id, {
+											status: 'completed',
+											recordCount: enrichedCustomers.length,
+											successCount: enrichedCustomers.length,
+											errorCount: 0
+										});
+									}
+									alert("Data customer berhasil disimpan ke Server MySQL.");
+								} catch (err) {
+									console.error("Server upload failed:", err);
+									alert("Gagal menyimpan ke server.");
 								}
 							}
-							alert("Data customer berhasil disimpan ke IndexedDB.");
 						}
 					} catch (error) {
 						logger.error("Excel parsing error:", error);
