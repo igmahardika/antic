@@ -1724,6 +1724,9 @@ const AgentAnalytics = () => {
                                                                                                 <div className="text-[10px] text-zinc-400 dark:text-zinc-500 mt-0.5">
                                                                                                         First Resolution Time
                                                                                                 </div>
+                                                                                                <div className="text-[10px] text-zinc-400 dark:text-zinc-500 mt-0.5">
+                                                                                                        First Resolution Time
+                                                                                                </div>
 											</div>
 											<div className="bg-zinc-50 dark:bg-zinc-800/50 rounded-lg p-3 text-center metric-card hover:bg-zinc-100 dark:hover:bg-zinc-800/70">
 												<div className="flex justify-center mb-2">
@@ -1734,6 +1737,9 @@ const AgentAnalytics = () => {
 												</div>
 												<div className="font-bold text-sm text-zinc-900 dark:text-zinc-100 mb-1">
 													{agent.art ? formatDurationDHM(agent.art) : "-"}
+                                                                                                <div className="text-[10px] text-zinc-400 dark:text-zinc-500 mt-0.5">
+                                                                                                        Average Resolution Time
+                                                                                                </div>
 												</div>
 												<div className="text-xs text-zinc-500 dark:text-zinc-400 font-medium">
 													ART
@@ -1750,6 +1756,9 @@ const AgentAnalytics = () => {
 													{agent.fcr !== undefined
 														? `${agent.fcr.toFixed(1)}%`
 														: "-"}
+                                                                                                <div className="text-[10px] text-zinc-400 dark:text-zinc-500 mt-0.5">
+                                                                                                        First Call Resolution
+                                                                                                </div>
 												</div>
 												<div className="text-xs text-zinc-500 dark:text-zinc-400 font-medium">
 													FCR
@@ -1769,6 +1778,9 @@ const AgentAnalytics = () => {
 												</div>
 												<div className="text-xs text-zinc-500 dark:text-zinc-400 font-medium">
 													SLA
+                                                                                                <div className="text-[10px] text-zinc-400 dark:text-zinc-500 mt-0.5">
+                                                                                                        Service Level Agreement
+                                                                                                </div>
 												</div>
 											</div>
 											<div className="bg-zinc-50 dark:bg-zinc-800/50 rounded-lg p-3 text-center metric-card hover:bg-zinc-100 dark:hover:bg-zinc-800/70">
