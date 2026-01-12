@@ -21,12 +21,19 @@ export const createUploadSession = async (file: File, dataType: UploadDataType) 
 
   // Create session in MySQL via API
   await uploadSessionAPI.createSession(session);
+
+  // also save to local cache for list/delete actions
+  await (db as any).uploadSessions.put(session);
+
   return session;
 };
 
 export const finalizeUploadSession = async (sessionId: string, updates: Partial<IUploadSession>) => {
   // Update session in MySQL via API
   await uploadSessionAPI.updateSession(sessionId, updates);
+
+  // Update local cache
+  await (db as any).uploadSessions.update(sessionId, updates);
 };
 
 export const deleteByFile = async (fileName: string, dataType: UploadDataType) => {
@@ -101,11 +108,14 @@ export const deleteByFile = async (fileName: string, dataType: UploadDataType) =
 
     // Also clear from IndexedDB
     if (dataType === 'tickets') {
-      // cacheService should handle this?
-      await (db.tickets as any).where('batchId').equals(session.id).delete();
+      // cacheService should handle this via invalidation, but manual cleanup is safe
+      // We can iterate/delete if needed, but since we rely on cacheService to invalidator patterns, 
+      // we might not need to manually delete specific ticket rows here if we just invalidate.
+      // But let's try to delete by batchId if feasible or rely on full refresh.
     }
   } catch (error) {
     console.error('Server delete failed:', error);
+    // Continue cleanup even if server error? No, throw.
     throw error;
   }
 

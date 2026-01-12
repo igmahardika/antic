@@ -5,8 +5,7 @@ import {
 	useState,
 	useEffect,
 } from "react";
-import { useLiveQuery } from "dexie-react-hooks";
-import { db, ITicket } from "@/lib/db";
+import { ITicket } from "@/lib/db";
 import {
 	formatDurationDHM,
 	analyzeKeywords,
@@ -49,7 +48,7 @@ export const AnalyticsProvider = ({ children }) => {
 			try {
 				// Gunakan cacheService untuk mendapatkan tiket (otomatis fetch API jika cache kosong)
 				const tickets = await cacheService.getTickets();
-				setAllTickets(tickets as ITicket[]);
+				setAllTickets(tickets as unknown as ITicket[]);
 			} catch (error) {
 				console.error("Failed to fetch tickets in AnalyticsContext:", error);
 			} finally {

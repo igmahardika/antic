@@ -998,7 +998,7 @@ const processAndAnalyzeData = (
 		const ticket: ITicket = {
 			id: crypto.randomUUID(),
 			customerId: customerId,
-			name: row["Site Name"] || row["Nama Site"] || "",
+			name: row["Site Name"] || row["Nama Site"] || row["Nama"] || row["Nama Pelanggan"] || "",
 			category: row["Kategori"] || "",
 			description: row["Deskripsi"] || "",
 			cause: row["Penyebab"] || "",

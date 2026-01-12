@@ -728,6 +728,10 @@ app.post('/api/tickets', authenticateToken, async (req, res) => {
 app.delete('/api/tickets/all', authenticateToken, async (req, res) => {
   try {
     await db.query('TRUNCATE TABLE tickets');
+    // Clear Redis Cache
+    const keys = await redisManager.getClient().keys('tickets:*');
+    if (keys.length > 0) await Promise.all(keys.map(k => redisManager.del(k)));
+    await redisManager.del('tickets_count');
     res.json({ success: true, message: 'All tickets deleted' });
   } catch (err) {
     console.error('Reset tickets error:', err);
