@@ -716,12 +716,12 @@ function parseExcelDate(value: any): string | undefined {
 			if (!isNaN(value.getTime())) {
 				const customDate = new Date(
 					Date.UTC(
-						value.getFullYear(),
-						value.getMonth(),
-						value.getDate(),
-						value.getHours(),
-						value.getMinutes(),
-						value.getSeconds(),
+						value.getUTCFullYear(),
+						value.getUTCMonth(),
+						value.getUTCDate(),
+						value.getUTCHours(),
+						value.getUTCMinutes(),
+						value.getUTCSeconds(),
 					),
 				);
 				return customDate.toISOString();
