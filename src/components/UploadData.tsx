@@ -713,8 +713,23 @@ function getFaceValueString(value: any): string | undefined {
 		minutes = date.getMinutes();
 		seconds = date.getSeconds();
 	} else if (typeof value === "string") {
-		// Return strictly trimmed string for regex parsing
-		return value.trim();
+		const trimmed = value.trim();
+		// If string contains letters (e.g. "Wed Jan ..."), try parsing as Date to extract face value
+		if (/[a-zA-Z]/.test(trimmed)) {
+			const d = new Date(trimmed);
+			if (!isNaN(d.getTime())) {
+				year = d.getFullYear();
+				month = d.getMonth() + 1;
+				day = d.getDate();
+				hours = d.getHours();
+				minutes = d.getMinutes();
+				seconds = d.getSeconds();
+			} else {
+				return trimmed;
+			}
+		} else {
+			return trimmed;
+		}
 	} else {
 		return undefined;
 	}
