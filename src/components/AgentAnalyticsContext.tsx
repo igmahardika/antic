@@ -80,9 +80,9 @@ export const AgentAnalyticsProvider = ({ children }) => {
 	const agentPerformanceData = useMemo(() => {
 		if (!Array.isArray(filteredTickets)) return { agentAnalyticsData: [], summary: null };
 
-		const performance: Record<string, { durations: number[]; closed: number }> = {};
+		const performance: Record<string, { durations: number[]; closed: number; total: number }> = {};
 		masterAgentList.forEach((agent) => {
-			performance[agent] = { durations: [], closed: 0 };
+			performance[agent] = { durations: [], closed: 0, total: 0 };
 		});
 
 		filteredTickets.forEach((t) => {
@@ -90,8 +90,12 @@ export const AgentAnalyticsProvider = ({ children }) => {
 			const validatedDuration = t?.handlingDuration?.rawHours || 0;
 			const agentName = t.openBy || "Unassigned";
 			if (!performance[agentName]) {
-				performance[agentName] = { durations: [], closed: 0 };
+				performance[agentName] = { durations: [], closed: 0, total: 0 };
 			}
+
+			// Always increment total tickets for the agent
+			performance[agentName].total++;
+
 			if (validatedDuration > 0) performance[agentName].durations.push(validatedDuration);
 			if (t.status === "Closed") performance[agentName].closed++;
 		});
@@ -102,28 +106,41 @@ export const AgentAnalyticsProvider = ({ children }) => {
 
 		const list = Object.entries(performance)
 			.map(([agentName, data]) => {
-				const ticketCount = data.durations.length;
+				// Use total assigned tickets as the main count
+				const ticketCount = data.total;
 				if (ticketCount === 0) return null;
-				const totalDuration = data.durations.reduce((acc, curr) => acc + curr, 0);
-				const avgDuration = totalDuration / ticketCount;
-				const minDuration = data.durations.reduce((min, v) => (v < min ? v : min), data.durations[0]);
-				const maxDuration = data.durations.reduce((max, v) => (v > max ? v : max), data.durations[0]);
+
 				const closedCount = data.closed;
 				const resolutionRate = (closedCount / ticketCount) * 100;
 
+				// Duration stats depend only on tickets with valid duration
+				const durationCount = data.durations.length;
+				let avgDuration = 0;
+				let minDuration = 0;
+				let maxDuration = 0;
+				let totalDuration = 0;
+
+				if (durationCount > 0) {
+					totalDuration = data.durations.reduce((acc, curr) => acc + curr, 0);
+					avgDuration = totalDuration / durationCount;
+					minDuration = data.durations.reduce((min, v) => (v < min ? v : min), data.durations[0]);
+					maxDuration = data.durations.reduce((max, v) => (v > max ? v : max), data.durations[0]);
+				}
+
 				if (ticketCount > busiestAgent.count) busiestAgent = { name: agentName, count: ticketCount };
-				if (avgDuration < mostEfficientAgent.avg) mostEfficientAgent = { name: agentName, avg: avgDuration };
+				// Efficiency is only valid if they have duration data
+				if (durationCount > 0 && avgDuration < mostEfficientAgent.avg) mostEfficientAgent = { name: agentName, avg: avgDuration };
 				if (resolutionRate > highestResolutionAgent.rate) highestResolutionAgent = { name: agentName, rate: resolutionRate };
 
 				return {
 					agentName,
-					ticketCount,
+					ticketCount, // This now reflects accurate TOTAL tickets
 					totalDurationFormatted: formatDurationDHM(totalDuration),
 					avgDurationFormatted: formatDurationDHM(avgDuration),
 					minDurationFormatted: formatDurationDHM(minDuration),
 					maxDurationFormatted: formatDurationDHM(maxDuration),
 					closedCount,
-					closedPercent: ((closedCount / ticketCount) * 100).toFixed(1),
+					closedPercent: resolutionRate.toFixed(1),
 					resolutionRate: resolutionRate.toFixed(1) + "%",
 				};
 			})
