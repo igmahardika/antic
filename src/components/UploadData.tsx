@@ -685,20 +685,20 @@ const ErrorLogTable = ({ errors }: { errors: IErrorLog[] }) => {
 function parseExcelDate(value: any): string | undefined {
 	if (value === null || value === undefined || value === "") return undefined;
 
-	// 1. Handle Excel's numeric date format (most reliable)
+	// 1. Handle Excel's numeric date format
+	// Force strict UTC interpretation to prevent timezone shifts
 	if (typeof value === "number" && !isNaN(value)) {
 		try {
-			// Handle reasonable date range (Excel dates typically between 1 and 50000)
 			if (value > 0 && value < 100000) {
-				// Excel date numbers represent days since 1900-01-01
-				const excelEpoch = new Date(1900, 0, 1);
-				const dateInMs = (value - 2) * 24 * 60 * 60 * 1000; // Subtract 2 to account for Excel's leap year bug
+				// Use UTC Epoch to ensure we calculate in UTC domain
+				const excelEpoch = new Date(Date.UTC(1900, 0, 1));
+				const dateInMs = (value - 2) * 24 * 60 * 60 * 1000;
 				const date = new Date(excelEpoch.getTime() + dateInMs);
 
 				if (
 					!isNaN(date.getTime()) &&
-					date.getFullYear() > 1900 &&
-					date.getFullYear() < 2100
+					date.getUTCFullYear() > 1900 &&
+					date.getUTCFullYear() < 2100
 				) {
 					return date.toISOString();
 				}
@@ -708,31 +708,43 @@ function parseExcelDate(value: any): string | undefined {
 		}
 	}
 
-	// 2. Handle Date objects (ExcelJS might return Date objects)
+	// 2. Handle Date objects (ExcelJS or JS Dates)
+	// Extract 'Face Value' components and force them to UTC
+	// This prevents local timezone offsets (e.g. UTC+7) from shifting the time
 	if (value instanceof Date) {
 		try {
 			if (!isNaN(value.getTime())) {
-				return value.toISOString();
+				const customDate = new Date(
+					Date.UTC(
+						value.getFullYear(),
+						value.getMonth(),
+						value.getDate(),
+						value.getHours(),
+						value.getMinutes(),
+						value.getSeconds(),
+					),
+				);
+				return customDate.toISOString();
 			}
 		} catch (error) {
 			logger.warn(`[DEBUG] Failed to convert Date object:`, value, error);
 		}
 	}
 
-	// 3. Handle string date formats - be more flexible
+	// 3. Handle string date formats
 	if (typeof value === "string") {
 		const trimmedValue = value.trim();
 		if (trimmedValue === "") return undefined;
 
 		// Try multiple date formats
 		const formats = [
-			// DD/MM/YYYY HH:MM:SS or DD/MM/YY HH:MM:SS (Support 2-4 digit year)
+			// DD/MM/YYYY HH:MM:SS
 			/^([0-3]?\d)\/([01]?\d)\/(\d{2,4})\s+([0-2]?\d):([0-5]?\d):([0-5]?\d)$/,
-			// DD/MM/YYYY or DD/MM/YY
+			// DD/MM/YYYY
 			/^([0-3]?\d)\/([01]?\d)\/(\d{2,4})$/,
-			// MM/DD/YYYY HH:MM:SS or MM/DD/YY ...
+			// MM/DD/YYYY HH:MM:SS
 			/^([01]?\d)\/([0-3]?\d)\/(\d{2,4})\s+([0-2]?\d):([0-5]?\d):([0-5]?\d)$/,
-			// MM/DD/YYYY or MM/DD/YY
+			// MM/DD/YYYY
 			/^([01]?\d)\/([0-3]?\d)\/(\d{2,4})$/,
 			// YYYY-MM-DD HH:MM:SS
 			/^(\d{4})-([01]?\d)-([0-3]?\d)\s+([0-2]?\d):([0-5]?\d):([0-5]?\d)$/,
@@ -776,12 +788,8 @@ function parseExcelDate(value: any): string | undefined {
 					if (parts[6]) seconds = parseInt(parts[6], 10);
 				}
 
-				// Adjust 2-digit year to 4-digit year (assume 20xx)
-				if (year < 100) {
-					year += 2000;
-				}
+				if (year < 100) year += 2000;
 
-				// Validate date components
 				if (
 					year > 1900 &&
 					year < 2100 &&
@@ -791,6 +799,7 @@ function parseExcelDate(value: any): string | undefined {
 					day <= 31
 				) {
 					try {
+						// Always use Date.UTC to prevent local timezone logic
 						const customDate = new Date(
 							Date.UTC(year, month - 1, day, hours, minutes, seconds),
 						);
@@ -808,18 +817,30 @@ function parseExcelDate(value: any): string | undefined {
 			}
 		}
 
-		// Try native Date parsing as last resort
+		// Fallback: Use native parse but try to preserve face value if possible
+		// Note: Native parse new Date("string") uses local time usually.
 		try {
 			const nativeDate = new Date(trimmedValue);
 			if (!isNaN(nativeDate.getTime())) {
-				return nativeDate.toISOString();
+				// Convert the resulting Local Time back to Face Value UTC
+				// Assumption: The string was parsed as Local, so getFullYear() returns Face Value
+				const customDate = new Date(
+					Date.UTC(
+						nativeDate.getFullYear(),
+						nativeDate.getMonth(),
+						nativeDate.getDate(),
+						nativeDate.getHours(),
+						nativeDate.getMinutes(),
+						nativeDate.getSeconds(),
+					),
+				);
+				return customDate.toISOString();
 			}
 		} catch (error) {
 			logger.warn(`[DEBUG] Native date parsing failed:`, trimmedValue, error);
 		}
 	}
 
-	// Only log warning for first few failures to avoid spam
 	return undefined;
 }
 
