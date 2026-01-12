@@ -713,7 +713,15 @@ function getFaceValueString(value: any): string | undefined {
 		minutes = date.getMinutes();
 		seconds = date.getSeconds();
 	} else if (typeof value === "string") {
-		const trimmed = value.trim();
+		let trimmed = value.trim();
+
+		// Aggressively strip timezone info to force "Local/Face Value" parsing
+		// Remove "GMT+xxxx", "UTC+xxxx", "Z" at end, and anything in parentheses
+		// Example: "Wed Jan 01 2020 20:50:00 GMT+0700 (WIB)" -> "Wed Jan 01 2020 20:50:00"
+		trimmed = trimmed.replace(/(GMT|UTC)[+-]\d{4}.*$/, "").trim();
+		trimmed = trimmed.replace(/\(.*\)$/, "").trim();
+		trimmed = trimmed.replace(/Z$/, "").trim();
+
 		// If string contains letters (e.g. "Wed Jan ..."), try parsing as Date to extract face value
 		if (/[a-zA-Z]/.test(trimmed)) {
 			const d = new Date(trimmed);
