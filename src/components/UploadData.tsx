@@ -1000,29 +1000,63 @@ const processAndAnalyzeData = (
 		const closeHandling4 = parseExcelDate(row["Close Penanganan 4"]);
 		const closeHandling5 = parseExcelDate(row["Close Penanganan 5"]);
 
-		const durationHours = calculateDuration(openTime, closeTime, 720); // Max 30 days for total duration
-		const handlingDurationHours = calculateDuration(openTime, closeHandling, 720); // Max 30 days for ART
-		const handlingDuration1Hours = calculateDuration(openTime, closeHandling1, 72); // Max 3 days for FRT
-		const handlingDuration2Hours = calculateDuration(
-			closeHandling1,
-			closeHandling2,
-			168, // Max 7 days per handling step
-		);
-		const handlingDuration3Hours = calculateDuration(
-			closeHandling2,
-			closeHandling3,
-			168,
-		);
-		const handlingDuration4Hours = calculateDuration(
-			closeHandling3,
-			closeHandling4,
-			168,
-		);
-		const handlingDuration5Hours = calculateDuration(
-			closeHandling4,
-			closeHandling5,
-			168,
-		);
+		// Helper to parse duration from Excel value (Number = days fraction, String = HH:MM:SS)
+		const parseDurationFromExcel = (val: any): number | null => {
+			if (typeof val === 'number') {
+				// Excel time is fraction of day. 1 = 24h.
+				return val * 24;
+			}
+			if (typeof val === 'string') {
+				// Try parsing HH:MM:SS
+				const parts = val.split(':');
+				if (parts.length === 3) {
+					const h = parseInt(parts[0], 10);
+					const m = parseInt(parts[1], 10);
+					const s = parseInt(parts[2], 10);
+					if (!isNaN(h)) return h + (m || 0) / 60 + (s || 0) / 3600;
+				}
+			}
+			return null;
+		};
+
+		// 1. Durasi Total
+		let durationHours = parseDurationFromExcel(row["Durasi"]);
+		if (durationHours === null) {
+			durationHours = calculateDuration(openTime, closeTime, 720);
+		}
+
+		// 2. Durasi Penanganan (ART)
+		let handlingDurationHours = parseDurationFromExcel(row["Durasi Penanganan"]);
+		if (handlingDurationHours === null) {
+			handlingDurationHours = calculateDuration(openTime, closeHandling, 720);
+		}
+
+		// 3. Durasi Penanganan 1 (FRT)
+		let handlingDuration1Hours = parseDurationFromExcel(row["Durasi Penanganan 1"]);
+		if (handlingDuration1Hours === null) {
+			handlingDuration1Hours = calculateDuration(openTime, closeHandling1, 72);
+		}
+
+		// 4. Handling Steps 2-5
+		let handlingDuration2Hours = parseDurationFromExcel(row["Durasi Penanganan 2"]);
+		if (handlingDuration2Hours === null) {
+			handlingDuration2Hours = calculateDuration(closeHandling1, closeHandling2, 168);
+		}
+
+		let handlingDuration3Hours = parseDurationFromExcel(row["Durasi Penanganan 3"]);
+		if (handlingDuration3Hours === null) {
+			handlingDuration3Hours = calculateDuration(closeHandling2, closeHandling3, 168);
+		}
+
+		let handlingDuration4Hours = parseDurationFromExcel(row["Durasi Penanganan 4"]);
+		if (handlingDuration4Hours === null) {
+			handlingDuration4Hours = calculateDuration(closeHandling3, closeHandling4, 168);
+		}
+
+		let handlingDuration5Hours = parseDurationFromExcel(row["Durasi Penanganan 5"]);
+		if (handlingDuration5Hours === null) {
+			handlingDuration5Hours = calculateDuration(closeHandling4, closeHandling5, 168);
+		}
 
 		const statusRaw = row["Status"];
 		let status = "Open";
