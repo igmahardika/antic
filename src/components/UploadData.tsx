@@ -713,26 +713,29 @@ function getFaceValueString(value: any): string | undefined {
 		minutes = date.getMinutes();
 		seconds = date.getSeconds();
 	} else if (typeof value === "string") {
-		let trimmed = value.trim();
+		const trimmed = value.trim();
 
-		// Aggressively strip timezone info to force "Local/Face Value" parsing
-		// Support: GMT+0700, GMT+07:00, UTC+7, +07:00, +0700, Z
-		trimmed = trimmed.replace(/(GMT|UTC).*$/, "").trim(); // Remove "GMT..." or "UTC..." and everything after
-		trimmed = trimmed.replace(/\(.*\)$/, "").trim(); // Remove (...)
-		trimmed = trimmed.replace(/Z$/, "").trim(); // Remove trailing Z
-		trimmed = trimmed.replace(/[+-]\d{2}:?\d{2}$/, "").trim(); // Remove ISO offsets like +07:00 or +0700 at end
+		// Strategy: Extract time components DIRECTLY from the string using Regex
+		// This bypasses "new Date()" ambiguity and timezone shifts entirely.
 
-		// If string contains letters (e.g. "Wed Jan ..."), try parsing as Date to extract face value
-		if (/[a-zA-Z]/.test(trimmed)) {
-			const d = new Date(trimmed);
-			if (!isNaN(d.getTime())) {
-				year = d.getFullYear();
-				month = d.getMonth() + 1;
-				day = d.getDate();
-				hours = d.getHours();
-				minutes = d.getMinutes();
-				seconds = d.getSeconds();
+		// 1. Matches "Mon Jan 01 2020 20:50:00 ..."
+		const verboseMatch = trimmed.match(/\w{3}\s+\w{3}\s+\d{1,2}\s+\d{4}\s+(\d{1,2}):(\d{1,2}):(\d{1,2})/);
+		if (verboseMatch) {
+			// Parse the DATE part as well to be safe, or assume standard structure?
+			// Let's parse full structure to be safe: RegEx: Wed Jan 01 2020 ...
+			const fullMatch = trimmed.match(/(\w{3})\s+(\w{3})\s+(\d{1,2})\s+(\d{4})\s+(\d{1,2}):(\d{1,2}):(\d{1,2})/);
+			if (fullMatch) {
+				const monthStr = fullMatch[2];
+				const months: { [key: string]: number } = { Jan: 1, Feb: 2, Mar: 3, Apr: 4, May: 5, Jun: 6, Jul: 7, Aug: 8, Sep: 9, Oct: 10, Nov: 11, Dec: 12 };
+
+				year = parseInt(fullMatch[4], 10);
+				month = months[monthStr] || 1;
+				day = parseInt(fullMatch[3], 10);
+				hours = parseInt(fullMatch[5], 10);
+				minutes = parseInt(fullMatch[6], 10);
+				seconds = parseInt(fullMatch[7], 10);
 			} else {
+				// Fallback to strict regex for simpler ISO/Excel formats
 				return trimmed;
 			}
 		} else {
