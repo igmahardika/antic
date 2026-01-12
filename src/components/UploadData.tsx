@@ -735,6 +735,10 @@ function parseExcelDate(value: any): string | undefined {
 		/^(\d{4})-(\d{1,2})-(\d{1,2})\s+(\d{1,2}):(\d{1,2}):(\d{1,2})$/,
 		// DD/MM/YYYY HH:MM:SS
 		/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})\s+(\d{1,2}):(\d{1,2}):(\d{1,2})$/,
+		// DD/MM/YYYY HH:MM (Supports user's new format)
+		/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})\s+(\d{1,2}):(\d{1,2})$/,
+		// YYYY-MM-DD HH:MM
+		/^(\d{4})-(\d{1,2})-(\d{1,2})\s+(\d{1,2}):(\d{1,2})$/,
 		// DD/MM/YYYY
 		/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/,
 		// YYYY-MM-DD
@@ -761,11 +765,23 @@ function parseExcelDate(value: any): string | undefined {
 				hours = parseInt(parts[4], 10);
 				minutes = parseInt(parts[5], 10);
 				seconds = parseInt(parts[6], 10);
-			} else if (i === 2) { // DD/MM/YYYY
+			} else if (i === 2) { // DD/MM/YYYY HH:mm
 				day = parseInt(parts[1], 10);
 				month = parseInt(parts[2], 10);
 				year = parseInt(parts[3], 10);
-			} else if (i === 3) { // YYYY-MM-DD
+				hours = parseInt(parts[4], 10);
+				minutes = parseInt(parts[5], 10);
+			} else if (i === 3) { // YYYY-MM-DD HH:mm
+				year = parseInt(parts[1], 10);
+				month = parseInt(parts[2], 10);
+				day = parseInt(parts[3], 10);
+				hours = parseInt(parts[4], 10);
+				minutes = parseInt(parts[5], 10);
+			} else if (i === 4) { // DD/MM/YYYY
+				day = parseInt(parts[1], 10);
+				month = parseInt(parts[2], 10);
+				year = parseInt(parts[3], 10);
+			} else if (i === 5) { // YYYY-MM-DD
 				year = parseInt(parts[1], 10);
 				month = parseInt(parts[2], 10);
 				day = parseInt(parts[3], 10);
