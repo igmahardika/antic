@@ -2743,7 +2743,7 @@ const AgentAnalytics = () => {
 																				Average Handle Time
 																			</span>
 																			<span className="font-semibold">
-																				{formatDurationDHM(avgAHT)}
+																				{formatDurationDHM(avgAHT / 60)}
 																			</span>
 																		</div>
 																		<div className="flex justify-between items-center">
@@ -2821,10 +2821,10 @@ const AgentAnalytics = () => {
 																		<div className="flex items-center gap-2">
 																			<div
 																				className={`w-3 h-3 rounded-full ${avgAHT > 1440
-																						? "bg-red-500"
-																						: avgAHT < 720
-																							? "bg-green-500"
-																							: "bg-yellow-500"
+																					? "bg-red-500"
+																					: avgAHT < 720
+																						? "bg-green-500"
+																						: "bg-yellow-500"
 																					}`}
 																			></div>
 																			<span className="text-sm font-medium">
@@ -2838,10 +2838,10 @@ const AgentAnalytics = () => {
 																		<div className="flex items-center gap-2">
 																			<div
 																				className={`w-3 h-3 rounded-full ${slaRate < 85
-																						? "bg-red-500"
-																						: slaRate > 95
-																							? "bg-green-500"
-																							: "bg-yellow-500"
+																					? "bg-red-500"
+																					: slaRate > 95
+																						? "bg-green-500"
+																						: "bg-yellow-500"
 																					}`}
 																			></div>
 																			<span className="text-sm font-medium">
@@ -2857,8 +2857,8 @@ const AgentAnalytics = () => {
 																		<div className="flex items-center gap-2">
 																			<div
 																				className={`w-3 h-3 rounded-full ${fcrRate < 75
-																						? "bg-red-500"
-																						: "bg-green-500"
+																					? "bg-red-500"
+																					: "bg-green-500"
 																					}`}
 																			></div>
 																			<span className="text-sm font-medium">
@@ -2870,8 +2870,8 @@ const AgentAnalytics = () => {
 																		<div className="flex items-center gap-2">
 																			<div
 																				className={`w-3 h-3 rounded-full ${escalationRate > 10
-																						? "bg-yellow-500"
-																						: "bg-green-500"
+																					? "bg-yellow-500"
+																					: "bg-green-500"
 																					}`}
 																			></div>
 																			<span className="text-sm font-medium">
@@ -3776,11 +3776,11 @@ const AgentAnalytics = () => {
 																			<div className="text-sm text-blue-700 dark:text-blue-300">
 																				<div>
 																					• Expected AHT:{" "}
-																					{formatDurationDHM(expectedAHT)}
+																					{formatDurationDHM(expectedAHT / 60)}
 																				</div>
 																				<div>
 																					• Actual AHT:{" "}
-																					{formatDurationDHM(avgAHT)}
+																					{formatDurationDHM(avgAHT / 60)}
 																				</div>
 																				<div>
 																					• Tenure: {tenure} days (
@@ -3870,7 +3870,7 @@ const AgentAnalytics = () => {
 																				AHT Target
 																			</span>
 																			<span className="font-semibold">
-																				≤ {formatDurationDHM(expectedAHT)}
+																				≤ {formatDurationDHM(expectedAHT / 60)}
 																			</span>
 																		</div>
 																		<div className="flex justify-between items-center p-2 bg-gray-50 dark:bg-gray-800 rounded">
@@ -3973,7 +3973,7 @@ const AgentAnalytics = () => {
 																				Average Handle Time
 																			</span>
 																			<span className="font-semibold">
-																				{formatDurationDHM(avgAHT)}
+																				{formatDurationDHM(avgAHT / 60)}
 																			</span>
 																		</div>
 																		<div className="flex justify-between items-center">
@@ -4151,7 +4151,7 @@ const AgentAnalytics = () => {
 														category: "Efficiency",
 														impact: "high",
 														title: "AHT Above Target",
-														description: `Average Handle Time (${formatDurationDHM(avgAHT)}) is above 24-hour target.`,
+														description: `Average Handle Time (${formatDurationDHM(avgAHT / 60)}) is above 24-hour target.`,
 														recommendation:
 															"Review ticket handling process and identify bottlenecks.",
 														color:
@@ -4162,7 +4162,7 @@ const AgentAnalytics = () => {
 														category: "Efficiency",
 														impact: "medium",
 														title: "Excellent AHT Performance",
-														description: `Average Handle Time (${formatDurationDHM(avgAHT)}) is well below target.`,
+														description: `Average Handle Time (${formatDurationDHM(avgAHT / 60)}) is well below target.`,
 														recommendation:
 															"Share best practices with team members.",
 														color:
@@ -4260,10 +4260,10 @@ const AgentAnalytics = () => {
 																				<div className="flex items-start gap-3">
 																					<div
 																						className={`w-2 h-2 rounded-full mt-2 ${insight.impact === "high"
-																								? "bg-red-500"
-																								: insight.impact === "medium"
-																									? "bg-yellow-500"
-																									: "bg-green-500"
+																							? "bg-red-500"
+																							: insight.impact === "medium"
+																								? "bg-yellow-500"
+																								: "bg-green-500"
 																							}`}
 																					></div>
 																					<div className="flex-1">
@@ -4273,11 +4273,11 @@ const AgentAnalytics = () => {
 																							</span>
 																							<span
 																								className={`px-2 py-1 rounded text-xs font-semibold ${insight.impact === "high"
-																										? "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300"
-																										: insight.impact ===
-																											"medium"
-																											? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300"
-																											: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300"
+																									? "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300"
+																									: insight.impact ===
+																										"medium"
+																										? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300"
+																										: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300"
 																									}`}
 																							>
 																								{insight.impact.toUpperCase()}
@@ -4545,10 +4545,10 @@ const AgentAnalytics = () => {
 																				<td className="text-right py-2">
 																					<span
 																						className={`px-2 py-1 rounded text-xs font-semibold ${metric.status === "success"
-																								? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300"
-																								: metric.status === "warning"
-																									? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300"
-																									: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300"
+																							? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300"
+																							: metric.status === "warning"
+																								? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300"
+																								: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300"
 																							}`}
 																					>
 																						{metric.status === "success" ? (
