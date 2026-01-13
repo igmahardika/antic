@@ -49,7 +49,14 @@ function mapTicketFieldsForAgentKpi(ticket) {
 		window &&
 		!(window as any).__agentKpiDebugged
 	) {
-		logger.info("Mapped ticket for agentKpi:", mapped);
+		logger.info("=== AGENT KPI DEBUG ===");
+		logger.info("Original ticket keys:", Object.keys(ticket));
+		logger.info("Mapped ticket keys:", Object.keys(mapped));
+		logger.info("handlingDuration in original?", "handlingDuration" in ticket);
+		logger.info("handlingDuration1 in original?", "handlingDuration1" in ticket);
+		logger.info("handlingDuration value:", ticket.handlingDuration);
+		logger.info("handlingDuration1 value:", ticket.handlingDuration1);
+		logger.info("Mapped ticket sample:", mapped);
 		(window as any).__agentKpiDebugged = true;
 	}
 	return mapped;

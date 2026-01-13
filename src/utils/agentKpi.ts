@@ -204,17 +204,17 @@ export function calcMetrics(agentTickets: Ticket[]): AgentMetric {
 	agentTickets.forEach((t) => {
 
 
-		// FRT: Use pre-calculated handlingDuration1 (hours -> minutes)
+		// FRT: Use pre-calculated handlingDuration1 (already in hours)
 		const frtHours = t.handlingDuration1?.rawHours || 0;
 		if (frtHours > 0) {
-			frtSum += frtHours * 60;
+			frtSum += frtHours; // Keep in HOURS for formatDurationDHM
 			frtCount++;
 		}
 
-		// ART: Use pre-calculated handlingDuration (hours -> minutes)
+		// ART: Use pre-calculated handlingDuration (already in hours)
 		const artHours = t.handlingDuration?.rawHours || 0;
 		if (artHours > 0) {
-			artSum += artHours * 60;
+			artSum += artHours; // Keep in HOURS for formatDurationDHM
 			artCount++;
 		}
 
