@@ -55,8 +55,8 @@ import { Badge } from "@/components/ui/badge";
 import { CardHeaderTitle, CardHeaderDescription } from "@/components/ui/CardTypography";
 import * as RadixDialog from "@radix-ui/react-dialog";
 import { logger } from "@/lib/logger";
-import { 
-	isBacklogTicket, 
+import {
+	isBacklogTicket,
 	isClosedTicket
 } from "@/utils/ticketStatus";
 import { getAgentPhotoPath } from "@/utils/photoUtils";
@@ -133,7 +133,7 @@ function toRechartsAgentTrend(
 // Custom Tooltip for AreaChart with improved typography and spacing
 const CustomTooltip = ({ active = false, payload = [], label = "" } = {}) => {
 	if (!active || !payload || !payload.length) return null;
-	
+
 	// Helper function to format duration values
 	const formatValue = (name, value) => {
 		if (name && name.toLowerCase().includes('duration')) {
@@ -142,7 +142,7 @@ const CustomTooltip = ({ active = false, payload = [], label = "" } = {}) => {
 		}
 		return value;
 	};
-	
+
 	return (
 		<div
 			className="bg-card text-card-foreground rounded-xl shadow-lg p-4 max-h-64 overflow-y-auto min-w-[280px] max-w-[350px] text-xs border"
@@ -255,20 +255,20 @@ const AgentAnalytics = () => {
 	const [exportYear, setExportYear] = useState("all");
 
 	// ====================== AGENT PERFORMANCE ANALYTICS DATA ======================
-	
+
 	// Get time-filtered tickets from AgentAnalyticsContext
 	const timeFilteredTickets = useMemo(() => {
 		// Use the same time filtering logic as AgentAnalyticsContext
 		if (!allTickets) return [];
 		if (!startMonth || !endMonth || !selectedYear) return allTickets;
 		if (selectedYear === "ALL") return allTickets;
-		
+
 		const y = Number(selectedYear);
 		const mStart = Number(startMonth) - 1;
 		const mEnd = Number(endMonth) - 1;
 		const cutoffStart = new Date(y, mStart, 1, 0, 0, 0, 0);
 		const cutoffEnd = new Date(y, mEnd + 1, 0, 23, 59, 59, 999);
-		
+
 		return allTickets.filter((t) => {
 			if (!t.openTime) return false;
 			const d = new Date(t.openTime);
@@ -276,7 +276,7 @@ const AgentAnalytics = () => {
 			return d >= cutoffStart && d <= cutoffEnd;
 		});
 	}, [allTickets, startMonth, endMonth, selectedYear]);
-	
+
 	// Available agents from time-filtered data
 	const availableAgents = useMemo(() => {
 		if (!Array.isArray(timeFilteredTickets)) return [];
@@ -353,20 +353,20 @@ const AgentAnalytics = () => {
 	// Agent performance data for charts
 	const agentPerformanceData = useMemo(() => {
 		if (!Array.isArray(filteredAgentData)) return [];
-		
+
 		// Group by month
 		const monthlyData: Record<string, { tickets: number; totalDuration: number; count: number }> = {};
-		
+
 		filteredAgentData.forEach((t) => {
 			if (!t.openTime) return;
 			const d = new Date(t.openTime);
 			if (isNaN(d.getTime())) return;
 			const month = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-			
+
 			if (!monthlyData[month]) {
 				monthlyData[month] = { tickets: 0, totalDuration: 0, count: 0 };
 			}
-			
+
 			monthlyData[month].tickets += 1;
 			const duration = toRawHours(t);
 			if (duration !== null) {
@@ -374,7 +374,7 @@ const AgentAnalytics = () => {
 				monthlyData[month].count += 1;
 			}
 		});
-		
+
 		return Object.entries(monthlyData)
 			.map(([month, data]) => ({
 				month,
@@ -387,23 +387,23 @@ const AgentAnalytics = () => {
 	// Agent shift data
 	const agentShiftData = useMemo(() => {
 		if (!Array.isArray(filteredAgentData)) return [];
-		
+
 		const shiftCount: Record<string, { Pagi: number; Sore: number; Malam: number }> = {};
-		
+
 		filteredAgentData.forEach((t) => {
 			if (!t.openTime) return;
 			const shift = getShift(t.openTime);
 			const agent = t.openBy || "Unknown";
-			
+
 			if (!shiftCount[agent]) {
 				shiftCount[agent] = { Pagi: 0, Sore: 0, Malam: 0 };
 			}
-			
+
 			if (shift === "Pagi") shiftCount[agent].Pagi += 1;
 			else if (shift === "Sore") shiftCount[agent].Sore += 1;
 			else if (shift === "Malam") shiftCount[agent].Malam += 1;
 		});
-		
+
 		return Object.entries(shiftCount).map(([agent, shifts]) => ({
 			agent,
 			...shifts,
@@ -413,7 +413,7 @@ const AgentAnalytics = () => {
 	// Agent performance table data
 	const agentPerformanceTable = useMemo(() => {
 		if (!Array.isArray(filteredAgentData)) return [];
-		
+
 		const agentStats: Record<string, {
 			totalTickets: number;
 			totalDuration: number;
@@ -421,11 +421,11 @@ const AgentAnalytics = () => {
 			firstTicket: Date | null;
 			lastTicket: Date | null;
 		}> = {};
-		
+
 		filteredAgentData.forEach((t) => {
 			if (!t.openBy) return;
 			const agent = t.openBy;
-			
+
 			if (!agentStats[agent]) {
 				agentStats[agent] = {
 					totalTickets: 0,
@@ -435,19 +435,19 @@ const AgentAnalytics = () => {
 					lastTicket: null,
 				};
 			}
-			
+
 			agentStats[agent].totalTickets += 1;
-			
+
 			const duration = toRawHours(t);
 			if (duration !== null) {
 				agentStats[agent].totalDuration += duration;
 			}
-			
+
 			const shift = getShift(t.openTime);
 			if (shift === "Pagi") agentStats[agent].shifts.Pagi += 1;
 			else if (shift === "Sore") agentStats[agent].shifts.Sore += 1;
 			else if (shift === "Malam") agentStats[agent].shifts.Malam += 1;
-			
+
 			const openDate = parseDateSafe(t.openTime);
 			if (openDate) {
 				if (!agentStats[agent].firstTicket || openDate < agentStats[agent].firstTicket) {
@@ -458,30 +458,30 @@ const AgentAnalytics = () => {
 				}
 			}
 		});
-		
+
 		return Object.entries(agentStats).map(([name, stats]) => {
 			const avgDuration = stats.totalTickets > 0 ? stats.totalDuration / stats.totalTickets : 0;
-			
+
 			// Calculate working days between first and last ticket
-			const workingDays = stats.firstTicket && stats.lastTicket 
+			const workingDays = stats.firstTicket && stats.lastTicket
 				? Math.max(1, Math.ceil((stats.lastTicket.getTime() - stats.firstTicket.getTime()) / (1000 * 60 * 60 * 24)))
 				: 1;
-			
+
 			const avgDaily = stats.totalTickets / workingDays;
 			const avgMonthly = avgDaily * 30;
-			
+
 			// Find best shift
-			const bestShift = Object.entries(stats.shifts).reduce((a, b) => 
+			const bestShift = Object.entries(stats.shifts).reduce((a, b) =>
 				stats.shifts[a[0] as keyof typeof stats.shifts] > stats.shifts[b[0] as keyof typeof stats.shifts] ? a : b
 			)[0];
-			
+
 			// Calculate performance score (0-100)
-			const performanceScore = Math.min(100, Math.max(0, 
-				(stats.totalTickets * 0.3) + 
+			const performanceScore = Math.min(100, Math.max(0,
+				(stats.totalTickets * 0.3) +
 				((100 - Math.min(avgDuration, 48)) * 0.4) + // Lower duration is better
 				((stats.shifts.Pagi + stats.shifts.Sore + stats.shifts.Malam > 0 ? 30 : 0) * 0.3) // Bonus for multi-shift
 			));
-			
+
 			return {
 				name,
 				totalTickets: stats.totalTickets,
@@ -497,17 +497,17 @@ const AgentAnalytics = () => {
 	// Agent summary cards
 	const agentSummaryCards = useMemo(() => {
 		if (!Array.isArray(filteredAgentData)) return [];
-		
+
 		const totalTickets = filteredAgentData.length;
 		const totalAgents = new Set(filteredAgentData.map(t => t.openBy)).size;
 		const avgTicketsPerAgent = totalAgents > 0 ? totalTickets / totalAgents : 0;
-		
+
 		const totalDuration = filteredAgentData.reduce((sum, t) => {
 			const duration = toRawHours(t);
 			return sum + (duration || 0);
 		}, 0);
 		const avgDuration = totalTickets > 0 ? totalDuration / totalTickets : 0;
-		
+
 		return [
 			{
 				title: "Total Tickets",
@@ -702,19 +702,19 @@ const AgentAnalytics = () => {
 			const firstTicket =
 				validTickets.length > 0
 					? validTickets.reduce((earliest, t) => {
-							const currentDate = new Date(t.openTime);
-							const earliestDate = new Date(earliest.openTime);
-							return currentDate < earliestDate ? t : earliest;
-						})
+						const currentDate = new Date(t.openTime);
+						const earliestDate = new Date(earliest.openTime);
+						return currentDate < earliestDate ? t : earliest;
+					})
 					: null;
 
 			const lastTicket =
 				validTickets.length > 0
 					? validTickets.reduce((latest, t) => {
-							const currentDate = new Date(t.openTime);
-							const latestDate = new Date(latest.openTime);
-							return currentDate > latestDate ? t : latest;
-						})
+						const currentDate = new Date(t.openTime);
+						const latestDate = new Date(latest.openTime);
+						return currentDate > latestDate ? t : latest;
+					})
 					: null;
 
 			let tenure = 0;
@@ -806,10 +806,10 @@ const AgentAnalytics = () => {
 
 			const cpi = Math.round(
 				efficiencyScore * 0.25 +
-					qualityScore * 0.3 +
-					resolutionScore * 0.2 +
-					reliabilityScore * 0.15 +
-					productivityScore * 0.1,
+				qualityScore * 0.3 +
+				resolutionScore * 0.2 +
+				reliabilityScore * 0.15 +
+				productivityScore * 0.1,
 			);
 
 			const getCPILevel = (score: number) => {
@@ -1720,13 +1720,10 @@ const AgentAnalytics = () => {
 												</div>
 												<div className="text-xs text-zinc-500 dark:text-zinc-400 font-medium">
 													FRT
+													<div className="text-[10px] text-zinc-400 dark:text-zinc-500 mt-0.5">
+														First Resolution Time
+													</div>
 												</div>
-                                                                                                <div className="text-[10px] text-zinc-400 dark:text-zinc-500 mt-0.5">
-                                                                                                        First Resolution Time
-                                                                                                </div>
-                                                                                                <div className="text-[10px] text-zinc-400 dark:text-zinc-500 mt-0.5">
-                                                                                                        First Resolution Time
-                                                                                                </div>
 											</div>
 											<div className="bg-zinc-50 dark:bg-zinc-800/50 rounded-lg p-3 text-center metric-card hover:bg-zinc-100 dark:hover:bg-zinc-800/70">
 												<div className="flex justify-center mb-2">
@@ -1737,12 +1734,12 @@ const AgentAnalytics = () => {
 												</div>
 												<div className="font-bold text-sm text-zinc-900 dark:text-zinc-100 mb-1">
 													{agent.art ? formatDurationDHM(agent.art) : "-"}
-                                                                                                <div className="text-[10px] text-zinc-400 dark:text-zinc-500 mt-0.5">
-                                                                                                        Average Resolution Time
-                                                                                                </div>
 												</div>
 												<div className="text-xs text-zinc-500 dark:text-zinc-400 font-medium">
 													ART
+													<div className="text-[10px] text-zinc-400 dark:text-zinc-500 mt-0.5">
+														Average Resolution Time
+													</div>
 												</div>
 											</div>
 											<div className="bg-zinc-50 dark:bg-zinc-800/50 rounded-lg p-3 text-center metric-card hover:bg-zinc-100 dark:hover:bg-zinc-800/70">
@@ -1756,12 +1753,12 @@ const AgentAnalytics = () => {
 													{agent.fcr !== undefined
 														? `${agent.fcr.toFixed(1)}%`
 														: "-"}
-                                                                                                <div className="text-[10px] text-zinc-400 dark:text-zinc-500 mt-0.5">
-                                                                                                        First Call Resolution
-                                                                                                </div>
 												</div>
 												<div className="text-xs text-zinc-500 dark:text-zinc-400 font-medium">
 													FCR
+													<div className="text-[10px] text-zinc-400 dark:text-zinc-500 mt-0.5">
+														First Call Resolution
+													</div>
 												</div>
 											</div>
 											<div className="bg-zinc-50 dark:bg-zinc-800/50 rounded-lg p-3 text-center metric-card hover:bg-zinc-100 dark:hover:bg-zinc-800/70">
@@ -1778,9 +1775,9 @@ const AgentAnalytics = () => {
 												</div>
 												<div className="text-xs text-zinc-500 dark:text-zinc-400 font-medium">
 													SLA
-                                                                                                <div className="text-[10px] text-zinc-400 dark:text-zinc-500 mt-0.5">
-                                                                                                        Service Level Agreement
-                                                                                                </div>
+													<div className="text-[10px] text-zinc-400 dark:text-zinc-500 mt-0.5">
+														Service Level Agreement
+													</div>
 												</div>
 											</div>
 											<div className="bg-zinc-50 dark:bg-zinc-800/50 rounded-lg p-3 text-center metric-card hover:bg-zinc-100 dark:hover:bg-zinc-800/70">
@@ -2084,11 +2081,11 @@ const AgentAnalytics = () => {
 									const scoreTrendArr = getAgentScoreTrend(selectedAgent);
 									const chartData = Array.isArray(scoreTrendArr)
 										? scoreTrendArr.map((score, i) => ({
-												month:
-													data.agentMonthlyChart.labels?.[i] ||
-													`Month ${i + 1}`,
-												score,
-											}))
+											month:
+												data.agentMonthlyChart.labels?.[i] ||
+												`Month ${i + 1}`,
+											score,
+										}))
 										: [];
 									return (
 										<div className="px-6 pb-6">
@@ -2163,9 +2160,9 @@ const AgentAnalytics = () => {
 									const scoreTrendArr = getAgentScoreTrend(selectedAgent);
 									const avgScore = scoreTrendArr.length
 										? (
-												scoreTrendArr.reduce((a, b) => a + b, 0) /
-												scoreTrendArr.length
-											).toFixed(1)
+											scoreTrendArr.reduce((a, b) => a + b, 0) /
+											scoreTrendArr.length
+										).toFixed(1)
 										: "-";
 									let trendBadge = null;
 									if (scoreTrendArr.length > 1) {
@@ -2464,23 +2461,23 @@ const AgentAnalytics = () => {
 												const firstTicket =
 													validTickets.length > 0
 														? validTickets.reduce((earliest, t) => {
-																const currentDate = new Date(t.openTime);
-																const earliestDate = new Date(
-																	earliest.openTime,
-																);
-																return currentDate < earliestDate
-																	? t
-																	: earliest;
-															})
+															const currentDate = new Date(t.openTime);
+															const earliestDate = new Date(
+																earliest.openTime,
+															);
+															return currentDate < earliestDate
+																? t
+																: earliest;
+														})
 														: null;
 
 												const lastTicket =
 													validTickets.length > 0
 														? validTickets.reduce((latest, t) => {
-																const currentDate = new Date(t.openTime);
-																const latestDate = new Date(latest.openTime);
-																return currentDate > latestDate ? t : latest;
-															})
+															const currentDate = new Date(t.openTime);
+															const latestDate = new Date(latest.openTime);
+															return currentDate > latestDate ? t : latest;
+														})
 														: null;
 
 												let tenure = 0;
@@ -2493,7 +2490,7 @@ const AgentAnalytics = () => {
 													) {
 														tenure = Math.ceil(
 															(lastDate.getTime() - firstDate.getTime()) /
-																(1000 * 60 * 60 * 24),
+															(1000 * 60 * 60 * 24),
 														);
 													}
 												}
@@ -2522,7 +2519,7 @@ const AgentAnalytics = () => {
 												const avgAHT =
 													ahtValues.length > 0
 														? ahtValues.reduce((sum, val) => sum + val, 0) /
-															ahtValues.length
+														ahtValues.length
 														: 0;
 
 												const fcrTickets = agentTickets.filter((t) => {
@@ -2588,10 +2585,10 @@ const AgentAnalytics = () => {
 
 												const cpi = Math.round(
 													efficiencyScore * 0.25 +
-														qualityScore * 0.3 +
-														resolutionScore * 0.2 +
-														reliabilityScore * 0.15 +
-														productivityScore * 0.1,
+													qualityScore * 0.3 +
+													resolutionScore * 0.2 +
+													reliabilityScore * 0.15 +
+													productivityScore * 0.1,
 												);
 
 												const getCPILevel = (score) => {
@@ -2772,8 +2769,8 @@ const AgentAnalytics = () => {
 																			<span className="font-semibold">
 																				{firstTicket
 																					? new Date(
-																							firstTicket.openTime,
-																						).toLocaleDateString()
+																						firstTicket.openTime,
+																					).toLocaleDateString()
 																					: "N/A"}
 																			</span>
 																		</div>
@@ -2823,13 +2820,12 @@ const AgentAnalytics = () => {
 																	<div className="space-y-3">
 																		<div className="flex items-center gap-2">
 																			<div
-																				className={`w-3 h-3 rounded-full ${
-																					avgAHT > 1440
+																				className={`w-3 h-3 rounded-full ${avgAHT > 1440
 																						? "bg-red-500"
 																						: avgAHT < 720
 																							? "bg-green-500"
 																							: "bg-yellow-500"
-																				}`}
+																					}`}
 																			></div>
 																			<span className="text-sm font-medium">
 																				{avgAHT > 1440
@@ -2841,13 +2837,12 @@ const AgentAnalytics = () => {
 																		</div>
 																		<div className="flex items-center gap-2">
 																			<div
-																				className={`w-3 h-3 rounded-full ${
-																					slaRate < 85
+																				className={`w-3 h-3 rounded-full ${slaRate < 85
 																						? "bg-red-500"
 																						: slaRate > 95
 																							? "bg-green-500"
 																							: "bg-yellow-500"
-																				}`}
+																					}`}
 																			></div>
 																			<span className="text-sm font-medium">
 																				{slaRate < 85
@@ -2861,11 +2856,10 @@ const AgentAnalytics = () => {
 																	<div className="space-y-3">
 																		<div className="flex items-center gap-2">
 																			<div
-																				className={`w-3 h-3 rounded-full ${
-																					fcrRate < 75
+																				className={`w-3 h-3 rounded-full ${fcrRate < 75
 																						? "bg-red-500"
 																						: "bg-green-500"
-																				}`}
+																					}`}
 																			></div>
 																			<span className="text-sm font-medium">
 																				{fcrRate < 75
@@ -2875,11 +2869,10 @@ const AgentAnalytics = () => {
 																		</div>
 																		<div className="flex items-center gap-2">
 																			<div
-																				className={`w-3 h-3 rounded-full ${
-																					escalationRate > 10
+																				className={`w-3 h-3 rounded-full ${escalationRate > 10
 																						? "bg-yellow-500"
 																						: "bg-green-500"
-																				}`}
+																					}`}
 																			></div>
 																			<span className="text-sm font-medium">
 																				{escalationRate > 10
@@ -2915,23 +2908,23 @@ const AgentAnalytics = () => {
 												const firstTicket =
 													validTickets.length > 0
 														? validTickets.reduce((earliest, t) => {
-																const currentDate = new Date(t.openTime);
-																const earliestDate = new Date(
-																	earliest.openTime,
-																);
-																return currentDate < earliestDate
-																	? t
-																	: earliest;
-															})
+															const currentDate = new Date(t.openTime);
+															const earliestDate = new Date(
+																earliest.openTime,
+															);
+															return currentDate < earliestDate
+																? t
+																: earliest;
+														})
 														: null;
 
 												const lastTicket =
 													validTickets.length > 0
 														? validTickets.reduce((latest, t) => {
-																const currentDate = new Date(t.openTime);
-																const latestDate = new Date(latest.openTime);
-																return currentDate > latestDate ? t : latest;
-															})
+															const currentDate = new Date(t.openTime);
+															const latestDate = new Date(latest.openTime);
+															return currentDate > latestDate ? t : latest;
+														})
 														: null;
 
 												// Calculate tenure with validation
@@ -2945,7 +2938,7 @@ const AgentAnalytics = () => {
 													) {
 														tenure = Math.ceil(
 															(lastDate.getTime() - firstDate.getTime()) /
-																(1000 * 60 * 60 * 24),
+															(1000 * 60 * 60 * 24),
 														);
 													}
 												}
@@ -2977,7 +2970,7 @@ const AgentAnalytics = () => {
 												const avgAHT =
 													ahtValues.length > 0
 														? ahtValues.reduce((sum, val) => sum + val, 0) /
-															ahtValues.length
+														ahtValues.length
 														: 0;
 
 												// Calculate FCR (First Contact Resolution) - tickets without second handling
@@ -3037,7 +3030,7 @@ const AgentAnalytics = () => {
 												const avgFRT =
 													frtValues.length > 0
 														? frtValues.reduce((sum, val) => sum + val, 0) /
-															frtValues.length
+														frtValues.length
 														: 0;
 
 												// Calculate ART (Average Resolution Time) with validation - using closeHandling
@@ -3064,7 +3057,7 @@ const AgentAnalytics = () => {
 												const avgART =
 													artValues.length > 0
 														? artValues.reduce((sum, val) => sum + val, 0) /
-															artValues.length
+														artValues.length
 														: 0;
 
 												// Calculate backlog using standardized function
@@ -3284,9 +3277,9 @@ const AgentAnalytics = () => {
 																			<span className="font-semibold">
 																				{totalTickets > 0
 																					? (
-																							(closedTickets / totalTickets) *
-																							100
-																						).toFixed(1)
+																						(closedTickets / totalTickets) *
+																						100
+																					).toFixed(1)
 																					: 0}
 																				%
 																			</span>
@@ -3315,12 +3308,12 @@ const AgentAnalytics = () => {
 																			<p className="text-sm text-muted-foreground">
 																				{firstTicket
 																					? new Date(
-																							firstTicket.openTime,
-																						).toLocaleDateString("id-ID", {
-																							year: "numeric",
-																							month: "long",
-																							day: "numeric",
-																						})
+																						firstTicket.openTime,
+																					).toLocaleDateString("id-ID", {
+																						year: "numeric",
+																						month: "long",
+																						day: "numeric",
+																					})
 																					: "Unknown"}
 																			</p>
 																		</div>
@@ -3335,12 +3328,12 @@ const AgentAnalytics = () => {
 																			<p className="text-sm text-muted-foreground">
 																				{lastTicket
 																					? new Date(
-																							lastTicket.openTime,
-																						).toLocaleDateString("id-ID", {
-																							year: "numeric",
-																							month: "long",
-																							day: "numeric",
-																						})
+																						lastTicket.openTime,
+																					).toLocaleDateString("id-ID", {
+																						year: "numeric",
+																						month: "long",
+																						day: "numeric",
+																					})
 																					: "Unknown"}
 																			</p>
 																		</div>
@@ -3439,7 +3432,7 @@ const AgentAnalytics = () => {
 												const avgAHT =
 													ahtValues.length > 0
 														? ahtValues.reduce((sum, val) => sum + val, 0) /
-															ahtValues.length
+														ahtValues.length
 														: 0;
 
 												// FCR calculation
@@ -3500,23 +3493,23 @@ const AgentAnalytics = () => {
 												const firstTicket =
 													validTickets.length > 0
 														? validTickets.reduce((earliest, t) => {
-																const currentDate = new Date(t.openTime);
-																const earliestDate = new Date(
-																	earliest.openTime,
-																);
-																return currentDate < earliestDate
-																	? t
-																	: earliest;
-															})
+															const currentDate = new Date(t.openTime);
+															const earliestDate = new Date(
+																earliest.openTime,
+															);
+															return currentDate < earliestDate
+																? t
+																: earliest;
+														})
 														: null;
 
 												const lastTicket =
 													validTickets.length > 0
 														? validTickets.reduce((latest, t) => {
-																const currentDate = new Date(t.openTime);
-																const latestDate = new Date(latest.openTime);
-																return currentDate > latestDate ? t : latest;
-															})
+															const currentDate = new Date(t.openTime);
+															const latestDate = new Date(latest.openTime);
+															return currentDate > latestDate ? t : latest;
+														})
 														: null;
 
 												let tenure = 0;
@@ -3529,7 +3522,7 @@ const AgentAnalytics = () => {
 													) {
 														tenure = Math.ceil(
 															(lastDate.getTime() - firstDate.getTime()) /
-																(1000 * 60 * 60 * 24),
+															(1000 * 60 * 60 * 24),
 														);
 													}
 												}
@@ -3573,8 +3566,8 @@ const AgentAnalytics = () => {
 
 												const qualityScore = Math.round(
 													slaQuality * slaWeight +
-														fcrQuality * fcrWeight +
-														escalationQuality * escalationWeight,
+													fcrQuality * fcrWeight +
+													escalationQuality * escalationWeight,
 												);
 
 												// 3. Resolution Score (20%) - Enhanced with proper bounds and context
@@ -3598,8 +3591,8 @@ const AgentAnalytics = () => {
 													Math.min(
 														100,
 														attendanceRate * 100 -
-															escalationPenaltyReliability +
-															consistencyBonus,
+														escalationPenaltyReliability +
+														consistencyBonus,
 													),
 												);
 
@@ -3617,10 +3610,10 @@ const AgentAnalytics = () => {
 												// Calculate CPI with weights
 												const cpi = Math.round(
 													efficiencyScore * 0.25 +
-														qualityScore * 0.3 +
-														resolutionScore * 0.2 +
-														reliabilityScore * 0.15 +
-														productivityScore * 0.1,
+													qualityScore * 0.3 +
+													resolutionScore * 0.2 +
+													reliabilityScore * 0.15 +
+													productivityScore * 0.1,
 												);
 
 												// Determine CPI level
@@ -4101,7 +4094,7 @@ const AgentAnalytics = () => {
 												const avgAHT =
 													ahtValues.length > 0
 														? ahtValues.reduce((sum, val) => sum + val, 0) /
-															ahtValues.length
+														ahtValues.length
 														: 0;
 
 												const fcrTickets = agentTickets.filter((t) => {
@@ -4266,13 +4259,12 @@ const AgentAnalytics = () => {
 																			>
 																				<div className="flex items-start gap-3">
 																					<div
-																						className={`w-2 h-2 rounded-full mt-2 ${
-																							insight.impact === "high"
+																						className={`w-2 h-2 rounded-full mt-2 ${insight.impact === "high"
 																								? "bg-red-500"
 																								: insight.impact === "medium"
 																									? "bg-yellow-500"
 																									: "bg-green-500"
-																						}`}
+																							}`}
 																					></div>
 																					<div className="flex-1">
 																						<div className="flex items-center gap-2 mb-2">
@@ -4280,14 +4272,13 @@ const AgentAnalytics = () => {
 																								{insight.title}
 																							</span>
 																							<span
-																								className={`px-2 py-1 rounded text-xs font-semibold ${
-																									insight.impact === "high"
+																								className={`px-2 py-1 rounded text-xs font-semibold ${insight.impact === "high"
 																										? "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300"
 																										: insight.impact ===
-																												"medium"
+																											"medium"
 																											? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300"
 																											: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300"
-																								}`}
+																									}`}
 																							>
 																								{insight.impact.toUpperCase()}
 																							</span>
@@ -4350,17 +4341,17 @@ const AgentAnalytics = () => {
 																		getAgentScoreTrend(selectedAgent);
 																	return Array.isArray(scoreTrendArr)
 																		? scoreTrendArr.map((score, i) => ({
-																				month:
-																					data.agentMonthlyChart.labels?.[i] ||
-																					`Month ${i + 1}`,
-																				score,
-																				trend:
-																					score > 60
-																						? "Good"
-																						: score > 45
-																							? "Fair"
-																							: "Needs Improvement",
-																			}))
+																			month:
+																				data.agentMonthlyChart.labels?.[i] ||
+																				`Month ${i + 1}`,
+																			score,
+																			trend:
+																				score > 60
+																					? "Good"
+																					: score > 45
+																						? "Fair"
+																						: "Needs Improvement",
+																		}))
 																		: [];
 																})()}
 															>
@@ -4516,7 +4507,7 @@ const AgentAnalytics = () => {
 																				target: "85%",
 																				status:
 																					(slaCompliant / totalTickets) * 100 >=
-																					85
+																						85
 																						? "success"
 																						: "warning",
 																			},
@@ -4527,7 +4518,7 @@ const AgentAnalytics = () => {
 																				status:
 																					(fcrTickets.length / totalTickets) *
 																						100 >=
-																					75
+																						75
 																						? "success"
 																						: "warning",
 																			},
@@ -4553,13 +4544,12 @@ const AgentAnalytics = () => {
 																				</td>
 																				<td className="text-right py-2">
 																					<span
-																						className={`px-2 py-1 rounded text-xs font-semibold ${
-																							metric.status === "success"
+																						className={`px-2 py-1 rounded text-xs font-semibold ${metric.status === "success"
 																								? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300"
 																								: metric.status === "warning"
 																									? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300"
 																									: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300"
-																						}`}
+																							}`}
 																					>
 																						{metric.status === "success" ? (
 																							<>
@@ -4623,8 +4613,8 @@ const AgentAnalytics = () => {
 											Time Filter Active:
 										</span>
 										<span className="text-muted-foreground">
-											{selectedYear === "ALL" 
-												? "All Years" 
+											{selectedYear === "ALL"
+												? "All Years"
 												: `${startMonth && endMonth ? `${startMonth}/${selectedYear} - ${endMonth}/${selectedYear}` : 'No filter'}`}
 										</span>
 										<span className="text-blue-600 dark:text-blue-400">
@@ -4633,15 +4623,15 @@ const AgentAnalytics = () => {
 									</div>
 								</CardContent>
 							</Card>
-							
+
 							{/* Agent Filter */}
 							<div className="flex flex-wrap gap-4 items-center">
 								<div className="flex items-center gap-2">
 									<label className="text-sm font-medium text-muted-foreground">
 										Filter Agent:
 									</label>
-									<Select 
-										value={selectedAgent || "all"} 
+									<Select
+										value={selectedAgent || "all"}
 										onValueChange={(value) => setSelectedAgent(value === "all" ? null : value)}
 									>
 										<SelectTrigger className="w-[200px]">
@@ -4707,22 +4697,22 @@ const AgentAnalytics = () => {
 											<AreaChart data={agentPerformanceData}>
 												<defs>
 													<linearGradient id="colorTickets" x1="0" y1="0" x2="0" y2="1">
-														<stop offset="5%" stopColor="#3b82f6" stopOpacity={0.8}/>
-														<stop offset="95%" stopColor="#3b82f6" stopOpacity={0.1}/>
+														<stop offset="5%" stopColor="#3b82f6" stopOpacity={0.8} />
+														<stop offset="95%" stopColor="#3b82f6" stopOpacity={0.1} />
 													</linearGradient>
 													<linearGradient id="colorAvgDuration" x1="0" y1="0" x2="0" y2="1">
-														<stop offset="5%" stopColor="#10b981" stopOpacity={0.8}/>
-														<stop offset="95%" stopColor="#10b981" stopOpacity={0.1}/>
+														<stop offset="5%" stopColor="#10b981" stopOpacity={0.8} />
+														<stop offset="95%" stopColor="#10b981" stopOpacity={0.1} />
 													</linearGradient>
 												</defs>
 												<CartesianGrid strokeDasharray="3 3" className="opacity-30" />
-												<XAxis 
-													dataKey="month" 
+												<XAxis
+													dataKey="month"
 													tick={{ fontSize: 12 }}
 												/>
 												<YAxis yAxisId="left" tick={{ fontSize: 12 }} />
 												<YAxis yAxisId="right" orientation="right" tick={{ fontSize: 12 }} />
-												<RechartsTooltip 
+												<RechartsTooltip
 													content={<CustomTooltip />}
 													wrapperStyle={{ outline: 'none' }}
 												/>
@@ -4957,8 +4947,8 @@ const AgentAnalytics = () => {
 															{formatDurationHMS(agent.avgDuration)}
 														</td>
 														<td className="text-center p-3">
-															<Badge 
-																variant="secondary" 
+															<Badge
+																variant="secondary"
 																className={`text-xs border ${getShiftColor(agent.bestShift)}`}
 															>
 																{agent.bestShift}
@@ -4967,7 +4957,7 @@ const AgentAnalytics = () => {
 														<td className="text-center p-3">
 															<div className="flex items-center justify-center gap-2">
 																<div className="w-16 bg-muted rounded-full h-2">
-																	<div 
+																	<div
 																		className="bg-green-500 h-2 rounded-full transition-all duration-300"
 																		style={{ width: `${agent.performanceScore}%` }}
 																	/>
