@@ -191,6 +191,19 @@ export function enableBacklogDebug(enable: boolean = true): void {
 /**
  * Calculate metrics for a single agent's tickets.
  */
+// Helper to safely calculate duration in hours
+function calculateDurationHours(start: Date | string | undefined, end: Date | string | undefined): number {
+	if (!start || !end) return 0;
+	const startDate = start instanceof Date ? start : new Date(start);
+	const endDate = end instanceof Date ? end : new Date(end);
+
+	if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) return 0;
+
+	const diffMs = endDate.getTime() - startDate.getTime();
+	const diffHours = diffMs / (1000 * 60 * 60); // Hours
+	return diffHours > 0 ? diffHours : 0;
+}
+
 export function calcMetrics(agentTickets: Ticket[]): AgentMetric {
 	const agent = agentTickets[0]?.OpenBy || "Unknown";
 	const vol = agentTickets.length;
@@ -202,19 +215,25 @@ export function calcMetrics(agentTickets: Ticket[]): AgentMetric {
 		fcrCount = 0,
 		slaCount = 0;
 	agentTickets.forEach((t) => {
+		// FRT: Priority 1 - handlingDuration1, Priority 2 - Calculate on the fly
+		let frtHours = t.handlingDuration1?.rawHours || 0;
+		if (frtHours === 0) {
+			frtHours = calculateDurationHours(t.WaktuOpen, t.closeHandling1);
+		}
 
-
-		// FRT: Use pre-calculated handlingDuration1 (already in hours)
-		const frtHours = t.handlingDuration1?.rawHours || 0;
 		if (frtHours > 0) {
-			frtSum += frtHours; // Keep in HOURS for formatDurationDHM
+			frtSum += frtHours; // Keep in HOURS
 			frtCount++;
 		}
 
-		// ART: Use pre-calculated handlingDuration (already in hours)
-		const artHours = t.handlingDuration?.rawHours || 0;
+		// ART: Priority 1 - handlingDuration, Priority 2 - Calculate on the fly
+		let artHours = t.handlingDuration?.rawHours || 0;
+		if (artHours === 0) {
+			artHours = calculateDurationHours(t.WaktuOpen, t.closeHandling);
+		}
+
 		if (artHours > 0) {
-			artSum += artHours; // Keep in HOURS for formatDurationDHM
+			artSum += artHours; // Keep in HOURS
 			artCount++;
 		}
 
@@ -222,8 +241,7 @@ export function calcMetrics(agentTickets: Ticket[]): AgentMetric {
 		if (!t.Penanganan2) fcrCount++;
 
 		// SLA: ART <= 24 hours
-		const artH = t.handlingDuration?.rawHours || 0;
-		if (artH > 0 && artH <= 24) {
+		if (artHours > 0 && artHours <= 24) {
 			slaCount++;
 		}
 	});
