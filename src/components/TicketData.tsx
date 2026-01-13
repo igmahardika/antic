@@ -127,10 +127,14 @@ const columns = [
 	},
 	{
 		key: "handlingDuration",
-		label: "Durasi Penanganan (ART)",
-		width: "140px",
+		label: "Durasi Penanganan",
+		width: "160px",
 		render: (_v: any, row: any) => renderDuration(row.handlingDuration),
 	},
+	{ key: "classification", label: "Klasifikasi", width: "120px" },
+	{ key: "subClassification", label: "Sub Klasifikasi", width: "140px" },
+	{ key: "status", label: "Status", width: "100px" },
+	{ key: "cabang", label: "Cabang", width: "100px" },
 	{ key: "handling1", label: "Penanganan 1", width: "180px" },
 	{
 		key: "closeHandling1",
@@ -141,7 +145,7 @@ const columns = [
 	},
 	{
 		key: "handlingDuration1",
-		label: "Durasi Penanganan 1 (FRT)",
+		label: "Durasi Penanganan 1",
 		width: "140px",
 		render: (_v: any, row: any) => renderDuration(row.handlingDuration1),
 	},
@@ -202,10 +206,6 @@ const columns = [
 		render: (_v: any, row: any) => renderHandlingDuration(row.handlingDuration5),
 	},
 	{ key: "openBy", label: "Open By", width: "120px" },
-	{ key: "cabang", label: "Cabang", width: "100px" },
-	{ key: "status", label: "Status", width: "100px" },
-	{ key: "classification", label: "Klasifikasi", width: "120px" },
-	{ key: "subClassification", label: "Sub Klasifikasi", width: "140px" },
 ];
 
 const mapApiTicketToITicket = (apiTicket: any): ITicket | null => {

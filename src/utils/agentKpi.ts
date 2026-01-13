@@ -15,6 +15,8 @@ export interface Ticket {
 	OpenBy: string;
 	status?: string;
 	// ...
+	handlingDuration?: { rawHours: number; formatted: string };
+	handlingDuration1?: { rawHours: number; formatted: string };
 }
 
 export interface AgentMetric {
@@ -200,42 +202,30 @@ export function calcMetrics(agentTickets: Ticket[]): AgentMetric {
 		fcrCount = 0,
 		slaCount = 0;
 	agentTickets.forEach((t) => {
-		const open =
-			t.WaktuOpen instanceof Date ? t.WaktuOpen : new Date(t.WaktuOpen);
 
-		// FRT: closeHandling1 - WaktuOpen (minutes) - First Response Time
-		const closePen1 = t.closeHandling1
-			? t.closeHandling1 instanceof Date
-				? t.closeHandling1
-				: new Date(t.closeHandling1)
-			: undefined;
-		if (closePen1 && open && closePen1.getTime() >= open.getTime()) {
-			frtSum += (closePen1.getTime() - open.getTime()) / 60000;
+
+		// FRT: Use pre-calculated handlingDuration1 (hours -> minutes)
+		const frtHours = t.handlingDuration1?.rawHours || 0;
+		if (frtHours > 0) {
+			frtSum += frtHours * 60;
 			frtCount++;
 		}
 
-		// ART: closeHandling - WaktuOpen (minutes) - Average Resolution Time
-		const closeHandling = t.closeHandling
-			? t.closeHandling instanceof Date
-				? t.closeHandling
-				: new Date(t.closeHandling)
-			: undefined;
-		if (closeHandling && open && closeHandling.getTime() >= open.getTime()) {
-			artSum += (closeHandling.getTime() - open.getTime()) / 60000;
+		// ART: Use pre-calculated handlingDuration (hours -> minutes)
+		const artHours = t.handlingDuration?.rawHours || 0;
+		if (artHours > 0) {
+			artSum += artHours * 60;
 			artCount++;
 		}
 
 		// FCR: only 1 handling step (Penanganan2 is empty/null/undefined)
 		if (!t.Penanganan2) fcrCount++;
 
-		// SLA: ART <= 1440 min (24 hours) - based on closeHandling
-		if (
-			closeHandling &&
-			open &&
-			closeHandling.getTime() >= open.getTime() &&
-			(closeHandling.getTime() - open.getTime()) / 60000 <= 1440
-		)
+		// SLA: ART <= 24 hours
+		const artH = t.handlingDuration?.rawHours || 0;
+		if (artH > 0 && artH <= 24) {
 			slaCount++;
+		}
 	});
 	const frt = frtCount ? frtSum / frtCount : 0;
 	const art = artCount ? artSum / artCount : 0;
