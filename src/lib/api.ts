@@ -392,6 +392,13 @@ export const customerAPI = {
 		});
 		return { success: customers.length, failed: 0 };
 	},
+
+	// Delete all customers (Reset)
+	async deleteAllCustomers(): Promise<void> {
+		await apiCall("/api/customers/all", {
+			method: "DELETE",
+		});
+	},
 };
 
 export interface Incident {

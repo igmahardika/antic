@@ -739,6 +739,20 @@ app.delete('/api/tickets/all', authenticateToken, async (req, res) => {
   }
 });
 
+// Delete all customers (Reset Database)
+app.delete('/api/customers/all', authenticateToken, async (req, res) => {
+  try {
+    await db.query('TRUNCATE TABLE customers');
+    // Clear Redis Cache
+    const keys = await redisManager.getClient().keys('customers:*');
+    if (keys.length > 0) await Promise.all(keys.map(k => redisManager.del(k)));
+    res.json({ success: true, message: 'All customers deleted' });
+  } catch (err) {
+    console.error('Reset customers error:', err);
+    res.status(500).json({ error: 'Failed to reset customers' });
+  }
+});
+
 // Delete tickets by batch (upload timestamp)
 app.delete('/api/tickets/batch/:timestamp', authenticateToken, async (req, res) => {
   try {
@@ -1345,6 +1359,18 @@ app.delete('/api/incidents/batch-id/:batchId', authenticateToken, async (req, re
     res.json({ success: true, message: 'Batch deleted' });
   } catch (err) {
     console.error('Delete incident batch error:', err);
+    res.status(500).json({ error: 'Failed to delete batch' });
+  }
+});
+
+// Delete customers by batch ID
+app.delete('/api/customers/batch-id/:batchId', authenticateToken, async (req, res) => {
+  try {
+    const { batchId } = req.params;
+    await db.query('DELETE FROM customers WHERE batch_id = ?', [batchId]);
+    res.json({ success: true, message: 'Customer batch deleted' });
+  } catch (err) {
+    console.error('Delete customer batch error:', err);
     res.status(500).json({ error: 'Failed to delete batch' });
   }
 });

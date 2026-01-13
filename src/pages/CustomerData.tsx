@@ -20,8 +20,12 @@ import { usePageUrlState } from "../hooks/usePageUrlState";
 import { PaginationControls } from "../components";
 import { logger } from "@/lib/logger";
 import DeleteByFileDialog from "../components/DeleteByFileDialog";
-import { createUploadSession, finalizeUploadSession } from '../services/uploadSessions';
+import { createUploadSession, finalizeUploadSession, deleteAllData } from '../services/uploadSessions';
 import { cacheService } from "@/services/cacheService";
+import DeleteIcon from "@mui/icons-material/Delete";
+import DownloadIcon from "@mui/icons-material/Download";
+import { Button } from "../components/ui/button";
+import { Progress } from "../components/ui/progress";
 
 const CUSTOMER_HEADERS = ["Nama", "Jenis Klien", "Layanan", "Kategori"];
 
@@ -104,36 +108,38 @@ const CustomerData: React.FC = () => {
 	}, [dataPerBulan, bulanDipilih, jenisKlienFilter, searchQuery, page, pageSize]);
 
 	// Load customers using CacheService (MySQL-First)
-	useEffect(() => {
-		(async () => {
-			try {
-				const customers = await cacheService.getCustomers();
-				if (customers && customers.length > 0) {
-					const dataPerBulan: { [bulan: string]: any[] } = {};
-					customers.forEach((c: any) => {
-						const bulan = (c.id || "").split("-")[0];
-						const key = bulan || "Data";
-						if (!dataPerBulan[key]) dataPerBulan[key] = [];
-						dataPerBulan[key].push({
-							Nama: c.nama,
-							// API returns snake_case usually but cacheService might map it?
-							// Actually API returns camelCase in api.ts types.
-							// But need to ensure backend saves it correctly. 
-							// Backend INSERT uses snake_case, but SELECT usually returns snake_case unless aliased.
-							"Jenis Klien": c.jenis_klien || c.jenisKlien,
-							Layanan: c.layanan,
-							Kategori: c.kategori,
-						});
+	const fetchAllCustomers = async () => {
+		try {
+			const customers = await cacheService.getCustomers();
+			if (customers && customers.length > 0) {
+				const dataPerBulan: { [bulan: string]: any[] } = {};
+				customers.forEach((c: any) => {
+					const bulan = (c.id || "").split("-")[0];
+					const key = bulan || "Data";
+					if (!dataPerBulan[key]) dataPerBulan[key] = [];
+					dataPerBulan[key].push({
+						Nama: c.nama,
+						"Jenis Klien": c.jenis_klien || c.jenisKlien,
+						Layanan: c.layanan,
+						Kategori: c.kategori,
 					});
-					const bulanList = Object.keys(dataPerBulan);
-					setDataPerBulan(dataPerBulan);
-					setBulanList(bulanList);
-					if (bulanList.length > 0) setBulanDipilih(bulanList[0]);
-				}
-			} catch (err) {
-				console.error("Failed to load customers:", err);
+				});
+				const bulanList = Object.keys(dataPerBulan);
+				setDataPerBulan(dataPerBulan);
+				setBulanList(bulanList);
+				if (bulanList.length > 0) setBulanDipilih(bulanList[0]);
+			} else {
+				setDataPerBulan({});
+				setBulanList([]);
+				setBulanDipilih("");
 			}
-		})();
+		} catch (err) {
+			console.error("Failed to load customers:", err);
+		}
+	};
+
+	useEffect(() => {
+		fetchAllCustomers();
 	}, []);
 
 	const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -280,7 +286,8 @@ const CustomerData: React.FC = () => {
 								row.eachCell((cell, colNumber) => {
 									const header = CUSTOMER_HEADERS[colNumber - 1];
 									if (header) {
-										rowData[header] = cell.value?.toString() || "";
+										// Use cell.text to avoid [object Object] from formulas/RichText
+										rowData[header] = cell.text || "";
 									}
 								});
 
@@ -358,6 +365,7 @@ const CustomerData: React.FC = () => {
 										});
 									}
 									alert("Data customer berhasil disimpan ke Server MySQL.");
+									fetchAllCustomers();
 								} catch (err) {
 									console.error("Server upload failed:", err);
 									alert("Gagal menyimpan ke server.");
@@ -384,19 +392,31 @@ const CustomerData: React.FC = () => {
 	const handleClearCache = async () => {
 		if (window.confirm("Yakin ingin menghapus cache customer di IndexedDB?")) {
 			await db.customers.clear();
-			alert("Cache customer di IndexedDB berhasil dihapus.");
+			await cacheService.invalidateCustomers();
+			alert("Cache customer berhasil dibersihkan.");
+			fetchAllCustomers();
 		}
 	};
-	const handleClearData = () => {
+
+	const handleResetDatabase = async () => {
 		if (
 			window.confirm(
-				"Yakin ingin menghapus seluruh data customer yang di-upload?",
+				"⚠️ PERINGATAN: Seluruh data customer akan dihapus PERMANEN dari server dan lokal!\n\nYakin ingin melanjutkan?",
 			)
 		) {
-			setDataPerBulan({});
-			setBulanList([]);
-			setBulanDipilih("");
-			setError(null);
+			try {
+				await deleteAllData('customers');
+				await cacheService.invalidateCustomers(); // Force invalidation
+				setDataPerBulan({});
+				setBulanList([]);
+				setBulanDipilih("");
+				setError(null);
+				alert("✅ BERHASIL: Semua data customer telah dihapus!");
+				fetchAllCustomers();
+			} catch (err) {
+				console.error("Failed to reset customers:", err);
+				alert("Gagal menghapus data dari server.");
+			}
 		}
 	};
 
@@ -566,23 +586,24 @@ const CustomerData: React.FC = () => {
 						</div>
 						{/* Tombol Action */}
 						<div className="flex flex-col w-full items-end justify-center gap-2">
-							<button
-								onClick={() => setShowDeleteDialog(true)}
-								className="px-4 py-2 rounded-lg bg-orange-600 text-white font-semibold text-xs hover:bg-orange-700 transition"
-								type="button"
-							>
-								Delete by File
-							</button>
-							<button
-								onClick={() => {
-									handleClearCache();
-									handleClearData();
-								}}
-								className="px-4 py-2 rounded-lg bg-red-600 text-white font-semibold text-xs hover:bg-red-700 transition"
-								type="button"
-							>
-								Clear All Data
-							</button>
+							<div className="flex gap-2">
+								<Button
+									onClick={() => setShowDeleteDialog(true)}
+									variant="outline"
+									className="px-4 py-2 h-10 font-semibold text-xs"
+								>
+									<DeleteIcon className="h-4 w-4 mr-2" />
+									Delete by File
+								</Button>
+								<Button
+									onClick={handleResetDatabase}
+									variant="destructive"
+									className="px-4 py-2 h-10 font-semibold text-xs text-white"
+								>
+									<DeleteIcon className="h-4 w-4 mr-2" />
+									Reset Database
+								</Button>
+							</div>
 						</div>
 					</div>
 				</CardContent>
@@ -636,12 +657,11 @@ const CustomerData: React.FC = () => {
 				<DeleteByFileDialog
 					dataType="customers"
 					onClose={() => setShowDeleteDialog(false)}
-					onDeleted={({ fileName, deletedCount }) => {
+					onDeleted={async ({ fileName, deletedCount }) => {
 						alert(`Terhapus ${deletedCount} data customer dari ${fileName}`);
+						await cacheService.invalidateCustomers(); // Force invalidation
 						// Refresh data
-						setDataPerBulan({});
-						setBulanList([]);
-						setBulanDipilih("");
+						fetchAllCustomers();
 					}}
 				/>
 			)}
@@ -650,26 +670,3 @@ const CustomerData: React.FC = () => {
 };
 
 export default CustomerData;
-
-// --- [AUTO-ADDED] Delete-by-File integration (Customers) ---
-// import { createUploadSession, finalizeUploadSession } from '../services/uploadSessions';
-// import DeleteByFileDialog from '../components/DeleteByFileDialog';
-// const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-//
-// async function handleUploadCustomer_withSession(file: File) {
-//   const session = await createUploadSession(file, 'customers');
-//   try {
-//     const parsed: any[] = await parseCustomers(file); // gunakan parser kamu
-//     const stamp = Date.now();
-//     const enriched = parsed.map(r => ({ ...r, uploadTimestamp: stamp, fileName: file.name, fileHash: session.fileHash, batchId: session.id, uploadSessionId: session.id }));
-//     await db.customers.bulkPut(enriched as any);
-//     await finalizeUploadSession(session.id, { status: 'completed', recordCount: enriched.length, successCount: enriched.length });
-//   } catch (e: any) {
-//     await finalizeUploadSession(session.id, { status: 'failed', errorCount: 1, errorLog: [String(e?.message || e)] });
-//   }
-// }
-//
-// {/* Tambahkan tombol di toolbar */}
-// {/* <button onClick={() => setShowDeleteDialog(true)} className="btn btn-outline">Delete by File</button> */}
-// {/* {showDeleteDialog && <DeleteByFileDialog dataType="customers" onClose={() => setShowDeleteDialog(false)} onDeleted={({fileName, deletedCount}) => toast.success(`Terhapus ${deletedCount} data customer dari ${fileName}`)} />} */}
-// --- [END AUTO-ADDED] ---

@@ -2,6 +2,7 @@ import { db } from '../lib/db';
 import { apiCall, uploadSessionAPI } from '../lib/api';
 import type { IUploadSession, UploadDataType } from '../types.upload';
 import { generateBatchId, generateFileHash } from '../utils/fileFingerprint';
+import { cacheService } from './cacheService';
 
 export const createUploadSession = async (file: File, dataType: UploadDataType) => {
   const fileHash = await generateFileHash(file);
@@ -104,6 +105,9 @@ export const deleteByFile = async (fileName: string, dataType: UploadDataType) =
       await apiCall(`/api/tickets/batch-id/${session.id}`, { method: 'DELETE' });
     } else if (dataType === 'incidents') {
       await apiCall(`/api/incidents/batch-id/${session.id}`, { method: 'DELETE' });
+    } else if (dataType === 'customers') {
+      await apiCall(`/api/customers/batch-id/${session.id}`, { method: 'DELETE' });
+      await cacheService.invalidateCustomers();
     }
 
     // Also clear from IndexedDB
@@ -133,19 +137,14 @@ export const deleteAllData = async (dataType: UploadDataType) => {
   try {
     // Clear Server API
     if (dataType === 'tickets') {
-      // Assuming this endpoint exists or will exist? 
-      // Existing server.mjs had DELETE /api/tickets/batch-id... but maybe not "all".
-      // Wait, I saw `DELETE /api/incidents/all` in my patch.
-      // Did tickets have it?
-      // I need to check.
-      // If not, I should adding it.
-
-      // I'll assume it exists or I'll add it.
-      // Actually, for tickets, maybe just truncate?
-      // Let's enable the call.
-      await apiCall('/api/tickets/all', { method: 'DELETE' }); // Danger!
+      await apiCall('/api/tickets/all', { method: 'DELETE' });
+      await cacheService.invalidateTickets();
     } else if (dataType === 'incidents') {
       await apiCall('/api/incidents/all', { method: 'DELETE' });
+      await cacheService.invalidateIncidents();
+    } else if (dataType === 'customers') {
+      await apiCall('/api/customers/all', { method: 'DELETE' });
+      await cacheService.invalidateCustomers();
     }
 
     // Clear IndexedDB

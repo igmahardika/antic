@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import {
 	Card,
 	CardContent,
@@ -378,7 +378,7 @@ const TicketAnalytics = ({ }: TicketAnalyticsProps) => {
 		(allCustomers || []).forEach((c) => {
 			map.set(
 				(c.nama || "").trim().toLowerCase(),
-				normalizeType((c as any).jenisKlien),
+				normalizeType((c as any).jenisKlien || (c as any).jenis_klien),
 			);
 		});
 		return map;
@@ -405,12 +405,17 @@ const TicketAnalytics = ({ }: TicketAnalyticsProps) => {
 			if (!s) return null;
 			// Case 1: already 'YYYY-MM'
 			const m1 = s.match(/(20\d{2})[-_/ ](0[1-9]|1[0-2])/);
-			if (m1) return `${m1[1]}-${m1[2]}`;
-			// Case 2: contains month name (assume 2025 if year missing)
+			if (m1) {
+				const y = Number(m1[1]);
+				if (y < 2025) return null;
+				return `${m1[1]}-${m1[2]}`;
+			}
 			const monthName = Object.keys(MONTH_NAME_ID).find((n) => s.includes(n));
 			if (monthName) {
 				const mm = MONTH_NAME_ID[monthName];
-				const y = (s.match(/\b(20\d{2})\b/) || [])[1] || "2025";
+				const yStr = (s.match(/\b(20\d{2})\b/) || [])[1] || "2025";
+				const y = Number(yStr);
+				if (y < 2025) return null;
 				return `${y}-${mm}`;
 			}
 			return null;
@@ -471,45 +476,6 @@ const TicketAnalytics = ({ }: TicketAnalyticsProps) => {
 		return map;
 	}, [allCustomers]);
 
-	// Row-based monthly client count from uploaded sheets (no dedup by name)
-	const customerMonthRowCount = useMemo(() => {
-		const MONTH_NAME_ID: Record<string, string> = {
-			januari: "01",
-			februari: "02",
-			maret: "03",
-			april: "04",
-			mei: "05",
-			juni: "06",
-			juli: "07",
-			agustus: "08",
-			september: "09",
-			oktober: "10",
-			november: "11",
-			desember: "12",
-		};
-		const norm = (sheet: string): string | null => {
-			const s = (sheet || "").toLowerCase().trim();
-			if (!s) return null;
-			const m1 = s.match(/(20\d{2})[-_/ ](0[1-9]|1[0-2])/);
-			if (m1) return `${m1[1]}-${m1[2]}`;
-			const monthName = Object.keys(MONTH_NAME_ID).find((n) => s.includes(n));
-			if (monthName) {
-				const mm = MONTH_NAME_ID[monthName];
-				const y = (s.match(/\b(20\d{2})\b/) || [])[1] || "2025";
-				return `${y}-${mm}`;
-			}
-			return null;
-		};
-		const map = new Map<string, number>();
-		(allCustomers || []).forEach((c) => {
-			const id: string = String((c as any).id || (c as any).customerId || "");
-			const sheetPart = id.split("-")[0] || id;
-			const canon = norm(sheetPart) || norm(id);
-			if (!canon) return;
-			map.set(canon, (map.get(canon) || 0) + 1);
-		});
-		return map;
-	}, [allCustomers]);
 
 	// Row-based monthly client count per Service Type (from uploaded sheets)
 	const customerMonthRowCountByType = useMemo(() => {
@@ -531,11 +497,17 @@ const TicketAnalytics = ({ }: TicketAnalyticsProps) => {
 			const s = (sheet || "").toLowerCase().trim();
 			if (!s) return null;
 			const m1 = s.match(/(20\d{2})[-_/ ](0[1-9]|1[0-2])/);
-			if (m1) return `${m1[1]}-${m1[2]}`;
+			if (m1) {
+				const y = Number(m1[1]);
+				if (y < 2025) return null;
+				return `${m1[1]}-${m1[2]}`;
+			}
 			const monthName = Object.keys(MONTH_NAME_ID).find((n) => s.includes(n));
 			if (monthName) {
 				const mm = MONTH_NAME_ID[monthName];
-				const y = (s.match(/\b(20\d{2})\b/) || [])[1] || "2025";
+				const yStr = (s.match(/\b(20\d{2})\b/) || [])[1] || "2025";
+				const y = Number(yStr);
+				if (y < 2025) return null;
 				return `${y}-${mm}`;
 			}
 			return null;
@@ -559,7 +531,7 @@ const TicketAnalytics = ({ }: TicketAnalyticsProps) => {
 			const sheetPart = id.split("-")[0] || id;
 			const month = normMonth(sheetPart) || normMonth(id);
 			if (!month) return;
-			const type = normalizeType((c as any).jenisKlien);
+			const type = normalizeType((c as any).jenis_klien || (c as any).jenisKlien);
 			if (!map.has(month)) map.set(month, {});
 			const obj = map.get(month)!;
 			obj[type] = (obj[type] || 0) + 1;
@@ -587,11 +559,17 @@ const TicketAnalytics = ({ }: TicketAnalyticsProps) => {
 			const s = (sheet || "").toLowerCase().trim();
 			if (!s) return null;
 			const m1 = s.match(/(20\d{2})[-_/ ](0[1-9]|1[0-2])/);
-			if (m1) return `${m1[1]}-${m1[2]}`;
+			if (m1) {
+				const y = Number(m1[1]);
+				if (y < 2025) return null;
+				return `${m1[1]}-${m1[2]}`;
+			}
 			const monthName = Object.keys(MONTH_NAME_ID).find((n) => s.includes(n));
 			if (monthName) {
 				const mm = MONTH_NAME_ID[monthName];
-				const y = (s.match(/\b(20\d{2})\b/) || [])[1] || "2025";
+				const yStr = (s.match(/\b(20\d{2})\b/) || [])[1] || "2025";
+				const y = Number(yStr);
+				if (y < 2025) return null;
 				return `${y}-${mm}`;
 			}
 			return null;
@@ -624,63 +602,6 @@ const TicketAnalytics = ({ }: TicketAnalyticsProps) => {
 		});
 		return map;
 	}, [allCustomers]);
-	const kategoriList = allCategories;
-	const gridData2025 = useMemo(
-		() =>
-			Array.isArray(gridData)
-				? gridData.filter((t) => {
-					const classification = (t.classification || "")
-						.trim()
-						.toLowerCase();
-					return (
-						t.openTime &&
-						t.openTime.startsWith("2025") &&
-						classification !== "gangguan diluar layanan" &&
-						classification !== "request"
-					);
-				})
-				: [],
-		[gridData],
-	);
-	const tiketPerJenisKlienPerBulan = useMemo(() => {
-		const result: Record<string, Record<string, number>> = {};
-		gridData2025.forEach((t) => {
-			if (!t.openTime || !t.name) return;
-			const d = new Date(t.openTime);
-			if (isNaN(d.getTime())) return;
-			const month = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-			const nama = (t.name || "").trim().toLowerCase();
-			const jenisKlien = customerJenisKlienMap.get(nama) || "Unknown";
-			if (!result[month])
-				result[month] = {
-					Broadband: 0,
-					"Broadband Business": 0,
-					Dedicated: 0,
-					Unknown: 0,
-				};
-			if (jenisKlienList.includes(jenisKlien)) result[month][jenisKlien] += 1;
-			else result[month].Unknown += 1;
-		});
-		return result;
-	}, [gridData2025, customerJenisKlienMap]);
-	const tiketPerKategoriPerBulan = useMemo(() => {
-		const result: Record<string, Record<string, number>> = {};
-		gridData2025.forEach((t) => {
-			if (!t.openTime || !t.name) return;
-			const d = new Date(t.openTime);
-			if (isNaN(d.getTime())) return;
-			const month = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-			const nama = (t.name || "").trim().toLowerCase();
-			const kategori = customerKategoriMap.get(nama) || "Unknown";
-			if (!result[month]) result[month] = {};
-			if (!result[month][kategori]) result[month][kategori] = 0;
-			result[month][kategori] += 1;
-		});
-		return result;
-	}, [gridData2025, customerKategoriMap]);
-
-	// Deklarasi variabel yang dibutuhkan sebelum digunakan
-	const monthOptions = MONTH_OPTIONS;
 	// Filtering logic for all years
 	const filteredGridData = useMemo(() => {
 		if (!gridData || !startMonth || !endMonth || !selectedYear) return [];
@@ -699,6 +620,70 @@ const TicketAnalytics = ({ }: TicketAnalyticsProps) => {
 			);
 		});
 	}, [gridData, startMonth, endMonth, selectedYear]);
+
+	const kategoriList = allCategories;
+	// Tickets from 2025+ that can be analyzed with customer data
+	// Uses filteredGridData (respects page filter) but only includes 2025+ for customer sync
+	const gridDataWithCustomerSync = useMemo(
+		() =>
+			Array.isArray(filteredGridData)
+				? filteredGridData.filter((t) => {
+					if (!t.openTime) return false;
+					const d = new Date(t.openTime);
+					const year = d.getFullYear();
+					// Only include 2025+ for customer sync
+					if (year < 2025) return false;
+
+					const classification = (t.classification || "")
+						.trim()
+						.toLowerCase();
+					return (
+						classification !== "gangguan diluar layanan" &&
+						classification !== "request"
+					);
+				})
+				: [],
+		[filteredGridData],
+	);
+	const tiketPerJenisKlienPerBulan = useMemo(() => {
+		const result: Record<string, Record<string, number>> = {};
+		gridDataWithCustomerSync.forEach((t) => {
+			if (!t.openTime || !t.name) return;
+			const d = new Date(t.openTime);
+			if (isNaN(d.getTime())) return;
+			const month = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+			const nama = (t.name || "").trim().toLowerCase();
+			const jenisKlien = customerJenisKlienMap.get(nama) || "Unknown";
+			if (!result[month])
+				result[month] = {
+					Broadband: 0,
+					"Broadband Business": 0,
+					Dedicated: 0,
+					Unknown: 0,
+				};
+			if (jenisKlienList.includes(jenisKlien)) result[month][jenisKlien] += 1;
+			else result[month].Unknown += 1;
+		});
+		return result;
+	}, [gridDataWithCustomerSync, customerJenisKlienMap]);
+	const tiketPerKategoriPerBulan = useMemo(() => {
+		const result: Record<string, Record<string, number>> = {};
+		gridDataWithCustomerSync.forEach((t) => {
+			if (!t.openTime || !t.name) return;
+			const d = new Date(t.openTime);
+			if (isNaN(d.getTime())) return;
+			const month = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+			const nama = (t.name || "").trim().toLowerCase();
+			const kategori = customerKategoriMap.get(nama) || "Unknown";
+			if (!result[month]) result[month] = {};
+			if (!result[month][kategori]) result[month][kategori] = 0;
+			result[month][kategori] += 1;
+		});
+		return result;
+	}, [gridDataWithCustomerSync, customerKategoriMap]);
+
+	// Deklarasi variabel yang dibutuhkan sebelum digunakan
+	const monthOptions = MONTH_OPTIONS;
 
 	// ====================== ADVANCED KPIs (NEW) ======================
 	const slaHoursBySeverity: Record<string, number> = {
@@ -1165,8 +1150,9 @@ const TicketAnalytics = ({ }: TicketAnalyticsProps) => {
 		// Hitung total klien unik per jenis
 		const totalByType: Record<string, number> = {};
 		allCustomers.forEach((c) => {
-			if (jenisKlienList.includes(c.jenisKlien)) {
-				totalByType[c.jenisKlien] = (totalByType[c.jenisKlien] || 0) + 1;
+			const jk = (c as any).jenis_klien || (c as any).jenisKlien;
+			if (jenisKlienList.includes(jk)) {
+				totalByType[jk] = (totalByType[jk] || 0) + 1;
 			}
 		});
 		// Hitung klien unik komplain per jenis (akumulasi semua bulan)
@@ -1174,9 +1160,9 @@ const TicketAnalytics = ({ }: TicketAnalyticsProps) => {
 		jenisKlienList.forEach((jk) => {
 			uniqueComplainingByType[jk] = new Set();
 		});
-		gridData2025.forEach((t) => {
+		gridDataWithCustomerSync.forEach((t) => {
 			const jk = customerJenisKlienMap.get((t.name || "").trim().toLowerCase());
-			if (jenisKlienList.includes(jk)) {
+			if (jk && jenisKlienList.includes(jk)) {
 				uniqueComplainingByType[jk].add((t.name || "").trim().toLowerCase());
 			}
 		});
@@ -1198,7 +1184,7 @@ const TicketAnalytics = ({ }: TicketAnalyticsProps) => {
 		tiketPerJenisKlienPerBulan,
 		jenisKlienList,
 		allCustomers,
-		gridData2025,
+		gridDataWithCustomerSync,
 		customerJenisKlienMap,
 	]);
 
@@ -1218,7 +1204,7 @@ const TicketAnalytics = ({ }: TicketAnalyticsProps) => {
 		kategoriList.forEach((cat) => {
 			uniqueComplainingByCat[cat] = new Set();
 		});
-		gridData2025.forEach((t) => {
+		gridDataWithCustomerSync.forEach((t) => {
 			const cat = customerKategoriMap.get((t.name || "").trim().toLowerCase());
 			if (cat && kategoriList.includes(cat)) {
 				uniqueComplainingByCat[cat].add((t.name || "").trim().toLowerCase());
@@ -1242,7 +1228,7 @@ const TicketAnalytics = ({ }: TicketAnalyticsProps) => {
 		tiketPerKategoriPerBulan,
 		kategoriList,
 		allCustomers,
-		gridData2025,
+		gridDataWithCustomerSync,
 		customerKategoriMap,
 	]);
 
@@ -1302,12 +1288,14 @@ const TicketAnalytics = ({ }: TicketAnalyticsProps) => {
 	}
 
 	// DEBUG LOG untuk validasi data customer dan kategori
-	if (typeof window !== "undefined" && process.env.NODE_ENV !== "production") {
-		logger.info("allCustomers:", allCustomers);
-		logger.info("kategoriList:", kategoriList);
-		logger.info("customerKategoriMap:", customerKategoriMap);
-		logger.info("gridData2025:", gridData2025.slice(0, 10));
-	}
+	useEffect(() => {
+		if (typeof window !== "undefined" && process.env.NODE_ENV !== "production") {
+			logger.info("allCustomers:", allCustomers);
+			logger.info("kategoriList:", kategoriList);
+			logger.info("customerKategoriMap:", customerKategoriMap);
+			logger.info("gridDataWithCustomerSync:", gridDataWithCustomerSync.slice(0, 10));
+		}
+	}, [allCustomers, kategoriList, customerKategoriMap, gridDataWithCustomerSync, logger]);
 
 	return (
 		<PageWrapper maxW="4xl">
@@ -2521,13 +2509,13 @@ const TicketAnalytics = ({ }: TicketAnalyticsProps) => {
 						</div>
 					</CardContent>
 				</Card>
-				{/* 3. Tickets by Client Type (2025) */}
+				{/* 3. Tickets by Client Type */}
 				<Card className="bg-card text-card-foreground rounded-2xl shadow-lg">
 					<CardHeader>
 						<CardTitle className="flex items-center gap-2">
 							<ShowChartIcon className="w-5 h-5 text-purple-600" />
 							<CardHeaderTitle className="text-base md:text-lg">
-								Tickets by Client Type (2025)
+								Tickets by Client Type
 							</CardHeaderTitle>
 						</CardTitle>
 						<CardHeaderDescription className="text-xs">
@@ -2761,12 +2749,12 @@ const TicketAnalytics = ({ }: TicketAnalyticsProps) => {
 						</div>
 					</CardContent>
 				</Card>
-				{/* 4. Tickets by Client Category (2025) */}
+				{/* 4. Tickets by Client Category */}
 				<Card className="bg-card text-card-foreground rounded-2xl shadow-lg">
 					<CardHeader>
 						<CardTitle className="flex items-center gap-2 text-base">
 							<ShowChartIcon className="w-5 h-5 text-indigo-600" /> Tickets by
-							Client Category (2025)
+							Client Category
 						</CardTitle>
 						<CardDescription className="text-xs">
 							Monthly ticket distribution by client category
@@ -2960,12 +2948,12 @@ const TicketAnalytics = ({ }: TicketAnalyticsProps) => {
 						</div>
 					</CardContent>
 				</Card>
-				{/* 5. Unique Complaining Clients by Type (2025) */}
+				{/* 5. Unique Complaining Clients by Type */}
 				<Card className="bg-card text-card-foreground rounded-2xl shadow-lg">
 					<CardHeader>
 						<CardTitle className="flex items-center gap-2 text-base">
 							<ShowChartIcon className="w-5 h-5 text-teal-600" /> Unique
-							Complaining Clients by Type (2025)
+							Complaining Clients by Type
 						</CardTitle>
 						<CardDescription className="text-xs">
 							Number of unique clients with complaints by type
@@ -2981,7 +2969,7 @@ const TicketAnalytics = ({ }: TicketAnalyticsProps) => {
 										jenisKlienList.forEach((jk) => {
 											row[jk] = Array.from(
 												new Set(
-													gridData2025
+													gridDataWithCustomerSync
 														.filter((t) => {
 															const d = new Date(t.openTime);
 															const m = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
@@ -2998,10 +2986,9 @@ const TicketAnalytics = ({ }: TicketAnalyticsProps) => {
 																m === month &&
 																jenis === jk &&
 																name &&
-																activeMonths.includes(month) &&
-																cls !== "di luar layanan" &&
-																cls !== "gangguan diluar layanan" &&
-																cls !== "request"
+																// Relax activeMonths check: if not available or empty, assume active
+																(activeMonths.length === 0 || activeMonths.includes(month)) &&
+																!/^(gangguan\s*)?di\s*luar\s*layanan|request$/i.test(cls)
 															);
 														})
 														.map((t) => (t.name || "").trim().toLowerCase()),
@@ -3152,7 +3139,7 @@ const TicketAnalytics = ({ }: TicketAnalyticsProps) => {
 												.map((month) => {
 													const uniqueClients = Array.from(
 														new Set(
-															gridData2025
+															gridDataWithCustomerSync
 																.filter((t) => {
 																	const d = new Date(t.openTime);
 																	const m = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
@@ -3172,10 +3159,9 @@ const TicketAnalytics = ({ }: TicketAnalyticsProps) => {
 																		m === month &&
 																		jenis === jk &&
 																		name &&
-																		activeMonths.includes(month) &&
-																		cls !== "di luar layanan" &&
-																		cls !== "gangguan diluar layanan" &&
-																		cls !== "request"
+																		// Relax activeMonths check
+																		(activeMonths.length === 0 || activeMonths.includes(month)) &&
+																		!/^(di luar layanan|gangguan\s*di\s*luar\s*layanan|request)$/.test(cls)
 																	);
 																})
 																.map((t) =>
@@ -3205,7 +3191,7 @@ const TicketAnalytics = ({ }: TicketAnalyticsProps) => {
 											.map((month) => {
 												// Total unique clients across ALL types this month (union, active, excluded classifications)
 												const unionSet = new Set<string>(
-													gridData2025
+													gridDataWithCustomerSync
 														.filter((t) => {
 															const d = new Date(t.openTime);
 															const m = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
@@ -3217,14 +3203,13 @@ const TicketAnalytics = ({ }: TicketAnalyticsProps) => {
 																.trim()
 																.toLowerCase();
 															if (
-																cls === "di luar layanan" ||
-																cls === "gangguan diluar layanan" ||
-																cls === "request"
+																/^(di luar layanan|gangguan\s*di\s*luar\s*layanan|request)$/.test(cls)
 															)
 																return false;
 															const activeMonths =
 																customerMonthMap.get(name) || [];
-															return activeMonths.includes(month);
+															// Relax activeMonths check
+															return activeMonths.length === 0 || activeMonths.includes(month);
 														})
 														.map((t) => (t.name || "").trim().toLowerCase()),
 												);
@@ -3243,12 +3228,12 @@ const TicketAnalytics = ({ }: TicketAnalyticsProps) => {
 						</div>
 					</CardContent>
 				</Card>
-				{/* 6. Unique Complaining Clients by Category (2025) */}
+				{/* 6. Unique Complaining Clients by Category */}
 				<Card className="bg-card text-card-foreground rounded-2xl shadow-lg">
 					<CardHeader>
 						<CardTitle className="flex items-center gap-2 text-base">
 							<ShowChartIcon className="w-5 h-5 text-orange-600" /> Unique
-							Complaining Clients by Category (2025)
+							Complaining Clients by Category
 						</CardTitle>
 						<CardDescription className="text-xs">
 							Number of unique clients with complaints by category
@@ -3265,7 +3250,7 @@ const TicketAnalytics = ({ }: TicketAnalyticsProps) => {
 											kategoriList.forEach((kat) => {
 												row[kat] = Array.from(
 													new Set(
-														gridData2025
+														gridDataWithCustomerSync
 															.filter((t) => {
 																const d = new Date(t.openTime);
 																const m = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
@@ -3284,10 +3269,8 @@ const TicketAnalytics = ({ }: TicketAnalyticsProps) => {
 																	m === month &&
 																	kategori === kat &&
 																	name &&
-																	activeMonths.includes(month) &&
-																	cls !== "di luar layanan" &&
-																	cls !== "gangguan diluar layanan" &&
-																	cls !== "request"
+																	(activeMonths.length === 0 || activeMonths.includes(month)) &&
+																	!/^(di luar layanan|gangguan\s*di\s*luar\s*layanan|request)$/.test(cls)
 																);
 															})
 															.map((t) => (t.name || "").trim().toLowerCase()),
@@ -3373,7 +3356,7 @@ const TicketAnalytics = ({ }: TicketAnalyticsProps) => {
 						{/* Table */}
 						<div className="overflow-x-auto w-full">
 							<h4 className="text-sm font-semibold text-card-foreground mb-3">
-								Unique Clients by Category (2025)
+								Unique Clients by Category
 							</h4>
 							<table className="w-full text-xs border-collapse">
 								<thead>
@@ -3407,7 +3390,7 @@ const TicketAnalytics = ({ }: TicketAnalyticsProps) => {
 												.map((month) => {
 													const uniqueClients = Array.from(
 														new Set(
-															gridData2025
+															gridDataWithCustomerSync
 																.filter((t) => {
 																	const d = new Date(t.openTime);
 																	const m = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
@@ -3424,10 +3407,9 @@ const TicketAnalytics = ({ }: TicketAnalyticsProps) => {
 																		m === month &&
 																		kategori === kat &&
 																		name &&
-																		activeMonths.includes(month) &&
-																		cls !== "di luar layanan" &&
-																		cls !== "gangguan diluar layanan" &&
-																		cls !== "request"
+																		// Relax activeMonths check
+																		(activeMonths.length === 0 || activeMonths.includes(month)) &&
+																		!/^(di luar layanan|gangguan\s*di\s*luar\s*layanan|request)$/.test(cls)
 																	);
 																})
 																.map((t) =>
@@ -3457,7 +3439,7 @@ const TicketAnalytics = ({ }: TicketAnalyticsProps) => {
 											.map((month) => {
 												// Total unique clients across ALL categories this month (union, active, excluded classifications)
 												const unionSet = new Set<string>(
-													gridData2025
+													gridDataWithCustomerSync
 														.filter((t) => {
 															const d = new Date(t.openTime);
 															const m = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
@@ -3469,14 +3451,13 @@ const TicketAnalytics = ({ }: TicketAnalyticsProps) => {
 																.trim()
 																.toLowerCase();
 															if (
-																cls === "di luar layanan" ||
-																cls === "gangguan diluar layanan" ||
-																cls === "request"
+																/^(di luar layanan|gangguan\s*di\s*luar\s*layanan|request)$/.test(cls)
 															)
 																return false;
 															const activeMonths =
 																customerMonthMap.get(name) || [];
-															return activeMonths.includes(month);
+															// Relax activeMonths check
+															return activeMonths.length === 0 || activeMonths.includes(month);
 														})
 														.map((t) => (t.name || "").trim().toLowerCase()),
 												);
@@ -3495,12 +3476,12 @@ const TicketAnalytics = ({ }: TicketAnalyticsProps) => {
 						</div>
 					</CardContent>
 				</Card>
-				{/* 7. Complaint Penetration Ratio by Type (2025) */}
+				{/* 7. Complaint Penetration Ratio by Type */}
 				<Card className="bg-card text-card-foreground rounded-2xl shadow-lg">
 					<CardHeader>
 						<CardTitle className="flex items-center gap-2 text-base">
 							<ShowChartIcon className="w-5 h-5 text-red-600" /> Complaint
-							Penetration Ratio by Type (2025)
+							Penetration Ratio by Type
 						</CardTitle>
 						<CardDescription className="text-xs">
 							Complaint penetration ratio by client type
@@ -3517,16 +3498,10 @@ const TicketAnalytics = ({ }: TicketAnalyticsProps) => {
 										return months.map((month) => {
 											const row: any = { month };
 											jenisKlienList.forEach((jk) => {
-												const denom = Array.from(
-													customerJenisKlienMap.entries(),
-												).filter(
-													([name, jenis2]) =>
-														jenis2 === jk &&
-														(customerMonthMap.get(name) || []).includes(month),
-												).length;
+												const denom = customerMonthRowCountByType.get(month)?.[jk] || 0;
 												const numer = Array.from(
 													new Set(
-														gridData2025
+														gridDataWithCustomerSync
 															.filter((t) => {
 																const d = new Date(t.openTime);
 																const m = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
@@ -3543,9 +3518,7 @@ const TicketAnalytics = ({ }: TicketAnalyticsProps) => {
 																	jenis === jk &&
 																	t.name &&
 																	t.name.trim() &&
-																	cls !== "di luar layanan" &&
-																	cls !== "gangguan diluar layanan" &&
-																	cls !== "request"
+																	!/^(di luar layanan|gangguan\s*di\s*luar\s*layanan|request)$/.test(cls)
 																);
 															})
 															.map((t) => (t.name || "").trim().toLowerCase()),
@@ -3666,7 +3639,7 @@ const TicketAnalytics = ({ }: TicketAnalyticsProps) => {
 						{/* Table */}
 						<div className="overflow-x-auto w-full">
 							<h4 className="text-sm font-semibold text-card-foreground mb-3">
-								Penetration Ratio by Type (2025)
+								Penetration Ratio by Type
 							</h4>
 							<table className="w-full text-xs border-collapse">
 								<thead>
@@ -3698,18 +3671,10 @@ const TicketAnalytics = ({ }: TicketAnalyticsProps) => {
 											{Object.keys(tiketPerJenisKlienPerBulan)
 												.sort((a, b) => new Date(a + "-01").getTime() - new Date(b + "-01").getTime())
 												.map((month) => {
-													const denom = Array.from(
-														customerJenisKlienMap.entries(),
-													).filter(
-														([name, jenis2]) =>
-															jenis2 === jk &&
-															(customerMonthMap.get(name) || []).includes(
-																month,
-															),
-													).length;
+													const denom = customerMonthRowCountByType.get(month)?.[jk] || 0;
 													const numer = Array.from(
 														new Set(
-															gridData2025
+															gridDataWithCustomerSync
 																.filter((t) => {
 																	const d = new Date(t.openTime);
 																	const m = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
@@ -3721,14 +3686,16 @@ const TicketAnalytics = ({ }: TicketAnalyticsProps) => {
 																		.toString()
 																		.trim()
 																		.toLowerCase();
+																	const activeMonths =
+																		customerMonthMap.get((t.name || "").trim().toLowerCase()) || [];
 																	return (
 																		m === month &&
 																		jenis === jk &&
 																		t.name &&
 																		t.name.trim() &&
-																		cls !== "di luar layanan" &&
-																		cls !== "gangguan diluar layanan" &&
-																		cls !== "request"
+																		// Relax activeMonths check
+																		(activeMonths.length === 0 || activeMonths.includes(month)) &&
+																		!/^(di luar layanan|gangguan\s*di\s*luar\s*layanan|request)$/.test(cls)
 																	);
 																})
 																.map((t) =>
@@ -3753,12 +3720,12 @@ const TicketAnalytics = ({ }: TicketAnalyticsProps) => {
 						</div>
 					</CardContent>
 				</Card>
-				{/* 8. Complaint Penetration Ratio by Category (2025) */}
+				{/* 8. Complaint Penetration Ratio by Category */}
 				<Card className="bg-card text-card-foreground rounded-2xl shadow-lg">
 					<CardHeader>
 						<CardTitle className="flex items-center gap-2 text-base">
 							<ShowChartIcon className="w-5 h-5 text-pink-600" /> Complaint
-							Penetration Ratio by Category (2025)
+							Penetration Ratio by Category
 						</CardTitle>
 						<CardDescription className="text-xs">
 							Complaint penetration ratio by client category
@@ -3775,7 +3742,7 @@ const TicketAnalytics = ({ }: TicketAnalyticsProps) => {
 											// Klien unik yang komplain bulan ini
 											const uniqueClients = Array.from(
 												new Set(
-													gridData2025
+													gridDataWithCustomerSync
 														.filter((t) => {
 															const d = new Date(t.openTime);
 															const m = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
@@ -3792,10 +3759,8 @@ const TicketAnalytics = ({ }: TicketAnalyticsProps) => {
 																m === month &&
 																kategori === kat &&
 																name &&
-																activeMonths.includes(month) &&
-																cls !== "di luar layanan" &&
-																cls !== "gangguan diluar layanan" &&
-																cls !== "request"
+																(activeMonths.length === 0 || activeMonths.includes(month)) &&
+																!/^(di luar layanan|gangguan\s*di\s*luar\s*layanan|request)$/.test(cls)
 															);
 														})
 														.map((t) => (t.name || "").trim().toLowerCase()),
@@ -3888,7 +3853,7 @@ const TicketAnalytics = ({ }: TicketAnalyticsProps) => {
 						{/* Table */}
 						<div className="overflow-x-auto w-full">
 							<h4 className="text-sm font-semibold text-card-foreground mb-3">
-								Penetration Ratio by Category (2025)
+								Penetration Ratio by Category
 							</h4>
 							<table className="w-full text-xs border-collapse">
 								<thead>
@@ -3923,7 +3888,7 @@ const TicketAnalytics = ({ }: TicketAnalyticsProps) => {
 													// Klien unik yang komplain bulan ini (aktif + exclude klasifikasi)
 													const uniqueClients = Array.from(
 														new Set(
-															gridData2025
+															gridDataWithCustomerSync
 																.filter((t) => {
 																	const d = new Date(t.openTime);
 																	const m = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
@@ -3942,10 +3907,9 @@ const TicketAnalytics = ({ }: TicketAnalyticsProps) => {
 																		m === month &&
 																		kategori === kat &&
 																		name &&
-																		activeMonths.includes(month) &&
-																		cls !== "di luar layanan" &&
-																		cls !== "gangguan diluar layanan" &&
-																		cls !== "request"
+																		// Relax activeMonths check
+																		(activeMonths.length === 0 || activeMonths.includes(month)) &&
+																		!/^(di luar layanan|gangguan\s*di\s*luar\s*layanan|request)$/.test(cls)
 																	);
 																})
 																.map((t) =>
@@ -3977,12 +3941,12 @@ const TicketAnalytics = ({ }: TicketAnalyticsProps) => {
 						</div>
 					</CardContent>
 				</Card>
-				{/* Active Clients per Month (2025) */}
+				{/* Active Clients per Month */}
 				<Card className="bg-card text-card-foreground rounded-2xl shadow-lg">
 					<CardHeader>
 						<CardTitle className="flex items-center gap-2 text-base">
 							<ShowChartIcon className="w-5 h-5 text-cyan-600" /> Active Clients
-							per Month (2025)
+							per Month
 						</CardTitle>
 						<CardDescription className="text-xs">
 							Monthly active clients vs complaint clients
@@ -3997,10 +3961,20 @@ const TicketAnalytics = ({ }: TicketAnalyticsProps) => {
 											tiketPerJenisKlienPerBulan,
 										).sort((a, b) => new Date(a + "-01").getTime() - new Date(b + "-01").getTime());
 										return months.map((month) => {
-											const totalActive = customerMonthRowCount.get(month) || 0;
+											// Unique active names this month
+											const activeNames = new Set(
+												Array.from(customerMonthMap.entries())
+													.filter(
+														([_name, monthsArr]) =>
+															Array.isArray(monthsArr) &&
+															(monthsArr.length === 0 || monthsArr.includes(month)),
+													)
+													.map(([name]) => (name || "").trim().toLowerCase()),
+											);
+											const totalActive = activeNames.size;
 											const complainCount = (() => {
 												const names = new Set(
-													gridData2025
+													gridDataWithCustomerSync
 														.filter((t) => {
 															const d = new Date(t.openTime);
 															const m = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
@@ -4011,14 +3985,17 @@ const TicketAnalytics = ({ }: TicketAnalyticsProps) => {
 																.toLowerCase();
 															if (!t.name || !t.name.trim()) return false;
 															return (
-																cls !== "di luar layanan" &&
-																cls !== "gangguan diluar layanan" &&
-																cls !== "request"
+																!/^(di luar layanan|gangguan\s*di\s*luar\s*layanan|request)$/.test(cls)
 															);
 														})
 														.map((t) => (t.name || "").trim().toLowerCase()),
 												);
-												return names.size;
+												// Only count those that are active in this month
+												let count = 0;
+												names.forEach((n) => {
+													if (activeNames.has(n)) count += 1;
+												});
+												return count;
 											})();
 											return {
 												month,
@@ -4113,7 +4090,7 @@ const TicketAnalytics = ({ }: TicketAnalyticsProps) => {
 						</div>
 						<div className="overflow-x-auto w-full">
 							<h4 className="text-sm font-semibold text-card-foreground mb-3">
-								Active vs Complaint Clients (2025)
+								Active vs Complaint Clients
 							</h4>
 							<table className="w-full text-xs border-collapse">
 								<thead>
@@ -4141,14 +4118,21 @@ const TicketAnalytics = ({ }: TicketAnalyticsProps) => {
 										{Object.keys(tiketPerJenisKlienPerBulan)
 											.sort((a, b) => new Date(a + "-01").getTime() - new Date(b + "-01").getTime())
 											.map((month) => {
-												const totalClients =
-													customerMonthRowCount.get(month) || 0;
+												const activeNames = new Set(
+													Array.from(customerMonthMap.entries())
+														.filter(
+															([_name, monthsArr]) =>
+																Array.isArray(monthsArr) &&
+																(monthsArr.length === 0 || monthsArr.includes(month)),
+														)
+														.map(([name]) => (name || "").trim().toLowerCase()),
+												);
 												return (
 													<td
 														key={month}
 														className="text-center p-2 text-card-foreground"
 													>
-														{totalClients}
+														{activeNames.size}
 													</td>
 												);
 											})}
@@ -4166,12 +4150,12 @@ const TicketAnalytics = ({ }: TicketAnalyticsProps) => {
 														.filter(
 															([_name, monthsArr]) =>
 																Array.isArray(monthsArr) &&
-																monthsArr.includes(month),
+																(monthsArr.length === 0 || monthsArr.includes(month)),
 														)
 														.map(([name]) => (name || "").trim().toLowerCase()),
 												);
 												const complainNames = new Set(
-													gridData2025
+													gridDataWithCustomerSync
 														.filter((t) => {
 															const d = new Date(t.openTime);
 															const m = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
@@ -4182,9 +4166,7 @@ const TicketAnalytics = ({ }: TicketAnalyticsProps) => {
 																.toLowerCase();
 															if (!t.name || !t.name.trim()) return false;
 															return (
-																cls !== "di luar layanan" &&
-																cls !== "gangguan diluar layanan" &&
-																cls !== "request"
+																!/^(di luar layanan|gangguan\s*di\s*luar\s*layanan|request)$/.test(cls)
 															);
 														})
 														.map((t) => (t.name || "").trim().toLowerCase()),
@@ -4209,14 +4191,14 @@ const TicketAnalytics = ({ }: TicketAnalyticsProps) => {
 					</CardContent>
 				</Card>
 
-				{/* Active Clients by Service Type (2025) - removed per request */}
+				{/* Active Clients by Service Type - removed per request */}
 
-				{/* 9. Total Complaint Penetration Ratio (2025) */}
+				{/* 9. Total Complaint Penetration Ratio */}
 				<Card className="bg-card text-card-foreground rounded-2xl shadow-lg">
 					<CardHeader>
 						<CardTitle className="flex items-center gap-2 text-base">
 							<ShowChartIcon className="w-5 h-5 text-emerald-600" /> Total
-							Complaint Penetration Ratio (2025)
+							Complaint Penetration Ratio
 						</CardTitle>
 						<CardDescription className="text-xs">
 							Overall complaint penetration ratio across all clients
@@ -4234,13 +4216,13 @@ const TicketAnalytics = ({ }: TicketAnalyticsProps) => {
 												.filter(
 													([_name, monthsArr]) =>
 														Array.isArray(monthsArr) &&
-														monthsArr.includes(month),
+														(monthsArr.length === 0 || monthsArr.includes(month)),
 												)
 												.map(([name]) => (name || "").trim().toLowerCase()),
 										);
 										// Distinct complaining names in this month (filtered classifications)
 										const complainNames = new Set(
-											gridData2025
+											gridDataWithCustomerSync
 												.filter((t) => {
 													const d = new Date(t.openTime);
 													const m = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
@@ -4251,9 +4233,7 @@ const TicketAnalytics = ({ }: TicketAnalyticsProps) => {
 														.toLowerCase();
 													if (!t.name || !t.name.trim()) return false;
 													return (
-														cls !== "di luar layanan" &&
-														cls !== "gangguan diluar layanan" &&
-														cls !== "request"
+														!/^(di luar layanan|gangguan\s*di\s*luar\s*layanan|request)$/.test(cls)
 													);
 												})
 												.map((t) => (t.name || "").trim().toLowerCase()),
@@ -4263,8 +4243,8 @@ const TicketAnalytics = ({ }: TicketAnalyticsProps) => {
 										complainNames.forEach((n) => {
 											if (activeNames.has(n)) uniqueClients += 1;
 										});
-										// Denominator: total uploaded rows for this month
-										const totalClients = customerMonthRowCount.get(month) || 0;
+										// Denominator: unique active customers
+										const totalClients = activeNames.size;
 										return {
 											month,
 											"Total Ratio":
@@ -4335,7 +4315,7 @@ const TicketAnalytics = ({ }: TicketAnalyticsProps) => {
 						{/* Table */}
 						<div className="overflow-x-auto w-full">
 							<h4 className="text-sm font-semibold text-card-foreground mb-3">
-								Total Penetration Ratio (2025)
+								Total Penetration Ratio
 							</h4>
 							<table className="w-full text-xs border-collapse">
 								<thead>
@@ -4363,22 +4343,19 @@ const TicketAnalytics = ({ }: TicketAnalyticsProps) => {
 										{Object.keys(tiketPerJenisKlienPerBulan)
 											.sort((a, b) => new Date(a + "-01").getTime() - new Date(b + "-01").getTime())
 											.map((month) => {
-												// Denominator: total rows uploaded for this month
-												const totalClients =
-													customerMonthRowCount.get(month) || 0;
 												// Active names this month
 												const activeNames = new Set(
 													Array.from(customerMonthMap.entries())
 														.filter(
 															([_name, monthsArr]) =>
 																Array.isArray(monthsArr) &&
-																monthsArr.includes(month),
+																(monthsArr.length === 0 || monthsArr.includes(month)),
 														)
 														.map(([name]) => (name || "").trim().toLowerCase()),
 												);
 												// Distinct complainants this month (filtered classifications)
 												const complainNames = new Set(
-													gridData2025
+													gridDataWithCustomerSync
 														.filter((t) => {
 															const d = new Date(t.openTime);
 															const m = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
@@ -4389,9 +4366,7 @@ const TicketAnalytics = ({ }: TicketAnalyticsProps) => {
 																.toLowerCase();
 															if (!t.name || !t.name.trim()) return false;
 															return (
-																cls !== "di luar layanan" &&
-																cls !== "gangguan diluar layanan" &&
-																cls !== "request"
+																!/^(di luar layanan|gangguan\s*di\s*luar\s*layanan|request)$/.test(cls)
 															);
 														})
 														.map((t) => (t.name || "").trim().toLowerCase()),
@@ -4402,8 +4377,8 @@ const TicketAnalytics = ({ }: TicketAnalyticsProps) => {
 													if (activeNames.has(n)) uniqueClients += 1;
 												});
 												const ratio =
-													totalClients > 0
-														? (uniqueClients / totalClients) * 100
+													activeNames.size > 0
+														? (uniqueClients / activeNames.size) * 100
 														: 0;
 												return (
 													<td
