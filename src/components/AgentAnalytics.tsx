@@ -38,9 +38,7 @@ import {
 	CPI_LEVELS,
 	calculateAgentMetrics,
 	getWeeklyBreakdown,
-	formatHoursToHMS,
 	getMetricStatus,
-	getCPILevel,
 } from "@/utils/agentMetrics";
 
 import { formatDurationDHM } from "@/lib/utils";
@@ -60,6 +58,16 @@ import {
 	Tooltip,
 	BarChart,
 	Bar,
+	Radar,
+	RadarChart,
+	PolarGrid,
+	PolarAngleAxis,
+	PolarRadiusAxis,
+	ComposedChart,
+	Line,
+	PieChart,
+	Pie,
+	Cell,
 } from "recharts";
 import { Badge } from "@/components/ui/badge";
 import { CardHeaderTitle, CardHeaderDescription } from "@/components/ui/CardTypography";
@@ -2405,27 +2413,33 @@ const AgentAnalytics = () => {
 										</p>
 									</div>
 									<Tabs defaultValue="overview" className="w-full">
-										<TabsList className="flex w-full bg-zinc-50 dark:bg-zinc-800/50 p-1.5 rounded-xl border border-zinc-200 dark:border-zinc-700 shadow-sm">
+										<TabsList className="grid w-full grid-cols-3 bg-muted/20 p-1 rounded-xl">
 											<TabsTrigger
 												value="overview"
-												className="flex-1 flex items-center justify-center gap-2.5 px-4 py-3 rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-700 data-[state=active]:shadow-sm data-[state=active]:text-blue-600 dark:data-[state=active]:text-blue-400 data-[state=active]:font-semibold text-sm font-medium text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 transition-all duration-200"
+												className="rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-800 data-[state=active]:shadow-sm data-[state=active]:text-blue-600 dark:data-[state=active]:text-blue-400 font-medium transition-all"
 											>
-												<TimelineIcon className="w-4 h-4" />
-												<span className="font-medium">Overview</span>
+												<div className="flex items-center gap-2">
+													<TimelineIcon className="w-4 h-4" />
+													<span>Overview</span>
+												</div>
 											</TabsTrigger>
 											<TabsTrigger
 												value="performance"
-												className="flex-1 flex items-center justify-center gap-2.5 px-4 py-3 rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-700 data-[state=active]:shadow-sm data-[state=active]:text-blue-600 dark:data-[state=active]:text-blue-400 data-[state=active]:font-semibold text-sm font-medium text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 transition-all duration-200"
+												className="rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-800 data-[state=active]:shadow-sm data-[state=active]:text-blue-600 dark:data-[state=active]:text-blue-400 font-medium transition-all"
 											>
-												<TrackChangesIcon className="w-4 h-4" />
-												<span className="font-medium">Performance</span>
+												<div className="flex items-center gap-2">
+													<TrackChangesIcon className="w-4 h-4" />
+													<span>Performance</span>
+												</div>
 											</TabsTrigger>
 											<TabsTrigger
 												value="trends"
-												className="flex-1 flex items-center justify-center gap-2.5 px-4 py-3 rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-700 data-[state=active]:shadow-sm data-[state=active]:text-blue-600 dark:data-[state=active]:text-blue-400 data-[state=active]:font-semibold text-sm font-medium text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 transition-all duration-200"
+												className="rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-800 data-[state=active]:shadow-sm data-[state=active]:text-blue-600 dark:data-[state=active]:text-blue-400 font-medium transition-all"
 											>
-												<TrendingUpIcon className="w-4 h-4" />
-												<span className="font-medium">Trends</span>
+												<div className="flex items-center gap-2">
+													<TrendingUpIcon className="w-4 h-4" />
+													<span>Trends</span>
+												</div>
 											</TabsTrigger>
 										</TabsList>
 
@@ -2458,10 +2472,31 @@ const AgentAnalytics = () => {
 													);
 												}
 
-												// Calculate all career metrics for overview
-												const totalTickets = agentTickets.length;
+												// Calculate all career metrics using centralized utility
+												const metrics = calculateAgentMetrics(selectedAgent, agentTickets);
+												const {
+													totalTickets,
+													tenure,
+													closedTickets,
+													avgAHT,
+													fcrRate,
+													slaRate,
+													escalationRate,
+													scores,
+													cpiLevel,
+													shiftDistribution
+												} = metrics;
+												const { cpi } = scores;
 
-												// Tenure calculation
+												const radarData = [
+													{ subject: "Efficiency", A: scores.efficiency, fullMark: 100 },
+													{ subject: "Quality", A: scores.quality, fullMark: 100 },
+													{ subject: "Resolution", A: scores.resolution, fullMark: 100 },
+													{ subject: "Reliability", A: scores.reliability, fullMark: 100 },
+													{ subject: "Productivity", A: scores.productivity, fullMark: 100 },
+												];
+
+												// Keep firstTicket calculation for Career Start display
 												const validTickets = agentTickets.filter((t) => {
 													if (!t.openTime) return false;
 													const date = new Date(t.openTime);
@@ -2481,173 +2516,16 @@ const AgentAnalytics = () => {
 														})
 														: null;
 
-												const lastTicket =
-													validTickets.length > 0
-														? validTickets.reduce((latest, t) => {
-															const currentDate = new Date(t.openTime);
-															const latestDate = new Date(latest.openTime);
-															return currentDate > latestDate ? t : latest;
-														})
-														: null;
-
-												let tenure = 0;
-												if (firstTicket && lastTicket) {
-													const firstDate = new Date(firstTicket.openTime);
-													const lastDate = new Date(lastTicket.openTime);
-													if (
-														!isNaN(firstDate.getTime()) &&
-														!isNaN(lastDate.getTime())
-													) {
-														tenure = Math.ceil(
-															(lastDate.getTime() - firstDate.getTime()) /
-															(1000 * 60 * 60 * 24),
-														);
-													}
-												}
-
-												// Performance metrics
-												const closedTickets = agentTickets.filter(isClosedTicket).length;
-
-												const ahtValues = agentTickets
-													.filter((t) => {
-														if (!t.openTime || !t.closeTime) return false;
-														const openDate = new Date(t.openTime);
-														const closeDate = new Date(t.closeTime);
-														return (
-															!isNaN(openDate.getTime()) &&
-															!isNaN(closeDate.getTime()) &&
-															closeDate > openDate
-														);
-													})
-													.map((t) => {
-														const open = new Date(t.openTime);
-														const close = new Date(t.closeTime);
-														return (close.getTime() - open.getTime()) / 60000;
-													})
-													.filter((t) => t > 0 && t < 10080);
-
-												const avgAHT =
-													ahtValues.length > 0
-														? ahtValues.reduce((sum, val) => sum + val, 0) /
-														ahtValues.length
-														: 0;
-
-												const fcrTickets = agentTickets.filter((t) => {
-													return !t.handling2 || t.handling2.trim() === "";
-												});
-												const fcrRate =
-													totalTickets > 0
-														? (fcrTickets.length / totalTickets) * 100
-														: 0;
-
-												const slaCompliant = agentTickets.filter((t) => {
-													if (!t.openTime || !t.closeHandling) return false;
-													const openDate = new Date(t.openTime);
-													const handlingDate = new Date(t.closeHandling);
-													if (
-														isNaN(openDate.getTime()) ||
-														isNaN(handlingDate.getTime())
-													)
-														return false;
-													if (handlingDate <= openDate) return false;
-
-													const diffMin =
-														(handlingDate.getTime() - openDate.getTime()) /
-														60000;
-													return diffMin <= 1440 && diffMin > 0;
-												}).length;
-												const slaRate =
-													totalTickets > 0
-														? (slaCompliant / totalTickets) * 100
-														: 0;
-
-												const escalated = agentTickets.filter((t) => {
-													const handlingFields = [
-														t.closeHandling2,
-														t.closeHandling3,
-														t.closeHandling4,
-														t.closeHandling5,
-													];
-													return handlingFields.some(
-														(h) => h && h.trim() !== "",
-													);
-												}).length;
-												const escalationRate =
-													totalTickets > 0
-														? (escalated / totalTickets) * 100
-														: 0;
-
-												// Calculate CPI for overview
-												const efficiencyScore = Math.max(
-													0,
-													100 - (avgAHT / 60) * 10,
-												);
-												const qualityScore = slaRate;
-												const resolutionScore = fcrRate - escalationRate;
-												const reliabilityScore = Math.max(
-													0,
-													100 - escalationRate * 5,
-												);
-												const productivityScore = Math.min(
-													100,
-													(totalTickets / 100) * 100,
-												);
-
-												const cpi = Math.round(
-													efficiencyScore * CPI_WEIGHTS.EFFICIENCY +
-													qualityScore * CPI_WEIGHTS.QUALITY +
-													resolutionScore * CPI_WEIGHTS.RESOLUTION +
-													reliabilityScore * CPI_WEIGHTS.RELIABILITY +
-													productivityScore * CPI_WEIGHTS.PRODUCTIVITY,
-												);
-
-												const getCPILevel = (score) => {
-													if (score >= 90)
-														return {
-															level: "Platinum",
-															color:
-																"bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300",
-														};
-													if (score >= 70)
-														return {
-															level: "Gold",
-															color:
-																"bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300",
-														};
-													if (score >= 40)
-														return {
-															level: "Silver",
-															color:
-																"bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-300",
-														};
-													return {
-														level: "Bronze",
-														color:
-															"bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300",
-													};
-												};
-
-												const cpiLevel = getCPILevel(cpi);
-
-												const getInformativeBadgeColor = (score) => {
-													if (score >= 90)
+												// Helper for badge colors (can use utility or keep local if specific to this view)
+												const getInformativeBadgeColor = (score: number) => {
+													if (score >= CPI_LEVELS.PLATINUM.min)
 														return "bg-gradient-to-r from-purple-500 to-purple-600 text-white shadow-sm rounded-lg";
-													if (score >= 70)
+													if (score >= CPI_LEVELS.GOLD.min)
 														return "bg-gradient-to-r from-yellow-500 to-amber-600 text-white shadow-sm rounded-lg";
-													if (score >= 40)
+													if (score >= CPI_LEVELS.SILVER.min)
 														return "bg-gradient-to-r from-gray-500 to-gray-600 text-white shadow-sm rounded-lg";
 													return "bg-gradient-to-r from-orange-500 to-red-600 text-white shadow-sm rounded-lg";
 												};
-
-												// Shift breakdown for overview
-												const shiftCount = { Pagi: 0, Siang: 0, Malam: 0 };
-												agentTickets.forEach((t) => {
-													if (!t.openTime) return;
-													const hour = new Date(t.openTime).getHours();
-													if (hour >= 6 && hour < 14) shiftCount.Pagi++;
-													else if (hour >= 14 && hour < 22) shiftCount.Siang++;
-													else shiftCount.Malam++;
-												});
 
 												return (
 													<div className="space-y-6">
@@ -2671,7 +2549,7 @@ const AgentAnalytics = () => {
 																		<span
 																			className={`px-3 py-2 rounded-lg text-sm font-semibold ${getInformativeBadgeColor(cpi)}`}
 																		>
-																			{cpiLevel.level}
+																			{cpiLevel.label}
 																		</span>
 																	</div>
 																</div>
@@ -2680,7 +2558,7 @@ const AgentAnalytics = () => {
 
 														{/* Key Metrics Grid with improved typography */}
 														<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-															<Card className="border">
+															<Card className="border-none shadow-sm bg-slate-50/50 dark:bg-slate-900/50">
 																<CardContent className="p-4 text-center">
 																	<div className="text-lg font-bold text-blue-600 mb-1">
 																		{totalTickets}
@@ -2688,13 +2566,13 @@ const AgentAnalytics = () => {
 																	<div className="text-sm text-muted-foreground font-medium">
 																		Total Tickets
 																	</div>
-																	<div className="text-xs text-gray-500 font-medium">
+																	<div className="text-xs text-gray-400 font-medium mt-1">
 																		Career Total
 																	</div>
 																</CardContent>
 															</Card>
 
-															<Card className="border">
+															<Card className="border-none shadow-sm bg-slate-50/50 dark:bg-slate-900/50">
 																<CardContent className="p-4 text-center">
 																	<div className="text-lg font-bold text-green-600 mb-1">
 																		{tenure}
@@ -2702,13 +2580,13 @@ const AgentAnalytics = () => {
 																	<div className="text-sm text-muted-foreground font-medium">
 																		Active Days
 																	</div>
-																	<div className="text-xs text-gray-500 font-medium">
-																		Career Tenure
+																	<div className="text-xs text-gray-400 font-medium mt-1">
+																		Since Start
 																	</div>
 																</CardContent>
 															</Card>
 
-															<Card className="border">
+															<Card className="border-none shadow-sm bg-slate-50/50 dark:bg-slate-900/50">
 																<CardContent className="p-4 text-center">
 																	<div className="text-lg font-bold text-purple-600 mb-1">
 																		{slaRate.toFixed(1)}%
@@ -2716,13 +2594,13 @@ const AgentAnalytics = () => {
 																	<div className="text-sm text-muted-foreground font-medium">
 																		SLA Rate
 																	</div>
-																	<div className="text-xs text-gray-500 font-medium">
-																		Quality Metric
+																	<div className="text-xs text-gray-400 font-medium mt-1">
+																		Compliance
 																	</div>
 																</CardContent>
 															</Card>
 
-															<Card className="border">
+															<Card className="border-none shadow-sm bg-slate-50/50 dark:bg-slate-900/50">
 																<CardContent className="p-4 text-center">
 																	<div className="text-lg font-bold text-orange-600 mb-1">
 																		{fcrRate.toFixed(1)}%
@@ -2730,19 +2608,19 @@ const AgentAnalytics = () => {
 																	<div className="text-sm text-muted-foreground font-medium">
 																		FCR Rate
 																	</div>
-																	<div className="text-xs text-gray-500 font-medium">
-																		Resolution Metric
+																	<div className="text-xs text-gray-400 font-medium mt-1">
+																		Resolution
 																	</div>
 																</CardContent>
 															</Card>
 														</div>
 
-														{/* Performance Summary with improved typography */}
-														<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-															<Card className="border">
+														{/* Performance Summary and Radar Chart */}
+														<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+															<Card className="border-none shadow-sm bg-white dark:bg-zinc-900">
 																<CardHeader>
 																	<CardTitle className="text-lg flex items-center gap-2 font-semibold">
-																		<TrendingUpIcon className="w-5 h-5" />
+																		<TrendingUpIcon className="w-5 h-5 text-zinc-500" />
 																		Performance Summary
 																	</CardTitle>
 																</CardHeader>
@@ -2788,22 +2666,22 @@ const AgentAnalytics = () => {
 																</CardContent>
 															</Card>
 
-															<Card className="border">
+															<Card className="border-none shadow-sm bg-white dark:bg-zinc-900">
 																<CardHeader>
 																	<CardTitle className="text-lg flex items-center gap-2 font-semibold">
-																		<BarChartIcon className="w-5 h-5" />
+																		<BarChartIcon className="w-5 h-5 text-zinc-500" />
 																		Shift Distribution
 																	</CardTitle>
 																</CardHeader>
 																<CardContent>
 																	<div className="space-y-4">
-																		{Object.entries(shiftCount).map(
+																		{Object.entries(shiftDistribution).map(
 																			([shift, count]) => (
 																				<div
 																					key={shift}
 																					className="flex justify-between items-center"
 																				>
-																					<span className="text-sm text-muted-foreground font-medium">
+																					<span className="text-sm text-muted-foreground font-medium capitalize">
 																						{shift}
 																					</span>
 																					<span className="font-semibold">
@@ -2815,10 +2693,38 @@ const AgentAnalytics = () => {
 																	</div>
 																</CardContent>
 															</Card>
+
+															<Card className="border-none shadow-sm bg-white dark:bg-zinc-900">
+																<CardHeader>
+																	<CardTitle className="text-lg flex items-center gap-2 font-semibold">
+																		<TrackChangesIcon className="w-5 h-5 text-zinc-500" />
+																		Performance Dimensions
+																	</CardTitle>
+																</CardHeader>
+																<CardContent className="flex justify-center items-center p-0 pb-4">
+																	<div className="h-[250px] w-full">
+																		<ResponsiveContainer width="100%" height="100%">
+																			<RadarChart cx="50%" cy="50%" outerRadius="65%" data={radarData}>
+																				<PolarGrid stroke="#e5e7eb" />
+																				<PolarAngleAxis dataKey="subject" tick={{ fill: "#6b7280", fontSize: 11 }} />
+																				<PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} axisLine={false} />
+																				<Radar
+																					name="Score"
+																					dataKey="A"
+																					stroke="#2563eb"
+																					fill="#3b82f6"
+																					fillOpacity={0.5}
+																				/>
+																				<Tooltip />
+																			</RadarChart>
+																		</ResponsiveContainer>
+																	</div>
+																</CardContent>
+															</Card>
 														</div>
 
 														{/* Quick Insights Summary with improved typography */}
-														<Card className="border">
+														<Card className="border-none shadow-sm bg-slate-50/50 dark:bg-slate-900/50">
 															<CardHeader>
 																<CardTitle className="text-lg flex items-center gap-2 font-semibold">
 																	<LightbulbIcon className="w-5 h-5" />
@@ -3389,28 +3295,19 @@ const AgentAnalytics = () => {
 										</TabsContent>
 
 										{/* Performance Tab - Career Performance Index */}
+										{/* Performance Tab - Detailed Metric Breakdown */}
 										<TabsContent value="performance" className="mt-6">
-											<div className="mb-6">
-												<h3 className="text-xl font-semibold text-zinc-900 dark:text-zinc-100 mb-2">
-													Career Performance Index
-												</h3>
-												<p className="text-sm text-zinc-600 dark:text-zinc-400">
-													Detailed analysis of agent's performance metrics and
-													scoring
-												</p>
-											</div>
 											{(() => {
-												// Calculate CPI (Career Performance Index)
+												// Calculate all metrics
 												const agentTickets =
 													timeFilteredTickets?.filter(
 														(t) => t.openBy === selectedAgent,
 													) || [];
-												const totalTickets = agentTickets.length;
 
-												if (totalTickets === 0) {
+												if (agentTickets.length === 0) {
 													return (
 														<div className="text-center py-8 text-gray-500">
-															<TrackChangesIcon className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+															<BarChartIcon className="w-12 h-12 mx-auto mb-4 text-gray-300" />
 															<p className="text-base font-medium">
 																No performance data available for this agent.
 															</p>
@@ -3418,646 +3315,199 @@ const AgentAnalytics = () => {
 													);
 												}
 
-												// Calculate all metrics for CPI
+												const metrics = calculateAgentMetrics(selectedAgent, agentTickets);
+												const {
+													scores,
+													avgAHT,
+													slaRate,
+													fcrRate,
+													escalationRate,
+													totalTickets,
+													tenure,
+													ticketsPerDay,
+												} = metrics;
 
-												// AHT calculation
-												const ahtValues = agentTickets
-													.filter((t) => {
-														if (!t.openTime || !t.closeTime) return false;
-														const openDate = new Date(t.openTime);
-														const closeDate = new Date(t.closeTime);
-														return (
-															!isNaN(openDate.getTime()) &&
-															!isNaN(closeDate.getTime()) &&
-															closeDate > openDate
-														);
-													})
-													.map((t) => {
-														const open = new Date(t.openTime);
-														const close = new Date(t.closeTime);
-														return (close.getTime() - open.getTime()) / 60000;
-													})
-													.filter((t) => t > 0 && t < 10080);
+												// Helper component for metric cards
+												const MetricCard = ({
+													title,
+													score,
+													weight,
+													icon: Icon,
+													color,
+													bgColor,
+													details
+												}: {
+													title: string;
+													score: number;
+													weight: string;
+													icon: any;
+													color: string;
+													bgColor: string;
+													details: { label: string; value: string; target: string; status: "on-target" | "warning" | "critical" }[];
+												}) => (
+													<Card className="border-none shadow-sm hover:shadow-md transition-shadow">
+														<CardHeader className="pb-2">
+															<CardTitle className={`text-lg flex items-center gap-2 font-semibold ${color}`}>
+																<div className={`p-2 rounded-lg ${bgColor}`}>
+																	<Icon className="w-5 h-5" />
+																</div>
+																{title}
+																<span className="text-xs font-normal text-muted-foreground ml-auto bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded-full border">
+																	Weight: {weight}
+																</span>
+															</CardTitle>
+														</CardHeader>
+														<CardContent>
+															<div className="flex justify-between items-baseline mb-4">
+																<div className="text-3xl font-bold text-zinc-900 dark:text-zinc-50">
+																	{score}
+																	<span className="text-sm font-normal text-muted-foreground ml-1">/100</span>
+																</div>
+																<Badge className={`${score >= 90 ? "bg-green-100 text-green-700 hover:bg-green-200" : score >= 70 ? "bg-blue-100 text-blue-700 hover:bg-blue-200" : score >= 50 ? "bg-yellow-100 text-yellow-700 hover:bg-yellow-200" : "bg-red-100 text-red-700 hover:bg-red-200"} border-0`}>
+																	{score >= 90 ? "Excellent" : score >= 70 ? "Good" : score >= 50 ? "Fair" : "Poor"}
+																</Badge>
+															</div>
 
-												const avgAHT =
-													ahtValues.length > 0
-														? ahtValues.reduce((sum, val) => sum + val, 0) /
-														ahtValues.length
-														: 0;
-
-												// FCR calculation
-												const fcrTickets = agentTickets.filter((t) => {
-													return !t.handling2 || t.handling2.trim() === "";
-												});
-												const fcrRate =
-													totalTickets > 0
-														? (fcrTickets.length / totalTickets) * 100
-														: 0;
-
-												// SLA calculation - using closeHandling
-												const slaCompliant = agentTickets.filter((t) => {
-													if (!t.openTime || !t.closeHandling) return false;
-													const openDate = new Date(t.openTime);
-													const handlingDate = new Date(t.closeHandling);
-													if (
-														isNaN(openDate.getTime()) ||
-														isNaN(handlingDate.getTime())
-													)
-														return false;
-													if (handlingDate <= openDate) return false;
-
-													const diffMin =
-														(handlingDate.getTime() - openDate.getTime()) /
-														60000;
-													return diffMin <= 1440 && diffMin > 0;
-												}).length;
-												const slaRate =
-													totalTickets > 0
-														? (slaCompliant / totalTickets) * 100
-														: 0;
-
-												// Escalation calculation
-												const escalated = agentTickets.filter((t) => {
-													const handlingFields = [
-														t.closeHandling2,
-														t.closeHandling3,
-														t.closeHandling4,
-														t.closeHandling5,
-													];
-													return handlingFields.some(
-														(h) => h && h.trim() !== "",
-													);
-												}).length;
-												const escalationRate =
-													totalTickets > 0
-														? (escalated / totalTickets) * 100
-														: 0;
-
-												// Tenure calculation
-												const validTickets = agentTickets.filter((t) => {
-													if (!t.openTime) return false;
-													const date = new Date(t.openTime);
-													return !isNaN(date.getTime());
-												});
-
-												const firstTicket =
-													validTickets.length > 0
-														? validTickets.reduce((earliest, t) => {
-															const currentDate = new Date(t.openTime);
-															const earliestDate = new Date(
-																earliest.openTime,
-															);
-															return currentDate < earliestDate
-																? t
-																: earliest;
-														})
-														: null;
-
-												const lastTicket =
-													validTickets.length > 0
-														? validTickets.reduce((latest, t) => {
-															const currentDate = new Date(t.openTime);
-															const latestDate = new Date(latest.openTime);
-															return currentDate > latestDate ? t : latest;
-														})
-														: null;
-
-												let tenure = 0;
-												if (firstTicket && lastTicket) {
-													const firstDate = new Date(firstTicket.openTime);
-													const lastDate = new Date(lastTicket.openTime);
-													if (
-														!isNaN(firstDate.getTime()) &&
-														!isNaN(lastDate.getTime())
-													) {
-														tenure = Math.ceil(
-															(lastDate.getTime() - firstDate.getTime()) /
-															(1000 * 60 * 60 * 24),
-														);
-													}
-												}
-
-												// Active days calculation
-												const activeDays = new Set(
-													agentTickets
-														.filter((t) => {
-															if (!t.openTime) return false;
-															const date = new Date(t.openTime);
-															return !isNaN(date.getTime());
-														})
-														.map((t) => new Date(t.openTime).toDateString()),
-												).size;
-
-												// Calculate CPI components with enhanced formulas
-
-												// 1. Efficiency Score (25%) - Enhanced AHT calculation with tenure consideration
-												const tenureMonths = Math.max(1, tenure / 30); // Convert days to months
-												const expectedAHT = Math.max(30, 60 - tenureMonths * 2); // Expected AHT decreases with experience
-												const ahtEfficiency = Math.max(
-													0,
-													Math.min(
-														100,
-														100 - ((avgAHT - expectedAHT) / expectedAHT) * 50,
-													),
+															<div className="space-y-3 pt-4 border-t border-dashed">
+																{details.map((detail, idx) => (
+																	<div key={idx} className="space-y-1">
+																		<div className="flex justify-between text-muted-foreground text-xs font-medium uppercase tracking-wider">
+																			<span>{detail.label}</span>
+																			<span>Target: {detail.target}</span>
+																		</div>
+																		<div className="flex justify-between font-medium items-center text-sm">
+																			<span className="text-zinc-700 dark:text-zinc-300">{detail.value}</span>
+																			<span className={`px-2 py-0.5 rounded text-[10px] uppercase font-bold flex items-center gap-1 ${detail.status === "on-target" ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400" :
+																				detail.status === "warning" ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400" :
+																					"bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
+																				}`}>
+																				{detail.status === "on-target" ? <CheckCircleIcon style={{ fontSize: 12 }} /> : detail.status === "warning" ? <WarningAmberIcon style={{ fontSize: 12 }} /> : <InfoIcon style={{ fontSize: 12 }} />}
+																				{detail.status === "on-target" ? "Met" : "Missed"}
+																			</span>
+																		</div>
+																	</div>
+																))}
+															</div>
+														</CardContent>
+													</Card>
 												);
-												const efficiencyScore = Math.round(ahtEfficiency);
-
-												// 2. Quality Score (30%) - Enhanced with multiple quality indicators
-												const slaWeight = 0.6;
-												const fcrWeight = 0.3;
-												const escalationWeight = 0.1;
-
-												const slaQuality = slaRate;
-												const fcrQuality = fcrRate;
-												const escalationQuality = Math.max(
-													0,
-													100 - escalationRate * 2,
-												);
-
-												const qualityScore = Math.round(
-													slaQuality * slaWeight +
-													fcrQuality * fcrWeight +
-													escalationQuality * escalationWeight,
-												);
-
-												// 3. Resolution Score (20%) - Enhanced with proper bounds and context
-												const baseResolution = fcrRate;
-												const escalationPenalty = escalationRate * 1.5; // Increased penalty
-												const resolutionScore = Math.max(
-													0,
-													Math.min(100, baseResolution - escalationPenalty),
-												);
-
-												// 4. Reliability Score (15%) - Enhanced with attendance and consistency
-												const attendanceRate = activeDays / Math.max(1, tenure); // Daily attendance rate
-												const escalationPenaltyReliability = escalationRate * 3;
-												const consistencyBonus = Math.min(
-													20,
-													(100 - Math.abs(slaRate - fcrRate)) / 5,
-												); // Bonus for consistent performance
-
-												const reliabilityScore = Math.max(
-													0,
-													Math.min(
-														100,
-														attendanceRate * 100 -
-														escalationPenaltyReliability +
-														consistencyBonus,
-													),
-												);
-
-												// 5. Productivity Score (10%) - Enhanced with tenure-adjusted volume
-												const expectedTicketsPerMonth = 50; // Base expectation
-												const actualTicketsPerMonth =
-													totalTickets / Math.max(1, tenureMonths);
-												const productivityRatio =
-													actualTicketsPerMonth / expectedTicketsPerMonth;
-												const productivityScore = Math.min(
-													100,
-													Math.max(0, productivityRatio * 100),
-												);
-
-												// Calculate CPI with weights
-												const cpi = Math.round(
-													efficiencyScore * CPI_WEIGHTS.EFFICIENCY +
-													qualityScore * CPI_WEIGHTS.QUALITY +
-													resolutionScore * CPI_WEIGHTS.RESOLUTION +
-													reliabilityScore * CPI_WEIGHTS.RELIABILITY +
-													productivityScore * CPI_WEIGHTS.PRODUCTIVITY,
-												);
-
-												// Determine CPI level
-												const getCPILevel = (score) => {
-													if (score >= 90)
-														return {
-															level: "Platinum",
-															color:
-																"bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300",
-														};
-													if (score >= 70)
-														return {
-															level: "Gold",
-															color:
-																"bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300",
-														};
-													if (score >= 40)
-														return {
-															level: "Silver",
-															color:
-																"bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-300",
-														};
-													return {
-														level: "Bronze",
-														color:
-															"bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300",
-													};
-												};
-
-												const cpiLevel = getCPILevel(cpi);
-
-												const getInformativeBadgeColor = (score) => {
-													if (score >= 90)
-														return "bg-gradient-to-r from-purple-500 to-purple-600 text-white shadow-sm rounded-lg";
-													if (score >= 70)
-														return "bg-gradient-to-r from-yellow-500 to-amber-600 text-white shadow-sm rounded-lg";
-													if (score >= 40)
-														return "bg-gradient-to-r from-gray-500 to-gray-600 text-white shadow-sm rounded-lg";
-													return "bg-gradient-to-r from-orange-500 to-red-600 text-white shadow-sm rounded-lg";
-												};
 
 												return (
 													<div className="space-y-6">
-														{/* Clean CPI Header */}
-														<Card className="bg-white dark:bg-zinc-900 border-0 shadow-sm">
-															<CardContent className="p-6">
-																<div className="flex items-center justify-between">
-																	<div>
-																		<h3 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-100">
-																			Career Performance Index
-																		</h3>
-																		<p className="text-sm text-zinc-600 dark:text-zinc-400">
-																			Comprehensive performance score for{" "}
-																			{selectedAgent}
-																		</p>
-																	</div>
-																	<div className="text-center">
-																		<div className="text-3xl font-bold text-blue-600 dark:text-blue-500 mb-2">
-																			{cpi}
-																		</div>
-																		<span
-																			className={`px-3 py-2 rounded-lg text-sm font-semibold ${getInformativeBadgeColor(cpi)}`}
-																		>
-																			{cpiLevel.level}
-																		</span>
-																	</div>
+														<div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-gray-50/50 dark:bg-zinc-900/50 p-4 rounded-xl">
+															<div>
+																<h3 className="text-xl font-semibold text-zinc-900 dark:text-zinc-100">
+																	Performance Breakdown
+																</h3>
+																<span className="text-sm text-zinc-500">
+																	Based on <span className="font-semibold text-zinc-900 dark:text-zinc-300">{totalTickets}</span> tickets over <span className="font-semibold text-zinc-900 dark:text-zinc-300">{tenure}</span> days
+																</span>
+															</div>
+															<div className="flex items-center gap-2">
+																<div className="text-right mr-2">
+																	<div className="text-xs text-muted-foreground uppercase font-bold tracking-wider">Overall CPI</div>
+																	<div className="text-2xl font-bold text-blue-600">{scores.cpi}</div>
 																</div>
-															</CardContent>
-														</Card>
-
-														{/* CPI Components */}
-														<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-															<Card>
-																<CardContent className="p-4 text-center">
-																	<div className="text-lg font-bold text-blue-600 mb-1">
-																		{efficiencyScore.toFixed(0)}
-																	</div>
-																	<div className="text-sm text-muted-foreground">
-																		Efficiency (25%)
-																	</div>
-																	<div className="text-xs text-gray-500">
-																		AHT: {formatDurationDHM(avgAHT)}
-																	</div>
-																</CardContent>
-															</Card>
-
-															<Card>
-																<CardContent className="p-4 text-center">
-																	<div className="text-lg font-bold text-green-600 mb-1">
-																		{qualityScore.toFixed(0)}
-																	</div>
-																	<div className="text-sm text-muted-foreground">
-																		Quality (30%)
-																	</div>
-																	<div className="text-xs text-gray-500">
-																		SLA: {slaRate.toFixed(1)}%
-																	</div>
-																</CardContent>
-															</Card>
-
-															<Card>
-																<CardContent className="p-4 text-center">
-																	<div className="text-lg font-bold text-purple-600 mb-1">
-																		{resolutionScore.toFixed(0)}
-																	</div>
-																	<div className="text-sm text-muted-foreground">
-																		Resolution (20%)
-																	</div>
-																	<div className="text-xs text-gray-500">
-																		FCR: {fcrRate.toFixed(1)}%
-																	</div>
-																</CardContent>
-															</Card>
-
-															<Card>
-																<CardContent className="p-4 text-center">
-																	<div className="text-lg font-bold text-orange-600 mb-1">
-																		{reliabilityScore.toFixed(0)}
-																	</div>
-																	<div className="text-sm text-muted-foreground">
-																		Reliability (15%)
-																	</div>
-																	<div className="text-xs text-gray-500">
-																		Esc: {escalationRate.toFixed(1)}%
-																	</div>
-																</CardContent>
-															</Card>
-
-															<Card>
-																<CardContent className="p-4 text-center">
-																	<div className="text-lg font-bold text-indigo-600 mb-1">
-																		{productivityScore.toFixed(0)}
-																	</div>
-																	<div className="text-sm text-muted-foreground">
-																		Productivity (10%)
-																	</div>
-																	<div className="text-xs text-gray-500">
-																		Vol: {totalTickets}
-																	</div>
-																</CardContent>
-															</Card>
+																<div className={`w-2 h-10 rounded-full ${scores.cpi >= 90 ? "bg-blue-500" : scores.cpi >= 70 ? "bg-green-500" : "bg-yellow-500"}`}></div>
+															</div>
 														</div>
 
-														{/* Enhanced CPI Details */}
-														<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-															<Card>
-																<CardHeader>
-																	<CardTitle className="text-lg flex items-center gap-2">
-																		<BarChartIcon className="w-5 h-5" />
-																		CPI Calculation Details
-																	</CardTitle>
-																</CardHeader>
-																<CardContent className="space-y-4">
-																	<div className="space-y-3">
-																		<div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-																			<div className="font-semibold text-blue-800 dark:text-blue-200 mb-1">
-																				Efficiency Score (
-																				{efficiencyScore.toFixed(0)})
-																			</div>
-																			<div className="text-sm text-blue-700 dark:text-blue-300">
-																				<div>
-																					• Expected AHT:{" "}
-																					{formatDurationDHM(expectedAHT / 60)}
-																				</div>
-																				<div>
-																					• Actual AHT:{" "}
-																					{formatDurationDHM(avgAHT / 60)}
-																				</div>
-																				<div>
-																					• Tenure: {tenure} days (
-																					{tenureMonths.toFixed(1)} months)
-																				</div>
-																				<div>
-																					• Performance:{" "}
-																					{avgAHT <= expectedAHT
-																						? "Above Expectation"
-																						: "Below Expectation"}
-																				</div>
-																			</div>
-																		</div>
+														<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+															{/* Efficiency - 25% */}
+															<MetricCard
+																title="Efficiency"
+																score={scores.efficiency}
+																weight="25%"
+																icon={AccessTimeIcon}
+																color="text-blue-600 dark:text-blue-400"
+																bgColor="bg-blue-100 dark:bg-blue-900/20"
+																details={[
+																	{
+																		label: "Average Handle Time",
+																		value: formatDurationDHM(avgAHT / 60),
+																		target: `< ${AGENT_TARGETS.AHT_HOURS}h`,
+																		status: getMetricStatus(avgAHT / 60, AGENT_TARGETS.AHT_HOURS, "max")
+																	}
+																]}
+															/>
 
-																		<div className="p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
-																			<div className="font-semibold text-green-800 dark:text-green-200 mb-1">
-																				Quality Score ({qualityScore.toFixed(0)}
-																				)
-																			</div>
-																			<div className="text-sm text-green-700 dark:text-green-300">
-																				<div>
-																					• SLA Rate: {slaRate.toFixed(1)}%
-																					(Weight: 60%)
-																				</div>
-																				<div>
-																					• FCR Rate: {fcrRate.toFixed(1)}%
-																					(Weight: 30%)
-																				</div>
-																				<div>
-																					• Escalation Quality:{" "}
-																					{escalationQuality.toFixed(0)}{" "}
-																					(Weight: 10%)
-																				</div>
-																				<div>
-																					• Overall:{" "}
-																					{qualityScore >= 80
-																						? "Excellent"
-																						: qualityScore >= 60
-																							? "Good"
-																							: "Needs Improvement"}
-																				</div>
-																			</div>
-																		</div>
+															{/* Quality - 30% */}
+															<MetricCard
+																title="Quality"
+																score={scores.quality}
+																weight="30%"
+																icon={StarIcon}
+																color="text-green-600 dark:text-green-400"
+																bgColor="bg-green-100 dark:bg-green-900/20"
+																details={[
+																	{
+																		label: "SLA Compliance",
+																		value: `${slaRate.toFixed(1)}%`,
+																		target: `> ${AGENT_TARGETS.SLA_RATE}%`,
+																		status: getMetricStatus(slaRate, AGENT_TARGETS.SLA_RATE, "min")
+																	}
+																]}
+															/>
 
-																		<div className="p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
-																			<div className="font-semibold text-purple-800 dark:text-purple-200 mb-1">
-																				Resolution Score (
-																				{resolutionScore.toFixed(0)})
-																			</div>
-																			<div className="text-sm text-purple-700 dark:text-purple-300">
-																				<div>
-																					• Base FCR: {fcrRate.toFixed(1)}%
-																				</div>
-																				<div>
-																					• Escalation Penalty: -
-																					{escalationPenalty.toFixed(1)}
-																				</div>
-																				<div>
-																					• Net Score:{" "}
-																					{resolutionScore.toFixed(0)}
-																				</div>
-																				<div>
-																					• Status:{" "}
-																					{resolutionScore >= 70
-																						? "Strong"
-																						: resolutionScore >= 50
-																							? "Moderate"
-																							: "Weak"}
-																				</div>
-																			</div>
-																		</div>
-																	</div>
-																</CardContent>
-															</Card>
+															{/* Resolution - 20% */}
+															<MetricCard
+																title="Resolution"
+																score={scores.resolution}
+																weight="20%"
+																icon={CheckCircleIcon}
+																color="text-purple-600 dark:text-purple-400"
+																bgColor="bg-purple-100 dark:bg-purple-900/20"
+																details={[
+																	{
+																		label: "First Contact Resolution",
+																		value: `${fcrRate.toFixed(1)}%`,
+																		target: `> ${AGENT_TARGETS.FCR_RATE}%`,
+																		status: getMetricStatus(fcrRate, AGENT_TARGETS.FCR_RATE, "min")
+																	}
+																]}
+															/>
 
-															<Card>
-																<CardHeader>
-																	<CardTitle className="text-lg flex items-center gap-2">
-																		<TrackChangesIcon className="w-5 h-5" />
-																		Performance Targets & Benchmarks
-																	</CardTitle>
-																</CardHeader>
-																<CardContent className="space-y-4">
-																	<div className="space-y-3">
-																		<div className="flex justify-between items-center p-2 bg-gray-50 dark:bg-gray-800 rounded">
-																			<span className="text-sm">
-																				AHT Target
-																			</span>
-																			<span className="font-semibold">
-																				≤ {formatDurationDHM(expectedAHT / 60)}
-																			</span>
-																		</div>
-																		<div className="flex justify-between items-center p-2 bg-gray-50 dark:bg-gray-800 rounded">
-																			<span className="text-sm">
-																				SLA Target
-																			</span>
-																			<span className="font-semibold">
-																				≥ 85%
-																			</span>
-																		</div>
-																		<div className="flex justify-between items-center p-2 bg-gray-50 dark:bg-gray-800 rounded">
-																			<span className="text-sm">
-																				FCR Target
-																			</span>
-																			<span className="font-semibold">
-																				≥ 75%
-																			</span>
-																		</div>
-																		<div className="flex justify-between items-center p-2 bg-gray-50 dark:bg-gray-800 rounded">
-																			<span className="text-sm">
-																				Escalation Target
-																			</span>
-																			<span className="font-semibold">
-																				≤ 25%
-																			</span>
-																		</div>
-																		<div className="flex justify-between items-center p-2 bg-gray-50 dark:bg-gray-800 rounded">
-																			<span className="text-sm">
-																				Productivity Target
-																			</span>
-																			<span className="font-semibold">
-																				≥ 50 tickets/month
-																			</span>
-																		</div>
-																	</div>
+															{/* Reliability - 15% */}
+															<MetricCard
+																title="Reliability"
+																score={scores.reliability}
+																weight="15%"
+																icon={WarningAmberIcon}
+																color="text-orange-600 dark:text-orange-400"
+																bgColor="bg-orange-100 dark:bg-orange-900/20"
+																details={[
+																	{
+																		label: "Escalation Rate",
+																		value: `${escalationRate.toFixed(1)}%`,
+																		target: `< ${AGENT_TARGETS.ESCALATION_RATE}%`,
+																		status: getMetricStatus(escalationRate, AGENT_TARGETS.ESCALATION_RATE, "max")
+																	}
+																]}
+															/>
 
-																	<div className="mt-4 p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
-																		<div className="font-semibold text-yellow-800 dark:text-yellow-200 mb-2">
-																			Performance Summary
-																		</div>
-																		<div className="text-sm text-yellow-700 dark:text-yellow-300">
-																			{(() => {
-																				const targets = {
-																					aht: avgAHT <= expectedAHT,
-																					sla: slaRate >= 85,
-																					fcr: fcrRate >= 75,
-																					escalation: escalationRate <= 25,
-																					productivity: productivityRatio >= 1,
-																				};
-
-																				const metTargets =
-																					Object.values(targets).filter(
-																						Boolean,
-																					).length;
-																				const totalTargets =
-																					Object.keys(targets).length;
-																				const percentage =
-																					(metTargets / totalTargets) * 100;
-
-																				return (
-																					<div>
-																						<div>
-																							• Targets Met: {metTargets}/
-																							{totalTargets} (
-																							{percentage.toFixed(0)}%)
-																						</div>
-																						<div>
-																							• Overall Grade: {cpiLevel.level}
-																						</div>
-																						<div>
-																							• Recommendation:{" "}
-																							{percentage >= 80
-																								? "Excellent performance, consider for advancement"
-																								: percentage >= 60
-																									? "Good performance, focus on improvement areas"
-																									: "Needs improvement, consider additional training"}
-																						</div>
-																					</div>
-																				);
-																			})()}
-																		</div>
-																	</div>
-																</CardContent>
-															</Card>
-														</div>
-
-														{/* Performance Breakdown */}
-														<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-															<Card>
-																<CardHeader>
-																	<CardTitle className="text-lg flex items-center gap-2">
-																		<TrendingUpIcon className="w-5 h-5" />
-																		Performance Metrics
-																	</CardTitle>
-																</CardHeader>
-																<CardContent>
-																	<div className="space-y-4">
-																		<div className="flex justify-between items-center">
-																			<span className="text-sm text-muted-foreground">
-																				Average Handle Time
-																			</span>
-																			<span className="font-semibold">
-																				{formatDurationDHM(avgAHT / 60)}
-																			</span>
-																		</div>
-																		<div className="flex justify-between items-center">
-																			<span className="text-sm text-muted-foreground">
-																				First Contact Resolution
-																			</span>
-																			<span className="font-semibold">
-																				{fcrRate.toFixed(1)}%
-																			</span>
-																		</div>
-																		<div className="flex justify-between items-center">
-																			<span className="text-sm text-muted-foreground">
-																				SLA Compliance
-																			</span>
-																			<span className="font-semibold">
-																				{slaRate.toFixed(1)}%
-																			</span>
-																		</div>
-																		<div className="flex justify-between items-center">
-																			<span className="text-sm text-muted-foreground">
-																				Escalation Rate
-																			</span>
-																			<span className="font-semibold">
-																				{escalationRate.toFixed(1)}%
-																			</span>
-																		</div>
-																	</div>
-																</CardContent>
-															</Card>
-
-															<Card>
-																<CardHeader>
-																	<CardTitle className="text-lg flex items-center gap-2">
-																		<TrackChangesIcon className="w-5 h-5" />
-																		Performance Targets
-																	</CardTitle>
-																</CardHeader>
-																<CardContent>
-																	<div className="space-y-4">
-																		<div className="flex justify-between items-center">
-																			<span className="text-sm text-muted-foreground">
-																				AHT Target
-																			</span>
-																			<span className="font-semibold">
-																				≤ 24h
-																			</span>
-																		</div>
-																		<div className="flex justify-between items-center">
-																			<span className="text-sm text-muted-foreground">
-																				FCR Target
-																			</span>
-																			<span className="font-semibold">
-																				≥ 75%
-																			</span>
-																		</div>
-																		<div className="flex justify-between items-center">
-																			<span className="text-sm text-muted-foreground">
-																				SLA Target
-																			</span>
-																			<span className="font-semibold">
-																				≥ 85%
-																			</span>
-																		</div>
-																		<div className="flex justify-between items-center">
-																			<span className="text-sm text-muted-foreground">
-																				Escalation Target
-																			</span>
-																			<span className="font-semibold">
-																				≤ 25%
-																			</span>
-																		</div>
-																	</div>
-																</CardContent>
-															</Card>
+															{/* Productivity - 10% */}
+															<MetricCard
+																title="Productivity"
+																score={scores.productivity}
+																weight="10%"
+																icon={TrendingUpIcon}
+																color="text-indigo-600 dark:text-indigo-400"
+																bgColor="bg-indigo-100 dark:bg-indigo-900/20"
+																details={[
+																	{
+																		label: "Ticket Volume",
+																		value: `${(totalTickets / (tenure > 0 ? tenure / 30 : 1)).toFixed(0)} /mo`,
+																		target: `> ${AGENT_TARGETS.TICKETS_PER_MONTH}`,
+																		status: ((totalTickets / (tenure > 0 ? tenure / 30 : 1)) >= AGENT_TARGETS.TICKETS_PER_MONTH) ? "on-target" : "warning"
+																	},
+																	{
+																		label: "Daily Average",
+																		value: `${ticketsPerDay.toFixed(1)} /day`,
+																		target: `> ${AGENT_TARGETS.TICKETS_PER_DAY}`,
+																		status: getMetricStatus(ticketsPerDay, AGENT_TARGETS.TICKETS_PER_DAY, "min")
+																	}
+																]}
+															/>
 														</div>
 													</div>
 												);
@@ -4248,7 +3698,7 @@ const AgentAnalytics = () => {
 
 												return (
 													<div className="space-y-6">
-														<Card>
+														<Card className="border-none shadow-sm bg-slate-50/50 dark:bg-slate-900/50">
 															<CardHeader>
 																<CardTitle className="text-lg flex items-center gap-2">
 																	<LightbulbIcon className="w-5 h-5" />
@@ -4326,87 +3776,219 @@ const AgentAnalytics = () => {
 										</TabsContent>
 
 										{/* Trends Tab with improved typography */}
+										{/* Trends Tab with improved data visualization */}
 										<TabsContent value="trends" className="mt-6">
 											<div className="mb-6">
 												<h3 className="text-xl font-semibold text-zinc-900 dark:text-zinc-100 mb-2">
 													Performance Trends
 												</h3>
 												<p className="text-sm text-zinc-600 dark:text-zinc-400">
-													Monthly performance progression and trend analysis
+													Detailed analysis of agent's performance progression and distribution
 												</p>
 											</div>
-											<div className="space-y-6">
-												<Card className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-sm">
-													<CardHeader className="pb-4">
-														<CardTitle className="text-lg flex items-center gap-2 font-semibold text-zinc-900 dark:text-zinc-100">
-															<TrendingUpIcon className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-															Monthly Performance Trends
-														</CardTitle>
-													</CardHeader>
-													<CardContent className="pt-0">
-														<ResponsiveContainer width="100%" height={260}>
-															<AreaChart
-																data={(() => {
-																	const scoreTrendArr =
-																		getAgentScoreTrend(selectedAgent);
-																	return Array.isArray(scoreTrendArr)
-																		? scoreTrendArr.map((score, i) => ({
-																			month:
-																				data.agentMonthlyChart.labels?.[i] ||
-																				`Month ${i + 1}`,
-																			score,
-																			trend:
-																				score > 60
-																					? "Good"
-																					: score > 45
-																						? "Fair"
-																						: "Needs Improvement",
-																		}))
-																		: [];
-																})()}
-															>
-																<defs>
-																	<linearGradient
-																		id="colorScoreTrend"
-																		x1="0"
-																		y1="0"
-																		x2="0"
-																		y2="1"
-																	>
-																		<stop
-																			offset="5%"
-																			stopColor="#3b82f6"
-																			stopOpacity={0.6}
-																		/>
-																		<stop
-																			offset="95%"
-																			stopColor="#3b82f6"
-																			stopOpacity={0.05}
-																		/>
-																	</linearGradient>
-																</defs>
-																<XAxis dataKey="month" />
-																<YAxis domain={[0, 100]} />
-																<CartesianGrid strokeDasharray="3 3" />
-																<RechartsTooltip />
-																<Area
-																	type="monotone"
-																	dataKey="score"
-																	stroke="#3b82f6"
-																	fill="url(#colorScoreTrend)"
-																	strokeWidth={1.5}
-																/>
-															</AreaChart>
-														</ResponsiveContainer>
-													</CardContent>
-												</Card>
-											</div>
+
+											{(() => {
+												// 1. Prepare Data
+												const agentTickets =
+													timeFilteredTickets?.filter(
+														(t) => t.openBy === selectedAgent,
+													) || [];
+
+												if (agentTickets.length === 0) {
+													return (
+														<div className="text-center py-8 text-gray-500">
+															<TimelineIcon className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+															<p className="text-base font-medium">
+																No trend data available for this agent.
+															</p>
+														</div>
+													);
+												}
+
+												const weeklyData = getWeeklyBreakdown(selectedAgent, agentTickets);
+												const metrics = calculateAgentMetrics(selectedAgent, agentTickets);
+
+												// Transform Shift Data for Pie Chart
+												const shiftData = [
+													{ name: 'Pagi (08-17)', value: metrics.shiftDistribution.pagi, color: '#fbbf24' }, // Amber
+													{ name: 'Sore (17-01)', value: metrics.shiftDistribution.sore, color: '#3b82f6' }, // Blue
+													{ name: 'Malam (01-08)', value: metrics.shiftDistribution.malam, color: '#8b5cf6' }, // Purple
+												].filter(d => d.value > 0);
+
+												// Transform Category Data for Bar Chart
+												const categoryData = Object.entries(metrics.categoryDistribution)
+													.map(([name, value]) => ({ name, value }))
+													.sort((a, b) => b.value - a.value)
+													.slice(0, 5); // Top 5
+
+												return (
+													<div className="space-y-6">
+														{/* 1. Weekly Performance Trend (Composed: Volume + Quality) */}
+														<Card className="bg-white dark:bg-zinc-900 border-none shadow-sm">
+															<CardHeader className="pb-4">
+																<CardTitle className="text-lg flex items-center gap-2 font-semibold text-zinc-900 dark:text-zinc-100">
+																	<TimelineIcon className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+																	Weekly Performance Progression
+																</CardTitle>
+																<CardHeaderDescription>
+																	Ticket volume vs. Resolution Quality (FCR & SLA)
+																</CardHeaderDescription>
+															</CardHeader>
+															<CardContent>
+																<div className="w-full h-[320px]">
+																	<ResponsiveContainer width="100%" height={320}>
+																		<ComposedChart data={weeklyData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+																			<defs>
+																				<linearGradient id="colorVolume" x1="0" y1="0" x2="0" y2="1">
+																					<stop offset="5%" stopColor="#94a3b8" stopOpacity={0.3} />
+																					<stop offset="95%" stopColor="#94a3b8" stopOpacity={0.05} />
+																				</linearGradient>
+																			</defs>
+																			<CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
+																			<XAxis
+																				dataKey="startDate"
+																				tick={{ fontSize: 11 }}
+																				tickLine={false}
+																				axisLine={false}
+																				tickMargin={10}
+																			/>
+																			<YAxis
+																				yAxisId="left"
+																				orientation="left"
+																				tick={{ fontSize: 11 }}
+																				tickLine={false}
+																				axisLine={false}
+																				label={{ value: 'Volume', angle: -90, position: 'insideLeft', style: { textAnchor: 'middle', fill: '#94a3b8', fontSize: 11 } }}
+																			/>
+																			<YAxis
+																				yAxisId="right"
+																				orientation="right"
+																				domain={[0, 110]}
+																				tick={{ fontSize: 11 }}
+																				tickLine={false}
+																				axisLine={false}
+																				label={{ value: 'Score %', angle: 90, position: 'insideRight', style: { textAnchor: 'middle', fill: '#94a3b8', fontSize: 11 } }}
+																			/>
+																			<RechartsTooltip
+																				contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+																				cursor={{ fill: '#f1f5f9' }}
+																			/>
+																			<RechartsLegend verticalAlign="top" height={36} iconSize={8} wrapperStyle={{ fontSize: '11px', paddingTop: '0px' }} />
+
+																			{/* Volume Area */}
+																			<Area
+																				yAxisId="left"
+																				type="monotone"
+																				dataKey="ticketCount"
+																				name="Ticket Volume"
+																				fill="url(#colorVolume)"
+																				stroke="#94a3b8"
+																				strokeWidth={2}
+																			/>
+
+																			{/* Quality Lines */}
+																			<Line
+																				yAxisId="right"
+																				type="monotone"
+																				dataKey="slaRate"
+																				name="SLA %"
+																				stroke="#16a34a"
+																				strokeWidth={2}
+																				dot={false}
+																				activeDot={{ r: 4 }}
+																			/>
+																			<Line
+																				yAxisId="right"
+																				type="monotone"
+																				dataKey="fcrRate"
+																				name="FCR %"
+																				stroke="#9333ea"
+																				strokeWidth={2}
+																				dot={false}
+																				activeDot={{ r: 4 }}
+																			/>
+																		</ComposedChart>
+																	</ResponsiveContainer>
+																</div>
+															</CardContent>
+														</Card>
+
+														<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+															{/* 2. Shift Distribution (Donut) */}
+															<Card className="bg-white dark:bg-zinc-900 border-none shadow-sm flex flex-col">
+																<CardHeader>
+																	<CardTitle className="text-lg flex items-center gap-2 font-semibold">
+																		<AccessTimeIcon className="w-5 h-5 text-amber-500" />
+																		Shift Distribution
+																	</CardTitle>
+																</CardHeader>
+																<CardContent className="flex-1 flex flex-col justify-between">
+																	<div className="w-full h-[220px] flex items-center justify-center">
+																		<ResponsiveContainer width="100%" height={220}>
+																			<PieChart>
+																				<Pie
+																					data={shiftData}
+																					cx="50%"
+																					cy="50%"
+																					innerRadius={50}
+																					outerRadius={80}
+																					paddingAngle={5}
+																					dataKey="value"
+																				>
+																					{shiftData.map((entry, index) => (
+																						<Cell key={`cell-${index}`} fill={entry.color} />
+																					))}
+																				</Pie>
+																				<RechartsTooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
+																				<RechartsLegend verticalAlign="bottom" height={36} iconSize={8} wrapperStyle={{ fontSize: '11px' }} />
+																			</PieChart>
+																		</ResponsiveContainer>
+																	</div>
+																</CardContent>
+															</Card>
+
+															{/* 3. Category Expertise (Bar) */}
+															<Card className="bg-white dark:bg-zinc-900 border-none shadow-sm flex flex-col">
+																<CardHeader>
+																	<CardTitle className="text-lg flex items-center gap-2 font-semibold">
+																		<ListAltIcon className="w-5 h-5 text-cyan-600" />
+																		Top Categories
+																	</CardTitle>
+																</CardHeader>
+																<CardContent className="flex-1">
+																	<div className="w-full h-[220px]">
+																		<ResponsiveContainer width="100%" height={220}>
+																			<BarChart
+																				layout="vertical"
+																				data={categoryData}
+																				margin={{ top: 5, right: 30, left: 80, bottom: 5 }}
+																			>
+																				<CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} />
+																				<XAxis type="number" hide />
+																				<YAxis
+																					dataKey="name"
+																					type="category"
+																					width={80}
+																					tick={{ fontSize: 10 }}
+																					tickFormatter={(value) => value.length > 12 ? `${value.substring(0, 12)}...` : value}
+																				/>
+																				<RechartsTooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
+																				<Bar dataKey="value" fill="#0ea5e9" radius={[0, 4, 4, 0]} barSize={20} name="Tickets" />
+																			</BarChart>
+																		</ResponsiveContainer>
+																	</div>
+																</CardContent>
+															</Card>
+														</div>
+													</div>
+												);
+											})()}
 										</TabsContent>
 
 										{/* Details Tab */}
 										<TabsContent value="details" className="mt-4">
 											<div className="space-y-6">
-												<Card>
+												<Card className="border-none shadow-sm bg-white dark:bg-zinc-900">
 													<CardHeader>
 														<CardTitle className="text-lg flex items-center gap-2">
 															<BarChartIcon className="w-5 h-5" />
@@ -4988,7 +4570,7 @@ const AgentAnalytics = () => {
 					</CardContent>
 				</Card>
 			</div>
-		</PageWrapper>
+		</PageWrapper >
 	);
 };
 

@@ -14,6 +14,8 @@ export interface AgentPhoto {
   isActive: boolean;
 }
 
+const CACHE_VERSION = Date.now();
+
 /**
  * Get photo path for agent - checks multiple sources
  * Returns path with proper encoding for URL
@@ -28,7 +30,7 @@ export const getAgentPhotoPath = (agentName: string): string => {
   // Return path - browser will handle URL encoding automatically
   // Use PNG as default (most common format)
   // The actual file might have different extension, but browser will try to load it
-  return `/agent-photos/${normalizedName}.png`;
+  return `/agent-photos/${normalizedName}.png?v=${CACHE_VERSION}`;
 };
 
 /**

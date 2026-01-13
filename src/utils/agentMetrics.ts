@@ -54,6 +54,7 @@ export interface AgentMetrics {
     agentName: string;
     tenure: number; // days since first ticket
     totalTickets: number;
+    closedTickets: number;
 
     // Efficiency Metrics (in hours)
     avgAHT: number; // Average Handle Time
@@ -71,9 +72,9 @@ export interface AgentMetrics {
 
     // Shift Distribution
     shiftDistribution: {
-        pagi: number;
-        siang: number;
         malam: number;
+        pagi: number;
+        sore: number;
     };
 
     // Category Distribution
@@ -118,11 +119,14 @@ export interface MetricStatus {
 
 /**
  * Determine shift based on hour of day
+ * Malam: 01:00-07:59
+ * Pagi: 08:00-16:59
+ * Sore: 00:00-00:59 & 17:00-23:59
  */
-export function getShiftFromHour(hour: number): "pagi" | "siang" | "malam" {
-    if (hour >= 6 && hour < 14) return "pagi";
-    if (hour >= 14 && hour < 22) return "siang";
-    return "malam";
+export function getShiftFromHour(hour: number): "malam" | "pagi" | "sore" {
+    if (hour >= 1 && hour < 8) return "malam";
+    if (hour >= 8 && hour < 17) return "pagi";
+    return "sore"; // 17-23 and 0 (midnight)
 }
 
 /**
@@ -185,6 +189,8 @@ export function calculateAgentMetrics(
 ): AgentMetrics {
     const agentTickets = tickets.filter((t) => t.openBy === agentName);
     const totalTickets = agentTickets.length;
+    // Count closed tickets (status 'Closed' or has closeTime)
+    const closedTickets = agentTickets.filter((t) => t.status === "Closed" || (t.closeTime && t.closeTime.trim() !== "")).length;
 
     if (totalTickets === 0) {
         return getEmptyMetrics(agentName);
@@ -259,7 +265,7 @@ export function calculateAgentMetrics(
     const escalationRate = (escalatedTickets.length / totalTickets) * 100;
 
     // Calculate shift distribution
-    const shiftDistribution = { pagi: 0, siang: 0, malam: 0 };
+    const shiftDistribution = { malam: 0, pagi: 0, sore: 0 };
     agentTickets.forEach((t) => {
         const date = new Date(t.openTime);
         if (!isNaN(date.getTime())) {
@@ -306,6 +312,7 @@ export function calculateAgentMetrics(
         agentName,
         tenure,
         totalTickets,
+        closedTickets,
         avgAHT,
         avgFRT,
         avgART,
@@ -399,6 +406,7 @@ function getEmptyMetrics(agentName: string): AgentMetrics {
         agentName,
         tenure: 0,
         totalTickets: 0,
+        closedTickets: 0,
         avgAHT: 0,
         avgFRT: 0,
         avgART: 0,
@@ -407,7 +415,7 @@ function getEmptyMetrics(agentName: string): AgentMetrics {
         escalationRate: 0,
         ticketsPerDay: 0,
         activedays: 0,
-        shiftDistribution: { pagi: 0, siang: 0, malam: 0 },
+        shiftDistribution: { malam: 0, pagi: 0, sore: 0 },
         categoryDistribution: {},
         escalationDepth: { level1: 0, level2: 0, level3: 0, level4: 0, level5: 0 },
         scores: {
