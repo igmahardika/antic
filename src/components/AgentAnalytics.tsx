@@ -3894,7 +3894,7 @@ const AgentAnalytics = () => {
 																				Escalation Target
 																			</span>
 																			<span className="font-semibold">
-																				≤ 10%
+																				≤ 25%
 																			</span>
 																		</div>
 																		<div className="flex justify-between items-center p-2 bg-gray-50 dark:bg-gray-800 rounded">
@@ -3917,7 +3917,7 @@ const AgentAnalytics = () => {
 																					aht: avgAHT <= expectedAHT,
 																					sla: slaRate >= 85,
 																					fcr: fcrRate >= 75,
-																					escalation: escalationRate <= 10,
+																					escalation: escalationRate <= 25,
 																					productivity: productivityRatio >= 1,
 																				};
 
@@ -4042,7 +4042,7 @@ const AgentAnalytics = () => {
 																				Escalation Target
 																			</span>
 																			<span className="font-semibold">
-																				≤ 10%
+																				≤ 25%
 																			</span>
 																		</div>
 																	</div>
@@ -4209,12 +4209,12 @@ const AgentAnalytics = () => {
 													});
 												}
 
-												if (escalationRate > 10) {
+												if (escalationRate > 25) {
 													insights.push({
 														category: "Resolution",
 														impact: "medium",
 														title: "High Escalation Rate",
-														description: `Escalation rate (${escalationRate.toFixed(1)}%) is above 10% threshold.`,
+														description: `Escalation rate (${escalationRate.toFixed(1)}%) is above 25% threshold.`,
 														recommendation:
 															"Identify common escalation reasons and provide additional training.",
 														color:
