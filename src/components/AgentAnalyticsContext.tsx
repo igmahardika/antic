@@ -257,11 +257,23 @@ export const AgentAnalyticsProvider = ({ children }) => {
 			totalTicketsPerMonth[monthYear] = (totalTicketsPerMonth[monthYear] || 0) + 1;
 
 			// KPI metrics
-			const closePen = t.closeHandling ? new Date(t.closeHandling) : null;
-			const close = t.closeTime ? new Date(t.closeTime) : null;
-			const frt = (closePen && !isNaN(closePen.getTime())) ? (closePen.getTime() - dateObj.getTime()) / 60000 : 0;
-			const art = (close && !isNaN(close.getTime())) ? (close.getTime() - dateObj.getTime()) / 60000 : 0;
+			// Use pre-calculated durations from UploadData.tsx to ensure consistency and correctness
+			// FRT: First Resolution Time -> handlingDuration1 (Durasi Penanganan 1)
+			const frt = t.handlingDuration1?.rawHours && t.handlingDuration1.rawHours > 0
+				? t.handlingDuration1.rawHours * 60 // Convert to minutes for consistency with existing logic (if needed) or keep as hours
+				: 0;
+
+			// ART: Average Resolution Time -> handlingDuration (Durasi Penanganan Total/Overall) OR specific step?
+			// "Average Resolution Time" usually means total resolution time for the ticket.
+			// In TicketData context, 'handlingDuration' is the main duration.
+			const art = t.handlingDuration?.rawHours && t.handlingDuration.rawHours > 0
+				? t.handlingDuration.rawHours * 60 // Convert to minutes
+				: 0;
+
 			const fcr = !t.handling2 ? 100 : 0;
+			// SLA: if resolution time <= 24 hours (1440 mins) -> 100%, else 0%
+			// Note: 1440 mins = 24 hours. The threshold might be 720h (30 days) depending on business rule, but common SLA is 24h.
+			// Using 24h as per previous code logic (1440).
 			const sla = art > 0 && art <= 1440 ? 100 : 0;
 
 			const updateMetric = (metricMap: Record<string, Record<string, number[]>>, val: number) => {
