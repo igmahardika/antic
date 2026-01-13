@@ -32,6 +32,16 @@ import {
 } from "@mui/icons-material";
 import PageWrapper from "./PageWrapper";
 import type { AgentMetric } from "@/utils/agentKpi";
+import {
+	AGENT_TARGETS,
+	CPI_WEIGHTS,
+	CPI_LEVELS,
+	calculateAgentMetrics,
+	getWeeklyBreakdown,
+	formatHoursToHMS,
+	getMetricStatus,
+	getCPILevel,
+} from "@/utils/agentMetrics";
 
 import { formatDurationDHM } from "@/lib/utils";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -805,11 +815,11 @@ const AgentAnalytics = () => {
 			const productivityScore = Math.min(100, (totalTickets / 100) * 100);
 
 			const cpi = Math.round(
-				efficiencyScore * 0.25 +
-				qualityScore * 0.3 +
-				resolutionScore * 0.2 +
-				reliabilityScore * 0.15 +
-				productivityScore * 0.1,
+				efficiencyScore * CPI_WEIGHTS.EFFICIENCY +
+				qualityScore * CPI_WEIGHTS.QUALITY +
+				resolutionScore * CPI_WEIGHTS.RESOLUTION +
+				reliabilityScore * CPI_WEIGHTS.RELIABILITY +
+				productivityScore * CPI_WEIGHTS.PRODUCTIVITY,
 			);
 
 			const getCPILevel = (score: number) => {
@@ -2584,11 +2594,11 @@ const AgentAnalytics = () => {
 												);
 
 												const cpi = Math.round(
-													efficiencyScore * 0.25 +
-													qualityScore * 0.3 +
-													resolutionScore * 0.2 +
-													reliabilityScore * 0.15 +
-													productivityScore * 0.1,
+													efficiencyScore * CPI_WEIGHTS.EFFICIENCY +
+													qualityScore * CPI_WEIGHTS.QUALITY +
+													resolutionScore * CPI_WEIGHTS.RESOLUTION +
+													reliabilityScore * CPI_WEIGHTS.RELIABILITY +
+													productivityScore * CPI_WEIGHTS.PRODUCTIVITY,
 												);
 
 												const getCPILevel = (score) => {
@@ -3166,7 +3176,7 @@ const AgentAnalytics = () => {
 																				Avg AHT
 																			</p>
 																			<p className="text-xl font-bold text-purple-900 dark:text-purple-100">
-																				{formatDurationDHM(avgAHT)}
+																				{formatDurationDHM(avgAHT / 60)}
 																			</p>
 																		</div>
 																	</div>
@@ -3609,11 +3619,11 @@ const AgentAnalytics = () => {
 
 												// Calculate CPI with weights
 												const cpi = Math.round(
-													efficiencyScore * 0.25 +
-													qualityScore * 0.3 +
-													resolutionScore * 0.2 +
-													reliabilityScore * 0.15 +
-													productivityScore * 0.1,
+													efficiencyScore * CPI_WEIGHTS.EFFICIENCY +
+													qualityScore * CPI_WEIGHTS.QUALITY +
+													resolutionScore * CPI_WEIGHTS.RESOLUTION +
+													reliabilityScore * CPI_WEIGHTS.RELIABILITY +
+													productivityScore * CPI_WEIGHTS.PRODUCTIVITY,
 												);
 
 												// Determine CPI level
