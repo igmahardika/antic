@@ -889,9 +889,9 @@ const AgentAnalytics = () => {
 				{
 					metric: "Escalation Rate",
 					value: `${escalationRate.toFixed(1)}%`,
-					target: "≤10%",
-					status: escalationRate <= 10 ? "On Target" : "Above Target",
-					statusColor: escalationRate <= 10 ? [34, 197, 94] : [245, 158, 11],
+					target: "≤25%",
+					status: escalationRate <= 25 ? "On Target" : "Above Target",
+					statusColor: escalationRate <= 25 ? [34, 197, 94] : [245, 158, 11],
 				},
 			];
 
@@ -1087,10 +1087,10 @@ const AgentAnalytics = () => {
 				});
 			}
 
-			if (escalationRate > 10) {
+			if (escalationRate > 25) {
 				insights.push({
 					title: "High Escalation Rate",
-					description: `Escalation rate (${escalationRate.toFixed(1)}%) is above 10% threshold. Identify common reasons and provide additional training.`,
+					description: `Escalation rate (${escalationRate.toFixed(1)}%) is above 25% threshold. Identify common reasons and provide additional training.`,
 					impact: "MEDIUM",
 				});
 			} else if (escalationRate < 5) {
@@ -2869,13 +2869,13 @@ const AgentAnalytics = () => {
 																		</div>
 																		<div className="flex items-center gap-2">
 																			<div
-																				className={`w-3 h-3 rounded-full ${escalationRate > 10
+																				className={`w-3 h-3 rounded-full ${escalationRate > 25
 																					? "bg-yellow-500"
 																					: "bg-green-500"
 																					}`}
 																			></div>
 																			<span className="text-sm font-medium">
-																				{escalationRate > 10
+																				{escalationRate > 25
 																					? "High Escalation Rate"
 																					: "Low Escalation Rate"}
 																			</span>
