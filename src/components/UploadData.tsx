@@ -969,8 +969,8 @@ const processAndAnalyzeData = (
 				openTimeIso,
 			);
 		}
-		// Normalisasi ke format tanpa timezone (YYYY-MM-DDTHH:mm:ss)
-		const openTime = openTimeIso.slice(0, 19);
+		// Normalisasi ke format tanpa timezone (YYYY-MM-DDTHH:mm:ss) -- REVERTED: Keep Z to force UTC!
+		const openTime = openTimeIso;
 		// Logging validasi waktu dan shift
 		if (typeof window !== "undefined") {
 			const d = new Date(openTimeIso);
