@@ -684,14 +684,16 @@ const ErrorLogTable = ({ errors }: { errors: IErrorLog[] }) => {
 
 // Helper to get formatted string YYYY-MM-DD HH:mm:ss from any date-like input
 // This extracts the "Face Value" assuming the input encapsulates the desired local time.
-function getFaceValueString(value: any): string | undefined {
+// Helper to extract "Face Value" components from any input type
+function getFaceValueComponents(value: any): { year: number, month: number, day: number, hours: number, minutes: number, seconds: number, type: string } | undefined {
 	if (value === null || value === undefined || value === "") return undefined;
 
 	let year, month, day, hours, minutes, seconds;
+	let type = "unknown";
 
 	if (value instanceof Date) {
+		type = "date_object";
 		if (isNaN(value.getTime())) return undefined;
-		// Extract local components (Face Value) from the Date object
 		year = value.getFullYear();
 		month = value.getMonth() + 1;
 		day = value.getDate();
@@ -699,16 +701,13 @@ function getFaceValueString(value: any): string | undefined {
 		minutes = value.getMinutes();
 		seconds = value.getSeconds();
 	} else if (typeof value === "number") {
-		// Excel Serial Date -> JS Date (UTC)
-		// Excel base date: Dec 30, 1899. Unix base date: Jan 1, 1970.
-		// Difference: 25569 days.
-		if (value <= 0 || value >= 2958465) return undefined; // Valid range
+		type = "excel_serial";
+		// Excel Serial Date -> JS Date (UTC calculation)
+		if (value <= 0 || value >= 2958465) return undefined;
 		const dateInMs = Math.round((value - 25569) * 86400 * 1000);
 		const date = new Date(dateInMs);
-
 		if (isNaN(date.getTime())) return undefined;
 
-		// Use UTC getters because we calculated the UTC timestamp directly
 		year = date.getUTCFullYear();
 		month = date.getUTCMonth() + 1;
 		day = date.getUTCDate();
@@ -716,115 +715,111 @@ function getFaceValueString(value: any): string | undefined {
 		minutes = date.getUTCMinutes();
 		seconds = date.getUTCSeconds();
 	} else if (typeof value === "string") {
+		type = "string";
 		let trimmed = value.trim();
 
-		// Aggressively strip timezone info to force "Local/Face Value" parsing
-		// Support: GMT+0700, GMT+07:00, UTC+7, +07:00, +0700, Z
-		trimmed = trimmed.replace(/(GMT|UTC).*$/, "").trim(); // Remove "GMT..." or "UTC..." and everything after
-		trimmed = trimmed.replace(/\(.*\)$/, "").trim(); // Remove (...)
-		trimmed = trimmed.replace(/Z$/, "").trim(); // Remove trailing Z
-		trimmed = trimmed.replace(/[+-]\d{2}:?\d{2}$/, "").trim(); // Remove ISO offsets like +07:00 or +0700 at end
+		// STRIP TIMEZONE INFO AGGRESSIVELY
+		trimmed = trimmed.replace(/(GMT|UTC).*$/, "").trim();
+		trimmed = trimmed.replace(/\(.*\)$/, "").trim();
+		trimmed = trimmed.replace(/Z$/, "").trim();
+		trimmed = trimmed.replace(/[+-]\d{2}:?\d{2}$/, "").trim();
 
-		// If string contains letters (e.g. "Wed Jan ..."), try parsing as Date to extract face value
-		if (/[a-zA-Z]/.test(trimmed)) {
-			const d = new Date(trimmed);
-			if (!isNaN(d.getTime())) {
-				year = d.getFullYear();
-				month = d.getMonth() + 1;
-				day = d.getDate();
-				hours = d.getHours();
-				minutes = d.getMinutes();
-				seconds = d.getSeconds();
+		// 1. Try Regex Patterns for Standard Formats
+		const formats = [
+			/^(\d{4})-(\d{1,2})-(\d{1,2})\s+(\d{1,2}):(\d{1,2}):(\d{1,2})$/, // YYYY-MM-DD HH:mm:ss
+			/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})\s+(\d{1,2}):(\d{1,2}):(\d{1,2})$/, // DD/MM/YYYY HH:mm:ss
+			/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})\s+(\d{1,2}):(\d{1,2})$/, // DD/MM/YYYY HH:mm
+			/^(\d{4})-(\d{1,2})-(\d{1,2})\s+(\d{1,2}):(\d{1,2})$/, // YYYY-MM-DD HH:mm
+			/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/, // DD/MM/YYYY
+			/^(\d{4})-(\d{1,2})-(\d{1,2})$/ // YYYY-MM-DD
+		];
+
+		let matchFound = false;
+		for (let i = 0; i < formats.length; i++) {
+			const parts = trimmed.match(formats[i]);
+			if (parts) {
+				if (i === 0) { // YYYY-MM-DD HH:mm:ss
+					year = parseInt(parts[1], 10); month = parseInt(parts[2], 10); day = parseInt(parts[3], 10);
+					hours = parseInt(parts[4], 10); minutes = parseInt(parts[5], 10); seconds = parseInt(parts[6], 10);
+				} else if (i === 1) { // DD/MM/YYYY HH:mm:ss
+					day = parseInt(parts[1], 10); month = parseInt(parts[2], 10); year = parseInt(parts[3], 10);
+					hours = parseInt(parts[4], 10); minutes = parseInt(parts[5], 10); seconds = parseInt(parts[6], 10);
+				} else if (i === 2) { // DD/MM/YYYY HH:mm
+					day = parseInt(parts[1], 10); month = parseInt(parts[2], 10); year = parseInt(parts[3], 10);
+					hours = parseInt(parts[4], 10); minutes = parseInt(parts[5], 10); seconds = 0;
+				} else if (i === 3) { // YYYY-MM-DD HH:mm
+					year = parseInt(parts[1], 10); month = parseInt(parts[2], 10); day = parseInt(parts[3], 10);
+					hours = parseInt(parts[4], 10); minutes = parseInt(parts[5], 10); seconds = 0;
+				} else if (i === 4) { // DD/MM/YYYY
+					day = parseInt(parts[1], 10); month = parseInt(parts[2], 10); year = parseInt(parts[3], 10);
+					hours = 0; minutes = 0; seconds = 0;
+				} else if (i === 5) { // YYYY-MM-DD
+					year = parseInt(parts[1], 10); month = parseInt(parts[2], 10); day = parseInt(parts[3], 10);
+					hours = 0; minutes = 0; seconds = 0;
+				}
+				matchFound = true;
+				break;
+			}
+		}
+
+		// 2. Fallback: Parse as Date (for verbose strings like "Wed Jan 01...")
+		if (!matchFound) {
+			// Check if it's a date-like string (contains letters)
+			if (/[a-zA-Z]/.test(trimmed)) {
+				const d = new Date(trimmed);
+				if (!isNaN(d.getTime())) {
+					type = "parsed_verbose_string";
+					year = d.getFullYear(); // Uses Browser Local Time (effective Face Value if no timezone info)
+					month = d.getMonth() + 1;
+					day = d.getDate();
+					hours = d.getHours();
+					minutes = d.getMinutes();
+					seconds = d.getSeconds();
+				} else {
+					return undefined;
+				}
 			} else {
-				return trimmed;
+				return undefined;
 			}
 		} else {
-			return trimmed;
+			type = "parsed_standard_string";
 		}
 	} else {
 		return undefined;
 	}
 
-	// Pad and format
-	const pad = (n: number) => n.toString().padStart(2, '0');
-	return `${year}-${pad(month)}-${pad(day)} ${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
+	// Year correction
+	if (year < 100) year += 2000;
+
+	return { year, month, day, hours, minutes: minutes || 0, seconds: seconds || 0, type };
 }
 
 function parseExcelDate(value: any): string | undefined {
-	const faceValueStr = getFaceValueString(value);
-	if (!faceValueStr) return undefined;
+	const components = getFaceValueComponents(value);
 
-	// Now parse strictly as UTC
-	// Supported formats: YYYY-MM-DD HH:mm:ss, DD/MM/YYYY HH:mm:ss, etc.
-	const formats = [
-		// YYYY-MM-DD HH:mm:ss (Standard Output from helper)
-		/^(\d{4})-(\d{1,2})-(\d{1,2})\s+(\d{1,2}):(\d{1,2}):(\d{1,2})$/,
-		// DD/MM/YYYY HH:MM:SS
-		/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})\s+(\d{1,2}):(\d{1,2}):(\d{1,2})$/,
-		// DD/MM/YYYY HH:MM (Supports user's new format)
-		/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})\s+(\d{1,2}):(\d{1,2})$/,
-		// YYYY-MM-DD HH:MM
-		/^(\d{4})-(\d{1,2})-(\d{1,2})\s+(\d{1,2}):(\d{1,2})$/,
-		// DD/MM/YYYY
-		/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/,
-		// YYYY-MM-DD
-		/^(\d{4})-(\d{1,2})-(\d{1,2})$/,
-	];
+	// Uncomment to debug specific value parsing
+	// if (components && components.hours > 0) {
+	//    logger.info(`[DATE DEBUG] Value: ${value} | Parsed: ${JSON.stringify(components)}`);
+	// }
 
-	for (let i = 0; i < formats.length; i++) {
-		const parts = faceValueStr.match(formats[i]);
-		if (parts) {
-			let year, month, day, hours = 0, minutes = 0, seconds = 0;
+	if (!components) return undefined;
 
-			// Handle format differences
-			if (i === 0) { // YYYY-MM-DD HH:mm:ss
-				year = parseInt(parts[1], 10);
-				month = parseInt(parts[2], 10);
-				day = parseInt(parts[3], 10);
-				hours = parseInt(parts[4], 10);
-				minutes = parseInt(parts[5], 10);
-				seconds = parseInt(parts[6], 10);
-			} else if (i === 1) { // DD/MM/YYYY HH:mm:ss
-				day = parseInt(parts[1], 10);
-				month = parseInt(parts[2], 10);
-				year = parseInt(parts[3], 10);
-				hours = parseInt(parts[4], 10);
-				minutes = parseInt(parts[5], 10);
-				seconds = parseInt(parts[6], 10);
-			} else if (i === 2) { // DD/MM/YYYY HH:mm
-				day = parseInt(parts[1], 10);
-				month = parseInt(parts[2], 10);
-				year = parseInt(parts[3], 10);
-				hours = parseInt(parts[4], 10);
-				minutes = parseInt(parts[5], 10);
-			} else if (i === 3) { // YYYY-MM-DD HH:mm
-				year = parseInt(parts[1], 10);
-				month = parseInt(parts[2], 10);
-				day = parseInt(parts[3], 10);
-				hours = parseInt(parts[4], 10);
-				minutes = parseInt(parts[5], 10);
-			} else if (i === 4) { // DD/MM/YYYY
-				day = parseInt(parts[1], 10);
-				month = parseInt(parts[2], 10);
-				year = parseInt(parts[3], 10);
-			} else if (i === 5) { // YYYY-MM-DD
-				year = parseInt(parts[1], 10);
-				month = parseInt(parts[2], 10);
-				day = parseInt(parts[3], 10);
-			}
+	try {
+		// STRICT UTC CONSTRUCTION
+		const utcDate = new Date(Date.UTC(
+			components.year,
+			components.month - 1,
+			components.day,
+			components.hours,
+			components.minutes,
+			components.seconds
+		));
 
-			if (year! < 100) year! += 2000;
-
-			// Construct strictly as UTC
-			try {
-				const utcDate = new Date(Date.UTC(year!, month! - 1, day!, hours, minutes, seconds));
-				if (!isNaN(utcDate.getTime())) {
-					return utcDate.toISOString();
-				}
-			} catch (e) {
-				// Ignore
-			}
+		if (!isNaN(utcDate.getTime())) {
+			return utcDate.toISOString();
 		}
+	} catch (e) {
+		logger.warn(`[DEBUG] Date construction failed for:`, value, e);
 	}
 
 	return undefined;
