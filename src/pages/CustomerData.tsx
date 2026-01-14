@@ -23,9 +23,7 @@ import DeleteByFileDialog from "../components/DeleteByFileDialog";
 import { createUploadSession, finalizeUploadSession, deleteAllData } from '../services/uploadSessions';
 import { cacheService } from "@/services/cacheService";
 import DeleteIcon from "@mui/icons-material/Delete";
-import DownloadIcon from "@mui/icons-material/Download";
 import { Button } from "../components/ui/button";
-import { Progress } from "../components/ui/progress";
 
 const CUSTOMER_HEADERS = ["Nama", "Jenis Klien", "Layanan", "Kategori"];
 
@@ -385,16 +383,6 @@ const CustomerData: React.FC = () => {
 			reader.readAsArrayBuffer(file); // Read as ArrayBuffer for both CSV and Excel
 		} else {
 			setFileName("");
-		}
-	};
-
-	// Tambahkan handler clear cache dan clear data
-	const handleClearCache = async () => {
-		if (window.confirm("Yakin ingin menghapus cache customer di IndexedDB?")) {
-			await db.customers.clear();
-			await cacheService.invalidateCustomers();
-			alert("Cache customer berhasil dibersihkan.");
-			fetchAllCustomers();
 		}
 	};
 

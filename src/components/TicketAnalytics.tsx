@@ -634,13 +634,8 @@ const TicketAnalytics = ({ }: TicketAnalyticsProps) => {
 					// Only include 2025+ for customer sync
 					if (year < 2025) return false;
 
-					const classification = (t.classification || "")
-						.trim()
-						.toLowerCase();
-					return (
-						classification !== "gangguan diluar layanan" &&
-						classification !== "request"
-					);
+					const classification = (t.classification || "").trim().toLowerCase();
+					return !/^(gangguan\s*)?di\s*luar\s*layanan|request$/i.test(classification);
 				})
 				: [],
 		[filteredGridData],
@@ -1272,6 +1267,16 @@ const TicketAnalytics = ({ }: TicketAnalyticsProps) => {
 			}
 			: { cat: "", avg: 0, median: 0, count: 0, formattedAvg: "00:00:00" };
 
+	// DEBUG LOG untuk validasi data customer dan kategori
+	useEffect(() => {
+		if (typeof window !== "undefined" && process.env.NODE_ENV !== "production") {
+			logger.info("allCustomers:", allCustomers);
+			logger.info("kategoriList:", kategoriList);
+			logger.info("customerKategoriMap:", customerKategoriMap);
+			logger.info("gridDataWithCustomerSync:", gridDataWithCustomerSync.slice(0, 10));
+		}
+	}, [allCustomers, kategoriList, customerKategoriMap, gridDataWithCustomerSync]);
+
 	// Guard clause for when data tidak tersedia
 	if (!gridData || gridData.length === 0) {
 		return (
@@ -1287,15 +1292,6 @@ const TicketAnalytics = ({ }: TicketAnalyticsProps) => {
 		);
 	}
 
-	// DEBUG LOG untuk validasi data customer dan kategori
-	useEffect(() => {
-		if (typeof window !== "undefined" && process.env.NODE_ENV !== "production") {
-			logger.info("allCustomers:", allCustomers);
-			logger.info("kategoriList:", kategoriList);
-			logger.info("customerKategoriMap:", customerKategoriMap);
-			logger.info("gridDataWithCustomerSync:", gridDataWithCustomerSync.slice(0, 10));
-		}
-	}, [allCustomers, kategoriList, customerKategoriMap, gridDataWithCustomerSync, logger]);
 
 	return (
 		<PageWrapper maxW="4xl">
@@ -3161,7 +3157,7 @@ const TicketAnalytics = ({ }: TicketAnalyticsProps) => {
 																		name &&
 																		// Relax activeMonths check
 																		(activeMonths.length === 0 || activeMonths.includes(month)) &&
-																		!/^(di luar layanan|gangguan\s*di\s*luar\s*layanan|request)$/.test(cls)
+																		!/^(gangguan\s*)?di\s*luar\s*layanan|request$/i.test(cls)
 																	);
 																})
 																.map((t) =>
@@ -3203,7 +3199,7 @@ const TicketAnalytics = ({ }: TicketAnalyticsProps) => {
 																.trim()
 																.toLowerCase();
 															if (
-																/^(di luar layanan|gangguan\s*di\s*luar\s*layanan|request)$/.test(cls)
+																/^(gangguan\s*)?di\s*luar\s*layanan|request$/i.test(cls)
 															)
 																return false;
 															const activeMonths =
@@ -3270,7 +3266,7 @@ const TicketAnalytics = ({ }: TicketAnalyticsProps) => {
 																	kategori === kat &&
 																	name &&
 																	(activeMonths.length === 0 || activeMonths.includes(month)) &&
-																	!/^(di luar layanan|gangguan\s*di\s*luar\s*layanan|request)$/.test(cls)
+																	!/^(gangguan\s*)?di\s*luar\s*layanan|request$/i.test(cls)
 																);
 															})
 															.map((t) => (t.name || "").trim().toLowerCase()),
@@ -3409,7 +3405,7 @@ const TicketAnalytics = ({ }: TicketAnalyticsProps) => {
 																		name &&
 																		// Relax activeMonths check
 																		(activeMonths.length === 0 || activeMonths.includes(month)) &&
-																		!/^(di luar layanan|gangguan\s*di\s*luar\s*layanan|request)$/.test(cls)
+																		!/^(gangguan\s*)?di\s*luar\s*layanan|request$/i.test(cls)
 																	);
 																})
 																.map((t) =>
@@ -3451,7 +3447,7 @@ const TicketAnalytics = ({ }: TicketAnalyticsProps) => {
 																.trim()
 																.toLowerCase();
 															if (
-																/^(di luar layanan|gangguan\s*di\s*luar\s*layanan|request)$/.test(cls)
+																/^(gangguan\s*)?di\s*luar\s*layanan|request$/i.test(cls)
 															)
 																return false;
 															const activeMonths =
@@ -3518,7 +3514,7 @@ const TicketAnalytics = ({ }: TicketAnalyticsProps) => {
 																	jenis === jk &&
 																	t.name &&
 																	t.name.trim() &&
-																	!/^(di luar layanan|gangguan\s*di\s*luar\s*layanan|request)$/.test(cls)
+																	!/^(gangguan\s*)?di\s*luar\s*layanan|request$/i.test(cls)
 																);
 															})
 															.map((t) => (t.name || "").trim().toLowerCase()),
@@ -3695,7 +3691,7 @@ const TicketAnalytics = ({ }: TicketAnalyticsProps) => {
 																		t.name.trim() &&
 																		// Relax activeMonths check
 																		(activeMonths.length === 0 || activeMonths.includes(month)) &&
-																		!/^(di luar layanan|gangguan\s*di\s*luar\s*layanan|request)$/.test(cls)
+																		!/^(gangguan\s*)?di\s*luar\s*layanan|request$/i.test(cls)
 																	);
 																})
 																.map((t) =>
@@ -3760,7 +3756,7 @@ const TicketAnalytics = ({ }: TicketAnalyticsProps) => {
 																kategori === kat &&
 																name &&
 																(activeMonths.length === 0 || activeMonths.includes(month)) &&
-																!/^(di luar layanan|gangguan\s*di\s*luar\s*layanan|request)$/.test(cls)
+																!/^(gangguan\s*)?di\s*luar\s*layanan|request$/i.test(cls)
 															);
 														})
 														.map((t) => (t.name || "").trim().toLowerCase()),
@@ -3909,7 +3905,7 @@ const TicketAnalytics = ({ }: TicketAnalyticsProps) => {
 																		name &&
 																		// Relax activeMonths check
 																		(activeMonths.length === 0 || activeMonths.includes(month)) &&
-																		!/^(di luar layanan|gangguan\s*di\s*luar\s*layanan|request)$/.test(cls)
+																		!/^(gangguan\s*)?di\s*luar\s*layanan|request$/i.test(cls)
 																	);
 																})
 																.map((t) =>
@@ -3985,7 +3981,7 @@ const TicketAnalytics = ({ }: TicketAnalyticsProps) => {
 																.toLowerCase();
 															if (!t.name || !t.name.trim()) return false;
 															return (
-																!/^(di luar layanan|gangguan\s*di\s*luar\s*layanan|request)$/.test(cls)
+																!/^(gangguan\s*)?di\s*luar\s*layanan|request$/i.test(cls)
 															);
 														})
 														.map((t) => (t.name || "").trim().toLowerCase()),
@@ -4166,7 +4162,7 @@ const TicketAnalytics = ({ }: TicketAnalyticsProps) => {
 																.toLowerCase();
 															if (!t.name || !t.name.trim()) return false;
 															return (
-																!/^(di luar layanan|gangguan\s*di\s*luar\s*layanan|request)$/.test(cls)
+																!/^(gangguan\s*)?di\s*luar\s*layanan|request$/i.test(cls)
 															);
 														})
 														.map((t) => (t.name || "").trim().toLowerCase()),
@@ -4233,7 +4229,7 @@ const TicketAnalytics = ({ }: TicketAnalyticsProps) => {
 														.toLowerCase();
 													if (!t.name || !t.name.trim()) return false;
 													return (
-														!/^(di luar layanan|gangguan\s*di\s*luar\s*layanan|request)$/.test(cls)
+														!/^(gangguan\s*)?di\s*luar\s*layanan|request$/i.test(cls)
 													);
 												})
 												.map((t) => (t.name || "").trim().toLowerCase()),
@@ -4366,7 +4362,7 @@ const TicketAnalytics = ({ }: TicketAnalyticsProps) => {
 																.toLowerCase();
 															if (!t.name || !t.name.trim()) return false;
 															return (
-																!/^(di luar layanan|gangguan\s*di\s*luar\s*layanan|request)$/.test(cls)
+																!/^(gangguan\s*)?di\s*luar\s*layanan|request$/i.test(cls)
 															);
 														})
 														.map((t) => (t.name || "").trim().toLowerCase()),
