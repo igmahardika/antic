@@ -145,7 +145,7 @@ class CacheService {
         // Fetch from API
         const { tickets } = await ticketAPI.getTickets({
             ...filters,
-            limit: 100000, // Get all for now
+            limit: 100000, // Fetch all records
         });
 
         // Store in cache (as is from API for now, or mapped? Let's map it before caching so checks work)
