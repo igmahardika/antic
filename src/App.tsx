@@ -70,6 +70,8 @@ import {
 import LogoutIcon from "@mui/icons-material/Logout";
 import { logger } from "@/lib/logger";
 
+import { ProtectedRoute } from "./components/ProtectedRoute";
+
 const queryClient = new QueryClient();
 
 function AppLayout() {
@@ -185,92 +187,100 @@ function AppLayout() {
 						</div>
 						<div className="p-4 sm:p-6 lg:p-8">
 							<Routes>
-								<Route path="/" element={<Dashboard />} />
-								<Route path="/admin" element={<AdminPanel />} />
+								<Route path="/" element={<ProtectedRoute menuName="Dashboard"><Dashboard /></ProtectedRoute>} />
+								<Route path="/admin" element={<ProtectedRoute menuName="Admin Panel"><AdminPanel /></ProtectedRoute>} />
 								<Route path="/login" element={<Login />} />
 								{/* Path lama tetap, tambahkan path baru nested sesuai sidebar */}
-								<Route path="/ticket/grid-view" element={<ErrorBoundary><TicketData /></ErrorBoundary>} />
-								<Route path="/ticket/kanban-board" element={<CustomerAnalytics />} />
+								<Route path="/ticket/grid-view" element={<ProtectedRoute menuName="Ticket Data"><ErrorBoundary><TicketData /></ErrorBoundary></ProtectedRoute>} />
+								<Route path="/ticket/kanban-board" element={<ProtectedRoute menuName="Customer Analytics"><CustomerAnalytics /></ProtectedRoute>} />
 								<Route
 									path="/ticket/ticket-analytics"
 									element={
-										<TicketAnalyticsProvider>
-											<TicketAnalytics />
-										</TicketAnalyticsProvider>
+										<ProtectedRoute menuName="Ticket Analytics">
+											<TicketAnalyticsProvider>
+												<TicketAnalytics />
+											</TicketAnalyticsProvider>
+										</ProtectedRoute>
 									}
 								/>
 								<Route
 									path="/ticket/agent-analytics"
 									element={
-										<AgentAnalyticsProvider>
-											<AgentAnalytics />
-										</AgentAnalyticsProvider>
+										<ProtectedRoute menuName="Agent Analytics">
+											<AgentAnalyticsProvider>
+												<AgentAnalytics />
+											</AgentAnalyticsProvider>
+										</ProtectedRoute>
 									}
 								/>
 								<Route
 									path="/ticket/upload"
-									element={<UploadData onUploadComplete={() => { }} />}
+									element={<ProtectedRoute menuName="Upload Data"><UploadData onUploadComplete={() => { }} /></ProtectedRoute>}
 								/>
 								<Route
 									path="/masterdata/data-agent"
-									element={<AgentData />}
+									element={<ProtectedRoute menuName="Agent Data"><AgentData /></ProtectedRoute>}
 								/>
 								<Route
 									path="/masterdata/data-customer"
-									element={<CustomerData />}
+									element={<ProtectedRoute menuName="Customer Data"><CustomerData /></ProtectedRoute>}
 								/>
 								{/* Incident Management Routes */}
-								<Route path="/incident/data" element={<IncidentData />} />
+								<Route path="/incident/data" element={<ProtectedRoute menuName="Incident Data"><IncidentData /></ProtectedRoute>} />
 								<Route
 									path="/incident/analytics"
-									element={<IncidentAnalytics />}
+									element={<ProtectedRoute menuName="Incident Analytics"><IncidentAnalytics /></ProtectedRoute>}
 								/>
 								<Route
 									path="/incident/ts-analytics"
-									element={<TSAnalytics />}
+									element={<ProtectedRoute menuName="Technical Support Analytics"><TSAnalytics /></ProtectedRoute>}
 								/>
 								<Route
 									path="/incident/site-analytics"
-									element={<SiteAnalytics />}
+									element={<ProtectedRoute menuName="Site Analytics"><SiteAnalytics /></ProtectedRoute>}
 								/>
 								{/* Escalation routes removed */}
 								<Route
 									path="/documentation/admin-rumus"
-									element={<Formulas />}
+									element={<ProtectedRoute menuName="Formulas"><Formulas /></ProtectedRoute>}
 								/>
 								{/* Path lama tetap untuk fallback/compatibility */}
 								<Route
 									path="/agent-analytics"
 									element={
-										<ErrorBoundary>
-											<AgentAnalyticsProvider>
-												<AgentAnalytics />
-											</AgentAnalyticsProvider>
-										</ErrorBoundary>
+										<ProtectedRoute menuName="Agent Analytics">
+											<ErrorBoundary>
+												<AgentAnalyticsProvider>
+													<AgentAnalytics />
+												</AgentAnalyticsProvider>
+											</ErrorBoundary>
+										</ProtectedRoute>
 									}
 								/>
-								<Route path="/grid-view" element={<TicketData />} />
-								<Route path="/kanban-board" element={<CustomerAnalytics />} />
+								<Route path="/grid-view" element={<ProtectedRoute menuName="Ticket Data"><TicketData /></ProtectedRoute>} />
+								<Route path="/kanban-board" element={<ProtectedRoute menuName="Customer Analytics"><CustomerAnalytics /></ProtectedRoute>} />
 								<Route
 									path="/ticket-analytics"
 									element={
-										<TicketAnalyticsProvider>
-											<TicketAnalytics />
-										</TicketAnalyticsProvider>
+										<ProtectedRoute menuName="Ticket Analytics">
+											<TicketAnalyticsProvider>
+												<TicketAnalytics />
+											</TicketAnalyticsProvider>
+										</ProtectedRoute>
 									}
 								/>
 								<Route
 									path="/upload"
-									element={<UploadData onUploadComplete={() => { }} />}
+									element={<ProtectedRoute menuName="Upload Data"><UploadData onUploadComplete={() => { }} /></ProtectedRoute>}
 								/>
 								<Route
 									path="/summary-dashboard"
-									element={<SummaryDashboard standalone={true} />}
+									element={<ProtectedRoute menuName="Dashboard"><SummaryDashboard standalone={true} /></ProtectedRoute>}
 								/>
-								<Route path="/admin-rumus" element={<Formulas />} />
-								<Route path="/master-agent" element={<AgentData />} />
-								<Route path="/customer" element={<CustomerData />} />
-								<Route path="/vendor-data" element={<VendorData />} />
+								<Route path="/admin-rumus" element={<ProtectedRoute menuName="Formulas"><Formulas /></ProtectedRoute>} />
+								<Route path="/master-agent" element={<ProtectedRoute menuName="Agent Data"><AgentData /></ProtectedRoute>} />
+								<Route path="/customer" element={<ProtectedRoute menuName="Customer Data"><CustomerData /></ProtectedRoute>} />
+								<Route path="/vendor-data" element={<ProtectedRoute menuName="Vendor Data"><VendorData /></ProtectedRoute>} />
 								<Route path="*" element={<NotFound />} />
 							</Routes>
 						</div>

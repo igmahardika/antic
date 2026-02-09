@@ -363,7 +363,7 @@ app.post('/api/users',
 
       // Insert new user
       const [result] = await db.query(
-        'INSERT INTO users (username, password, role) VALUES (?, ?, ?)',
+        'INSERT INTO users (username, password, role, is_active) VALUES (?, ?, ?, TRUE)',
         [username, hashedPassword, role]
       );
 
