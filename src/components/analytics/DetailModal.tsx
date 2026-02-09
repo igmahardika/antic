@@ -7,8 +7,6 @@ import {
     SheetDescription,
 } from "@/components/ui/sheet";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
 
 interface DetailModalProps {
     isOpen: boolean;

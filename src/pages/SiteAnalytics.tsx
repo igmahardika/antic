@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/card";
 import {
 	calculateCustomDuration,
+	normalizeNCAL,
 	getSLATarget,
 	formatDurationHMS as formatDurationHMSUtil,
 } from "@/utils/incidentUtils";
@@ -49,7 +50,6 @@ import TrendingUpIcon from "@mui/icons-material/TrendingUp";
 import DomainDisabledIcon from "@mui/icons-material/DomainDisabled";
 import SignalCellularAltIcon from "@mui/icons-material/SignalCellularAlt";
 import InfoIcon from "@mui/icons-material/InfoOutlined";
-import ErrorIcon from "@mui/icons-material/Error";
 import WarningIcon from "@mui/icons-material/Warning";
 import BuildIcon from "@mui/icons-material/Build";
 
@@ -61,9 +61,16 @@ import {
 } from "@/components/ui/tooltip";
 import { Separator } from "@/components/ui/separator";
 import DetailModal from "@/components/analytics/DetailModal";
-import { Progress } from "@/components/ui/progress";
 
 // Constants
+const NCAL_COLORS = {
+	Blue: "#3b82f6",
+	Yellow: "#eab308",
+	Orange: "#f97316",
+	Red: "#ef4444",
+	Black: "#1f2937",
+};
+
 const formatDurationHMS = (minutes: number): string => {
 	return formatDurationHMSUtil(minutes);
 };

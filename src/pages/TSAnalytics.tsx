@@ -57,7 +57,6 @@ import SpeedIcon from "@mui/icons-material/Speed";
 import PeakHoursIcon from "@mui/icons-material/AccessTimeFilled";
 import InfoIcon from "@mui/icons-material/InfoOutlined";
 import ErrorIcon from "@mui/icons-material/Error";
-import WarningIcon from "@mui/icons-material/Warning";
 
 import {
 	Tooltip,
