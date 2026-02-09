@@ -505,7 +505,7 @@ const IncidentAnalytics: React.FC = () => {
 
 	// Auto-select latest year if current selection is not available
 	React.useEffect(() => {
-		if (availableYears.length > 0 && selectedYear && !availableYears.includes(Number(selectedYear))) {
+		if (availableYears.length > 0 && selectedYear && selectedYear !== "ALL" && !availableYears.includes(Number(selectedYear))) {
 			setSelectedYear(availableYears[0].toString());
 		}
 	}, [availableYears, selectedYear]);
