@@ -477,7 +477,7 @@ const SiteAnalytics: React.FC = () => {
 										content={
 											<ChartTooltipContent
 												formatter={(value, name) => {
-													if (name === "AvgDuration") {
+													if (name === "Total Avg" || name === "AvgDuration") {
 														return (
 															<div className="flex items-center gap-2">
 																<div className="h-2 w-2 rounded-full bg-[#f59e0b]" />
@@ -486,7 +486,7 @@ const SiteAnalytics: React.FC = () => {
 															</div>
 														);
 													}
-													if (name === "NetDuration") {
+													if (name === "Net Avg" || name === "NetDuration") {
 														return (
 															<div className="flex items-center gap-2">
 																<div className="h-2 w-2 rounded-full bg-[#3b82f6]" />
@@ -495,7 +495,25 @@ const SiteAnalytics: React.FC = () => {
 															</div>
 														);
 													}
-													return undefined;
+													if (name === "Incidents") {
+														return (
+															<div className="flex items-center gap-2">
+																<div className="h-2 w-2 rounded-full bg-[#3b82f6]" />
+																<span className="text-gray-700 font-medium">Incidents:</span>
+																<span className="font-mono font-semibold text-gray-900">{value}</span>
+															</div>
+														);
+													}
+													if (name === "ActiveSites") {
+														return (
+															<div className="flex items-center gap-2">
+																<div className="h-2 w-2 rounded-full bg-[#f97316]" />
+																<span className="text-gray-700 font-medium">Active Sites:</span>
+																<span className="font-mono font-semibold text-gray-900">{value}</span>
+															</div>
+														);
+													}
+													return null;
 												}}
 											/>
 										}
