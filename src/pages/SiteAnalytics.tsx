@@ -173,10 +173,16 @@ const SiteAnalytics: React.FC = () => {
 
 		const durations = filteredIncidents.map(i => ({
 			val: calculateCustomDuration(i),
+			net: calculateNetDuration(i),
 			ncal: i.ncal
 		})).filter(d => d.val > 0);
 
-		const avgDuration = durations.length ? durations.reduce((a, b) => a + b.val, 0) / durations.length : 0;
+		const totalMin = durations.reduce((a, b) => a + b.val, 0);
+		const netMin = durations.reduce((a, b) => a + b.net, 0);
+		const avgDuration = durations.length ? totalMin / durations.length : 0;
+		const avgNetDuration = durations.length ? netMin / durations.length : 0;
+		const pauseRatio = totalMin > 0 ? ((totalMin - netMin) / totalMin) * 100 : 0;
+
 		const slaBreach = durations.filter(d => d.val > getSLATarget(d.ncal)).length;
 		const slaCompliance = totalIncidents > 0 ? ((totalIncidents - slaBreach) / totalIncidents) * 100 : 100;
 		const siteReliability = totalIncidents > 0 ? (totalResolved / totalIncidents) * 100 : 0;
@@ -191,6 +197,7 @@ const SiteAnalytics: React.FC = () => {
 					count: 0,
 					resolved: 0,
 					totalDur: 0,
+					netDur: 0,
 					durCount: 0,
 					highSeverity: 0,
 					problems: {} as Record<string, number>,
@@ -206,6 +213,7 @@ const SiteAnalytics: React.FC = () => {
 			siteStats[site].problems[prob] = (siteStats[site].problems[prob] || 0) + 1;
 
 			const dur = calculateCustomDuration(inc);
+			const net = calculateNetDuration(inc);
 			const ncal = normalizeNCAL(inc.ncal);
 			if (siteStats[site].ncalBreakdown[ncal] !== undefined) {
 				siteStats[site].ncalBreakdown[ncal]++;
@@ -213,6 +221,7 @@ const SiteAnalytics: React.FC = () => {
 
 			if (dur > 0) {
 				siteStats[site].totalDur += dur;
+				siteStats[site].netDur += net;
 				siteStats[site].durCount++;
 				const target = getSLATarget(inc.ncal);
 				if (dur > target) {
@@ -222,6 +231,7 @@ const SiteAnalytics: React.FC = () => {
 						ts: inc.ts || "Unknown",
 						ncal,
 						duration: dur,
+						netDuration: net,
 						target,
 						startTime: inc.startTime
 					});
@@ -232,17 +242,17 @@ const SiteAnalytics: React.FC = () => {
 		// Calculate Risk Score & Metrics
 		const siteMetrics = Object.values(siteStats).map((s: any) => {
 			const avgDur = s.durCount ? s.totalDur / s.durCount : 0;
+			const avgNetDur = s.durCount ? s.netDur / s.durCount : 0;
+			const pauseGap = avgDur > 0 ? ((avgDur - avgNetDur) / avgDur) * 100 : 0;
+
 			const reliability = s.count ? (s.resolved / s.count) * 100 : 0;
 			const slaCompliance = s.count ? ((s.count - s.highSeverity) / s.count) * 100 : 100;
 
-			// Find most frequent problem
 			const topProb = Object.entries(s.problems)
 				.sort((a: any, b: any) => b[1] - a[1])[0]?.[0] || "None";
 
-			// Risk Score Algorithm:
-			// 30% Volume, 30% Duration, 20% Unresolved, 20% SLA Breach
 			const volumeRisk = Math.min(s.count * 2, 30);
-			const durationRisk = Math.min((avgDur / 120) * 10, 30); // 120min as baseline
+			const durationRisk = Math.min((avgDur / 120) * 10, 30);
 			const reliabilityRisk = Math.min((100 - reliability) * 0.2, 20);
 			const slaRisk = Math.min((100 - slaCompliance) * 0.2, 20);
 			const riskScore = volumeRisk + durationRisk + reliabilityRisk + slaRisk;
@@ -251,6 +261,7 @@ const SiteAnalytics: React.FC = () => {
 			const recommendations = [];
 			if (slaCompliance < 85) recommendations.push("Evaluasi respon time penanganan tiket kritis.");
 			if (reliability < 90) recommendations.push("Site ini memiliki banyak insiden yang belum 'Resolved'.");
+			if (pauseGap > 30) recommendations.push("Gap durasi pause tinggi (" + pauseGap.toFixed(1) + "%). Verifikasi alasan pause yang berlebihan.");
 			if (topProb.toLowerCase().includes("battery") || topProb.toLowerCase().includes("power")) {
 				recommendations.push("Perlu dilakukan audit sistem kelistrikan (UPS/Battery).");
 			}
@@ -259,6 +270,8 @@ const SiteAnalytics: React.FC = () => {
 			return {
 				...s,
 				avgDur,
+				avgNetDur,
+				pauseGap,
 				reliability,
 				slaCompliance,
 				topProb,
@@ -403,13 +416,13 @@ const SiteAnalytics: React.FC = () => {
 						trendType={stats.momTrends.sites.type}
 					/>
 					<SummaryCard
-						title="Avg Downtime"
+						title="MTTR (Total vs Net)"
 						value={formatDurationHMS(stats.avgDuration)}
-						description="Average incident duration"
+						description={`Net: ${formatDurationHMS(stats.avgNetDuration)} (${pauseRatio.toFixed(1)}% Pause)`}
 						icon={<AccessTimeIcon className="text-white" />}
 						iconBg="bg-amber-500"
-						trend={stats.momTrends.duration.value.toFixed(1) + "%"}
-						trendType={stats.momTrends.duration.type}
+						trend={analytics.momTrends.duration.value.toFixed(1) + "%"}
+						trendType={analytics.momTrends.duration.type}
 					/>
 					<SummaryCard
 						title="SLA Compliance"
@@ -578,7 +591,8 @@ const SiteAnalytics: React.FC = () => {
 										<th className="py-3 px-4 text-center font-semibold text-rose-600">SLA %</th>
 										<th className="py-3 px-4 text-center font-semibold text-emerald-600">Success %</th>
 										<th className="py-3 px-4 text-left font-semibold">Main Problem</th>
-										<th className="py-3 px-4 text-right font-semibold">Avg Duration</th>
+										<th className="py-3 px-4 text-center font-semibold">MTTR (Total vs Net)</th>
+										<th className="py-3 px-4 text-center font-semibold text-amber-600">Pause Gap</th>
 										<th className="py-3 px-4 text-center font-semibold">
 											<TooltipProvider>
 												<div className="flex items-center gap-1 justify-center">
@@ -618,43 +632,32 @@ const SiteAnalytics: React.FC = () => {
 											<td className="py-3 px-4 text-center">
 												<Badge variant="secondary" className="font-mono">{site.count}</Badge>
 											</td>
-											<td className="py-3 px-4 text-center">
-												<span className={`font-mono text-sm font-bold ${site.slaCompliance < 80 ? "text-rose-600" : site.slaCompliance < 95 ? "text-amber-600" : "text-emerald-600"}`}>
-													{site.slaCompliance.toFixed(0)}%
-												</span>
-											</td>
-											<td className="py-3 px-4 text-center">
-												<span className={`font-mono text-xs ${site.reliability < 90 ? "text-amber-600" : "text-emerald-600"}`}>
-													{site.reliability.toFixed(0)}%
-												</span>
+											<td className="py-3 px-4 text-center font-semibold text-emerald-600">
+												{site.reliability.toFixed(1)}%
 											</td>
 											<td className="py-3 px-4">
-												<div className="flex flex-col">
-													<span className="text-xs text-foreground truncate max-w-[200px]" title={site.topProb}>
-														{site.topProb}
-													</span>
-													{site.count > 5 && (
-														<span className="text-[10px] text-rose-500 font-bold uppercase tracking-tight">Recurring Issue</span>
-													)}
-												</div>
-											</td>
-											<td className="py-3 px-4 text-right font-mono text-xs">
-												<span className={`${site.avgDur > 240 ? "text-rose-500" : site.avgDur < 120 ? "text-emerald-500" : "text-amber-500"}`}>
-													{formatDurationHMS(site.avgDur)}
+												<span className="text-[11px] text-muted-foreground truncate w-32 block" title={site.topProb}>
+													{site.topProb}
 												</span>
 											</td>
 											<td className="py-3 px-4 text-center">
-												<div className="flex items-center justify-center gap-2">
-													<div className="w-16 h-1.5 bg-gray-100 rounded-full overflow-hidden">
-														<div
-															className={`h-full transition-all duration-500 ${site.riskScore > 70 ? "bg-rose-500" :
-																site.riskScore > 40 ? "bg-amber-500" : "bg-emerald-500"
-																}`}
-															style={{ width: `${site.riskScore}%` }}
-														/>
-													</div>
-													<span className="text-[10px] font-bold text-muted-foreground">{site.riskScore.toFixed(0)}</span>
+												<div className="flex flex-col items-center">
+													<span className="font-mono text-xs text-foreground uppercase">{formatDurationHMS(site.avgDur)}</span>
+													<span className="text-[10px] text-blue-600 font-bold uppercase">Net: {formatDurationHMS(site.avgNetDur)}</span>
 												</div>
+											</td>
+											<td className="py-3 px-4 text-center">
+												<Badge variant="secondary" className="font-mono text-[10px] bg-amber-50 text-amber-600 border-amber-200">
+													{site.pauseGap.toFixed(1)}%
+												</Badge>
+											</td>
+											<td className="py-3 px-4 text-center">
+												<Badge
+													variant={site.riskScore >= 70 ? "danger" : site.riskScore >= 40 ? "warning" : "success"}
+													className="text-[10px]"
+												>
+													{site.riskScore.toFixed(0)}
+												</Badge>
 											</td>
 										</tr>
 									))}
@@ -750,9 +753,15 @@ const SiteAnalytics: React.FC = () => {
 												{t.ncal}
 											</Badge>
 										</div>
-										<div className="flex justify-between text-[10px]">
-											<span className="text-muted-foreground">Officer: {t.ts}</span>
-											<span className="text-rose-600 font-bold">{formatDurationHMS(t.duration)}</span>
+										<div className="flex flex-col gap-1 text-[10px]">
+											<div className="flex justify-between items-center bg-muted/30 p-1.5 rounded-sm">
+												<span className="text-muted-foreground">Officer: {t.ts}</span>
+												<span className="text-rose-600 font-bold underline">Total: {formatDurationHMS(t.duration)}</span>
+											</div>
+											<div className="flex justify-between items-center bg-blue-50 p-1.5 rounded-sm">
+												<span className="text-blue-700 font-bold">Net: {formatDurationHMS(t.netDuration)}</span>
+												<span className="text-blue-600/70 font-medium">Pause: {formatDurationHMS(t.duration - t.netDuration)}</span>
+											</div>
 										</div>
 									</div>
 								))}

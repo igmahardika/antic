@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/card";
 import {
 	calculateCustomDuration,
+	calculateNetDuration,
 	normalizeNCAL,
 	getSLATarget,
 	formatDurationHMS as formatDurationHMSUtil
@@ -195,10 +196,16 @@ const TSAnalytics: React.FC = () => {
 		// Duration Stats
 		const durations = filteredIncidents.map(i => ({
 			val: calculateCustomDuration(i),
+			net: calculateNetDuration(i),
 			ncal: i.ncal
 		})).filter(d => d.val > 0);
 
-		const avgDuration = durations.length ? durations.reduce((a, b) => a + b.val, 0) / durations.length : 0;
+		const sumTotal = durations.reduce((a, b) => a + b.val, 0);
+		const sumNet = durations.reduce((a, b) => a + b.net, 0);
+		const avgDuration = durations.length ? sumTotal / durations.length : 0;
+		const avgNetDuration = durations.length ? sumNet / durations.length : 0;
+		const pauseRatio = sumTotal > 0 ? ((sumTotal - sumNet) / sumTotal) * 100 : 0;
+
 		const slaBreach = durations.filter(d => d.val > getSLATarget(d.ncal)).length;
 		const slaCompliance = total > 0 ? ((total - slaBreach) / total) * 100 : 100;
 
@@ -225,6 +232,7 @@ const TSAnalytics: React.FC = () => {
 					count: 0,
 					resolved: 0,
 					totalDur: 0,
+					netDur: 0,
 					durCount: 0,
 					breaches: 0,
 					ncalBreakdown: { RED: 0, BLACK: 0, ORANGE: 0, YELLOW: 0, BLUE: 0 },
@@ -241,8 +249,10 @@ const TSAnalytics: React.FC = () => {
 			}
 
 			const dur = calculateCustomDuration(inc);
+			const net = calculateNetDuration(inc);
 			if (dur > 0) {
 				tsStats[name].totalDur += dur;
+				tsStats[name].netDur += net;
 				tsStats[name].durCount++;
 				const target = getSLATarget(inc.ncal);
 				if (dur > target) {
@@ -252,6 +262,7 @@ const TSAnalytics: React.FC = () => {
 						site: inc.site,
 						ncal,
 						duration: dur,
+						netDuration: net,
 						target: target,
 						startTime: inc.startTime
 					});
@@ -264,17 +275,21 @@ const TSAnalytics: React.FC = () => {
 
 		const leaderboard = Object.values(tsStats).map((s: any) => {
 			const avgDur = s.durCount ? s.totalDur / s.durCount : 0;
+			const avgNetDur = s.durCount ? s.netDur / s.durCount : 0;
+			const pauseGap = avgDur > 0 ? ((avgDur - avgNetDur) / avgDur) * 100 : 0;
+
 			const sla = s.count ? ((s.count - s.breaches) / s.count) * 100 : 100;
 			const resRate = s.count ? (s.resolved / s.count) * 100 : 0;
 
 			// Efficiency Score: 40% SLA, 30% Volume (normalized), 30% Resolution Rate
-			// Normalize volume: assume max tickets by 1 person is 50 for max score
 			const volScore = Math.min((s.count / 50) * 100, 100);
 			const efficiency = (sla * 0.4) + (resRate * 0.3) + (volScore * 0.3);
 
 			return {
 				...s,
 				avgDur,
+				avgNetDur,
+				pauseGap,
 				sla,
 				resRate,
 				efficiency
@@ -288,12 +303,14 @@ const TSAnalytics: React.FC = () => {
 			const d = new Date(inc.startTime);
 			const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
 
-			if (!trends[key]) trends[key] = { month: key, count: 0, totalDur: 0, n: 0, resolved: 0 };
+			if (!trends[key]) trends[key] = { month: key, count: 0, totalDur: 0, netDur: 0, n: 0, resolved: 0 };
 			trends[key].count++;
 			if (inc.status === 'Done') trends[key].resolved++;
 			const dur = calculateCustomDuration(inc);
+			const net = calculateNetDuration(inc);
 			if (dur > 0) {
 				trends[key].totalDur += dur;
+				trends[key].netDur += net;
 				trends[key].n++;
 			}
 		});
@@ -304,6 +321,7 @@ const TSAnalytics: React.FC = () => {
 				month: t.month,
 				Tickets: t.count,
 				AvgDuration: t.n ? Math.round(t.totalDur / t.n) : 0,
+				NetDuration: t.n ? Math.round(t.netDur / t.n) : 0,
 				Resolved: t.resolved
 			}));
 
@@ -432,9 +450,9 @@ const TSAnalytics: React.FC = () => {
 						trendType={analytics.momTrends.tickets.type}
 					/>
 					<SummaryCard
-						title="Avg Resolution Time"
-						value={formatDurationHMS(analytics.avgDuration)}
-						description="Average handling duration"
+						title="MTTR (Total vs Net)"
+						value={formatDurationHMS(avgDuration)}
+						description={`Net: ${formatDurationHMS(avgNetDuration)} (${pauseRatio.toFixed(1)}% Pause)`}
 						icon={<AccessTimeIcon className="text-white" />}
 						iconBg="bg-amber-500"
 						trend={analytics.momTrends.duration.value.toFixed(1) + "%"}
@@ -599,7 +617,9 @@ const TSAnalytics: React.FC = () => {
 											<th className="py-3 px-4 text-center font-semibold text-emerald-600">Resolved %</th>
 											<th className="py-3 px-4 text-center font-semibold text-rose-600">Breach</th>
 											<th className="py-3 px-4 text-center font-semibold">NCAL Load</th>
-											<th className="py-3 px-4 text-right font-semibold">Avg Duration</th>
+											<th className="py-3 px-4 text-center font-semibold">MTTR (Total)</th>
+											<th className="py-3 px-4 text-center font-semibold text-blue-500">MTTR (Net)</th>
+											<th className="py-3 px-4 text-center font-semibold text-amber-600">Pause Gap</th>
 											<th className="py-3 px-4 text-left font-semibold w-[150px]">
 												<TooltipProvider>
 													<div className="flex items-center gap-1">
@@ -648,10 +668,14 @@ const TSAnalytics: React.FC = () => {
 												<td className="py-3 px-4 text-center font-semibold text-emerald-600">
 													{item.resRate.toFixed(1)}%
 												</td>
-												<td className="py-3 px-4 text-center">
-													<span className={`font-mono text-xs ${item.breaches > 0 ? "text-rose-600 font-bold" : "text-muted-foreground"}`}>
-														{item.breaches}
-													</span>
+												<td className="py-3 px-4 text-center font-mono text-xs">
+													{formatDurationHMS(item.avgDur)}
+												</td>
+												<td className="py-3 px-4 text-center font-mono text-xs text-blue-600 font-bold">
+													{formatDurationHMS(item.avgNetDur)}
+												</td>
+												<td className="py-3 px-4 text-center font-mono text-xs text-amber-600">
+													{item.pauseGap.toFixed(1)}%
 												</td>
 												<td className="py-3 px-4">
 													<div className="flex gap-1 justify-center">
@@ -773,9 +797,15 @@ const TSAnalytics: React.FC = () => {
 											</Badge>
 										</div>
 										<p className="text-[11px] text-muted-foreground truncate">Site: {t.site}</p>
-										<div className="flex items-center justify-between text-[10px]">
-											<span className="text-rose-600 font-bold">Duration: {formatDurationHMS(t.duration)}</span>
-											<span className="text-muted-foreground italic">Target: {formatDurationHMS(t.target)}</span>
+										<div className="flex flex-col gap-1 text-[10px]">
+											<div className="flex justify-between">
+												<span className="text-rose-600 font-bold underline">Total Duration: {formatDurationHMS(t.duration)}</span>
+												<span className="text-muted-foreground italic">Target: {formatDurationHMS(t.target)}</span>
+											</div>
+											<div className="flex justify-between items-center bg-blue-50 p-1 rounded-sm">
+												<span className="text-blue-700 font-bold">Net Duration: {formatDurationHMS(t.netDuration)}</span>
+												<span className="text-blue-600/70">Pause: {formatDurationHMS(t.duration - t.netDuration)}</span>
+											</div>
 										</div>
 									</div>
 								))}
