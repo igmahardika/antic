@@ -697,14 +697,8 @@ const TSAnalytics: React.FC = () => {
 												<td className="py-3 px-4 text-center font-semibold text-emerald-600">
 													{item.resRate.toFixed(1)}%
 												</td>
-												<td className="py-3 px-4 text-center font-mono text-xs">
-													{formatDurationHMS(item.avgDur)}
-												</td>
-												<td className="py-3 px-4 text-center font-mono text-xs text-blue-600 font-bold">
-													{formatDurationHMS(item.avgNetDur)}
-												</td>
-												<td className="py-3 px-4 text-center font-mono text-xs text-amber-600">
-													{item.pauseGap.toFixed(1)}%
+												<td className="py-3 px-4 text-center font-mono text-red-500 font-bold">
+													{item.breaches}
 												</td>
 												<td className="py-3 px-4">
 													<div className="flex gap-1 justify-center">
@@ -723,10 +717,14 @@ const TSAnalytics: React.FC = () => {
 														}
 													</div>
 												</td>
-												<td className="py-3 px-4 text-right font-mono text-xs">
-													<span className={`${item.avgDur > 240 ? "text-rose-500" : item.avgDur < 120 ? "text-emerald-500" : "text-amber-500"}`}>
-														{formatDurationHMS(item.avgDur)}
-													</span>
+												<td className="py-3 px-4 text-center font-mono text-xs">
+													{formatDurationHMS(item.avgDur)}
+												</td>
+												<td className="py-3 px-4 text-center font-mono text-xs text-blue-600 font-bold">
+													{formatDurationHMS(item.avgNetDur)}
+												</td>
+												<td className="py-3 px-4 text-center font-mono text-xs text-amber-600">
+													{item.pauseGap.toFixed(1)}%
 												</td>
 												<td className="py-3 px-4">
 													<div className="flex items-center gap-2">

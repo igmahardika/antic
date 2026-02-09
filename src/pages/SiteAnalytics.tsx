@@ -674,6 +674,9 @@ const SiteAnalytics: React.FC = () => {
 											<td className="py-3 px-4 text-center">
 												<Badge variant="secondary" className="font-mono">{site.count}</Badge>
 											</td>
+											<td className="py-3 px-4 text-center font-semibold text-rose-600">
+												{site.count > 0 ? (((site.count - site.highSeverity) / site.count) * 100).toFixed(1) : "100.0"}%
+											</td>
 											<td className="py-3 px-4 text-center font-semibold text-emerald-600">
 												{site.reliability.toFixed(1)}%
 											</td>
