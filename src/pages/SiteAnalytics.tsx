@@ -14,8 +14,6 @@ import {
 	formatDurationHMS as formatDurationHMSUtil,
 } from "@/utils/incidentUtils";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
 
 import SummaryCard from "@/components/ui/SummaryCard";
 
@@ -47,7 +45,6 @@ import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import LocationOnIcon from "@mui/icons-material/LocationOn";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
-import FilterListIcon from "@mui/icons-material/FilterList";
 import TrendingUpIcon from "@mui/icons-material/TrendingUp";
 import DomainDisabledIcon from "@mui/icons-material/DomainDisabled";
 import SignalCellularAltIcon from "@mui/icons-material/SignalCellularAlt";
@@ -283,8 +280,6 @@ const SiteAnalytics: React.FC = () => {
 			momTrends.sites = calcTrend(current.ActiveSites, previous.ActiveSites);
 			momTrends.duration = calcTrend(current.AvgDuration, previous.AvgDuration, true);
 
-			const curSla = current.Incidents ? (1 - (current.Incidents / current.Incidents)) * 100 : 100; // Simplified for now since trendData doesn't have sla
-			const prevSla = previous.Incidents ? (1 - (previous.Incidents / previous.Incidents)) * 100 : 100;
 			// Actually I should update trendData to include sla
 			momTrends.reliability = calcTrend(current.Reliability, previous.Reliability);
 		}
@@ -542,15 +537,15 @@ const SiteAnalytics: React.FC = () => {
 										<tr key={idx} className="border-b hover:bg-muted/10 transition-colors">
 											<td className="py-3 px-4">
 												<div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs ${site.riskScore > 75 ? "bg-rose-100 text-rose-700 border border-rose-200" :
-														site.riskScore > 40 ? "bg-amber-100 text-amber-700 border border-amber-200" :
-															"bg-emerald-50 text-emerald-700 border border-emerald-100"
+													site.riskScore > 40 ? "bg-amber-100 text-amber-700 border border-amber-200" :
+														"bg-emerald-50 text-emerald-700 border border-emerald-100"
 													}`}>
 													{idx + 1}
 												</div>
 											</td>
 											<td className="py-3 px-4 font-medium text-foreground">{site.site}</td>
 											<td className="py-3 px-4 text-center">
-												<Badge variant="outline" className="font-mono">{site.count}</Badge>
+												<Badge variant="secondary" className="font-mono">{site.count}</Badge>
 											</td>
 											<td className="py-3 px-4 text-center">
 												<span className={`font-mono text-sm font-bold ${site.slaCompliance < 80 ? "text-rose-600" : site.slaCompliance < 95 ? "text-amber-600" : "text-emerald-600"}`}>
@@ -582,7 +577,7 @@ const SiteAnalytics: React.FC = () => {
 													<div className="w-16 h-1.5 bg-gray-100 rounded-full overflow-hidden">
 														<div
 															className={`h-full transition-all duration-500 ${site.riskScore > 70 ? "bg-rose-500" :
-																	site.riskScore > 40 ? "bg-amber-500" : "bg-emerald-500"
+																site.riskScore > 40 ? "bg-amber-500" : "bg-emerald-500"
 																}`}
 															style={{ width: `${site.riskScore}%` }}
 														/>

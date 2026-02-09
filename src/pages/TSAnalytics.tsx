@@ -14,8 +14,6 @@ import {
 	formatDurationHMS as formatDurationHMSUtil
 } from "@/utils/incidentUtils";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
 
 import SummaryCard from "@/components/ui/SummaryCard";
 import {
@@ -60,7 +58,6 @@ import PeakHoursIcon from "@mui/icons-material/AccessTimeFilled";
 import { logger } from "@/lib/logger";
 
 // Constants & Helpers
-const VENDOR_SLA_MINUTES = 240; // 4 hours
 
 const NCAL_COLORS = {
 	Blue: "#3b82f6",
@@ -582,9 +579,9 @@ const TSAnalytics: React.FC = () => {
 											<tr key={idx} className="border-b hover:bg-muted/10 transition-colors">
 												<td className="py-3 px-4">
 													<div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs ${idx === 0 ? "bg-amber-100 text-amber-700 border border-amber-200" :
-															idx === 1 ? "bg-slate-100 text-slate-600 border border-slate-200" :
-																idx === 2 ? "bg-orange-50 text-orange-700 border border-orange-100" :
-																	"text-muted-foreground"
+														idx === 1 ? "bg-slate-100 text-slate-600 border border-slate-200" :
+															idx === 2 ? "bg-orange-50 text-orange-700 border border-orange-100" :
+																"text-muted-foreground"
 														}`}>
 														{idx + 1}
 													</div>
@@ -596,7 +593,7 @@ const TSAnalytics: React.FC = () => {
 													</div>
 												</td>
 												<td className="py-3 px-4 text-center">
-													<Badge variant="outline" className="font-mono">{item.count}</Badge>
+													<Badge variant="secondary" className="font-mono">{item.count}</Badge>
 												</td>
 												<td className="py-3 px-4 text-center font-semibold text-emerald-600">
 													{item.resRate.toFixed(1)}%
@@ -633,7 +630,7 @@ const TSAnalytics: React.FC = () => {
 														<div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
 															<div
 																className={`h-full transition-all duration-500 ${item.efficiency > 85 ? "bg-emerald-500" :
-																		item.efficiency > 60 ? "bg-amber-500" : "bg-rose-500"
+																	item.efficiency > 60 ? "bg-amber-500" : "bg-rose-500"
 																	}`}
 																style={{ width: `${item.efficiency}%` }}
 															/>

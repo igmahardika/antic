@@ -17,7 +17,6 @@ import {
 	CardFooter,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import SummaryCard from "@/components/ui/SummaryCard";
 import {
 	ChartContainer,
@@ -70,7 +69,6 @@ import TrendingFlatIcon from "@mui/icons-material/TrendingFlat";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import HourglassEmptyIcon from "@mui/icons-material/HourglassEmpty";
 import TimelineIcon from "@mui/icons-material/Timeline";
-import FilterListIcon from "@mui/icons-material/FilterList";
 import { logger } from "@/lib/logger";
 
 // NCAL colors and targets
