@@ -235,7 +235,7 @@ const TSAnalytics: React.FC = () => {
 					netDur: 0,
 					durCount: 0,
 					breaches: 0,
-					ncalBreakdown: { RED: 0, BLACK: 0, ORANGE: 0, YELLOW: 0, BLUE: 0 },
+					ncalBreakdown: { Red: 0, Black: 0, Orange: 0, Yellow: 0, Blue: 0 },
 					breachedTickets: [] as any[],
 					problemMatrix: {} as Record<string, number>
 				};
