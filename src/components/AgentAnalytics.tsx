@@ -252,6 +252,9 @@ const AgentAnalytics = () => {
 		agentMonthlyChart,
 	} = useAgentAnalytics() || {};
 
+	// Ensure allYearsInData is available (default to empty array if undefined)
+	const safeAllYearsInData = allYearsInData || [];
+
 	// Note: cutoffStart and cutoffEnd are not used in career report tabs
 	// They are only used for time filtering in the main agent list
 	const data = agentAnalyticsData || {};
@@ -1975,9 +1978,19 @@ const AgentAnalytics = () => {
 										value={exportYear}
 									>
 										<option value="all">All Time</option>
-										<option value="2025">2025</option>
-										<option value="2024">2024</option>
-										<option value="2023">2023</option>
+										{safeAllYearsInData && safeAllYearsInData.length > 0 ? (
+											safeAllYearsInData.map((y) => (
+												<option key={y} value={y}>
+													{y}
+												</option>
+											))
+										) : (
+											<>
+												<option value="2025">2025</option>
+												<option value="2024">2024</option>
+												<option value="2023">2023</option>
+											</>
+										)}
 									</select>
 									<Button
 										onClick={exportToPDF}

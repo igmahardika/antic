@@ -592,12 +592,23 @@ export async function queryIncidents(
  */
 export const formatDurationHMS = (minutes: number): string => {
 	if (!minutes || isNaN(minutes) || minutes < 0) return "00:00:00";
-	const totalSeconds = Math.floor(minutes * 60);
+	const totalSeconds = Math.round(minutes * 60);
 	const h = Math.floor(totalSeconds / 3600);
 	const m = Math.floor((totalSeconds % 3600) / 60);
 	const s = totalSeconds % 60;
 	const pad = (num: number) => num.toString().padStart(2, "0");
 	return `${pad(h)}:${pad(m)}:${pad(s)}`;
+};
+
+/**
+ * Get SLA Target in minutes based on NCAL level
+ */
+export const getSLATarget = (ncal: string | null | undefined): number => {
+	const level = (ncal || "").toUpperCase().trim();
+	if (level.includes("BLUE")) return 360; // 6 hours
+	if (level.includes("YELLOW") || level.includes("ORANGE") || level.includes("RED")) return 240; // 4 hours
+	if (level.includes("BLACK")) return 120; // 2 hours
+	return 240; // Default 4 hours
 };
 
 // Format durasi untuk display di tabel (HH:MM:SS)

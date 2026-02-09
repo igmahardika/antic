@@ -1378,11 +1378,21 @@ app.post('/api/incidents/bulk', authenticateToken, async (req, res) => {
       return res.status(400).json({ error: 'Incidents must be an array' });
     }
 
+    // Helper to format date for MySQL
+    const toMySQLDate = (isoStr) => {
+      if (!isoStr) return null;
+      try {
+        return new Date(isoStr).toISOString().slice(0, 19).replace('T', ' ');
+      } catch (e) {
+        return null; // Handle invalid dates gracefully
+      }
+    };
+
     const values = incidents.map(inc => [
       inc.id, inc.noCase, inc.priority, inc.site, inc.ncal, inc.status, inc.level, inc.ts, inc.odpBts,
-      inc.startTime, inc.endTime, inc.startEscalationVendor,
+      toMySQLDate(inc.startTime), toMySQLDate(inc.endTime), toMySQLDate(inc.startEscalationVendor),
       inc.durationMin, inc.durationVendorMin, inc.totalDurationPauseMin, inc.totalDurationVendorMin,
-      inc.startPause1, inc.endPause1, inc.startPause2, inc.endPause2,
+      toMySQLDate(inc.startPause1), toMySQLDate(inc.endPause1), toMySQLDate(inc.startPause2), toMySQLDate(inc.endPause2),
       inc.problem, inc.penyebab, inc.actionTerakhir, inc.note, inc.klasifikasiGangguan,
       inc.powerBefore, inc.powerAfter,
       inc.batchId || metadata?.batchId,
@@ -1525,11 +1535,56 @@ app.post('/api/generate-pdf', async (req, res) => {
 // Get all incidents
 app.get('/api/incidents', authenticateToken, async (req, res) => {
   try {
-    const { limit = 100 } = req.query;
+    const { limit = 100000 } = req.query;
     const [rows] = await db.query('SELECT * FROM incidents ORDER BY start_time DESC LIMIT ?', [parseInt(limit)]);
     res.json({ success: true, incidents: rows });
   } catch (err) {
     console.error('Get incidents error:', err);
     res.status(500).json({ error: 'Failed to fetch incidents' });
+  }
+});
+
+// Get incidents stats
+app.get('/api/incidents/stats', authenticateToken, async (req, res) => {
+  try {
+    const [rows] = await db.query(`
+      SELECT 
+        COUNT(*) as total,
+        SUM(CASE WHEN status = 'Done' THEN 1 ELSE 0 END) as done,
+        SUM(CASE WHEN status = 'Open' THEN 1 ELSE 0 END) as open,
+        SUM(CASE WHEN status = 'Pending' THEN 1 ELSE 0 END) as pending
+      FROM incidents
+    `);
+    res.json({ success: true, stats: rows[0] });
+  } catch (err) {
+    console.error('Get incidents stats error:', err);
+    res.status(500).json({ error: 'Failed to fetch incident stats' });
+  }
+});
+
+// Get distinct incident months
+app.get('/api/incidents/months', authenticateToken, async (req, res) => {
+  try {
+    const [rows] = await db.query(`
+      SELECT DISTINCT DATE_FORMAT(start_time, '%Y-%m') as month
+      FROM incidents
+      WHERE start_time IS NOT NULL
+      ORDER BY month DESC
+    `);
+    res.json({ success: true, months: rows.map(r => r.month) });
+  } catch (err) {
+    console.error('Get incidents months error:', err);
+    res.status(500).json({ error: 'Failed to fetch incident months' });
+  }
+});
+
+// Get all vendors
+app.get('/api/vendors', authenticateToken, async (req, res) => {
+  try {
+    const [rows] = await db.query('SELECT * FROM vendors ORDER BY name ASC');
+    res.json({ success: true, vendors: rows });
+  } catch (err) {
+    console.error('Get vendors error:', err);
+    res.status(500).json({ error: 'Failed to fetch vendors' });
   }
 });

@@ -1,4 +1,5 @@
 // API service untuk komunikasi dengan backend MySQL
+import { Incident } from "@/types/incident";
 // Allow empty string for relative paths (proxied)
 const API_BASE_URL =
 	import.meta.env.VITE_API_URL !== undefined
@@ -401,17 +402,7 @@ export const customerAPI = {
 	},
 };
 
-export interface Incident {
-	id: string;
-	ticket_id?: string;
-	subject?: string;
-	description?: string;
-	status?: string;
-	priority?: string;
-	created_at?: string;
-	updated_at?: string;
-	// Add other fields as needed based on DB schema
-}
+export type { Incident };
 
 export const incidentAPI = {
 	// Get all incidents
@@ -419,18 +410,67 @@ export const incidentAPI = {
 		page?: number;
 		limit?: number;
 		search?: string;
-	}): Promise<{ incidents: Incident[]; pagination: any }> {
+		priority?: string;
+		ncal?: string;
+		status?: string;
+		month?: string; // YYYY-MM
+	}): Promise<{ incidents: Incident[]; total: number; pagination: any }> {
 		const queryParams = new URLSearchParams();
 		if (params?.page) queryParams.append("page", params.page.toString());
 		if (params?.limit) queryParams.append("limit", params.limit.toString());
 		if (params?.search) queryParams.append("search", params.search);
+		if (params?.priority) queryParams.append("priority", params.priority);
+		if (params?.ncal) queryParams.append("ncal", params.ncal);
+		if (params?.status) queryParams.append("status", params.status);
+		if (params?.month) queryParams.append("month", params.month);
 
 		const response = await apiCall<{
 			success: boolean;
-			incidents: Incident[];
-			pagination: any;
+			incidents: any[];
+			total?: number;
+			pagination?: any;
 		}>(`/api/incidents?${queryParams.toString()}`);
-		return { incidents: response.incidents, pagination: response.pagination };
+
+		// Map snake_case from DB to camelCase for frontend
+		const incidents = (response.incidents || []).map((inc: any) => ({
+			id: inc.id,
+			noCase: inc.no_case,
+			priority: inc.priority,
+			site: inc.site,
+			ncal: inc.ncal,
+			status: inc.status,
+			level: inc.level,
+			ts: inc.ts,
+			odpBts: inc.odp_bts,
+			startTime: inc.start_time,
+			endTime: inc.end_time,
+			startEscalationVendor: inc.start_escalation_vendor,
+			durationMin: inc.duration_min,
+			durationVendorMin: inc.duration_vendor_min,
+			totalDurationPauseMin: inc.total_duration_pause_min,
+			totalDurationVendorMin: inc.total_duration_vendor_min,
+			startPause1: inc.start_pause1,
+			endPause1: inc.end_pause1,
+			startPause2: inc.start_pause2,
+			endPause2: inc.end_pause2,
+			problem: inc.problem,
+			penyebab: inc.penyebab,
+			actionTerakhir: inc.action_terakhir,
+			note: inc.note,
+			klasifikasiGangguan: inc.klasifikasi_gangguan,
+			powerBefore: inc.power_before,
+			powerAfter: inc.power_after,
+			batchId: inc.batch_id,
+			uploadSessionId: inc.upload_session_id,
+			fileName: inc.file_name,
+			importedAt: inc.imported_at || inc.created_at
+		}));
+
+		return {
+			incidents: incidents as unknown as Incident[],
+			total: response.total || incidents.length,
+			pagination: response.pagination || {}
+		};
 	},
 
 	// Bulk insert incidents
@@ -442,11 +482,53 @@ export const incidentAPI = {
 			uploadSessionId?: string;
 		},
 	): Promise<{ success: number; failed: number }> {
-		await apiCall("/api/incidents/bulk", {
+		const response = await apiCall<{
+			success: boolean;
+			message: string;
+			created: number;
+		}>("/api/incidents/bulk", {
 			method: "POST",
 			body: JSON.stringify({ incidents, metadata }),
 		});
-		return { success: incidents.length, failed: 0 };
+		return { success: response.created || incidents.length, failed: 0 };
+	},
+
+	// Delete all incidents (Reset)
+	async deleteAllIncidents(): Promise<void> {
+		await apiCall("/api/incidents/all", {
+			method: "DELETE",
+		});
+	},
+
+	// Get incident statistics
+	async getIncidentStats(params?: {
+		month?: string;
+	}): Promise<{
+		total: number;
+		open: number;
+		closed: number;
+		avgDuration: number;
+		avgNetDuration: number;
+		ncalCounts: Record<string, number>;
+	}> {
+		const queryParams = new URLSearchParams();
+		if (params?.month) queryParams.append("month", params.month);
+
+		const response = await apiCall<{
+			success: boolean;
+			stats: any;
+		}>(`/api/incidents/stats?${queryParams.toString()}`);
+
+		return response.stats;
+	},
+
+	// Get available months
+	async getIncidentMonths(): Promise<string[]> {
+		const response = await apiCall<{
+			success: boolean;
+			months: string[];
+		}>("/api/incidents/months");
+		return response.months || [];
 	},
 };
 

@@ -7,6 +7,7 @@ import {
 	calculateNetDuration,
 	normalizeNCAL,
 	safeMinutes,
+	formatDurationHMS as formatDurationHMSUtil
 } from "@/utils/incidentUtils";
 import {
 	Card,
@@ -40,6 +41,22 @@ import {
 	CardHeaderTitle,
 	CardHeaderDescription,
 } from "@/components/ui/CardTypography";
+import TimeFilter from "@/components/TimeFilter";
+const MONTH_OPTIONS = [
+	{ value: "01", label: "January" },
+	{ value: "02", label: "February" },
+	{ value: "03", label: "March" },
+	{ value: "04", label: "April" },
+	{ value: "05", label: "May" },
+	{ value: "06", label: "June" },
+	{ value: "07", label: "July" },
+	{ value: "08", label: "August" },
+	{ value: "09", label: "September" },
+	{ value: "10", label: "October" },
+	{ value: "11", label: "November" },
+	{ value: "12", label: "December" },
+];
+
 // MUI icons
 import AssignmentIcon from "@mui/icons-material/Assignment";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
@@ -66,10 +83,10 @@ const NCAL_COLORS: Record<string, string> = {
 };
 const NCAL_TARGETS: Record<string, number> = {
 	Blue: 6 * 60,
-	Yellow: 5 * 60,
+	Yellow: 4 * 60,
 	Orange: 4 * 60,
-	Red: 3 * 60,
-	Black: 1 * 60,
+	Red: 4 * 60,
+	Black: 2 * 60,
 };
 const NCAL_ORDER = ["Blue", "Yellow", "Orange", "Red", "Black"];
 
@@ -95,13 +112,7 @@ const takeTop = <T extends string>(map: Record<T, number>, n = 5) => {
 
 // Helper function to format duration in HH:MM:SS format
 const formatDurationHMS = (minutes: number): string => {
-	if (!minutes || minutes <= 0) return "0:00:00";
-
-	const hours = Math.floor(minutes / 60);
-	const mins = Math.floor(minutes % 60);
-	const secs = Math.floor((minutes % 1) * 60);
-
-	return `${hours}:${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
+	return formatDurationHMSUtil(minutes);
 };
 
 // Custom tooltip for SLA Breach Analysis
@@ -355,9 +366,10 @@ const SLABreachTrendTooltip = ({ active, payload, label }: any) => {
 
 // Main component
 const IncidentAnalytics: React.FC = () => {
-	const [selectedPeriod, setSelectedPeriod] = useState<
-		"3m" | "6m" | "1y" | "all"
-	>("6m");
+	const [startMonth, setStartMonth] = useState<string | null>("01");
+	const [endMonth, setEndMonth] = useState<string | null>("12");
+	const [selectedYear, setSelectedYear] = useState<string | null>(new Date().getFullYear().toString());
+
 
 	// Performance monitoring
 	const metrics = usePerf('IncidentAnalytics');
@@ -478,55 +490,55 @@ const IncidentAnalytics: React.FC = () => {
 			logger.info("🔍 DEBUG: All time-related fields:", timeRelatedFields);
 		}
 	}, [allIncidents]);
+	// Extract available years
+	const availableYears = useMemo(() => {
+		if (!allIncidents || allIncidents.length === 0) return [];
+		const years = new Set<number>();
+		allIncidents.forEach((incident) => {
+			if (incident.startTime) {
+				const yr = new Date(incident.startTime).getFullYear();
+				if (!isNaN(yr)) years.add(yr);
+			}
+		});
+		return Array.from(years).sort((a, b) => b - a);
+	}, [allIncidents]);
+
+	// Auto-select latest year if current selection is not available
+	React.useEffect(() => {
+		if (availableYears.length > 0 && selectedYear && !availableYears.includes(Number(selectedYear))) {
+			setSelectedYear(availableYears[0].toString());
+		}
+	}, [availableYears, selectedYear]);
+
 
 	// Normalize NCAL text to capitalized key
 	// Menggunakan fungsi normalizeNCAL dari utils yang tidak bergantung pada IndexedDB
 
 	// Menggunakan fungsi calculateCustomDuration dari utils yang tidak bergantung pada IndexedDB
 
-	// Filter incidents by period
+	// Filter incidents by month range and year
 	const filteredIncidents = useMemo(() => {
-		if (!allIncidents) return [] as any[];
+		if (!allIncidents || !selectedYear || !startMonth || !endMonth) return [];
 
-		// Debug: Log filtering process
-		logger.info("🔍 Filtering incidents:", {
-			totalIncidents: allIncidents.length,
-			selectedPeriod,
-			incidentsWithStartTime: allIncidents.filter((inc) => inc.startTime)
-				.length,
+		const yearNum = Number(selectedYear);
+		const startM = Number(startMonth) - 1;
+		const endM = Number(endMonth) - 1;
+
+		return allIncidents.filter((incident) => {
+			if (!incident.startTime) return false;
+			const iDate = new Date(incident.startTime);
+			const iYear = iDate.getFullYear();
+			const iMonth = iDate.getMonth();
+
+			// 1. Filter by Year
+			if (selectedYear !== "ALL" && yearNum !== iYear) return false;
+
+			// 2. Filter by Month Range
+			if (selectedYear !== "ALL" && (iMonth < startM || iMonth > endM)) return false;
+
+			return true;
 		});
-
-		const now = new Date();
-		let cutoff: Date;
-		switch (selectedPeriod) {
-			case "3m":
-				cutoff = new Date(now.getFullYear(), now.getMonth() - 3, now.getDate());
-				break;
-			case "6m":
-				cutoff = new Date(now.getFullYear(), now.getMonth() - 6, now.getDate());
-				break;
-			case "1y":
-				cutoff = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate());
-				break;
-			default:
-				logger.info("📊 Using all incidents (no period filter)");
-				return allIncidents;
-		}
-
-		const filtered = allIncidents.filter((inc) => {
-			if (!inc.startTime) return false;
-			const date = new Date(inc.startTime);
-			return date >= cutoff;
-		});
-
-		logger.info("📊 Filtered incidents:", {
-			filteredCount: filtered.length,
-			cutoffDate: cutoff.toISOString(),
-			sampleDates: filtered.slice(0, 3).map((inc) => inc.startTime),
-		});
-
-		return filtered;
-	}, [allIncidents, selectedPeriod]);
+	}, [allIncidents, startMonth, endMonth, selectedYear]);
 
 	// Stats aggregator (simple summary for KPI cards)
 	const stats = useMemo(() => {
@@ -948,7 +960,7 @@ const IncidentAnalytics: React.FC = () => {
 				};
 			}
 
-			const duration = calculateCustomDuration(inc);
+			const duration = calculateNetDuration(inc);
 			if (duration > 0) {
 				const ncal = normalizeNCAL(inc.ncal);
 				const target = NCAL_TARGETS[ncal] || 0;
@@ -996,7 +1008,7 @@ const IncidentAnalytics: React.FC = () => {
 		withDuration.forEach((i) => {
 			const n = normalizeNCAL(i.ncal);
 			const target = NCAL_TARGETS[n] || 0;
-			const dur = calculateCustomDuration(i);
+			const dur = calculateNetDuration(i);
 			if (dur > target) breach.push(i);
 			else compliant.push(i);
 		});
@@ -1021,7 +1033,7 @@ const IncidentAnalytics: React.FC = () => {
 					ncalBreakdown: {},
 				};
 			}
-			const duration = calculateCustomDuration(i);
+			const duration = calculateNetDuration(i);
 			siteMap[site].count += 1;
 			siteMap[site].totalBreachTime += duration;
 			siteMap[site].ncalBreakdown[i.ncal] =
@@ -1046,7 +1058,7 @@ const IncidentAnalytics: React.FC = () => {
 			if (!causeMap[cause]) {
 				causeMap[cause] = { count: 0, avgBreachTime: 0, sites: [] };
 			}
-			const duration = calculateCustomDuration(i);
+			const duration = calculateNetDuration(i);
 			causeMap[cause].count += 1;
 			causeMap[cause].avgBreachTime += duration;
 			if (i.site && !causeMap[cause].sites.includes(i.site)) {
@@ -1094,7 +1106,7 @@ const IncidentAnalytics: React.FC = () => {
 		withDuration.forEach((i) => {
 			const n = normalizeNCAL(i.ncal);
 			const target = NCAL_TARGETS[n] || 0;
-			const dur = calculateCustomDuration(i);
+			const dur = calculateNetDuration(i);
 			if (dur <= target) compliant.push(i);
 			else breach.push(i);
 		});
@@ -1320,43 +1332,26 @@ const IncidentAnalytics: React.FC = () => {
 					title="Incident Analytics"
 					description="Comprehensive analysis of incident data and performance metrics"
 				/>
-				{/* Header */}
 				<div className="flex flex-col md:flex-row md:items-center md:justify-end gap-4">
-					{/* Period Filter */}
-					<div className="flex items-center gap-2 scale-75 transform origin-right">
-						<FilterListIcon className="w-4 h-4 text-muted-foreground" />
-						<div className="flex bg-white/80 dark:bg-zinc-900/80 rounded-2xl shadow-lg p-2">
-							{[
-								{ key: "3m", label: "3M" },
-								{ key: "6m", label: "6M" },
-								{ key: "1y", label: "1Y" },
-								{ key: "all", label: "All" },
-							].map(({ key, label }) => (
-								<Button
-									key={key}
-									variant={selectedPeriod === key ? "default" : "ghost"}
-									size="sm"
-									onClick={() => setSelectedPeriod(key as any)}
-									className={`text-xs rounded-xl ${selectedPeriod === key
-										? "bg-blue-600 hover:bg-blue-700 text-white"
-										: "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-zinc-800"
-										}`}
-								>
-									{label}
-								</Button>
-							))}
-						</div>
-					</div>
+					<TimeFilter
+						startMonth={startMonth}
+						setStartMonth={setStartMonth}
+						endMonth={endMonth}
+						setEndMonth={setEndMonth}
+						selectedYear={selectedYear}
+						setSelectedYear={setSelectedYear}
+						monthOptions={MONTH_OPTIONS}
+						allYearsInData={availableYears.map(y => y.toString())}
+					/>
 				</div>
+
 				{/* KPI Cards - Overview Metrics */}
 				<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
 					<SummaryCard
 						icon={<ErrorOutlineIcon className="w-5 h-5 text-white" />}
 						title="Total Tickets"
 						value={stats.total}
-						description={
-							selectedPeriod === "all" ? "All time" : `Last ${selectedPeriod}`
-						}
+						description="Total assignments in period"
 						iconBg="bg-blue-700"
 					/>
 					<SummaryCard
@@ -1393,7 +1388,7 @@ const IncidentAnalytics: React.FC = () => {
 							</CardHeaderTitle>
 						</CardTitle>
 						<CardHeaderDescription className="text-xs">
-							Critical findings from the selected period
+							Critical findings for selected timeframe
 						</CardHeaderDescription>
 					</CardHeader>
 					<CardContent className="grid md:grid-cols-2 gap-4">

@@ -26,3 +26,6 @@ export const Area = lazy(() => import("recharts").then(m => ({ default: m.Area }
 // Pie
 export const PieChart = lazy(() => import("recharts").then(m => ({ default: m.PieChart })));
 export const Pie = lazy(() => import("recharts").then(m => ({ default: m.Pie })));
+
+// Composed
+export const ComposedChart = lazy(() => import("recharts").then(m => ({ default: m.ComposedChart })));

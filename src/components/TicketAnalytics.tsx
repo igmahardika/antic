@@ -407,15 +407,16 @@ const TicketAnalytics = ({ }: TicketAnalyticsProps) => {
 			const m1 = s.match(/(20\d{2})[-_/ ](0[1-9]|1[0-2])/);
 			if (m1) {
 				const y = Number(m1[1]);
-				if (y < 2025) return null;
+				if (y < 2020) return null;
 				return `${m1[1]}-${m1[2]}`;
 			}
 			const monthName = Object.keys(MONTH_NAME_ID).find((n) => s.includes(n));
 			if (monthName) {
 				const mm = MONTH_NAME_ID[monthName];
-				const yStr = (s.match(/\b(20\d{2})\b/) || [])[1] || "2025";
+				const currentYear = new Date().getFullYear();
+				const yStr = (s.match(/\b(20\d{2})\b/) || [])[1] || String(currentYear);
 				const y = Number(yStr);
-				if (y < 2025) return null;
+				if (y < 2020) return null;
 				return `${y}-${mm}`;
 			}
 			return null;
@@ -499,15 +500,16 @@ const TicketAnalytics = ({ }: TicketAnalyticsProps) => {
 			const m1 = s.match(/(20\d{2})[-_/ ](0[1-9]|1[0-2])/);
 			if (m1) {
 				const y = Number(m1[1]);
-				if (y < 2025) return null;
+				if (y < 2020) return null;
 				return `${m1[1]}-${m1[2]}`;
 			}
 			const monthName = Object.keys(MONTH_NAME_ID).find((n) => s.includes(n));
 			if (monthName) {
 				const mm = MONTH_NAME_ID[monthName];
-				const yStr = (s.match(/\b(20\d{2})\b/) || [])[1] || "2025";
+				const currentYear = new Date().getFullYear();
+				const yStr = (s.match(/\b(20\d{2})\b/) || [])[1] || String(currentYear);
 				const y = Number(yStr);
-				if (y < 2025) return null;
+				if (y < 2020) return null;
 				return `${y}-${mm}`;
 			}
 			return null;
@@ -561,15 +563,16 @@ const TicketAnalytics = ({ }: TicketAnalyticsProps) => {
 			const m1 = s.match(/(20\d{2})[-_/ ](0[1-9]|1[0-2])/);
 			if (m1) {
 				const y = Number(m1[1]);
-				if (y < 2025) return null;
+				if (y < 2020) return null;
 				return `${m1[1]}-${m1[2]}`;
 			}
 			const monthName = Object.keys(MONTH_NAME_ID).find((n) => s.includes(n));
 			if (monthName) {
 				const mm = MONTH_NAME_ID[monthName];
-				const yStr = (s.match(/\b(20\d{2})\b/) || [])[1] || "2025";
+				const currentYear = new Date().getFullYear();
+				const yStr = (s.match(/\b(20\d{2})\b/) || [])[1] || String(currentYear);
 				const y = Number(yStr);
-				if (y < 2025) return null;
+				if (y < 2020) return null;
 				return `${y}-${mm}`;
 			}
 			return null;
@@ -631,8 +634,8 @@ const TicketAnalytics = ({ }: TicketAnalyticsProps) => {
 					if (!t.openTime) return false;
 					const d = new Date(t.openTime);
 					const year = d.getFullYear();
-					// Only include 2025+ for customer sync
-					if (year < 2025) return false;
+					// Only include 2020+ for customer sync
+					if (year < 2020) return false;
 
 					const classification = (t.classification || "").trim().toLowerCase();
 					return !/^(gangguan\s*)?di\s*luar\s*layanan|request$/i.test(classification);

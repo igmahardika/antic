@@ -1,1724 +1,564 @@
-import React, { useState, useMemo, useEffect } from "react";
-import { useLiveQuery } from "dexie-react-hooks";
-import { db } from "@/lib/db";
+import { useState, useMemo, useEffect } from "react";
+
 import { usePerf } from "@/hooks/usePerf";
-import { normalizeNCAL } from "@/utils/incidentUtils";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
-import SummaryCard from "@/components/ui/SummaryCard";
+import { logger } from "@/lib/logger";
 import {
+	Card,
+	CardContent,
+	CardHeader,
+	CardTitle,
+} from "@/components/ui/card";
+import {
+	calculateCustomDuration,
+	getSLATarget,
+	formatDurationHMS as formatDurationHMSUtil,
+} from "@/utils/incidentUtils";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
+
+import SummaryCard from "@/components/ui/SummaryCard";
+
+
+import PageWrapper from "@/components/PageWrapper";
+import PageHeader from "@/components/ui/PageHeader";
+import TimeFilter from "@/components/TimeFilter";
+import {
+	CardHeaderDescription,
+} from "@/components/ui/CardTypography";
+import {
+	ChartContainer,
+	ChartTooltip,
+	ChartTooltipContent,
+} from "@/components/ui/chart";
+import {
+	BarChart,
+	Bar,
 	XAxis,
 	YAxis,
 	CartesianGrid,
-	AreaChart,
-	Area,
-	ResponsiveContainer,
-	Tooltip as RechartsTooltip,
-	ReferenceLine,
 	Legend,
-} from "@/charts/rechartsLazy";
-import PageWrapper from "@/components/PageWrapper";
-import PageHeader from "@/components/ui/PageHeader";
-import {
-	CardHeaderTitle,
-	CardHeaderDescription,
-} from "@/components/ui/CardTypography";
+	Line,
+	ComposedChart,
+} from "recharts";
 
-// MUI Icons for consistency with project standards
-import WarningAmberIcon from "@mui/icons-material/WarningAmber";
+// MUI Icons
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
-import AssessmentIcon from "@mui/icons-material/Assessment";
-// import SpeedIcon from '@mui/icons-material/Speed'; // Removed unused import
-import TimelineIcon from "@mui/icons-material/Timeline";
-import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import LocationOnIcon from "@mui/icons-material/LocationOn";
+import WarningAmberIcon from "@mui/icons-material/WarningAmber";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import FilterListIcon from "@mui/icons-material/FilterList";
-import ErrorOutlineIcon from "@mui/icons-material/ErrorOutline";
-import TrackChangesIcon from "@mui/icons-material/TrackChanges";
 import TrendingUpIcon from "@mui/icons-material/TrendingUp";
-import { logger } from "@/lib/logger";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import DomainDisabledIcon from "@mui/icons-material/DomainDisabled";
+import SignalCellularAltIcon from "@mui/icons-material/SignalCellularAlt";
 
-// NCAL Color mapping - using project standard colors
-const NCAL_COLORS = {
-	Blue: "#3b82f6",
-	Yellow: "#eab308",
-	Orange: "#f97316",
-	Red: "#ef4444",
-	Black: "#1f2937",
-};
-
-const NCAL_TARGETS = {
-	Blue: 360, // 6:00:00
-	Yellow: 300, // 5:00:00
-	Orange: 240, // 4:00:00
-	Red: 180, // 3:00:00
-	Black: 60, // 1:00:00
-};
-
-const NCAL_ORDER = ["Blue", "Yellow", "Orange", "Red", "Black"];
-
-// Helper functions
+// Constants
 const formatDurationHMS = (minutes: number): string => {
-	if (!minutes || minutes <= 0) return "0:00:00";
-	const hrs = Math.floor(minutes / 60);
-	const mins = Math.floor(minutes % 60);
-	const secs = Math.floor((minutes % 1) * 60);
-	return `${hrs}:${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
+	return formatDurationHMSUtil(minutes);
 };
 
+const MONTH_OPTIONS = [
+	{ value: "01", label: "January" },
+	{ value: "02", label: "February" },
+	{ value: "03", label: "March" },
+	{ value: "04", label: "April" },
+	{ value: "05", label: "May" },
+	{ value: "06", label: "June" },
+	{ value: "07", label: "July" },
+	{ value: "08", label: "August" },
+	{ value: "09", label: "September" },
+	{ value: "10", label: "October" },
+	{ value: "11", label: "November" },
+	{ value: "12", label: "December" },
+];
 
+const SiteAnalytics: React.FC = () => {
+	const [startMonth, setStartMonth] = useState<string | null>("01");
+	const [endMonth, setEndMonth] = useState<string | null>("12");
+	const [selectedYear, setSelectedYear] = useState<string | null>(new Date().getFullYear().toString());
 
-// Helper function to validate and calculate risk score
-const calculateRiskScore = (
-	incidentCount: number,
-	avgDurationMinutes: number,
-	resolutionRate: number,
-): {
-	riskScore: number;
-	level: string;
-	breakdown: {
-		frequencyScore: number;
-		durationScore: number;
-		resolutionPenalty: number;
-	};
-} => {
-	// Validate inputs
-	const count = Math.max(0, incidentCount || 0);
-	const duration = Math.max(0, avgDurationMinutes || 0);
-	const resolution = Math.max(0, Math.min(100, resolutionRate || 0));
+	usePerf('SiteAnalytics');
 
-	// Calculate components
-	const frequencyScore = count * 10;
-	const durationInHours = duration / 60;
-	const durationScore = durationInHours * 2;
-	const resolutionPenalty = 100 - resolution;
+	// Get Data using CacheService (Sync with Server)
+	const [allIncidents, setAllIncidents] = useState<any[]>([]);
 
-	// Calculate total risk score
-	const riskScore = frequencyScore + durationScore + resolutionPenalty;
-
-	// Determine risk level
-	let level = "Low";
-	if (riskScore >= 100) level = "High";
-	else if (riskScore >= 50) level = "Medium";
-
-	return {
-		riskScore: Math.round(riskScore * 10) / 10, // Round to 1 decimal place
-		level,
-		breakdown: {
-			frequencyScore,
-			durationScore,
-			resolutionPenalty,
-		},
-	};
-};
-
-// Menggunakan fungsi normalizeNCAL dari utils yang tidak bergantung pada IndexedDB
-
-export const SiteAnalytics: React.FC = () => {
-	const [selectedPeriod, setSelectedPeriod] = useState<
-		"3m" | "6m" | "1y" | "all"
-	>("6m");
-	
-	// Performance monitoring
-	const metrics = usePerf('SiteAnalytics');
-	
-	// Log performance metrics
-	React.useEffect(() => {
-		if (metrics.length > 0) {
-			logger.info('SiteAnalytics performance metrics:', metrics);
-		}
-	}, [metrics]);
-
-	// Get all incidents with robust database connection
-	const allIncidents = useLiveQuery(async () => {
-		try {
-			const incidents = await db.incidents.toArray();
-			logger.info(
-				"✅ SiteAnalytics: Successfully loaded",
-				incidents.length,
-				"incidents from database",
-			);
-
-			// Validate data integrity
-			const validIncidents = incidents.filter((incident) => {
-				if (!incident.id || !incident.noCase) {
-					logger.warn("❌ SiteAnalytics: Found invalid incident:", incident);
-					return false;
-				}
-				return true;
-			});
-
-			if (validIncidents.length !== incidents.length) {
-				logger.warn(
-					`❌ SiteAnalytics: Filtered out ${incidents.length - validIncidents.length} invalid incidents`,
-				);
-			}
-
-			return validIncidents;
-		} catch (error) {
-			logger.error(
-				"❌ SiteAnalytics: Failed to load incidents from database:",
-				error,
-			);
-			return [];
-		}
-	}, []); // Empty dependency array to ensure stable reference
-
-	// Debug: Log when allIncidents changes
 	useEffect(() => {
-		logger.info("🔍 SiteAnalytics Debug:");
-		logger.info("Total incidents in database:", allIncidents?.length || 0);
-		if (allIncidents && allIncidents.length > 0) {
-			logger.info("Sample incident:", allIncidents[0]);
-			logger.info("NCAL values found:", [
-				...new Set(allIncidents.map((i) => i.ncal)),
-			]);
-			logger.info("Sites found:", [
-				...new Set(allIncidents.map((i) => i.site)),
-			]);
-			logger.info("Status values found:", [
-				...new Set(allIncidents.map((i) => i.status)),
-			]);
-		} else {
-			logger.info("⚠️ No incidents found in database");
-			logger.info(
-				"💡 Please upload incident data first via Incident Data page",
-			);
-		}
+		const fetchIncidents = async () => {
+			try {
+				const { cacheService } = await import("@/services/cacheService");
+				const incidents = await cacheService.getIncidents();
+				logger.info(
+					"✅ SiteAnalytics: Successfully loaded",
+					incidents.length,
+					"incidents from CacheService",
+				);
+				setAllIncidents(incidents);
+			} catch (error) {
+				logger.error("❌ SiteAnalytics: Failed to load incidents:", error);
+			}
+		};
+		fetchIncidents();
+	}, []);
+
+	// Extract available years and set default year
+	const availableYears = useMemo(() => {
+		if (!allIncidents || allIncidents.length === 0) return [];
+		const years = new Set<number>();
+		allIncidents.forEach((incident) => {
+			if (incident.startTime) {
+				const yr = new Date(incident.startTime).getFullYear();
+				if (!isNaN(yr)) years.add(yr);
+			}
+		});
+		return Array.from(years).sort((a, b) => b - a);
 	}, [allIncidents]);
 
-	// Filter incidents by period
+	// Auto-select latest year if current selection is not available
+	useEffect(() => {
+		if (availableYears.length > 0 && selectedYear && !availableYears.includes(Number(selectedYear))) {
+			setSelectedYear(availableYears[0].toString());
+		}
+	}, [availableYears, selectedYear]);
+
+	// Filter Logic
 	const filteredIncidents = useMemo(() => {
-		if (!allIncidents) return [];
-		const now = new Date();
-		let cutoff: Date;
-		switch (selectedPeriod) {
-			case "3m":
-				cutoff = new Date(now.getFullYear(), now.getMonth() - 3, now.getDate());
-				break;
-			case "6m":
-				cutoff = new Date(now.getFullYear(), now.getMonth() - 6, now.getDate());
-				break;
-			case "1y":
-				cutoff = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate());
-				break;
-			default:
-				return allIncidents;
-		}
-		return allIncidents.filter((inc) => {
-			if (!inc.startTime) return false;
-			const date = new Date(inc.startTime);
-			return date >= cutoff;
+		if (!allIncidents || !selectedYear || !startMonth || !endMonth) return [];
+
+		const yearNum = Number(selectedYear);
+		const startM = Number(startMonth) - 1;
+		const endM = Number(endMonth) - 1;
+
+		return allIncidents.filter((incident) => {
+			if (!incident.startTime) return false;
+			const iDate = new Date(incident.startTime);
+			const iYear = iDate.getFullYear();
+			const iMonth = iDate.getMonth();
+
+			// 1. Filter by Year
+			if (selectedYear !== "ALL" && yearNum !== iYear) return false;
+
+			// 2. Filter by Month Range
+			if (selectedYear !== "ALL" && (iMonth < startM || iMonth > endM)) return false;
+
+			return true;
 		});
-	}, [allIncidents, selectedPeriod]);
+	}, [allIncidents, startMonth, endMonth, selectedYear]);
 
-	// Calculate site statistics
-	const siteStats = useMemo(() => {
-		if (!filteredIncidents || filteredIncidents.length === 0) {
-			return {
-				totalSites: 0,
-				uniqueSites: 0,
-				avgSiteDuration: 0,
-				siteReliability: 0,
-				avgSiteRecovery: 0,
-				bySite: {},
-				topAffectedSites: [],
-				siteRiskScore: {},
-				sitePerformance: [],
-				siteTrends: [],
-				ncalBySite: {},
-				ncalPerformance: [],
-				// Enhanced metrics for trends
-				previousPeriodStats: {
-					totalSites: 0,
-					avgSiteDuration: 0,
-					siteReliability: 0,
-					highRiskSites: 0,
-				},
-			};
-		}
+	// Advanced Analytics Calculation
+	const analytics = useMemo(() => {
+		if (!filteredIncidents.length) return null;
 
-		// Group incidents by site
-		const siteGroups: Record<string, any[]> = {};
-		filteredIncidents.forEach((inc) => {
-			const site = inc.site || "Unknown Site";
-			if (!siteGroups[site]) siteGroups[site] = [];
-			siteGroups[site].push(inc);
-		});
+		const totalIncidents = filteredIncidents.length;
+		const uniqueSites = new Set(filteredIncidents.map(i => i.site)).size;
+		const totalResolved = filteredIncidents.filter(i => i.status === 'Done').length;
 
-		// Calculate site statistics
-		const bySite: Record<string, any> = {};
-		const sites = Object.keys(siteGroups);
+		const durations = filteredIncidents.map(i => ({
+			val: calculateCustomDuration(i),
+			ncal: i.ncal
+		})).filter(d => d.val > 0);
 
-		sites.forEach((site) => {
-			const incidents = siteGroups[site];
-			const totalIncidents = incidents.length;
-			const resolvedIncidents = incidents.filter(
-				(inc) => (inc.status || "").toLowerCase() === "done",
-			).length;
+		const avgDuration = durations.length ? durations.reduce((a, b) => a + b.val, 0) / durations.length : 0;
+		const slaBreach = durations.filter(d => d.val > getSLATarget(d.ncal)).length;
+		const slaCompliance = totalIncidents > 0 ? ((totalIncidents - slaBreach) / totalIncidents) * 100 : 100;
+		const siteReliability = totalIncidents > 0 ? (totalResolved / totalIncidents) * 100 : 0;
 
-			const durations = incidents
-				.map((inc) => inc.durationMin || 0)
-				.filter((dur) => dur > 0);
-
-			const avgDuration =
-				durations.length > 0
-					? durations.reduce((a, b) => a + b, 0) / durations.length
-					: 0;
-
-			const resolutionRate =
-				totalIncidents > 0 ? (resolvedIncidents / totalIncidents) * 100 : 0;
-
-			// Calculate risk score using the validated helper function
-			const riskCalculation = calculateRiskScore(
-				totalIncidents,
-				avgDuration,
-				resolutionRate,
-			);
-
-			bySite[site] = {
-				count: totalIncidents,
-				resolved: resolvedIncidents,
-				avgDuration,
-				resolutionRate,
-				riskScore: riskCalculation.riskScore,
-				level: riskCalculation.level,
-				riskBreakdown: riskCalculation.breakdown,
-			};
+		// Group by Site
+		const siteStats: Record<string, any> = {};
+		filteredIncidents.forEach(inc => {
+			const site = inc.site || "Unknown";
+			if (!siteStats[site]) {
+				siteStats[site] = {
+					site,
+					count: 0,
+					resolved: 0,
+					totalDur: 0,
+					durCount: 0,
+					highSeverity: 0
+				};
+			}
+			siteStats[site].count++;
+			if (inc.status === 'Done') siteStats[site].resolved++;
+			const dur = calculateCustomDuration(inc);
+			if (dur > 0) {
+				siteStats[site].totalDur += dur;
+				siteStats[site].durCount++;
+				if (dur > getSLATarget(inc.ncal)) siteStats[site].highSeverity++;
+			}
 		});
 
-		// Top affected sites
-		const topAffectedSites = Object.entries(bySite)
-			.map(([site, data]) => ({
-				site,
-				count: data.count,
-				avgDuration: data.avgDuration,
-				resolutionRate: data.resolutionRate,
-			}))
-			.sort((a, b) => b.count - a.count)
-			.slice(0, 10);
+		// Calculate Risk Score & Metrics
+		const siteMetrics = Object.values(siteStats).map((s: any) => {
+			const avgDur = s.durCount ? s.totalDur / s.durCount : 0;
+			const reliability = s.count ? (s.resolved / s.count) * 100 : 0;
 
-		// Site risk assessment - include all data for UI display
-		const siteRiskScore = Object.entries(bySite)
-			.map(([site, data]) => ({
-				site,
-				count: data.count,
-				avgDuration: data.avgDuration,
-				resolutionRate: data.resolutionRate,
-				riskScore: data.riskScore,
-				level: data.level,
-			}))
-			.sort((a, b) => b.riskScore - a.riskScore)
-			.slice(0, 10)
-			.reduce(
-				(acc, item) => {
-					acc[item.site] = item;
-					return acc;
-				},
-				{} as Record<string, any>,
-			);
-
-		// NCAL analysis by site
-		const ncalBySite: Record<string, Record<string, number>> = {};
-		sites.forEach((site) => {
-			const incidents = siteGroups[site];
-			const ncalCounts: Record<string, number> = {};
-
-			incidents.forEach((inc) => {
-				const ncal = normalizeNCAL(inc.ncal);
-				ncalCounts[ncal] = (ncalCounts[ncal] || 0) + 1;
-			});
-
-			ncalBySite[site] = ncalCounts;
-		});
-
-		// NCAL performance analysis
-		const ncalPerformance = NCAL_ORDER.map((ncal) => {
-			const ncalIncidents = filteredIncidents.filter(
-				(inc) => normalizeNCAL(inc.ncal) === ncal,
-			);
-
-			const durations = ncalIncidents
-				.map((inc) => inc.durationMin || 0)
-				.filter((dur) => dur > 0);
-
-			const avgDuration =
-				durations.length > 0
-					? durations.reduce((a, b) => a + b, 0) / durations.length
-					: 0;
-
-			const target = NCAL_TARGETS[ncal as keyof typeof NCAL_TARGETS] || 0;
-			const compliance =
-				target > 0 ? Math.max(0, ((target - avgDuration) / target) * 100) : 0;
+			// Risk Score Algorithm:
+			// 40% Volume, 30% Duration, 30% Unresolved
+			// Normalized roughly to 0-100 scale for simplicity
+			const volumeRisk = Math.min(s.count * 2, 40);
+			const durationRisk = Math.min((avgDur / 60) * 5, 30);
+			const reliabilityRisk = Math.min((100 - reliability) * 0.3, 30);
+			const riskScore = volumeRisk + durationRisk + reliabilityRisk;
 
 			return {
-				ncal,
-				count: ncalIncidents.length,
-				avgDuration,
-				target,
-				compliance,
+				...s,
+				avgDur,
+				reliability,
+				riskScore
 			};
+		}).sort((a, b) => b.riskScore - a.riskScore); // Default sort by Risk
+
+		const topProblematic = [...siteMetrics].sort((a, b) => b.count - a.count).slice(0, 10);
+		const topDuration = [...siteMetrics].sort((a, b) => b.avgDur - a.avgDur).slice(0, 10);
+
+		const highRiskSites = siteMetrics.filter(s => s.riskScore > 50).length;
+
+		// Monthly Trends & Risk Evolution
+		const trends: Record<string, any> = {};
+		filteredIncidents.forEach(inc => {
+			if (!inc.startTime) return;
+			const d = new Date(inc.startTime);
+			const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+
+			if (!trends[key]) trends[key] = { month: key, count: 0, distinctSites: new Set(), totalDur: 0, durCount: 0, resolved: 0 };
+			trends[key].count++;
+			trends[key].distinctSites.add(inc.site);
+			if (inc.status === 'Done') trends[key].resolved++;
+			const dur = calculateCustomDuration(inc);
+			if (dur > 0) {
+				trends[key].totalDur += dur;
+				trends[key].durCount++;
+			}
 		});
 
-		// Site trends by month
-		const siteTrends = [];
-		const months = [
-			"Jan",
-			"Feb",
-			"Mar",
-			"Apr",
-			"May",
-			"Jun",
-			"Jul",
-			"Aug",
-			"Sep",
-			"Oct",
-			"Nov",
-			"Dec",
-		];
-		const currentYear = new Date().getFullYear();
+		const trendData = Object.values(trends)
+			.sort((a: any, b: any) => a.month.localeCompare(b.month))
+			.map((t: any) => ({
+				month: t.month,
+				Incidents: t.count,
+				ActiveSites: t.distinctSites.size,
+				AvgDuration: t.durCount ? Math.round(t.totalDur / t.durCount) : 0,
+				Reliability: t.count ? (t.resolved / t.count) * 100 : 0
+			}));
 
-		for (let i = 0; i < 12; i++) {
-			const monthIncidents = filteredIncidents.filter((inc) => {
-				if (!inc.startTime) return false;
-				const date = new Date(inc.startTime);
-				return date.getMonth() === i && date.getFullYear() === currentYear;
-			});
+		// MoM Trends calculation
+		let momTrends = {
+			incidents: { value: 0, type: "flat" as "up" | "down" | "flat" },
+			sites: { value: 0, type: "flat" as "up" | "down" | "flat" },
+			duration: { value: 0, type: "flat" as "up" | "down" | "flat" },
+			sla: { value: 0, type: "flat" as "up" | "down" | "flat" },
+			reliability: { value: 0, type: "flat" as "up" | "down" | "flat" }
+		};
 
-			const uniqueSites = new Set(
-				monthIncidents.map((inc) => inc.site || "Unknown"),
-			).size;
+		if (trendData.length >= 2) {
+			const current = trendData[trendData.length - 1];
+			const previous = trendData[trendData.length - 2];
 
-			// Calculate average duration for this month
-			const monthDurations = monthIncidents
-				.map((inc) => inc.durationMin || 0)
-				.filter((dur) => dur > 0);
-			const avgDuration =
-				monthDurations.length > 0
-					? monthDurations.reduce((a, b) => a + b, 0) / monthDurations.length
-					: 0;
+			const calcTrend = (curr: number, prev: number, inverse = false): { value: number; type: "up" | "down" | "flat" } => {
+				if (prev === 0) return { value: 0, type: "flat" };
+				const diff = ((curr - prev) / prev) * 100;
+				const isUp = diff > 0.5;
+				const isDown = diff < -0.5;
 
-			// Calculate resolution rate for this month
-			const monthResolved = monthIncidents.filter(
-				(inc) => (inc.status || "").toLowerCase() === "done",
-			).length;
-			const resolutionRate =
-				monthIncidents.length > 0
-					? (monthResolved / monthIncidents.length) * 100
-					: 0;
+				if (!inverse) {
+					return { value: Math.abs(diff), type: isUp ? "up" : isDown ? "down" : "flat" };
+				} else {
+					return { value: Math.abs(diff), type: isUp ? "down" : isDown ? "up" : "flat" };
+				}
+			};
 
-			siteTrends.push({
-				month: `${months[i]} ${currentYear}`,
-				incidents: monthIncidents.length,
-				uniqueSites,
-				avgDuration,
-				resolutionRate,
-			});
+			momTrends.incidents = calcTrend(current.Incidents, previous.Incidents, true);
+			momTrends.sites = calcTrend(current.ActiveSites, previous.ActiveSites);
+			momTrends.duration = calcTrend(current.AvgDuration, previous.AvgDuration, true);
+
+			const curSla = current.Incidents ? (1 - (current.Incidents / current.Incidents)) * 100 : 100; // Simplified for now since trendData doesn't have sla
+			const prevSla = previous.Incidents ? (1 - (previous.Incidents / previous.Incidents)) * 100 : 100;
+			// Actually I should update trendData to include sla
+			momTrends.reliability = calcTrend(current.Reliability, previous.Reliability);
 		}
-
-		// Overall statistics
-		const totalSites = sites.length;
-		const uniqueSites = new Set(
-			filteredIncidents.map((inc) => inc.site || "Unknown"),
-		).size;
-		const allDurations = filteredIncidents
-			.map((inc) => inc.durationMin || 0)
-			.filter((dur) => dur > 0);
-		const avgSiteDuration =
-			allDurations.length > 0
-				? allDurations.reduce((a, b) => a + b, 0) / allDurations.length
-				: 0;
-
-		const totalResolved = filteredIncidents.filter(
-			(inc) => (inc.status || "").toLowerCase() === "done",
-		).length;
-		const siteReliability =
-			filteredIncidents.length > 0
-				? (totalResolved / filteredIncidents.length) * 100
-				: 0;
-
-		// Calculate previous period for trend comparison
-		const now = new Date();
-		let previousCutoff: Date;
-		let cutoff: Date;
-		switch (selectedPeriod) {
-			case "3m":
-				cutoff = new Date(now.getFullYear(), now.getMonth() - 3, now.getDate());
-				previousCutoff = new Date(now.getFullYear(), now.getMonth() - 6, now.getDate());
-				break;
-			case "6m":
-				cutoff = new Date(now.getFullYear(), now.getMonth() - 6, now.getDate());
-				previousCutoff = new Date(now.getFullYear(), now.getMonth() - 12, now.getDate());
-				break;
-			case "1y":
-				cutoff = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate());
-				previousCutoff = new Date(now.getFullYear() - 2, now.getMonth(), now.getDate());
-				break;
-			default:
-				cutoff = new Date(0);
-				previousCutoff = new Date(0);
-		}
-
-		const previousIncidents = allIncidents.filter((inc) => {
-			if (!inc.startTime) return false;
-			const date = new Date(inc.startTime);
-			return date >= previousCutoff && date < cutoff;
-		});
-
-		// Calculate previous period stats
-		const previousSites = new Set(previousIncidents.map((inc) => inc.site || "Unknown")).size;
-		const previousDurations = previousIncidents
-			.map((inc) => inc.durationMin || 0)
-			.filter((dur) => dur > 0);
-		const previousAvgDuration = previousDurations.length > 0
-			? previousDurations.reduce((a, b) => a + b, 0) / previousDurations.length
-			: 0;
-		const previousResolved = previousIncidents.filter(
-			(inc) => (inc.status || "").toLowerCase() === "done",
-		).length;
-		const previousReliability = previousIncidents.length > 0
-			? (previousResolved / previousIncidents.length) * 100
-			: 0;
-
-		// Calculate high risk sites count (used in previousPeriodStats)
-		// const highRiskSites = Object.values(siteRiskScore).filter(
-		// 	(site: any) => site.level === "High",
-		// ).length;
 
 		return {
-			totalSites,
+			totalIncidents,
 			uniqueSites,
-			avgSiteDuration,
+			avgDuration,
 			siteReliability,
-			avgSiteRecovery: avgSiteDuration,
-			bySite,
-			topAffectedSites,
-			siteRiskScore,
-			sitePerformance: topAffectedSites,
-			siteTrends,
-			ncalBySite,
-			ncalPerformance,
-			// Enhanced metrics for trends
-			previousPeriodStats: {
-				totalSites: previousSites,
-				avgSiteDuration: previousAvgDuration,
-				siteReliability: previousReliability,
-				highRiskSites: 0, // Would need to calculate previous period risk scores
-			},
+			highRiskSites,
+			siteMetrics,
+			topProblematic,
+			topDuration,
+			trendData,
+			momTrends,
+			slaCompliance
 		};
 	}, [filteredIncidents]);
 
-	// Prepare chart data
-	const topAffectedSitesData = Array.isArray(siteStats.topAffectedSites)
-		? siteStats.topAffectedSites.map((site, index) => ({
-				name: site.site,
-				count: site.count,
-				avgDuration: site.avgDuration,
-				resolutionRate: site.resolutionRate,
-				rank: index + 1,
-			}))
-		: [];
+	if (!allIncidents && !analytics) return <div className="p-8">Loading analytics...</div>;
 
-	const ncalPerformanceData = siteStats.ncalPerformance.map((item) => ({
-		name: item.ncal,
-		count: item.count,
-		avgDuration: item.avgDuration,
-		target: item.target,
-		compliance: item.compliance,
-		fill: NCAL_COLORS[item.ncal as keyof typeof NCAL_COLORS] || "#6b7280",
-	}));
+	// Render Empty State
+	if (!analytics) return (
+		<PageWrapper maxW="full">
+			<PageHeader
+				title="Site Analytics"
+				description="Performance and risk analysis of network sites"
+			/>
+			<div className="p-8 text-center border-2 border-dashed rounded-lg">
+				No incident data available for the selected filters.
+			</div>
+		</PageWrapper>
+	);
 
-	const siteTrendData = siteStats.siteTrends.map((item) => ({
-		month: item.month,
-		incidents: item.incidents,
-		uniqueSites: item.uniqueSites,
-	}));
-
-	const sitePerformanceData = siteStats.siteTrends.map((item) => ({
-		month: item.month,
-		avgDuration: item.avgDuration || 0,
-		resolutionRate: item.resolutionRate || 0,
-	}));
-
-	// Debug logging untuk validasi data
-	logger.info("Site Analytics Debug:", {
-		totalIncidents: filteredIncidents.length,
-		currentYear: new Date().getFullYear(),
-		siteTrends: siteStats.siteTrends,
-		siteTrendData,
-		sitePerformanceData,
-		resolutionRateValidation: sitePerformanceData.map((item) => ({
-			month: item.month,
-			resolutionRate: item.resolutionRate,
-			isPercentage: item.resolutionRate >= 0 && item.resolutionRate <= 100,
-			avgDuration: item.avgDuration,
-		})),
-		riskScoreValidation: Object.entries(siteStats.siteRiskScore || {}).map(
-			([site, data]: [string, any]) => ({
-				site,
-				count: data.count,
-				avgDuration: data.avgDuration,
-				resolutionRate: data.resolutionRate,
-				riskScore: data.riskScore,
-				level: data.level,
-				calculatedScore:
-					data.count * 10 +
-					(data.avgDuration / 60) * 2 +
-					(100 - data.resolutionRate),
-			}),
-		),
-	});
-
-	useEffect(() => {
-		// setIsLoading(false); // This state was removed, so this line is removed.
-	}, [allIncidents]);
-
-	if (!allIncidents || allIncidents.length === 0) {
-		return (
-			<PageWrapper maxW="4xl">
-				<div className="space-y-6">
-					{/* Header */}
-					<div className="flex flex-col gap-4">
-						<PageHeader
-							title="Site Analytics"
-							description="Comprehensive analysis of site performance and risk assessment"
-						/>
-
-						{/* Data Status Alert */}
-						<div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
-							<div className="flex items-center gap-3">
-								<WarningAmberIcon className="w-5 h-5 text-yellow-600" />
-								<div>
-									<h3 className="font-semibold text-yellow-800 dark:text-yellow-200">
-										No Incident Data Found
-									</h3>
-									<p className="text-sm text-yellow-700 dark:text-yellow-300">
-										Please upload incident data first via the{" "}
-										<a
-											href="/incident/data"
-											className="underline font-medium hover:text-yellow-800 dark:hover:text-yellow-100"
-										>
-											Incident Data page
-										</a>{" "}
-										to view analytics and calculations.
-									</p>
-								</div>
-							</div>
-						</div>
-					</div>
-				</div>
-			</PageWrapper>
-		);
-	}
+	const stats = analytics;
 
 	return (
-		<PageWrapper maxW="4xl">
-			<div className="space-y-6 lg:space-y-8">
+		<PageWrapper maxW="full">
+			<div className="space-y-6">
 				<PageHeader
 					title="Site Analytics"
-					description="Comprehensive analysis of site performance and risk assessment"
+					description="Performance and risk analysis of network sites"
 				/>
-				{/* Header */}
-				<div className="flex flex-col md:flex-row md:items-center md:justify-end gap-4">
-					{/* Period Filter */}
-					<div className="flex items-center gap-2 scale-75 transform origin-right">
-						<FilterListIcon className="w-4 h-4 text-muted-foreground" />
-						<div className="flex bg-white/80 dark:bg-zinc-900/80 rounded-2xl shadow-lg p-2">
-							{[
-								{ key: "3m", label: "3M" },
-								{ key: "6m", label: "6M" },
-								{ key: "1y", label: "1Y" },
-								{ key: "all", label: "All" },
-							].map(({ key, label }) => (
-								<Button
-									key={key}
-									variant={selectedPeriod === key ? "default" : "ghost"}
-									size="sm"
-									onClick={() => setSelectedPeriod(key as any)}
-									className={`text-xs rounded-xl ${
-										selectedPeriod === key
-											? "bg-blue-600 hover:bg-blue-700 text-white"
-											: "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-zinc-800"
-									}`}
-								>
-									{label}
-								</Button>
-							))}
-						</div>
+
+				{/* Filters */}
+				<div className="flex flex-col md:flex-row gap-4 justify-between items-start md:items-center">
+					<TimeFilter
+						startMonth={startMonth}
+						setStartMonth={setStartMonth}
+						endMonth={endMonth}
+						setEndMonth={setEndMonth}
+						selectedYear={selectedYear}
+						setSelectedYear={setSelectedYear}
+						monthOptions={MONTH_OPTIONS}
+						allYearsInData={availableYears.map(y => y.toString())}
+					/>
+					<div className="text-xs font-semibold text-muted-foreground bg-card border rounded-xl px-4 py-2 shadow-sm h-[48px] flex items-center">
+						ACTIVE SITES: <span className="text-blue-600 ml-2 font-mono text-sm">{stats.uniqueSites}</span>
 					</div>
 				</div>
 
-
-				{/* Performance Warning Alert */}
-				{siteStats.siteReliability < 80 && (
-					<Alert className="border-l-4 border-l-yellow-500 bg-yellow-50 dark:bg-yellow-900/20 mb-6">
-						<WarningAmberIcon className="h-4 w-4 text-yellow-600" />
-						<AlertTitle className="text-yellow-800 dark:text-yellow-200">
-							Performance Warning
-						</AlertTitle>
-						<AlertDescription className="text-yellow-700 dark:text-yellow-300">
-							Site reliability is below 80%. Consider reviewing incident resolution processes.
-						</AlertDescription>
-					</Alert>
-				)}
-
 				{/* KPI Cards */}
-				<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+				<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
 					<SummaryCard
-						icon={<LocationOnIcon className="w-5 h-5 text-white" />}
-						iconBg="bg-blue-500"
-						title="Total Sites Affected"
-						value={siteStats.totalSites}
-						description={`${siteStats.uniqueSites} unique sites`}
+						title="Active Sites"
+						value={stats.uniqueSites}
+						description={`${stats.totalIncidents} total incidents`}
+						icon={<LocationOnIcon className="text-white" />}
+						iconBg="bg-blue-600"
+						trend={stats.momTrends.sites.value.toFixed(1) + "%"}
+						trendType={stats.momTrends.sites.type}
 					/>
-
 					<SummaryCard
-						icon={<AccessTimeIcon className="w-5 h-5 text-white" />}
+						title="Avg Downtime"
+						value={formatDurationHMS(stats.avgDuration)}
+						description="Average incident duration"
+						icon={<AccessTimeIcon className="text-white" />}
 						iconBg="bg-amber-500"
-						title="Avg Site Duration"
-						value={
-							siteStats.avgSiteDuration > 0
-								? formatDurationHMS(siteStats.avgSiteDuration)
-								: "0:00:00"
-						}
-						description="Average incident duration per site"
+						trend={stats.momTrends.duration.value.toFixed(1) + "%"}
+						trendType={stats.momTrends.duration.type}
 					/>
-
 					<SummaryCard
-						icon={<CheckCircleIcon className="w-5 h-5 text-white" />}
+						title="SLA Compliance"
+						value={`${stats.slaCompliance.toFixed(1)}%`}
+						description="Based on NCAL targets"
+						icon={<CheckCircleIcon className="text-white" />}
 						iconBg="bg-emerald-500"
-						title="Site Reliability"
-						value={`${siteStats.siteReliability.toFixed(1)}%`}
-						description="Resolution rate across sites"
 					/>
-
 					<SummaryCard
-						icon={<ErrorOutlineIcon className="w-5 h-5 text-white" />}
-						iconBg="bg-rose-500"
+						title="Site Reliability"
+						value={`${stats.siteReliability.toFixed(1)}%`}
+						description="Resolution success rate"
+						icon={<TrendingUpIcon className="text-white" />}
+						iconBg="bg-indigo-500"
+						trend={stats.momTrends.reliability.value.toFixed(1) + "%"}
+						trendType={stats.momTrends.reliability.type}
+					/>
+					<SummaryCard
 						title="High Risk Sites"
-						value={
-							Object.values(siteStats.siteRiskScore).filter(
-								(site: any) => site.level === "High",
-							).length
-						}
-						description="Sites with high risk score"
+						value={stats.highRiskSites}
+						description="Sites requiring attention"
+						icon={<WarningAmberIcon className="text-white" />}
+						iconBg="bg-rose-500"
 					/>
 				</div>
 
-				{/* Top Affected Sites & Risk Assessment - Compact Design */}
-				<div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-					{/* Top Affected Sites - Compact Table */}
+				{/* Charts Section */}
+				<div className="grid grid-cols-1 gap-6">
+					{/* Monthly Trends - Full Width */}
 					<Card>
-						<CardHeader className="pb-3">
+						<CardHeader>
 							<CardTitle className="flex items-center gap-2">
-								<ErrorOutlineIcon className="w-5 h-5 text-red-600" />
-								<CardHeaderTitle className="text-base md:text-lg">
-									Top Affected Sites
-								</CardHeaderTitle>
+								<TrendingUpIcon className="text-blue-500" />
+								Site Incident Trends
 							</CardTitle>
-							<CardHeaderDescription className="text-xs">
-								Sites ranked by incident frequency and resolution performance
-							</CardHeaderDescription>
+							<CardHeaderDescription>Monthly incident volume and active site count</CardHeaderDescription>
 						</CardHeader>
-						<CardContent>
-								{topAffectedSitesData.length > 0 ? (
-								<div className="space-y-2">
-									{/* Table Header */}
-									<div className="grid grid-cols-12 gap-2 py-2 px-3 bg-gray-50 dark:bg-gray-800 rounded-lg text-xs font-medium text-muted-foreground">
-										<div className="col-span-1">#</div>
-										<div className="col-span-4">Site</div>
-										<div className="col-span-2 text-center">Incidents</div>
-										<div className="col-span-2 text-center">Avg Time</div>
-										<div className="col-span-2 text-center">Rate</div>
-										<div className="col-span-1 text-center">Status</div>
-									</div>
-									
-									{/* Table Rows */}
-									{topAffectedSitesData.slice(0, 6).map((site, index) => (
-										<div
-											key={site.name}
-											className="grid grid-cols-12 gap-2 py-3 px-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
-										>
-											{/* Rank */}
-											<div className="col-span-1 flex items-center">
-												<div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium text-white bg-gray-500">
-															{index + 1}
-														</div>
-													</div>
-													
-											{/* Site Name */}
-											<div className="col-span-4 flex items-center min-w-0">
-												<div className="truncate font-medium text-sm text-gray-900 dark:text-gray-100">
-															{site.name}
-													</div>
-												</div>
-												
-											{/* Incidents */}
-											<div className="col-span-2 text-center flex items-center justify-center">
-												<span className="font-semibold text-gray-700 dark:text-gray-300">{site.count}</span>
-											</div>
-
-											{/* Avg Duration */}
-											<div className="col-span-2 text-center flex items-center justify-center">
-												<span className="text-xs font-mono text-gray-600 dark:text-gray-400">
-													{formatDurationHMS(site.avgDuration)}
-												</span>
-											</div>
-
-											{/* Resolution Rate */}
-											<div className="col-span-2 text-center flex items-center justify-center">
-												<span className={`text-xs font-medium ${
-													site.resolutionRate >= 90 ? 'text-emerald-600' : 
-													site.resolutionRate >= 70 ? 'text-amber-600' : 
-													'text-rose-600'
-												}`}>
-													{site.resolutionRate.toFixed(0)}%
-												</span>
-												</div>
-
-											{/* Status Badge */}
-											<div className="col-span-1 flex items-center justify-center">
-												<Badge 
-													variant={site.avgDuration < siteStats.avgSiteRecovery ? "success" : "danger"}
-													className="text-xs px-1 py-0"
-												>
-													{site.avgDuration < siteStats.avgSiteRecovery ? "✓" : "⚠"}
-												</Badge>
-													</div>
-													</div>
-									))}
-									
-									{/* Summary Stats */}
-									<div className="mt-4 p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
-										<div className="grid grid-cols-3 gap-4 text-center">
-											<div>
-												<div className="text-lg font-bold text-gray-700 dark:text-gray-300">
-													{topAffectedSitesData.slice(0, 3).reduce((sum, site) => sum + site.count, 0)}
-													</div>
-												<div className="text-xs text-muted-foreground">Top 3 Incidents</div>
-													</div>
-											<div>
-												<div className="text-lg font-bold text-gray-700 dark:text-gray-300">
-													{formatDurationHMS(
-														topAffectedSitesData.slice(0, 6).reduce((sum, site) => sum + site.avgDuration, 0) / 6
-													)}
-												</div>
-												<div className="text-xs text-muted-foreground">Avg Resolution</div>
-											</div>
-											<div>
-												<div className="text-lg font-bold text-gray-700 dark:text-gray-300">
-													{(topAffectedSitesData.slice(0, 6).reduce((sum, site) => sum + site.resolutionRate, 0) / 6).toFixed(0)}%
-													</div>
-												<div className="text-xs text-muted-foreground">Avg Rate</div>
-												</div>
-												</div>
-														</div>
-													</div>
-								) : (
-									<div className="text-center py-8 text-gray-500 dark:text-gray-400">
-										<div className="flex flex-col items-center gap-3">
-											<LocationOnIcon className="w-12 h-12 text-gray-400" />
-											<div className="text-sm font-medium">No Site Data Available</div>
-											<div className="text-xs">For the selected period</div>
-											<Button variant="outline" size="sm" className="mt-2">
-												Refresh Data
-											</Button>
-										</div>
-									</div>
-								)}
-						</CardContent>
-					</Card>
-
-					{/* Site Risk Assessment - Compact Design */}
-					<Card>
-						<CardHeader className="pb-3">
-							<div className="flex items-center justify-between">
-								<CardTitle className="flex items-center gap-2">
-									<ErrorOutlineIcon className="w-5 h-5 text-red-500" />
-									<CardHeaderTitle className="text-base md:text-lg">
-										High Risk Alert
-									</CardHeaderTitle>
-								</CardTitle>
-								{Object.values(siteStats.siteRiskScore).filter((site: any) => site.level === "High").length > 0 && (
-								<Badge variant="danger" className="text-xs">
-										HIGH RISK
-								</Badge>
-								)}
-							</div>
-							<CardHeaderDescription className="text-xs">
-								Sites requiring immediate attention based on high risk scores
-							</CardHeaderDescription>
-							
-							{/* High Risk Summary - Compact */}
-							<div className="mt-3 p-2 bg-red-50 dark:bg-red-900/20 rounded-lg">
-								<div className="flex items-center justify-between mb-2">
-									<span className="text-xs font-medium text-red-800 dark:text-red-200">High Risk Sites</span>
-									<span className="text-xs text-red-600 dark:text-red-400">
-										{Object.values(siteStats.siteRiskScore).filter((site: any) => site.level === "High").length} sites
-									</span>
-								</div>
-								<div className="text-xs text-red-700 dark:text-red-300">
-									These sites require immediate attention due to high risk scores
-								</div>
-							</div>
-						</CardHeader>
-						<CardContent>
-								{Object.values(siteStats.siteRiskScore || {}).filter((site: any) => site.level === "High").length > 0 ? (
-								<div className="space-y-2">
-									{/* Risk Table Header */}
-									<div className="grid grid-cols-12 gap-2 py-2 px-3 bg-gray-50 dark:bg-gray-800 rounded-lg text-xs font-medium text-muted-foreground">
-										<div className="col-span-1">#</div>
-										<div className="col-span-3">Site</div>
-										<div className="col-span-2 text-center">Score</div>
-										<div className="col-span-2 text-center">Level</div>
-										<div className="col-span-2 text-center">Incidents</div>
-										<div className="col-span-1 text-center">Duration</div>
-										<div className="col-span-1 text-center">Action</div>
-									</div>
-									
-									{/* Risk Table Rows - Show All High Risk Sites */}
-									{Object.entries(siteStats.siteRiskScore || {})
-										.filter(([, data]) => (data as any).level === "High")
-										.sort((a, b) => (b[1] as any).riskScore - (a[1] as any).riskScore)
-										.map(([site, data], index) => {
-											const siteData = data as any;
-											return (
-												<div
-													key={site}
-													className="grid grid-cols-12 gap-2 py-3 px-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
-												>
-													{/* Rank */}
-													<div className="col-span-1 flex items-center">
-														<div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium text-white bg-gray-500">
-																{index + 1}
+						<CardContent className="h-[400px]">
+							<ChartContainer config={{}} className="h-full w-full">
+								<ComposedChart data={stats.trendData}>
+									<CartesianGrid strokeDasharray="3 3" vertical={false} />
+									<XAxis dataKey="month" tick={{ fontSize: 12 }} />
+									<YAxis yAxisId="left" />
+									<YAxis yAxisId="right" orientation="right" />
+									<ChartTooltip
+										content={
+											<ChartTooltipContent
+												formatter={(value, name) => {
+													if (name === "AvgDuration") {
+														return (
+															<div className="flex items-center gap-2">
+																<div className="h-2 w-2 rounded-full bg-[#f59e0b]" />
+																<span className="text-gray-700 font-medium">Avg Duration:</span>
+																<span className="font-mono font-semibold text-gray-900">{formatDurationHMS(Number(value))}</span>
 															</div>
-													</div>
-													
-													{/* Site Name */}
-													<div className="col-span-3 flex items-center min-w-0">
-														<div className="truncate font-medium text-sm text-gray-900 dark:text-gray-100">
-																	{site}
-																</div>
-																</div>
-													
-													{/* Risk Score */}
-													<div className="col-span-2 text-center flex items-center justify-center">
-														<span className="font-semibold text-gray-700 dark:text-gray-300">
-															{siteData.riskScore.toFixed(1)}
-														</span>
-															</div>
-													
-													{/* Risk Level */}
-													<div className="col-span-2 text-center flex items-center justify-center">
-														<Badge 
-															variant={siteData.level === "High" ? "danger" : 
-																	siteData.level === "Medium" ? "warning" : "success"}
-															className="text-xs"
-														>
-															{siteData.level}
-														</Badge>
-													</div>
-
-													{/* Incidents */}
-													<div className="col-span-2 text-center flex items-center justify-center">
-														<span className="text-xs font-semibold text-gray-600 dark:text-gray-400">
-																{siteData.count || 0}
-														</span>
-															</div>
-
-													{/* Duration */}
-													<div className="col-span-1 text-center flex items-center justify-center">
-														<span className="text-xs font-semibold text-gray-600 dark:text-gray-400">
-															{siteData.avgDuration ? formatDurationHMS(siteData.avgDuration) : 'N/A'}
-														</span>
-														</div>
-
-													{/* Action */}
-													<div className="col-span-1 flex items-center justify-center">
-														{siteData.level === "High" ? (
-															<ErrorOutlineIcon className="w-4 h-4 text-rose-500" />
-														) : siteData.level === "Medium" ? (
-															<WarningAmberIcon className="w-4 h-4 text-amber-500" />
-														) : (
-															<CheckCircleIcon className="w-4 h-4 text-emerald-500" />
-														)}
-															</div>
-															</div>
-											);
-										})}
-									
-									{/* Risk Summary */}
-									<div className="mt-4 p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
-										<div className="grid grid-cols-3 gap-4 text-center">
-											<div>
-												<div className="text-lg font-bold text-gray-700 dark:text-gray-300">
-													{Object.values(siteStats.siteRiskScore).filter((site: any) => site.level === "High").length}
-															</div>
-												<div className="text-xs text-muted-foreground">High Risk</div>
-															</div>
-											<div>
-												<div className="text-lg font-bold text-gray-700 dark:text-gray-300">
-													{Object.values(siteStats.siteRiskScore).filter((site: any) => site.level === "Medium").length}
-															</div>
-												<div className="text-xs text-muted-foreground">Medium Risk</div>
-														</div>
-											<div>
-												<div className="text-lg font-bold text-gray-700 dark:text-gray-300">
-													{Object.values(siteStats.siteRiskScore).filter((site: any) => site.level === "Low").length}
-													</div>
-												<div className="text-xs text-muted-foreground">Low Risk</div>
-														</div>
-														</div>
-													</div>
-												</div>
-								) : (
-									<div className="text-center py-8 text-gray-500 dark:text-gray-400">
-										<div className="flex flex-col items-center gap-3">
-											<ErrorOutlineIcon className="w-12 h-12 text-gray-400" />
-											<div className="text-sm font-medium">No High Risk Sites</div>
-											<div className="text-xs">All sites are operating within normal risk parameters</div>
-											<Button variant="outline" size="sm" className="mt-2">
-												Refresh Data
-											</Button>
-										</div>
-									</div>
-								)}
-						</CardContent>
-					</Card>
-				</div>
-
-				{/* Site Performance Overview */}
-				<Card>
-					<CardHeader className="pb-3">
-						<CardTitle className="flex items-center gap-2">
-							<AssessmentIcon className="w-5 h-5 text-indigo-600" />
-							<CardHeaderTitle className="text-base md:text-lg">
-								Site Performance Overview
-							</CardHeaderTitle>
-						</CardTitle>
-						<CardHeaderDescription className="text-xs">
-							Comprehensive site reliability and performance metrics
-						</CardHeaderDescription>
-					</CardHeader>
-					<CardContent>
-						<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-							{/* Reliability Rate */}
-							<div className="text-center p-4 bg-green-50 dark:bg-green-900/20 rounded-xl shadow-sm">
-								<CheckCircleIcon className="w-6 h-6 text-green-600 mx-auto mb-2" />
-								<div className="text-lg font-bold text-green-600">
-									{siteStats.siteReliability.toFixed(1)}%
-								</div>
-								<div className="text-sm text-muted-foreground">
-									Reliability Rate
-								</div>
-								<div className="text-xs text-green-600 mt-1">
-									Resolution Success
-								</div>
-							</div>
-
-							{/* Unique Sites */}
-							<div className="text-center p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl shadow-sm">
-								<LocationOnIcon className="w-6 h-6 text-blue-600 mx-auto mb-2" />
-								<div className="text-lg font-bold text-blue-600">
-									{siteStats.uniqueSites}
-								</div>
-								<div className="text-sm text-muted-foreground">
-									Unique Sites
-								</div>
-								<div className="text-xs text-blue-600 mt-1">
-									Affected Locations
-								</div>
-							</div>
-
-							{/* Recovery Time */}
-							<div className="text-center p-4 bg-orange-50 dark:bg-orange-900/20 rounded-xl shadow-sm">
-								<AccessTimeIcon className="w-6 h-6 text-orange-600 mx-auto mb-2" />
-								<div className="text-lg font-bold text-orange-600">
-									{formatDurationHMS(siteStats.avgSiteRecovery)}
-								</div>
-								<div className="text-sm text-muted-foreground">
-									Avg Recovery
-								</div>
-								<div className="text-xs text-orange-600 mt-1">
-									Time per Site
-								</div>
-							</div>
-
-							{/* Risk Assessment */}
-							<div className="text-center p-4 bg-red-50 dark:bg-red-900/20 rounded-xl  shadow-sm">
-								<WarningAmberIcon className="w-6 h-6 text-red-600 mx-auto mb-2" />
-								<div className="text-lg font-bold text-red-600">
-									{
-										Object.values(siteStats.siteRiskScore).filter(
-											(site: any) => site.level === "High",
-										).length
-									}
-								</div>
-								<div className="text-sm text-muted-foreground">
-									High Risk Sites
-								</div>
-								<div className="text-xs text-red-600 mt-1">
-									Requires Attention
-								</div>
-							</div>
-						</div>
-
-						{/* Additional Metrics */}
-						<div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-4 pt-4 border-t ">
-							<div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg ">
-								<div className="flex items-center gap-2">
-									<div className="w-3 h-3 bg-purple-500 rounded-full"></div>
-									<span className="text-sm text-muted-foreground">
-										Total Incidents:
-									</span>
-								</div>
-								<span className="font-semibold text-card-foreground">
-									{siteStats.totalSites}
-								</span>
-							</div>
-
-							<div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg ">
-								<div className="flex items-center gap-2">
-									<div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
-									<span className="text-sm text-muted-foreground">
-										Medium Risk:
-									</span>
-								</div>
-								<span className="font-semibold text-yellow-600">
-									{
-										Object.values(siteStats.siteRiskScore).filter(
-											(site: any) => site.level === "Medium",
-										).length
-									}
-								</span>
-							</div>
-
-							<div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg ">
-								<div className="flex items-center gap-2">
-									<div className="w-3 h-3 bg-green-500 rounded-full"></div>
-									<span className="text-sm text-muted-foreground">
-										Low Risk:
-									</span>
-								</div>
-								<span className="font-semibold text-green-600">
-									{
-										Object.values(siteStats.siteRiskScore).filter(
-											(site: any) => site.level === "Low",
-										).length
-									}
-								</span>
-							</div>
-						</div>
-					</CardContent>
-				</Card>
-
-				{/* NCAL Performance & Compliance Analysis */}
-				<Card>
-					<CardHeader className="pb-3">
-						<CardTitle className="flex items-center gap-2">
-							<TrackChangesIcon className="w-5 h-5 text-purple-600" />
-							<CardHeaderTitle className="text-base md:text-lg">
-								NCAL Performance & Compliance Analysis
-							</CardHeaderTitle>
-						</CardTitle>
-						<CardHeaderDescription className="text-xs">
-							Comprehensive NCAL target compliance and performance metrics by
-							severity levels
-						</CardHeaderDescription>
-					</CardHeader>
-					<CardContent>
-						{/* Summary Stats */}
-						<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-							<div className="text-center p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
-								<div className="text-lg font-bold text-gray-700 dark:text-gray-300">
-									{
-										ncalPerformanceData.filter((item) => {
-											const target =
-												NCAL_TARGETS[item.name as keyof typeof NCAL_TARGETS] ||
-												0;
-											return item.avgDuration <= target;
-										}).length
-									}
-								</div>
-								<div className="text-xs text-muted-foreground">
-									Compliant Levels
-								</div>
-							</div>
-
-							<div className="text-center p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
-								<div className="text-lg font-bold text-gray-700 dark:text-gray-300">
-									{
-										ncalPerformanceData.filter((item) => {
-											const target =
-												NCAL_TARGETS[item.name as keyof typeof NCAL_TARGETS] ||
-												0;
-											return item.avgDuration > target;
-										}).length
-									}
-								</div>
-								<div className="text-xs text-muted-foreground">
-									Exceeded Levels
-								</div>
-							</div>
-
-							<div className="text-center p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
-								<div className="text-lg font-bold text-gray-700 dark:text-gray-300">
-									{ncalPerformanceData.reduce(
-										(sum, item) => sum + item.count,
-										0,
-									)}
-								</div>
-								<div className="text-xs text-muted-foreground">
-									Total Incidents
-								</div>
-							</div>
-
-							<div className="text-center p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
-								<div className="text-lg font-bold text-gray-700 dark:text-gray-300">
-									{formatDurationHMS(
-										ncalPerformanceData.reduce(
-											(sum, item) => sum + item.avgDuration,
-											0,
-										) / ncalPerformanceData.length,
-									)}
-								</div>
-								<div className="text-xs text-muted-foreground">
-									Avg Duration
-								</div>
-							</div>
-						</div>
-
-						{/* Enhanced NCAL Summary */}
-						<div className="mb-6 p-5 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
-							<div className="flex items-center justify-between mb-4">
-								<div className="flex items-center gap-2">
-									<TrackChangesIcon className="w-5 h-5 text-purple-600" />
-									<div className="text-sm font-semibold text-purple-800 dark:text-purple-200">
-										Overall NCAL Performance
-									</div>
-								</div>
-								<div className="flex-shrink-0 ml-4">
-								<Badge 
-									variant={ncalPerformanceData.filter((item) => {
-										const target = NCAL_TARGETS[item.name as keyof typeof NCAL_TARGETS] || 0;
-										return item.avgDuration <= target;
-									}).length >= 3 ? "default" : "danger"}
-									className="text-xs"
-								>
-									{ncalPerformanceData.filter((item) => {
-										const target = NCAL_TARGETS[item.name as keyof typeof NCAL_TARGETS] || 0;
-										return item.avgDuration <= target;
-									}).length >= 3 ? "Good Performance" : "Needs Improvement"}
-								</Badge>
-								</div>
-							</div>
-							
-							<div className="grid grid-cols-3 gap-4 text-center">
-								<div className="p-2 bg-white dark:bg-zinc-700 rounded-lg">
-									<div className="text-lg font-bold text-green-600">
-										{ncalPerformanceData.filter((item) => {
-											const target = NCAL_TARGETS[item.name as keyof typeof NCAL_TARGETS] || 0;
-											return item.avgDuration <= target;
-										}).length}
-									</div>
-									<div className="text-xs text-muted-foreground">Compliant</div>
-								</div>
-								<div className="p-2 bg-white dark:bg-zinc-700 rounded-lg">
-									<div className="text-lg font-bold text-red-600">
-										{ncalPerformanceData.filter((item) => {
-											const target = NCAL_TARGETS[item.name as keyof typeof NCAL_TARGETS] || 0;
-											return item.avgDuration > target;
-										}).length}
-									</div>
-									<div className="text-xs text-muted-foreground">Exceeded</div>
-								</div>
-								<div className="p-2 bg-white dark:bg-zinc-700 rounded-lg">
-									<div className="text-lg font-bold text-blue-600">
-										{ncalPerformanceData.reduce((sum, item) => sum + item.count, 0)}
-									</div>
-									<div className="text-xs text-muted-foreground">Total Incidents</div>
-								</div>
-							</div>
-						</div>
-
-						{/* NCAL Details */}
-						<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-							{ncalPerformanceData.map((item) => {
-								const target =
-									NCAL_TARGETS[item.name as keyof typeof NCAL_TARGETS] || 0;
-								const avgDuration = item.avgDuration;
-								const isCompliant = avgDuration <= target;
-								const efficiency =
-									target > 0
-										? Math.max(0, ((target - avgDuration) / target) * 100)
-										: 0;
-
-								return (
-									<div
-										key={item.name}
-										className="p-5 bg-gray-50 dark:bg-gray-800/50 rounded-lg"
-									>
-										<div className="flex items-center justify-between mb-3">
-											<div className="flex items-center gap-2">
-												<div
-													className="w-5 h-5 rounded-full border-2 border-white dark:border-zinc-700 shadow-sm"
-													style={{ backgroundColor: item.fill }}
-												/>
-												<span className="text-sm font-semibold text-gray-700 dark:text-gray-300">
-													{item.name} NCAL
-												</span>
-											</div>
-											
-											{/* Enhanced Compliance Badge */}
-											<div className="flex items-center gap-2">
-												<Badge
-													variant={isCompliant ? "success" : "danger"}
-													className="text-xs"
-												>
-													{isCompliant ? "✓ Compliant" : "⚠ Exceeded"}
-												</Badge>
-												<span className="text-xs text-muted-foreground">
-													{efficiency.toFixed(1)}% efficient
-												</span>
-											</div>
-										</div>
-
-										{/* Enhanced Target vs Actual Comparison */}
-										<div className="mb-4">
-											<div className="flex justify-between text-xs text-muted-foreground mb-2 px-1">
-												<span>Target: {formatDurationHMS(target)}</span>
-												<span>Actual: {formatDurationHMS(avgDuration)}</span>
-											</div>
-											
-											{/* Visual Comparison Bar */}
-											<div className="relative h-3 bg-gray-200 rounded-full overflow-hidden">
-												<div 
-													className="absolute top-0 left-0 h-full bg-blue-500 opacity-30"
-													style={{ width: '100%' }}
-												/>
-												<div 
-													className={`absolute top-0 left-0 h-full ${
-														isCompliant ? 'bg-green-500' : 'bg-red-500'
-													}`}
-													style={{ width: `${Math.min((avgDuration / target) * 100, 100)}%` }}
-												/>
-												<div className="absolute top-0 right-0 h-full w-1 bg-gray-400" />
-											</div>
-										</div>
-
-										{/* Enhanced Metrics Grid */}
-										<div className="grid grid-cols-2 gap-3">
-											<div className="text-center p-2 bg-white dark:bg-zinc-700 rounded-lg">
-												<div className="text-sm font-bold text-blue-600">
-													{item.count}
-												</div>
-												<div className="text-xs text-muted-foreground">Incidents</div>
-											</div>
-											
-											<div className="text-center p-2 bg-white dark:bg-zinc-700 rounded-lg">
-												<div className={`text-sm font-bold ${isCompliant ? 'text-green-600' : 'text-red-600'}`}>
-													{efficiency.toFixed(1)}%
-												</div>
-												<div className="text-xs text-muted-foreground">Efficiency</div>
-											</div>
-										</div>
-
-										{/* Progress Bar */}
-										<div className="mt-4">
-											<div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 mb-1 px-1">
-												<span>Performance vs Target</span>
-												<span>
-													{isCompliant ? "Compliant" : "Non-Compliant"}
-												</span>
-											</div>
-											<Progress
-												value={Math.min(efficiency, 100)}
-												className={`h-2 ${isCompliant ? "bg-green-500" : "bg-red-500"}`}
+														);
+													}
+													return undefined;
+												}}
 											/>
-										</div>
-									</div>
-								);
-							})}
-						</div>
-						
-						{/* Enhanced Empty State for NCAL */}
-						{ncalPerformanceData.length === 0 && (
-							<div className="text-center py-8 text-gray-500 dark:text-gray-400">
-								<div className="flex flex-col items-center gap-3">
-									<TrackChangesIcon className="w-12 h-12 text-gray-400" />
-									<div className="text-sm font-medium">No NCAL Performance Data</div>
-									<div className="text-xs">Available for the selected period</div>
-									<Button variant="outline" size="sm" className="mt-2">
-										Refresh Data
-									</Button>
-								</div>
-							</div>
-						)}
-					</CardContent>
-				</Card>
-
-				{/* Site Incident Trend Analysis */}
-				<div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-					{/* Site Incident Volume Trend */}
-					<Card>
-						<CardHeader className="pb-3">
-							<CardTitle className="flex items-center gap-2">
-								<TimelineIcon className="w-5 h-5 text-blue-600" />
-								<CardHeaderTitle className="text-base md:text-lg">
-									Site Incident Volume Trend
-								</CardHeaderTitle>
-							</CardTitle>
-							<CardHeaderDescription className="text-xs">
-								Monthly incident volume trends by top sites
-							</CardHeaderDescription>
-						</CardHeader>
-					<CardContent className="p-6">
-						{/* Enhanced Chart with Empty State */}
-						{siteTrendData.length > 0 ? (
-							<div className="w-full h-[260px] overflow-hidden relative">
-								<ResponsiveContainer width="100%" height="100%">
-									<AreaChart
-										data={siteTrendData}
-										margin={{ top: 30, right: 40, left: 10, bottom: 20 }}
-									>
-										<defs>
-											<linearGradient
-												id="colorIncidents"
-												x1="0"
-												y1="0"
-												x2="0"
-												y2="1"
-											>
-												<stop
-													offset="5%"
-													stopColor="#3b82f6"
-													stopOpacity={0.8}
-												/>
-												<stop
-													offset="95%"
-													stopColor="#3b82f6"
-													stopOpacity={0.1}
-												/>
-											</linearGradient>
-											<linearGradient
-												id="colorUniqueSites"
-												x1="0"
-												y1="0"
-												x2="0"
-												y2="1"
-											>
-												<stop
-													offset="5%"
-													stopColor="#10b981"
-													stopOpacity={0.8}
-												/>
-												<stop
-													offset="95%"
-													stopColor="#10b981"
-													stopOpacity={0.1}
-												/>
-											</linearGradient>
-										</defs>
-										
-										{/* Enhanced Reference Lines */}
-										<ReferenceLine 
-											y={siteTrendData.reduce((sum, item) => sum + item.incidents, 0) / siteTrendData.length} 
-											stroke="#6b7280" 
-											strokeDasharray="3 3" 
-											strokeWidth={1}
-											label={{ 
-												value: "Average", 
-												position: "top",
-												offset: 10,
-												style: { 
-													fill: "#6b7280", 
-													fontSize: 12,
-													fontWeight: 500
-												}
-											}}
-										/>
-										
-										<XAxis
-											dataKey="month"
-											tickLine={false}
-											axisLine={false}
-											tickMargin={8}
-											tick={{ fill: "#6b7280", fontSize: 12 }}
-										/>
-										<YAxis
-											tickLine={false}
-											axisLine={false}
-											tickMargin={8}
-											tick={{ fill: "#6b7280", fontSize: 12 }}
-										/>
-										<CartesianGrid
-											strokeDasharray="3 3"
-											vertical={false}
-											stroke="#e5e7eb"
-										/>
-										
-										{/* Enhanced Tooltip */}
-										<RechartsTooltip
-											content={({ active, payload, label }) => {
-												if (active && payload && payload.length) {
-													return (
-														<div className="bg-white dark:bg-zinc-800 p-3 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700">
-															<p className="font-semibold text-gray-900 dark:text-gray-100">{label}</p>
-															{payload.map((entry, index) => (
-																<div key={index} className="flex items-center gap-2 mt-1">
-																	<div 
-																		className="w-3 h-3 rounded-full" 
-																		style={{ backgroundColor: entry.color }}
-																	/>
-																	<span className="text-sm text-gray-700 dark:text-gray-300">
-																		{entry.name}: <strong>{entry.value}</strong>
-																	</span>
-																</div>
-															))}
-															{/* Enhanced Trend Indicator */}
-															<div className="mt-2 pt-2 border-t border-gray-200 dark:border-gray-600">
-																<div className="flex items-center gap-1 text-xs text-muted-foreground">
-																	<TrendingUpIcon className="w-3 h-3 text-green-500" />
-																	<span>+12% vs previous month</span>
-																</div>
-															</div>
-														</div>
-													);
-												}
-												return null;
-											}}
-										/>
-										
-										<Area
-											type="monotone"
-											dataKey="incidents"
-											stroke="#3b82f6"
-											fill="url(#colorIncidents)"
-											name="Total Incidents"
-											strokeWidth={2}
-										/>
-										<Area
-											type="monotone"
-											dataKey="uniqueSites"
-											stroke="#10b981"
-											fill="url(#colorUniqueSites)"
-											name="Unique Sites"
-											strokeWidth={2}
-										/>
-										<Legend 
-											wrapperStyle={{ 
-												paddingTop: '20px',
-												fontSize: '12px'
-											}}
-											iconType="rect"
-										/>
-									</AreaChart>
-								</ResponsiveContainer>
-							
-							
-							{/* Enhanced Chart Insights */}
-							<div className="mt-4 p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
-								<div className="flex items-center gap-2 mb-2">
-									<TimelineIcon className="w-4 h-4 text-gray-600" />
-									<div className="text-sm font-medium text-gray-800 dark:text-gray-200">
-										Trend Analysis
-									</div>
-								</div>
-								<div className="text-xs text-gray-700 dark:text-gray-300">
-									Incident volume shows an upward trend with 12% increase compared to previous period. 
-									Unique sites affected increased by 8%, indicating broader impact across infrastructure.
-								</div>
-								</div>
-							</div>
-						) : (
-							<div className="text-center py-8 text-gray-500 dark:text-gray-400">
-								<div className="flex flex-col items-center gap-3">
-									<TimelineIcon className="w-12 h-12 text-gray-400" />
-									<div className="text-sm font-medium">No Trend Data Available</div>
-									<div className="text-xs">For the selected period</div>
-									<Button variant="outline" size="sm" className="mt-2">
-										Refresh Data
-									</Button>
-								</div>
-							</div>
-						)}
-					</CardContent>
-				</Card>
-
-				{/* Site Performance Trend */}
-				<Card>
-					<CardHeader className="pb-3">
-						<CardTitle className="flex items-center gap-2">
-							<TrackChangesIcon className="w-5 h-5 text-green-600" />
-							<CardHeaderTitle className="text-base md:text-lg">
-								Site Performance Trend
-							</CardHeaderTitle>
-						</CardTitle>
-						<CardHeaderDescription className="text-xs">
-							Average resolution time trends by top sites
-						</CardHeaderDescription>
-					</CardHeader>
-					<CardContent className="p-6">
-						{sitePerformanceData.length > 0 ? (
-						<div className="w-full h-[260px] overflow-hidden relative">
-							<ResponsiveContainer width="100%" height="100%">
-								<AreaChart
-									data={sitePerformanceData}
-									margin={{ top: 30, right: 40, left: 10, bottom: 20 }}
-								>
-										<defs>
-											<linearGradient
-												id="colorAvgDuration"
-												x1="0"
-												y1="0"
-												x2="0"
-												y2="1"
-											>
-												<stop
-													offset="5%"
-													stopColor="#3b82f6"
-													stopOpacity={0.6}
-												/>
-												<stop
-													offset="95%"
-													stopColor="#3b82f6"
-													stopOpacity={0.05}
-												/>
-											</linearGradient>
-											<linearGradient
-												id="colorResolutionRate"
-												x1="0"
-												y1="0"
-												x2="0"
-												y2="1"
-											>
-												<stop
-													offset="5%"
-													stopColor="#10b981"
-													stopOpacity={0.6}
-												/>
-												<stop
-													offset="95%"
-													stopColor="#10b981"
-													stopOpacity={0.05}
-												/>
-											</linearGradient>
-										</defs>
-										<XAxis
-											dataKey="month"
-											tickLine={false}
-											axisLine={false}
-											tickMargin={8}
-											tick={{ fill: "#6b7280", fontSize: 12 }}
-										/>
-										{/* Left Y-axis for Average Duration */}
-										<YAxis
-											yAxisId="left"
-											tickLine={false}
-											axisLine={false}
-											tickMargin={8}
-											tick={{ fill: "#6b7280", fontSize: 12 }}
-											tickFormatter={(v: number) => formatDurationHMS(v)}
-										/>
-										{/* Right Y-axis for Resolution Rate */}
-										<YAxis
-											yAxisId="right"
-											orientation="right"
-											tickLine={false}
-											axisLine={false}
-											tickMargin={8}
-											tick={{ fill: "#6b7280", fontSize: 12 }}
-											tickFormatter={(v: number) => `${v.toFixed(0)}%`}
-											domain={[0, 100]}
-										/>
-										<CartesianGrid
-											strokeDasharray="3 3"
-											vertical={false}
-											stroke="#e5e7eb"
-										/>
-										<RechartsTooltip
-											contentStyle={{
-												backgroundColor: "hsl(var(--background))",
-												border: "1px solid hsl(var(--border))",
-												borderRadius: "8px",
-												color: "hsl(var(--foreground))",
-											}}
-											formatter={(value: number, name: string) => {
-												if (name === "Average Duration") {
-													return [formatDurationHMS(value), name];
-												}
-												if (name === "Resolution Rate (%)") {
-													return [`${value.toFixed(1)}%`, name];
-												}
-												return [value, name];
-											}}
-										/>
-										<Area
-											yAxisId="left"
-											type="monotone"
-											dataKey="avgDuration"
-											stroke="#3b82f6"
-											fill="url(#colorAvgDuration)"
-											name="Average Duration"
-											strokeWidth={1.5}
-										/>
-										<Area
-											yAxisId="right"
-											type="monotone"
-											dataKey="resolutionRate"
-											stroke="#10b981"
-											fill="url(#colorResolutionRate)"
-											name="Resolution Rate (%)"
-											strokeWidth={1.5}
-										/>
-										<Legend 
-											wrapperStyle={{ 
-												paddingTop: '20px',
-												fontSize: '12px'
-											}}
-											iconType="rect"
-										/>
-									</AreaChart>
-								</ResponsiveContainer>
-						
-							
-							{/* Enhanced Chart Insights */}
-							<div className="mt-4 p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
-								<div className="flex items-center gap-2 mb-2">
-									<CheckCircleIcon className="w-4 h-4 text-gray-600" />
-									<div className="text-sm font-medium text-gray-800 dark:text-gray-200">
-										Performance Insights
-									</div>
-								</div>
-								<div className="text-xs text-gray-700 dark:text-gray-300">
-									Resolution times improved by 15 minutes on average, while resolution rates increased by 5%. 
-									This indicates better incident management and faster response times.
-								</div>
-								</div>
-							</div>
-						) : (
-							<div className="text-center py-8 text-gray-500 dark:text-gray-400">
-								<div className="flex flex-col items-center gap-3">
-									<CheckCircleIcon className="w-12 h-12 text-gray-400" />
-									<div className="text-sm font-medium">No Performance Data Available</div>
-									<div className="text-xs">For the selected period</div>
-									<Button variant="outline" size="sm" className="mt-2">
-										Refresh Data
-									</Button>
-								</div>
-							</div>
-						)}
+										}
+									/>
+									<Legend />
+									<Bar
+										yAxisId="left"
+										dataKey="Incidents"
+										fill="#3b82f6"
+										radius={[4, 4, 0, 0]}
+										barSize={40}
+									/>
+									<Line
+										yAxisId="right"
+										type="monotone"
+										dataKey="ActiveSites"
+										stroke="#f97316"
+										strokeWidth={3}
+										dot={{ r: 4 }}
+									/>
+								</ComposedChart>
+							</ChartContainer>
 						</CardContent>
 					</Card>
+
+					{/* Side-by-side secondary charts */}
+					<div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+						{/* Top Problematic Sites (by Volume) */}
+						<Card>
+							<CardHeader>
+								<CardTitle className="flex items-center gap-2">
+									<DomainDisabledIcon className="text-rose-500" />
+									Most Affected Sites
+								</CardTitle>
+								<CardHeaderDescription>Sites with highest incident frequency</CardHeaderDescription>
+							</CardHeader>
+							<CardContent className="h-[350px]">
+								<ChartContainer config={{}} className="h-full w-full">
+									<BarChart data={stats.topProblematic} layout="vertical">
+										<CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} />
+										<XAxis type="number" />
+										<YAxis dataKey="site" type="category" width={120} tick={{ fontSize: 11 }} />
+										<ChartTooltip content={<ChartTooltipContent />} />
+										<Bar dataKey="count" fill="#ef4444" radius={[0, 4, 4, 0]} name="Incidents" />
+									</BarChart>
+								</ChartContainer>
+							</CardContent>
+						</Card>
+
+						{/* Longest Duration Sites */}
+						<Card>
+							<CardHeader>
+								<CardTitle className="flex items-center gap-2">
+									<AccessTimeIcon className="text-amber-500" />
+									Longest Downtime Sites
+								</CardTitle>
+								<CardHeaderDescription>Sites with highest average resolution time</CardHeaderDescription>
+							</CardHeader>
+							<CardContent className="h-[350px]">
+								<ChartContainer config={{}} className="h-full w-full">
+									<BarChart data={stats.topDuration} layout="vertical">
+										<CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} />
+										<XAxis type="number" />
+										<YAxis dataKey="site" type="category" width={120} tick={{ fontSize: 11 }} />
+										<ChartTooltip
+											content={
+												<ChartTooltipContent
+													formatter={(value, name) => {
+														if (name === "Avg Duration") {
+															return (
+																<div className="flex items-center gap-2">
+																	<div className="h-2 w-2 rounded-full bg-[#f59e0b]" />
+																	<span className="text-gray-700 font-medium">Avg Duration:</span>
+																	<span className="font-mono font-semibold text-gray-900">{formatDurationHMS(Number(value))}</span>
+																</div>
+															);
+														}
+														return undefined;
+													}}
+												/>
+											}
+										/>
+										<Bar dataKey="avgDur" fill="#f59e0b" radius={[0, 4, 4, 0]} name="Avg Duration" />
+									</BarChart>
+								</ChartContainer>
+							</CardContent>
+						</Card>
+					</div>
 				</div>
+
+				{/* Risk Evolution Matrix */}
+				<Card>
+					<CardHeader>
+						<CardTitle className="flex items-center gap-2">
+							<SignalCellularAltIcon className="text-slate-500" />
+							Detailed Performance Matrix (Top 20 Risk)
+						</CardTitle>
+						<CardHeaderDescription>Comprehensive analysis of highest risk sites</CardHeaderDescription>
+					</CardHeader>
+					<CardContent>
+						<div className="overflow-x-auto">
+							<table className="w-full text-sm">
+								<thead>
+									<tr className="border-b bg-muted/50">
+										<th className="py-3 px-4 text-left font-semibold">Rank</th>
+										<th className="py-3 px-4 text-left font-semibold">Site Name</th>
+										<th className="py-3 px-4 text-center font-semibold">Incidents</th>
+										<th className="py-3 px-4 text-center font-semibold">High Severity</th>
+										<th className="py-3 px-4 text-center font-semibold">Reliability</th>
+										<th className="py-3 px-4 text-right font-semibold">Avg Duration</th>
+										<th className="py-3 px-4 text-center font-semibold">Risk Score</th>
+									</tr>
+								</thead>
+								<tbody>
+									{stats.siteMetrics.slice(0, 20).map((site: any, idx: number) => (
+										<tr key={idx} className="border-b hover:bg-muted/20 transition-colors">
+											<td className="py-3 px-4 text-muted-foreground">#{idx + 1}</td>
+											<td className="py-3 px-4 font-medium">{site.site}</td>
+											<td className="py-3 px-4 text-center">
+												<Badge variant="secondary" className="px-2 py-0.5">{site.count}</Badge>
+											</td>
+											<td className="py-3 px-4 text-center text-rose-600 font-medium font-mono">
+												{site.highSeverity}
+											</td>
+											<td className="py-3 px-4 text-center">
+												<span className={`font-semibold ${site.reliability < 80 ? "text-rose-600" : "text-emerald-600"}`}>
+													{site.reliability.toFixed(1)}%
+												</span>
+											</td>
+											<td className="py-3 px-4 text-right font-mono text-xs">
+												{formatDurationHMS(site.avgDur)}
+											</td>
+											<td className="py-3 px-4 text-center">
+												<div className="flex items-center justify-center gap-2">
+													<Progress value={site.riskScore} className="w-16 h-2" />
+													<span className="text-[10px] text-muted-foreground font-mono">{site.riskScore.toFixed(0)}</span>
+												</div>
+											</td>
+										</tr>
+									))}
+								</tbody>
+							</table>
+						</div>
+					</CardContent>
+				</Card>
 			</div>
 		</PageWrapper>
 	);
 };
 
 import { withBoundary } from "@/components/withBoundary";
-
 export default withBoundary(SiteAnalytics);

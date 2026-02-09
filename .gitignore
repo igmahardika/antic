@@ -42,7 +42,7 @@ env.production
 *.sh
 *.js
 *.cjs
-*.mjs
+# *.mjs
 !vite.config.*
 !postcss.config.*
 !tailwind.config.*
@@ -62,7 +62,7 @@ env.production
 # Test files with sensitive data
 test-*.js
 test-*.cjs
-test-*.mjs
+test-# *.mjs
 test-*.sql
 
 # Deployment and configuration files with secrets
