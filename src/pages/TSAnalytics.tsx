@@ -55,6 +55,19 @@ import FilterListIcon from "@mui/icons-material/FilterList";
 import PersonIcon from "@mui/icons-material/Person";
 import SpeedIcon from "@mui/icons-material/Speed";
 import PeakHoursIcon from "@mui/icons-material/AccessTimeFilled";
+import InfoIcon from "@mui/icons-material/InfoOutlined";
+import ErrorIcon from "@mui/icons-material/Error";
+import WarningIcon from "@mui/icons-material/Warning";
+
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipProvider,
+	TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { Separator } from "@/components/ui/separator";
+import DetailModal from "@/components/analytics/DetailModal";
+
 import { logger } from "@/lib/logger";
 
 // Constants & Helpers
@@ -91,6 +104,7 @@ const TSAnalytics: React.FC = () => {
 	const [endMonth, setEndMonth] = useState<string | null>("12");
 	const [selectedYear, setSelectedYear] = useState<string | null>(new Date().getFullYear().toString());
 	const [selectedTS, setSelectedTS] = useState<string>("all");
+	const [detailPersonnel, setDetailPersonnel] = useState<any>(null);
 
 	usePerf('TSAnalytics');
 
@@ -214,7 +228,9 @@ const TSAnalytics: React.FC = () => {
 					totalDur: 0,
 					durCount: 0,
 					breaches: 0,
-					ncalBreakdown: { RED: 0, BLACK: 0, ORANGE: 0, YELLOW: 0, BLUE: 0 }
+					ncalBreakdown: { RED: 0, BLACK: 0, ORANGE: 0, YELLOW: 0, BLUE: 0 },
+					breachedTickets: [] as any[],
+					problemMatrix: {} as Record<string, number>
 				};
 			}
 			tsStats[name].count++;
@@ -229,8 +245,22 @@ const TSAnalytics: React.FC = () => {
 			if (dur > 0) {
 				tsStats[name].totalDur += dur;
 				tsStats[name].durCount++;
-				if (dur > getSLATarget(inc.ncal)) tsStats[name].breaches++;
+				const target = getSLATarget(inc.ncal);
+				if (dur > target) {
+					tsStats[name].breaches++;
+					tsStats[name].breachedTickets.push({
+						noCase: inc.noCase,
+						site: inc.site,
+						ncal,
+						duration: dur,
+						target: target,
+						startTime: inc.startTime
+					});
+				}
 			}
+
+			const prob = inc.problem || inc.penyebab || "Other";
+			tsStats[name].problemMatrix[prob] = (tsStats[name].problemMatrix[prob] || 0) + 1;
 		});
 
 		const leaderboard = Object.values(tsStats).map((s: any) => {
@@ -571,12 +601,33 @@ const TSAnalytics: React.FC = () => {
 											<th className="py-3 px-4 text-center font-semibold text-rose-600">Breach</th>
 											<th className="py-3 px-4 text-center font-semibold">NCAL Load</th>
 											<th className="py-3 px-4 text-right font-semibold">Avg Duration</th>
-											<th className="py-3 px-4 text-left font-semibold w-[150px]">Efficiency</th>
+											<th className="py-3 px-4 text-left font-semibold w-[150px]">
+												<TooltipProvider>
+													<div className="flex items-center gap-1">
+														Efficiency
+														<Tooltip>
+															<TooltipTrigger asChild>
+																<InfoIcon className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
+															</TooltipTrigger>
+															<TooltipContent className="max-w-[220px] p-3">
+																<p className="text-xs font-bold mb-1">Rumus Efficiency Score:</p>
+																<p className="text-[10px] text-muted-foreground leading-relaxed">
+																	(40% SLA) + (30% Resolution Rate) + (30% Volume Tiket)
+																</p>
+															</TooltipContent>
+														</Tooltip>
+													</div>
+												</TooltipProvider>
+											</th>
 										</tr>
 									</thead>
 									<tbody>
 										{analytics.leaderboard.map((item: any, idx: number) => (
-											<tr key={idx} className="border-b hover:bg-muted/10 transition-colors">
+											<tr
+												key={idx}
+												className="border-b hover:bg-muted/20 transition-colors cursor-pointer group"
+												onClick={() => setDetailPersonnel(item)}
+											>
 												<td className="py-3 px-4">
 													<div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs ${idx === 0 ? "bg-amber-100 text-amber-700 border border-amber-200" :
 														idx === 1 ? "bg-slate-100 text-slate-600 border border-slate-200" :
@@ -647,6 +698,116 @@ const TSAnalytics: React.FC = () => {
 					</Card>
 				</div>
 			</div>
+
+			{/* Detail Drill-down Modal */}
+			{detailPersonnel && (
+				<DetailModal
+					isOpen={!!detailPersonnel}
+					onClose={() => setDetailPersonnel(null)}
+					title={detailPersonnel.name}
+					description="Detailed Performance Analysis"
+				>
+					<div className="grid grid-cols-2 gap-4">
+						<div className="p-4 rounded-xl bg-blue-50 border border-blue-100">
+							<p className="text-[10px] font-bold text-blue-600 uppercase tracking-widest mb-1">Success Rate</p>
+							<p className="text-2xl font-black text-blue-700">{detailPersonnel.resRate.toFixed(1)}%</p>
+							<p className="text-[11px] text-blue-600/70 font-medium">Resolusi Tiket</p>
+						</div>
+						<div className="p-4 rounded-xl bg-amber-50 border border-amber-100">
+							<p className="text-[10px] font-bold text-amber-600 uppercase tracking-widest mb-1">Avg Duration</p>
+							<p className="text-2xl font-black text-amber-700">{formatDurationHMS(detailPersonnel.avgDur)}</p>
+							<p className="text-[11px] text-amber-600/70 font-medium">Monitoring MTTR</p>
+						</div>
+					</div>
+
+					<div className="space-y-4">
+						<div className="flex items-center gap-2">
+							<SpeedIcon className="text-indigo-500 h-5 w-5" />
+							<h4 className="font-bold text-sm">Specialization Breakdown</h4>
+						</div>
+						<div className="grid grid-cols-1 gap-2">
+							{Object.entries(detailPersonnel.problemMatrix)
+								.sort((a: any, b: any) => b[1] - a[1])
+								.slice(0, 5)
+								.map(([prob, count]: any) => {
+									const percentage = (count / detailPersonnel.count) * 100;
+									return (
+										<div key={prob} className="space-y-1.5">
+											<div className="flex justify-between text-xs">
+												<span className="font-medium text-muted-foreground truncate w-48">{prob}</span>
+												<span className="font-bold">{count} cases</span>
+											</div>
+											<div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
+												<div className="h-full bg-indigo-500 rounded-full" style={{ width: `${percentage}%` }} />
+											</div>
+										</div>
+									);
+								})}
+						</div>
+					</div>
+
+					<Separator />
+
+					<div className="space-y-4">
+						<div className="flex items-center justify-between">
+							<div className="flex items-center gap-2">
+								<ErrorIcon className="text-rose-500 h-5 w-5" />
+								<h4 className="font-bold text-sm">SLA Breach Analysis</h4>
+							</div>
+							<Badge variant={detailPersonnel.breaches > 0 ? "danger" : "success"}>
+								{detailPersonnel.breaches} Breached
+							</Badge>
+						</div>
+
+						{detailPersonnel.breachedTickets.length > 0 ? (
+							<div className="space-y-3">
+								{detailPersonnel.breachedTickets.slice(0, 5).map((t: any, idx: number) => (
+									<div key={idx} className="p-3 rounded-lg border bg-muted/20 space-y-2">
+										<div className="flex justify-between items-start">
+											<span className="font-mono text-xs font-bold text-foreground">#{t.noCase}</span>
+											<Badge
+												variant="secondary"
+												className="text-[9px]"
+												style={{ backgroundColor: NCAL_COLORS[t.ncal as keyof typeof NCAL_COLORS] + '20', color: NCAL_COLORS[t.ncal as keyof typeof NCAL_COLORS] }}
+											>
+												{t.ncal}
+											</Badge>
+										</div>
+										<p className="text-[11px] text-muted-foreground truncate">Site: {t.site}</p>
+										<div className="flex items-center justify-between text-[10px]">
+											<span className="text-rose-600 font-bold">Duration: {formatDurationHMS(t.duration)}</span>
+											<span className="text-muted-foreground italic">Target: {formatDurationHMS(t.target)}</span>
+										</div>
+									</div>
+								))}
+								{detailPersonnel.breachedTickets.length > 5 && (
+									<p className="text-center text-[10px] text-muted-foreground italic">
+										+ {detailPersonnel.breachedTickets.length - 5} more breached tickets
+									</p>
+								)}
+							</div>
+						) : (
+							<div className="py-8 text-center border-2 border-dashed rounded-xl">
+								<p className="text-xs text-muted-foreground">Excellent! No SLA breaches found for this period.</p>
+							</div>
+						)}
+					</div>
+
+					<div className="p-4 rounded-xl bg-indigo-50 border border-indigo-100 space-y-2">
+						<div className="flex items-center gap-2">
+							<TrendingUpIcon className="h-4 w-4 text-indigo-600" />
+							<span className="text-xs font-bold text-indigo-700 uppercase tracking-tight">Performance Note</span>
+						</div>
+						<p className="text-xs text-indigo-900 leading-relaxed italic">
+							{detailPersonnel.efficiency > 85 ?
+								"Performa sangat luar biasa. Memiliki tingkat kepatuhan SLA yang tinggi meski menangani volume tiket yang signifikan." :
+								detailPersonnel.breaches > 2 ?
+									"Perlu evaluasi pada manajemen waktu untuk tiket penugasan kritis (NCAL Red/Black) yang melampaui SLA." :
+									"Performa stabil. Perhatikan konsistensi pada pelaporan tepat waktu untuk meningkatkan skor efisiensi."}
+						</p>
+					</div>
+				</DetailModal>
+			)}
 		</PageWrapper>
 	);
 };

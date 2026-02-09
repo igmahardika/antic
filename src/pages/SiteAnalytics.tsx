@@ -48,6 +48,20 @@ import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import TrendingUpIcon from "@mui/icons-material/TrendingUp";
 import DomainDisabledIcon from "@mui/icons-material/DomainDisabled";
 import SignalCellularAltIcon from "@mui/icons-material/SignalCellularAlt";
+import InfoIcon from "@mui/icons-material/InfoOutlined";
+import ErrorIcon from "@mui/icons-material/Error";
+import WarningIcon from "@mui/icons-material/Warning";
+import BuildIcon from "@mui/icons-material/Build";
+
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipProvider,
+	TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { Separator } from "@/components/ui/separator";
+import DetailModal from "@/components/analytics/DetailModal";
+import { Progress } from "@/components/ui/progress";
 
 // Constants
 const formatDurationHMS = (minutes: number): string => {
@@ -73,6 +87,7 @@ const SiteAnalytics: React.FC = () => {
 	const [startMonth, setStartMonth] = useState<string | null>("01");
 	const [endMonth, setEndMonth] = useState<string | null>("12");
 	const [selectedYear, setSelectedYear] = useState<string | null>(new Date().getFullYear().toString());
+	const [selectedSite, setSelectedSite] = useState<any>(null);
 
 	usePerf('SiteAnalytics');
 
@@ -171,7 +186,9 @@ const SiteAnalytics: React.FC = () => {
 					totalDur: 0,
 					durCount: 0,
 					highSeverity: 0,
-					problems: {} as Record<string, number>
+					problems: {} as Record<string, number>,
+					ncalBreakdown: { RED: 0, BLACK: 0, ORANGE: 0, YELLOW: 0, BLUE: 0 },
+					breachedTickets: [] as any[]
 				};
 			}
 			siteStats[site].count++;
@@ -182,10 +199,26 @@ const SiteAnalytics: React.FC = () => {
 			siteStats[site].problems[prob] = (siteStats[site].problems[prob] || 0) + 1;
 
 			const dur = calculateCustomDuration(inc);
+			const ncal = normalizeNCAL(inc.ncal);
+			if (siteStats[site].ncalBreakdown[ncal] !== undefined) {
+				siteStats[site].ncalBreakdown[ncal]++;
+			}
+
 			if (dur > 0) {
 				siteStats[site].totalDur += dur;
 				siteStats[site].durCount++;
-				if (dur > getSLATarget(inc.ncal)) siteStats[site].highSeverity++;
+				const target = getSLATarget(inc.ncal);
+				if (dur > target) {
+					siteStats[site].highSeverity++;
+					siteStats[site].breachedTickets.push({
+						noCase: inc.noCase,
+						ts: inc.ts || "Unknown",
+						ncal,
+						duration: dur,
+						target,
+						startTime: inc.startTime
+					});
+				}
 			}
 		});
 
@@ -207,13 +240,23 @@ const SiteAnalytics: React.FC = () => {
 			const slaRisk = Math.min((100 - slaCompliance) * 0.2, 20);
 			const riskScore = volumeRisk + durationRisk + reliabilityRisk + slaRisk;
 
+			// Generate recommendations
+			const recommendations = [];
+			if (slaCompliance < 85) recommendations.push("Evaluasi respon time penanganan tiket kritis.");
+			if (reliability < 90) recommendations.push("Site ini memiliki banyak insiden yang belum 'Resolved'.");
+			if (topProb.toLowerCase().includes("battery") || topProb.toLowerCase().includes("power")) {
+				recommendations.push("Perlu dilakukan audit sistem kelistrikan (UPS/Battery).");
+			}
+			if (s.count > 10) recommendations.push("Volume gangguan tinggi, jadwalkan preventive maintenance.");
+
 			return {
 				...s,
 				avgDur,
 				reliability,
 				slaCompliance,
 				topProb,
-				riskScore
+				riskScore,
+				recommendations
 			};
 		}).sort((a, b) => b.riskScore - a.riskScore); // Default sort by Risk
 
@@ -529,12 +572,33 @@ const SiteAnalytics: React.FC = () => {
 										<th className="py-3 px-4 text-center font-semibold text-emerald-600">Success %</th>
 										<th className="py-3 px-4 text-left font-semibold">Main Problem</th>
 										<th className="py-3 px-4 text-right font-semibold">Avg Duration</th>
-										<th className="py-3 px-4 text-center font-semibold">Risk Level</th>
+										<th className="py-3 px-4 text-center font-semibold">
+											<TooltipProvider>
+												<div className="flex items-center gap-1 justify-center">
+													Risk Level
+													<Tooltip>
+														<TooltipTrigger asChild>
+															<InfoIcon className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
+														</TooltipTrigger>
+														<TooltipContent className="max-w-[220px] p-3 text-left">
+															<p className="text-xs font-bold mb-1">Rumus Risk Score:</p>
+															<p className="text-[10px] text-muted-foreground leading-relaxed">
+																(30% Vol) + (30% Durasi) + (20% Resolusi) + (20% SLA Breach)
+															</p>
+														</TooltipContent>
+													</Tooltip>
+												</div>
+											</TooltipProvider>
+										</th>
 									</tr>
 								</thead>
 								<tbody>
 									{stats.siteMetrics.slice(0, 20).map((site: any, idx: number) => (
-										<tr key={idx} className="border-b hover:bg-muted/10 transition-colors">
+										<tr
+											key={idx}
+											className="border-b hover:bg-muted/20 transition-colors cursor-pointer group"
+											onClick={() => setSelectedSite(site)}
+										>
 											<td className="py-3 px-4">
 												<div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs ${site.riskScore > 75 ? "bg-rose-100 text-rose-700 border border-rose-200" :
 													site.riskScore > 40 ? "bg-amber-100 text-amber-700 border border-amber-200" :
@@ -593,6 +657,126 @@ const SiteAnalytics: React.FC = () => {
 					</CardContent>
 				</Card>
 			</div>
+
+			{/* Site Drill-down Detail Modal */}
+			{selectedSite && (
+				<DetailModal
+					isOpen={!!selectedSite}
+					onClose={() => setSelectedSite(null)}
+					title={selectedSite.site}
+					description="Detailed Site Risk Analysis"
+				>
+					<div className="grid grid-cols-2 gap-4">
+						<div className="p-4 rounded-xl bg-blue-100/50 border border-blue-200">
+							<p className="text-[10px] font-bold text-blue-600 uppercase tracking-widest mb-1">Risk Score</p>
+							<p className="text-2xl font-black text-blue-700">{selectedSite.riskScore.toFixed(0)}/100</p>
+							<p className="text-[11px] text-blue-600/70 font-medium">Kritikalitas Site</p>
+						</div>
+						<div className="p-4 rounded-xl bg-slate-100 border border-slate-200">
+							<p className="text-[10px] font-bold text-slate-600 uppercase tracking-widest mb-1">Total Incidents</p>
+							<p className="text-2xl font-black text-slate-700">{selectedSite.count}</p>
+							<p className="text-[11px] text-slate-600/70 font-medium">Beban Gangguan</p>
+						</div>
+					</div>
+
+					<div className="space-y-4">
+						<div className="flex items-center gap-2">
+							<WarningIcon className="text-rose-500 h-5 w-5" />
+							<h4 className="font-bold text-sm">Severity Distribution</h4>
+						</div>
+						<div className="flex gap-2">
+							{Object.entries(selectedSite.ncalBreakdown)
+								.filter(([_, count]) => (count as number) > 0)
+								.map(([level, count]) => (
+									<div key={level} className="flex-1 p-2 rounded-lg border text-center space-y-1">
+										<p className="text-[9px] font-bold text-muted-foreground">{level}</p>
+										<p className="text-sm font-black" style={{ color: (NCAL_COLORS as any)[level] || '#888' }}>{count as number}</p>
+									</div>
+								))
+							}
+						</div>
+					</div>
+
+					<div className="space-y-4">
+						<div className="flex items-center gap-2">
+							<BuildIcon className="text-amber-500 h-5 w-5" />
+							<h4 className="font-bold text-sm">Problem Frequency</h4>
+						</div>
+						<div className="grid grid-cols-1 gap-2">
+							{Object.entries(selectedSite.problems)
+								.sort((a: any, b: any) => b[1] - a[1])
+								.slice(0, 5)
+								.map(([prob, count]: any) => {
+									const percentage = (count / selectedSite.count) * 100;
+									return (
+										<div key={prob} className="space-y-1.5">
+											<div className="flex justify-between text-xs">
+												<span className="font-medium text-muted-foreground truncate w-48">{prob}</span>
+												<span className="font-bold">{count} cases</span>
+											</div>
+											<div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
+												<div className="h-full bg-amber-500 rounded-full" style={{ width: `${percentage}%` }} />
+											</div>
+										</div>
+									);
+								})}
+						</div>
+					</div>
+
+					<Separator />
+
+					<div className="space-y-4">
+						<div className="flex items-center gap-2">
+							<LocationOnIcon className="text-blue-500 h-5 w-5" />
+							<h4 className="font-bold text-sm">SLA Breach List</h4>
+						</div>
+						{selectedSite.breachedTickets.length > 0 ? (
+							<div className="space-y-3">
+								{selectedSite.breachedTickets.slice(0, 5).map((t: any, idx: number) => (
+									<div key={idx} className="p-3 rounded-lg border bg-muted/20 space-y-2">
+										<div className="flex justify-between items-start">
+											<span className="font-mono text-xs font-bold font-mono">#{t.noCase}</span>
+											<Badge
+												variant="secondary"
+												style={{ backgroundColor: (NCAL_COLORS as any)[t.ncal] + '20', color: (NCAL_COLORS as any)[t.ncal] }}
+											>
+												{t.ncal}
+											</Badge>
+										</div>
+										<div className="flex justify-between text-[10px]">
+											<span className="text-muted-foreground">Officer: {t.ts}</span>
+											<span className="text-rose-600 font-bold">{formatDurationHMS(t.duration)}</span>
+										</div>
+									</div>
+								))}
+							</div>
+						) : (
+							<div className="py-6 text-center border-2 border-dashed rounded-xl">
+								<p className="text-xs text-muted-foreground italic">No SLA breaches recorded for this site.</p>
+							</div>
+						)}
+					</div>
+
+					<div className="p-4 rounded-xl bg-amber-50 border border-amber-100 space-y-3">
+						<div className="flex items-center gap-2">
+							<TrendingUpIcon className="h-4 w-4 text-amber-600" />
+							<span className="text-xs font-bold text-amber-700 uppercase tracking-tight">AI Recommendation</span>
+						</div>
+						<ul className="space-y-1.5 list-disc list-inside">
+							{selectedSite.recommendations.map((rec: string, i: number) => (
+								<li key={i} className="text-xs text-amber-900 leading-relaxed font-medium">
+									{rec}
+								</li>
+							))}
+							{selectedSite.recommendations.length === 0 && (
+								<li className="text-xs text-amber-900 italic list-none">
+									Kondisi site sangat prima. Lanjutkan monitoring rutin.
+								</li>
+							)}
+						</ul>
+					</div>
+				</DetailModal>
+			)}
 		</PageWrapper>
 	);
 };
