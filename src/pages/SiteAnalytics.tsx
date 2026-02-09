@@ -173,11 +173,17 @@ const SiteAnalytics: React.FC = () => {
 					resolved: 0,
 					totalDur: 0,
 					durCount: 0,
-					highSeverity: 0
+					highSeverity: 0,
+					problems: {} as Record<string, number>
 				};
 			}
 			siteStats[site].count++;
 			if (inc.status === 'Done') siteStats[site].resolved++;
+
+			// Track problems
+			const prob = inc.problem || inc.penyebab || inc.klasifikasiGangguan || "Other";
+			siteStats[site].problems[prob] = (siteStats[site].problems[prob] || 0) + 1;
+
 			const dur = calculateCustomDuration(inc);
 			if (dur > 0) {
 				siteStats[site].totalDur += dur;
@@ -190,19 +196,26 @@ const SiteAnalytics: React.FC = () => {
 		const siteMetrics = Object.values(siteStats).map((s: any) => {
 			const avgDur = s.durCount ? s.totalDur / s.durCount : 0;
 			const reliability = s.count ? (s.resolved / s.count) * 100 : 0;
+			const slaCompliance = s.count ? ((s.count - s.highSeverity) / s.count) * 100 : 100;
+
+			// Find most frequent problem
+			const topProb = Object.entries(s.problems)
+				.sort((a: any, b: any) => b[1] - a[1])[0]?.[0] || "None";
 
 			// Risk Score Algorithm:
-			// 40% Volume, 30% Duration, 30% Unresolved
-			// Normalized roughly to 0-100 scale for simplicity
-			const volumeRisk = Math.min(s.count * 2, 40);
-			const durationRisk = Math.min((avgDur / 60) * 5, 30);
-			const reliabilityRisk = Math.min((100 - reliability) * 0.3, 30);
-			const riskScore = volumeRisk + durationRisk + reliabilityRisk;
+			// 30% Volume, 30% Duration, 20% Unresolved, 20% SLA Breach
+			const volumeRisk = Math.min(s.count * 2, 30);
+			const durationRisk = Math.min((avgDur / 120) * 10, 30); // 120min as baseline
+			const reliabilityRisk = Math.min((100 - reliability) * 0.2, 20);
+			const slaRisk = Math.min((100 - slaCompliance) * 0.2, 20);
+			const riskScore = volumeRisk + durationRisk + reliabilityRisk + slaRisk;
 
 			return {
 				...s,
 				avgDur,
 				reliability,
+				slaCompliance,
+				topProb,
 				riskScore
 			};
 		}).sort((a, b) => b.riskScore - a.riskScore); // Default sort by Risk
@@ -516,36 +529,65 @@ const SiteAnalytics: React.FC = () => {
 									<tr className="border-b bg-muted/50">
 										<th className="py-3 px-4 text-left font-semibold">Rank</th>
 										<th className="py-3 px-4 text-left font-semibold">Site Name</th>
-										<th className="py-3 px-4 text-center font-semibold">Incidents</th>
-										<th className="py-3 px-4 text-center font-semibold">High Severity</th>
-										<th className="py-3 px-4 text-center font-semibold">Reliability</th>
+										<th className="py-3 px-4 text-center font-semibold text-blue-600">Vol</th>
+										<th className="py-3 px-4 text-center font-semibold text-rose-600">SLA %</th>
+										<th className="py-3 px-4 text-center font-semibold text-emerald-600">Success %</th>
+										<th className="py-3 px-4 text-left font-semibold">Main Problem</th>
 										<th className="py-3 px-4 text-right font-semibold">Avg Duration</th>
-										<th className="py-3 px-4 text-center font-semibold">Risk Score</th>
+										<th className="py-3 px-4 text-center font-semibold">Risk Level</th>
 									</tr>
 								</thead>
 								<tbody>
 									{stats.siteMetrics.slice(0, 20).map((site: any, idx: number) => (
-										<tr key={idx} className="border-b hover:bg-muted/20 transition-colors">
-											<td className="py-3 px-4 text-muted-foreground">#{idx + 1}</td>
-											<td className="py-3 px-4 font-medium">{site.site}</td>
-											<td className="py-3 px-4 text-center">
-												<Badge variant="secondary" className="px-2 py-0.5">{site.count}</Badge>
+										<tr key={idx} className="border-b hover:bg-muted/10 transition-colors">
+											<td className="py-3 px-4">
+												<div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs ${site.riskScore > 75 ? "bg-rose-100 text-rose-700 border border-rose-200" :
+														site.riskScore > 40 ? "bg-amber-100 text-amber-700 border border-amber-200" :
+															"bg-emerald-50 text-emerald-700 border border-emerald-100"
+													}`}>
+													{idx + 1}
+												</div>
 											</td>
-											<td className="py-3 px-4 text-center text-rose-600 font-medium font-mono">
-												{site.highSeverity}
+											<td className="py-3 px-4 font-medium text-foreground">{site.site}</td>
+											<td className="py-3 px-4 text-center">
+												<Badge variant="outline" className="font-mono">{site.count}</Badge>
 											</td>
 											<td className="py-3 px-4 text-center">
-												<span className={`font-semibold ${site.reliability < 80 ? "text-rose-600" : "text-emerald-600"}`}>
-													{site.reliability.toFixed(1)}%
+												<span className={`font-mono text-sm font-bold ${site.slaCompliance < 80 ? "text-rose-600" : site.slaCompliance < 95 ? "text-amber-600" : "text-emerald-600"}`}>
+													{site.slaCompliance.toFixed(0)}%
 												</span>
 											</td>
+											<td className="py-3 px-4 text-center">
+												<span className={`font-mono text-xs ${site.reliability < 90 ? "text-amber-600" : "text-emerald-600"}`}>
+													{site.reliability.toFixed(0)}%
+												</span>
+											</td>
+											<td className="py-3 px-4">
+												<div className="flex flex-col">
+													<span className="text-xs text-foreground truncate max-w-[200px]" title={site.topProb}>
+														{site.topProb}
+													</span>
+													{site.count > 5 && (
+														<span className="text-[10px] text-rose-500 font-bold uppercase tracking-tight">Recurring Issue</span>
+													)}
+												</div>
+											</td>
 											<td className="py-3 px-4 text-right font-mono text-xs">
-												{formatDurationHMS(site.avgDur)}
+												<span className={`${site.avgDur > 240 ? "text-rose-500" : site.avgDur < 120 ? "text-emerald-500" : "text-amber-500"}`}>
+													{formatDurationHMS(site.avgDur)}
+												</span>
 											</td>
 											<td className="py-3 px-4 text-center">
 												<div className="flex items-center justify-center gap-2">
-													<Progress value={site.riskScore} className="w-16 h-2" />
-													<span className="text-[10px] text-muted-foreground font-mono">{site.riskScore.toFixed(0)}</span>
+													<div className="w-16 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+														<div
+															className={`h-full transition-all duration-500 ${site.riskScore > 70 ? "bg-rose-500" :
+																	site.riskScore > 40 ? "bg-amber-500" : "bg-emerald-500"
+																}`}
+															style={{ width: `${site.riskScore}%` }}
+														/>
+													</div>
+													<span className="text-[10px] font-bold text-muted-foreground">{site.riskScore.toFixed(0)}</span>
 												</div>
 											</td>
 										</tr>

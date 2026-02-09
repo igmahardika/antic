@@ -216,11 +216,18 @@ const TSAnalytics: React.FC = () => {
 					resolved: 0,
 					totalDur: 0,
 					durCount: 0,
-					breaches: 0
+					breaches: 0,
+					ncalBreakdown: { RED: 0, BLACK: 0, ORANGE: 0, YELLOW: 0, BLUE: 0 }
 				};
 			}
 			tsStats[name].count++;
 			if (inc.status === 'Done') tsStats[name].resolved++;
+
+			const ncal = normalizeNCAL(inc.ncal);
+			if (tsStats[name].ncalBreakdown[ncal] !== undefined) {
+				tsStats[name].ncalBreakdown[ncal]++;
+			}
+
 			const dur = calculateCustomDuration(inc);
 			if (dur > 0) {
 				tsStats[name].totalDur += dur;
@@ -229,11 +236,24 @@ const TSAnalytics: React.FC = () => {
 			}
 		});
 
-		const leaderboard = Object.values(tsStats).map((s: any) => ({
-			...s,
-			avgDur: s.durCount ? s.totalDur / s.durCount : 0,
-			sla: s.count ? ((s.count - s.breaches) / s.count) * 100 : 100
-		})).sort((a: any, b: any) => b.count - a.count);
+		const leaderboard = Object.values(tsStats).map((s: any) => {
+			const avgDur = s.durCount ? s.totalDur / s.durCount : 0;
+			const sla = s.count ? ((s.count - s.breaches) / s.count) * 100 : 100;
+			const resRate = s.count ? (s.resolved / s.count) * 100 : 0;
+
+			// Efficiency Score: 40% SLA, 30% Volume (normalized), 30% Resolution Rate
+			// Normalize volume: assume max tickets by 1 person is 50 for max score
+			const volScore = Math.min((s.count / 50) * 100, 100);
+			const efficiency = (sla * 0.4) + (resRate * 0.3) + (volScore * 0.3);
+
+			return {
+				...s,
+				avgDur,
+				sla,
+				resRate,
+				efficiency
+			};
+		}).sort((a: any, b: any) => b.efficiency - a.efficiency);
 
 		// Monthly Trends & MoM
 		const trends: Record<string, any> = {};
@@ -549,46 +569,76 @@ const TSAnalytics: React.FC = () => {
 										<tr className="border-b bg-muted/50">
 											<th className="py-3 px-4 text-left font-semibold">Rank</th>
 											<th className="py-3 px-4 text-left font-semibold">Personnel Name</th>
-											<th className="py-3 px-4 text-center font-semibold">Total Tickets</th>
-											<th className="py-3 px-4 text-center font-semibold">Resolved</th>
-											<th className="py-3 px-4 text-center font-semibold">SLA Score</th>
+											<th className="py-3 px-4 text-center font-semibold text-blue-600">Total</th>
+											<th className="py-3 px-4 text-center font-semibold text-emerald-600">Resolved %</th>
+											<th className="py-3 px-4 text-center font-semibold text-rose-600">Breach</th>
+											<th className="py-3 px-4 text-center font-semibold">NCAL Load</th>
 											<th className="py-3 px-4 text-right font-semibold">Avg Duration</th>
-											<th className="py-3 px-4 text-left font-semibold w-[200px]">Performance</th>
+											<th className="py-3 px-4 text-left font-semibold w-[150px]">Efficiency</th>
 										</tr>
 									</thead>
 									<tbody>
 										{analytics.leaderboard.map((item: any, idx: number) => (
-											<tr key={idx} className="border-b hover:bg-muted/20 transition-colors">
-												<td className="py-3 px-4 text-muted-foreground">#{idx + 1}</td>
-												<td className="py-3 px-4 font-medium text-foreground">{item.name}</td>
-												<td className="py-3 px-4 text-center">
-													<Badge variant="secondary" className="px-2 py-0.5">{item.count}</Badge>
+											<tr key={idx} className="border-b hover:bg-muted/10 transition-colors">
+												<td className="py-3 px-4">
+													<div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs ${idx === 0 ? "bg-amber-100 text-amber-700 border border-amber-200" :
+															idx === 1 ? "bg-slate-100 text-slate-600 border border-slate-200" :
+																idx === 2 ? "bg-orange-50 text-orange-700 border border-orange-100" :
+																	"text-muted-foreground"
+														}`}>
+														{idx + 1}
+													</div>
 												</td>
-												<td className="py-3 px-4 text-center text-muted-foreground">
-													{item.resolved}
+												<td className="py-3 px-4 font-medium text-foreground">
+													<div className="flex flex-col">
+														<span>{item.name}</span>
+														{idx === 0 && <span className="text-[10px] text-amber-600 font-bold uppercase tracking-tighter">🏆 Top Performer</span>}
+													</div>
 												</td>
 												<td className="py-3 px-4 text-center">
-													<div className="flex flex-col items-center">
-														<span className={`font-semibold ${item.sla >= 90 ? "text-emerald-600" :
-															item.sla >= 70 ? "text-amber-600" : "text-red-600"
-															}`}>
-															{item.sla.toFixed(1)}%
-														</span>
-														{idx === 0 && item.sla >= 95 && (
-															<Badge className="text-[10px] bg-emerald-100 text-emerald-700 hover:bg-emerald-100 mt-1">SLA Champion</Badge>
-														)}
+													<Badge variant="outline" className="font-mono">{item.count}</Badge>
+												</td>
+												<td className="py-3 px-4 text-center font-semibold text-emerald-600">
+													{item.resRate.toFixed(1)}%
+												</td>
+												<td className="py-3 px-4 text-center">
+													<span className={`font-mono text-xs ${item.breaches > 0 ? "text-rose-600 font-bold" : "text-muted-foreground"}`}>
+														{item.breaches}
+													</span>
+												</td>
+												<td className="py-3 px-4">
+													<div className="flex gap-1 justify-center">
+														{Object.entries(item.ncalBreakdown)
+															.filter(([_, count]) => (count as number) > 0)
+															.map(([level, count]) => (
+																<div
+																	key={level}
+																	title={`${level}: ${count}`}
+																	className={`w-4 h-4 rounded-sm flex items-center justify-center text-[8px] font-bold text-white shadow-sm`}
+																	style={{ backgroundColor: NCAL_COLORS[level as keyof typeof NCAL_COLORS] || '#888' }}
+																>
+																	{count as number}
+																</div>
+															))
+														}
 													</div>
 												</td>
 												<td className="py-3 px-4 text-right font-mono text-xs">
-													{formatDurationHMS(item.avgDur)}
+													<span className={`${item.avgDur > 240 ? "text-rose-500" : item.avgDur < 120 ? "text-emerald-500" : "text-amber-500"}`}>
+														{formatDurationHMS(item.avgDur)}
+													</span>
 												</td>
 												<td className="py-3 px-4">
 													<div className="flex items-center gap-2">
-														<Progress
-															value={item.sla}
-															className="h-2 flex-1"
-														/>
-														<span className="text-[10px] text-muted-foreground">{item.sla.toFixed(0)}</span>
+														<div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+															<div
+																className={`h-full transition-all duration-500 ${item.efficiency > 85 ? "bg-emerald-500" :
+																		item.efficiency > 60 ? "bg-amber-500" : "bg-rose-500"
+																	}`}
+																style={{ width: `${item.efficiency}%` }}
+															/>
+														</div>
+														<span className="text-[10px] font-bold text-muted-foreground">{item.efficiency.toFixed(0)}</span>
 													</div>
 												</td>
 											</tr>
