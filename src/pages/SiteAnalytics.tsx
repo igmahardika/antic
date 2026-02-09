@@ -292,13 +292,15 @@ const SiteAnalytics: React.FC = () => {
 			const d = new Date(inc.startTime);
 			const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
 
-			if (!trends[key]) trends[key] = { month: key, count: 0, distinctSites: new Set(), totalDur: 0, durCount: 0, resolved: 0 };
+			if (!trends[key]) trends[key] = { month: key, count: 0, distinctSites: new Set(), totalDur: 0, netDur: 0, durCount: 0, resolved: 0 };
 			trends[key].count++;
 			trends[key].distinctSites.add(inc.site);
 			if (inc.status === 'Done') trends[key].resolved++;
 			const dur = calculateCustomDuration(inc);
+			const net = calculateNetDuration(inc);
 			if (dur > 0) {
 				trends[key].totalDur += dur;
+				trends[key].netDur += net;
 				trends[key].durCount++;
 			}
 		});
@@ -310,6 +312,7 @@ const SiteAnalytics: React.FC = () => {
 				Incidents: t.count,
 				ActiveSites: t.distinctSites.size,
 				AvgDuration: t.durCount ? Math.round(t.totalDur / t.durCount) : 0,
+				NetDuration: t.durCount ? Math.round(t.netDur / t.durCount) : 0,
 				Reliability: t.count ? (t.resolved / t.count) * 100 : 0
 			}));
 
