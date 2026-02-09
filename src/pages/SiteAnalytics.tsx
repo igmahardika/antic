@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/card";
 import {
 	calculateCustomDuration,
+	calculateNetDuration,
 	normalizeNCAL,
 	getSLATarget,
 	formatDurationHMS as formatDurationHMSUtil,
@@ -354,6 +355,8 @@ const SiteAnalytics: React.FC = () => {
 			totalIncidents,
 			uniqueSites,
 			avgDuration,
+			avgNetDuration,
+			pauseRatio,
 			siteReliability,
 			highRiskSites,
 			siteMetrics,
@@ -421,7 +424,7 @@ const SiteAnalytics: React.FC = () => {
 					<SummaryCard
 						title="MTTR (Total vs Net)"
 						value={formatDurationHMS(stats.avgDuration)}
-						description={`Net: ${formatDurationHMS(stats.avgNetDuration)} (${pauseRatio.toFixed(1)}% Pause)`}
+						description={`Net: ${formatDurationHMS(stats.avgNetDuration)} (${stats.pauseRatio.toFixed(1)}% Pause)`}
 						icon={<AccessTimeIcon className="text-white" />}
 						iconBg="bg-amber-500"
 						trend={analytics.momTrends.duration.value.toFixed(1) + "%"}

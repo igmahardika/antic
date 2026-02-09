@@ -379,6 +379,8 @@ const TSAnalytics: React.FC = () => {
 			total,
 			resolved,
 			avgDuration,
+			avgNetDuration,
+			pauseRatio,
 			slaCompliance,
 			ncalData,
 			leaderboard,
@@ -451,8 +453,8 @@ const TSAnalytics: React.FC = () => {
 					/>
 					<SummaryCard
 						title="MTTR (Total vs Net)"
-						value={formatDurationHMS(avgDuration)}
-						description={`Net: ${formatDurationHMS(avgNetDuration)} (${pauseRatio.toFixed(1)}% Pause)`}
+						value={formatDurationHMS(analytics.avgDuration)}
+						description={`Net: ${formatDurationHMS(analytics.avgNetDuration)} (${analytics.pauseRatio.toFixed(1)}% Pause)`}
 						icon={<AccessTimeIcon className="text-white" />}
 						iconBg="bg-amber-500"
 						trend={analytics.momTrends.duration.value.toFixed(1) + "%"}
