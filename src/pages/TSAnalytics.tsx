@@ -504,16 +504,25 @@ const TSAnalytics: React.FC = () => {
 										content={
 											<ChartTooltipContent
 												formatter={(value, name) => {
-													if (name === "Avg Duration") {
+													if (name === "Avg Duration" || name === "AvgDuration") {
 														return (
 															<div className="flex items-center gap-2">
 																<div className="h-2 w-2 rounded-full bg-[#f59e0b]" />
-																<span className="text-gray-700 font-medium">Avg Duration:</span>
+																<span className="text-gray-700 font-medium">Total Duration:</span>
 																<span className="font-mono font-semibold text-gray-900">{formatDurationHMS(Number(value))}</span>
 															</div>
 														);
 													}
-													return undefined; // use default for others
+													if (name === "Net Duration" || name === "NetDuration") {
+														return (
+															<div className="flex items-center gap-2">
+																<div className="h-2 w-2 rounded-full bg-[#3b82f6]" />
+																<span className="text-gray-700 font-medium">Net Duration:</span>
+																<span className="font-mono font-semibold text-blue-600">{formatDurationHMS(Number(value))}</span>
+															</div>
+														);
+													}
+													return undefined;
 												}}
 											/>
 										}
@@ -531,9 +540,18 @@ const TSAnalytics: React.FC = () => {
 										yAxisId="right"
 										type="monotone"
 										dataKey="AvgDuration"
-										name="Avg Duration"
 										stroke="#f59e0b"
 										strokeWidth={2}
+										name="Total Avg"
+									/>
+									<Line
+										yAxisId="right"
+										type="monotone"
+										dataKey="NetDuration"
+										stroke="#3b82f6"
+										strokeWidth={2}
+										strokeDasharray="5 5"
+										name="Net Avg"
 									/>
 								</AreaChart>
 							</ChartContainer>
