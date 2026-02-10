@@ -35,8 +35,16 @@ export default function AppSidebar() {
 
 	// Filter menus based on user permissions
 	const getFilteredMenus = (userRole: string, permissions: any[]) => {
+		// Super admin always sees everything
+		if (userRole === 'super admin') return allMenus;
+
 		const userPermissions = permissions.find(p => p.role === userRole);
-		if (!userPermissions) return allMenus; // Show all if no permissions found
+
+		// If no permissions configured for this role, default to empty (restrictive)
+		if (!userPermissions || !userPermissions.menus) {
+			console.warn(`No menu permissions found for role: ${userRole}`);
+			return [];
+		}
 
 		return allMenus.filter(menu => {
 			if (menu.children) {

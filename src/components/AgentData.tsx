@@ -14,8 +14,6 @@ import {
 import PhotoManagement from "./PhotoManagement";
 import { Users, Image as ImageIcon } from "lucide-react";
 
-const CURRENT_YEAR = 2025;
-
 function formatDurationHMS(hours: number) {
 	if (!isFinite(hours)) return "-";
 	const totalSeconds = Math.round(hours * 3600);
@@ -71,14 +69,31 @@ const AgentData: React.FC = () => {
 		fetchTickets();
 	}, []);
 
-	const { activeAgents, nonActiveAgents } = useMemo(() => {
-		if (!allTickets) return { activeAgents: [], nonActiveAgents: [] };
+	const { activeAgents, nonActiveAgents, currentYear } = useMemo(() => {
+		if (!allTickets || allTickets.length === 0) {
+			return { activeAgents: [], nonActiveAgents: [], currentYear: new Date().getFullYear() };
+		}
+
+		// Temukan tahun tertinggi dari data
+		let maxYearData = 0;
 		const map = new Map();
+
 		allTickets.forEach((t) => {
 			const agent = t.openBy?.trim() || "Unknown";
 			if (!map.has(agent)) map.set(agent, []);
 			map.get(agent).push(t);
+
+			const d = new Date(t.openTime);
+			if (!isNaN(d.getTime())) {
+				const y = d.getFullYear();
+				if (y > maxYearData) maxYearData = y;
+			}
 		});
+
+		// Fallback ke tahun sistem jika data kosong atau sangat lama
+		const currentSystemYear = new Date().getFullYear();
+		const effectiveYear = maxYearData > 0 ? maxYearData : currentSystemYear;
+
 		const all = Array.from(map.entries())
 			.map(([name, tickets]) => {
 				const years = Array.from(
@@ -99,6 +114,7 @@ const AgentData: React.FC = () => {
 					sortedYears.length > 0
 						? sortedYears.reduce((max, y) => y > max ? y : max, sortedYears[0])
 						: 0;
+
 				// Jumlah tiket
 				const ticketCount = tickets.length;
 				// Tiket pertama & terakhir
@@ -124,7 +140,7 @@ const AgentData: React.FC = () => {
 						(t) => t.customer || t.customerId || t.customer_id || "-",
 					),
 				).size;
-				// Jumlah tiket selesai di hari yang sama (openTime dan closeTime di tanggal yang sama, jam boleh beda, status apapun)
+				// Jumlah tiket selesai di hari yang sama
 				const sameDayResolved = tickets.filter((t) => {
 					if (!t.openTime || !t.closeTime) return false;
 					const open = new Date(t.openTime);
@@ -135,7 +151,7 @@ const AgentData: React.FC = () => {
 						open.getDate() === close.getDate()
 					);
 				}).length;
-				// Jumlah escalation: tiket dengan closeHandling2/3/4/5 tidak kosong (logika sama dengan halaman lain)
+				// Jumlah escalation
 				const escalationCount = tickets.filter((t) =>
 					[
 						t.closeHandling2,
@@ -169,15 +185,14 @@ const AgentData: React.FC = () => {
 					uniqueCustomers,
 					sameDayResolved,
 					escalationCount,
-					// topCategory,
-					// topShift,
 				};
 			})
-			// Urutkan berdasarkan jumlah tiket terbanyak ke terkecil
 			.sort((a, b) => b.ticketCount - a.ticketCount);
+
 		return {
-			activeAgents: all.filter((a) => a.lastYear === CURRENT_YEAR),
-			nonActiveAgents: all.filter((a) => a.lastYear < CURRENT_YEAR),
+			activeAgents: all.filter((a) => a.lastYear === effectiveYear),
+			nonActiveAgents: all.filter((a) => a.lastYear < effectiveYear),
+			currentYear: effectiveYear
 		};
 	}, [allTickets]);
 
@@ -348,7 +363,7 @@ const AgentData: React.FC = () => {
 			{/* Tab Content */}
 			{activeTab === 'data' && (
 				<div>
-					{renderTable(activeAgents, `Active Agent (${CURRENT_YEAR})`)}
+					{renderTable(activeAgents, `Active Agent (${currentYear})`)}
 					{renderTable(nonActiveAgents, "Nonaktif Agent")}
 				</div>
 			)}

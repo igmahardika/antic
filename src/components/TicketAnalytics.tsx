@@ -625,8 +625,8 @@ const TicketAnalytics = ({ }: TicketAnalyticsProps) => {
 	}, [gridData, startMonth, endMonth, selectedYear]);
 
 	const kategoriList = allCategories;
-	// Tickets from 2025+ that can be analyzed with customer data
-	// Uses filteredGridData (respects page filter) but only includes 2025+ for customer sync
+	// Tickets from 2020+ that can be analyzed with customer data
+	// Uses filteredGridData (respects page filter) but only includes 2020+ for customer sync
 	const gridDataWithCustomerSync = useMemo(
 		() =>
 			Array.isArray(filteredGridData)
@@ -4007,7 +4007,7 @@ const TicketAnalytics = ({ }: TicketAnalyticsProps) => {
 								>
 									<defs>
 										<linearGradient
-											id="colorActiveClients2025"
+											id="colorActiveClients"
 											x1="0"
 											y1="0"
 											x2="0"
@@ -4021,7 +4021,7 @@ const TicketAnalytics = ({ }: TicketAnalyticsProps) => {
 											/>
 										</linearGradient>
 										<linearGradient
-											id="colorComplaintClients2025"
+											id="colorComplaintClients"
 											x1="0"
 											y1="0"
 											x2="0"
@@ -4072,7 +4072,7 @@ const TicketAnalytics = ({ }: TicketAnalyticsProps) => {
 										type="monotone"
 										dataKey="Active Clients"
 										stroke="#6366F1"
-										fill="url(#colorActiveClients2025)"
+										fill="url(#colorActiveClients)"
 										name="Active Clients"
 										strokeWidth={1.5}
 									/>
@@ -4080,7 +4080,7 @@ const TicketAnalytics = ({ }: TicketAnalyticsProps) => {
 										type="monotone"
 										dataKey="Complaint Clients"
 										stroke="#F43F5E"
-										fill="url(#colorComplaintClients2025)"
+										fill="url(#colorComplaintClients)"
 										name="Complaint Clients"
 										strokeWidth={1.5}
 									/>

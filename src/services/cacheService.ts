@@ -145,7 +145,7 @@ class CacheService {
         // Fetch from API
         const { tickets } = await ticketAPI.getTickets({
             ...filters,
-            limit: 100000, // Fetch all records
+            limit: 5000, // Reduced from 10k to 5k for better responsiveness
         });
 
         // Store in cache (as is from API for now, or mapped? Let's map it before caching so checks work)
@@ -170,7 +170,7 @@ class CacheService {
             setTimeout(async () => {
                 const { tickets } = await ticketAPI.getTickets({
                     ...filters,
-                    limit: 100000,
+                    limit: 5000,
                 });
                 const mappedTickets = tickets.map(t => this.mapApiTicketToITicket(t));
                 await this.set(cacheKey, mappedTickets);
@@ -232,7 +232,7 @@ class CacheService {
         const { customerAPI } = await import('../lib/api');
         const { customers } = await customerAPI.getCustomers({
             ...filters,
-            limit: 100000,
+            limit: 10000,
         });
 
         await this.set(cacheKey, customers);
@@ -255,7 +255,7 @@ class CacheService {
         const { incidentAPI } = await import('../lib/api');
         const { incidents } = await incidentAPI.getIncidents({
             ...filters,
-            limit: 100000,
+            limit: 10000,
         });
 
         await this.set(cacheKey, incidents);

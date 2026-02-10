@@ -63,20 +63,20 @@ export const createRateLimit = (windowMs, max, message) => {
 
 // Different rate limits for different endpoints
 export const rateLimits = {
-  // General API rate limit
-  general: createRateLimit(15 * 60 * 1000, 100, 'Too many requests, please try again later'),
-  
+  // General API rate limit (Increased to 300 per 15m to handle dashboard concurrent requests)
+  general: createRateLimit(15 * 60 * 1000, 300, 'Too many requests, please try again later'),
+
   // Strict rate limit for authentication endpoints
-  auth: createRateLimit(15 * 60 * 1000, 5, 'Too many login attempts, please try again later'),
-  
-  // More lenient for data retrieval
-  data: createRateLimit(1 * 60 * 1000, 30, 'Too many data requests, please slow down'),
-  
-  // Very strict for admin operations
-  admin: createRateLimit(60 * 60 * 1000, 10, 'Too many admin operations, please try again later'),
-  
+  auth: createRateLimit(15 * 60 * 1000, 20, 'Too many login attempts, please try again later'),
+
+  // More lenient for data retrieval (Increased to 120 per minute)
+  data: createRateLimit(1 * 60 * 1000, 120, 'Too many data requests, please slow down'),
+
+  // Admin operations (Increased to 60 per minute to allow bulk edits/configurations)
+  admin: createRateLimit(1 * 60 * 1000, 60, 'Too many admin operations, please try again later'),
+
   // Special rate limit for migration operations (very high limit)
-  migration: createRateLimit(5 * 60 * 1000, 500, 'Too many migration requests, please wait'),
+  migration: createRateLimit(5 * 60 * 1000, 1000, 'Too many migration requests, please wait'),
 };
 
 // Input Validation Middleware
@@ -115,7 +115,7 @@ export const validationRules = {
       .isIn(['super admin', 'admin', 'user'])
       .withMessage('Role must be: super admin, admin, or user'),
   ],
-  
+
   // Login validation
   login: [
     body('username')
@@ -126,7 +126,7 @@ export const validationRules = {
       .isLength({ min: 1 })
       .withMessage('Password is required'),
   ],
-  
+
   // Ticket validation
   createTicket: [
     body('id')
@@ -171,20 +171,20 @@ class BruteForceProtection {
   recordFailedAttempt(ip) {
     const now = Date.now();
     const attempts = this.attempts.get(ip) || [];
-    
+
     // Remove old attempts outside the window
     const recentAttempts = attempts.filter(time => now - time < this.attemptWindow);
     recentAttempts.push(now);
-    
+
     this.attempts.set(ip, recentAttempts);
-    
+
     if (recentAttempts.length >= this.maxAttempts) {
       this.blockedIPs.set(ip, now + this.blockDuration);
       this.attempts.delete(ip);
       console.warn(`IP ${ip} blocked due to ${this.maxAttempts} failed login attempts`);
       return true;
     }
-    
+
     return false;
   }
 
@@ -205,14 +205,14 @@ export const bruteForceProtection = new BruteForceProtection();
 // Brute force middleware
 export const checkBruteForce = (req, res, next) => {
   const ip = req.ip || req.connection.remoteAddress;
-  
+
   if (bruteForceProtection.isBlocked(ip)) {
     return res.status(429).json({
       error: 'Too many failed login attempts. Please try again later.',
       retryAfter: Math.ceil(bruteForceProtection.blockDuration / 1000),
     });
   }
-  
+
   next();
 };
 
@@ -225,7 +225,7 @@ export const sanitizeError = (error) => {
       timestamp: new Date().toISOString(),
     };
   }
-  
+
   return {
     error: error.message || 'An error occurred',
     timestamp: new Date().toISOString(),
@@ -238,16 +238,16 @@ export const csrfProtection = (req, res, next) => {
   if (req.method === 'GET' || req.headers.authorization) {
     return next();
   }
-  
+
   const token = req.headers['x-csrf-token'] || req.body._csrf;
   const sessionToken = req.session?.csrfToken;
-  
+
   if (!token || !sessionToken || token !== sessionToken) {
     return res.status(403).json({
       error: 'Invalid CSRF token',
     });
   }
-  
+
   next();
 };
 
@@ -264,10 +264,10 @@ export const auditLogger = (action, req, additionalData = {}) => {
     method: req.method,
     ...additionalData,
   };
-  
+
   // In production, send to proper logging service
   console.log('AUDIT:', JSON.stringify(logEntry));
-  
+
   // Store in database for audit trail
   // TODO: Implement database audit logging
 };

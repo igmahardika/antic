@@ -194,6 +194,7 @@ export const authAPI = {
 	async login(
 		username: string,
 		password: string,
+		recaptchaToken?: string,
 	): Promise<{
 		success: boolean;
 		token: string;
@@ -202,7 +203,7 @@ export const authAPI = {
 	}> {
 		return apiCall("/login", {
 			method: "POST",
-			body: JSON.stringify({ username, password }),
+			body: JSON.stringify({ username, password, recaptchaToken }),
 		});
 	},
 

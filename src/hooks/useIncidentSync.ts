@@ -15,7 +15,7 @@ export const useIncidentSync = () => {
             if (count === 0 || force) {
                 const token = localStorage.getItem('token');
                 // Increase limit to ensure we get all historical data
-                const response = await fetch('/api/incidents?limit=100000', {
+                const response = await fetch('/api/incidents?limit=10000', {
                     headers: {
                         'Authorization': `Bearer ${token}`,
                         'Content-Type': 'application/json'

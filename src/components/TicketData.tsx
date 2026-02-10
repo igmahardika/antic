@@ -276,21 +276,19 @@ const mapApiTicketToITicket = (apiTicket: any): ITicket | null => {
 import { ticketAPI } from "@/lib/api";
 
 const TicketData = ({ data: propsData }: { data?: ITicket[] }) => {
-	const { gridData } = useAnalytics();
+	const { gridData, allYearsInData } = useAnalytics();
 	// Use allTicketsInDb directly to avoid double filtering
 	// Migrated from IndexedDB to API
-	const [allTicketsInDb, setTickets] = useState<ITicket[]>([]);
-	// isLoading is set but currently unused in the render logic, 
-	// we keep it for now but remove the IDE warning if we don't use it, 
-	// actually it's better to use it or remove it. 
-	// The IDE says it's never read.
+	const [isLoadingTickets, setIsLoadingTickets] = useState(false);
 
 	useEffect(() => {
 		const fetchTickets = async () => {
+			setIsLoadingTickets(true);
 			try {
 				// Fetch tickets using authenticated API helper
-				// Use a reasonable limit, or implement proper server-side pagination in the future
-				const { tickets } = await ticketAPI.getTickets({ limit: 10000 });
+				// Reduced from 10000 to 1000 for initial load performance
+				// Users can still search/filter within this dataset
+				const { tickets } = await ticketAPI.getTickets({ limit: 1000 });
 				if (Array.isArray(tickets)) {
 					// Map API response (snake_case) to ITicket (camelCase + nested objects)
 					const mappedTickets = tickets
@@ -301,6 +299,8 @@ const TicketData = ({ data: propsData }: { data?: ITicket[] }) => {
 			} catch (error) {
 				logger.error("Error fetching tickets:", error);
 				// Notification error handled by ErrorBoundary or alert if needed
+			} finally {
+				setIsLoadingTickets(false);
 			}
 		};
 
@@ -528,333 +528,346 @@ const TicketData = ({ data: propsData }: { data?: ITicket[] }) => {
 
 	return (
 		<PageWrapper maxW="4xl">
-			{/* Header Section */}
-			<div className="mb-8">
-				<div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-					<div>
-						<h1 className="text-3xl font-bold text-card-foreground mb-2">
-							Ticket Data
-						</h1>
-						<p className="text-gray-600 dark:text-gray-400 text-base">
-							Comprehensive view of all ticket information and customer data
-						</p>
+			{/* Loading State */}
+			{isLoadingTickets && (
+				<div className="flex items-center justify-center py-12">
+					<div className="flex flex-col items-center gap-3">
+						<div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+						<p className="text-sm text-gray-600 dark:text-gray-400">Loading ticket data...</p>
 					</div>
 				</div>
-			</div>
+			)}
 
-			{/* Summary Cards */}
-			<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-6 mb-8">
-				<SummaryCard
-					icon={<ConfirmationNumberIcon className="w-6 h-6 text-white" />}
-					title="Total Tickets"
-					value={totalTicketsInDb || 0}
-					description="Total recorded tickets in database"
-					iconBg="bg-blue-600"
-				/>
-				<SummaryCard
-					icon={<GroupIcon className="w-6 h-6 text-white" />}
-					title="Unique Customers"
-					value={uniqueCustomersCount}
-					description="Number of unique customers"
-					iconBg="bg-green-600"
-				/>
-				<SummaryCard
-					icon={<HowToRegIcon className="w-6 h-6 text-white" />}
-					title="Unique Agents"
-					value={uniqueAgentsCount}
-					description="Number of unique agents"
-					iconBg="bg-purple-600"
-				/>
-				<SummaryCard
-					icon={<ConfirmationNumberIcon className="w-6 h-6 text-white" />}
-					title="Overtime Duration"
-					value={durationStats.invalidDuration}
-					description="Tickets with duration > 24 hours"
-					iconBg="bg-red-600"
-				/>
-				<SummaryCard
-					icon={<ConfirmationNumberIcon className="w-6 h-6 text-white" />}
-					title="Long Duration"
-					value={durationStats.longDuration}
-					description="Tickets with duration > 8 hours"
-					iconBg="bg-amber-600"
-				/>
-				<SummaryCard
-					icon={<ConfirmationNumberIcon className="w-6 h-6 text-white" />}
-					title="Zero Duration"
-					value={durationStats.zeroDuration}
-					description="Tickets with 0 duration"
-					iconBg="bg-gray-600"
-				/>
-			</div>
-
-			{/* Search and Filter Controls */}
-			<Card className="mb-6 shadow-sm">
-				<CardContent className="p-6">
-					<div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-						<div className="relative max-w-md w-full">
-							<div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-								<Search className="h-4 w-4 text-gray-400" />
+			{!isLoadingTickets && (
+				<>
+					{/* Header Section */}
+					<div className="mb-8">
+						<div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+							<div>
+								<h1 className="text-3xl font-bold text-card-foreground mb-2">
+									Ticket Data
+								</h1>
+								<p className="text-gray-600 dark:text-gray-400 text-base">
+									Comprehensive view of all ticket information and customer data
+								</p>
 							</div>
-							<input
-								type="text"
-								className="w-full pl-10 pr-4 py-2.5 text-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
-								placeholder="Search tickets, customers, descriptions..."
-								value={search}
-								onChange={(e) => {
-									setSearch(e.target.value);
-									setPage(1);
-								}}
-							/>
-						</div>
-						<div className="flex items-center gap-3">
-							<div className="flex items-center gap-2">
-								<Filter className="h-4 w-4 text-gray-500" />
-							</div>
-							<select
-								value={validasiFilter}
-								onChange={(e) => {
-									setValidasiFilter(e.target.value as any);
-									setPage(1);
-								}}
-								className="px-3 py-2 text-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
-							>
-								<option value="all">All Records</option>
-								<option value="valid">Valid Customers</option>
-								<option value="invalid">Invalid Customers</option>
-							</select>
-
-							<div className="flex items-center gap-2">
-								<Filter className="h-4 w-4 text-gray-500" />
-							</div>
-							<select
-								value={durationFilter}
-								onChange={(e) => {
-									setDurationFilter(e.target.value as any);
-									setPage(1);
-								}}
-								className="px-3 py-2 text-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
-							>
-								<option value="all">All Durations</option>
-								<option value="invalid">Overtime (&gt;24h)</option>
-								<option value="long">Long (8-24h)</option>
-								<option value="zero">Zero Duration</option>
-							</select>
-
-							<div className="flex items-center gap-2">
-								<Filter className="h-4 w-4 text-gray-500" />
-							</div>
-							<select
-								value={monthFilter}
-								onChange={(e) => {
-									setMonthFilter(e.target.value);
-									setPage(1);
-								}}
-								className="px-3 py-2 text-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
-							>
-								<option value="all">All Months</option>
-								<option value="01">January</option>
-								<option value="02">February</option>
-								<option value="03">March</option>
-								<option value="04">April</option>
-								<option value="05">May</option>
-								<option value="06">June</option>
-								<option value="07">July</option>
-								<option value="08">August</option>
-								<option value="09">September</option>
-								<option value="10">October</option>
-								<option value="11">November</option>
-								<option value="12">December</option>
-							</select>
-
-							<div className="flex items-center gap-2">
-								<Filter className="h-4 w-4 text-gray-500" />
-							</div>
-							<select
-								value={yearFilter}
-								onChange={(e) => {
-									setYearFilter(e.target.value);
-									setPage(1);
-								}}
-								className="px-3 py-2 text-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
-							>
-								<option value="all">All Years</option>
-								<option value="2020">2020</option>
-								<option value="2021">2021</option>
-								<option value="2022">2022</option>
-								<option value="2023">2023</option>
-								<option value="2024">2024</option>
-								<option value="2025">2025</option>
-							</select>
 						</div>
 					</div>
-				</CardContent>
-			</Card>
 
-			{/* Data Table */}
-			<Card className="shadow-sm">
-				<CardHeader className="pb-4">
-					<div className="flex items-center justify-between">
-						<div>
-							<CardTitle className="flex items-center gap-2">
-								<FileSpreadsheet className="w-5 h-5 text-blue-600" />
-								<CardHeaderTitle className="text-base md:text-lg">
-									Ticket Records
-								</CardHeaderTitle>
-							</CardTitle>
-							<CardHeaderDescription className="text-xs mt-1">
-								Showing {paged.length} of {filtered.length} tickets
-								{validasiFilter !== "all" && (
-									<Badge
-										variant="info"
-										className="ml-2 text-[8px] px-1 py-0.5 opacity-90"
-									>
-										{validasiFilter === "valid"
-											? "Valid Customers Only"
-											: "Invalid Customers Only"}
-									</Badge>
-								)}
-								{durationFilter !== "all" && (
-									<Badge
-										variant="warning"
-										className="ml-2 text-[8px] px-1 py-0.5 opacity-90"
-									>
-										{durationFilter === "invalid"
-											? "Overtime Duration (>24h)"
-											: durationFilter === "long"
-												? "Long Duration (8-24h)"
-												: durationFilter === "zero"
-													? "Zero Duration"
-													: ""}
-									</Badge>
-								)}
-								{monthFilter !== "all" && (
-									<Badge
-										variant="secondary"
-										className="ml-2 text-[8px] px-1 py-0.5 opacity-90"
-									>
-										{new Date(0, parseInt(monthFilter) - 1).toLocaleString(
-											"default",
-											{ month: "long" },
-										)}
-									</Badge>
-								)}
-								{yearFilter !== "all" && (
-									<Badge
-										variant="secondary"
-										className="ml-2 text-[8px] px-1 py-0.5 opacity-90"
-									>
-										{yearFilter}
-									</Badge>
-								)}
-							</CardHeaderDescription>
-						</div>
-					</div>
-				</CardHeader>
-				<CardContent className="p-0">
-					<OverflowX minWidth={800}>
-						<div className="inline-block min-w-full align-middle">
-							<div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
-								<table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-									<thead className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-gray-800 dark:to-gray-700">
-										<tr>
-											{columns.map((col) => (
-												<th
-													key={col.key}
-													className="px-2 py-2 text-left text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider whitespace-nowrap border-r border-gray-200 dark:border-gray-600 last:border-r-0"
-													style={{ width: col.width, minWidth: col.width }}
-												>
-													<div className="flex items-center gap-2">
-														<span>{col.label}</span>
-													</div>
-												</th>
-											))}
-										</tr>
-									</thead>
-									<tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
-										{paged.length === 0 ? (
-											<tr>
-												<td
-													colSpan={columns.length}
-													className="text-center py-12 text-gray-500 dark:text-gray-400"
-												>
-													<div className="flex flex-col items-center gap-3">
-														<div className="w-12 h-12 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center">
-															<FileSpreadsheet className="w-6 h-6 text-gray-400" />
-														</div>
-														<div className="text-center">
-															<p className="text-sm font-medium text-gray-900 dark:text-gray-100">
-																No tickets found
-															</p>
-															<p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-																{search
-																	? "Try adjusting your search criteria"
-																	: "No data available"}
-															</p>
-														</div>
-													</div>
-												</td>
-											</tr>
-										) : (
-											paged.map((row, i) => {
-												const is2025 = row._is2025;
-												const isValid = row._isValid;
-												return (
-													<tr
-														key={i}
-														className={
-															i % 2 === 0
-																? "bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors duration-150"
-																: "bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-150"
-														}
-													>
-														{columns.map((col) => (
-															<td
-																key={col.key}
-																className="px-2 py-1 text-xs text-gray-900 dark:text-gray-100 align-top border-r border-gray-200 dark:border-gray-600 last:border-r-0"
-																style={{
-																	width: col.width,
-																	minWidth: col.width,
-																}}
-															>
-																<div className="whitespace-pre-line max-w-full overflow-hidden">
-																	{col.render
-																		? col.render(row[col.key], row)
-																		: row[col.key] || ""}
-																</div>
-																{is2025 && !isValid && col.key === "name" && (
-																	<Badge
-																		variant="danger"
-																		className="mt-1 text-[8px] px-1 py-0.5 opacity-90"
-																	>
-																		Invalid Customer
-																	</Badge>
-																)}
-															</td>
-														))}
-													</tr>
-												);
-											})
-										)}
-									</tbody>
-								</table>
-							</div>
-						</div>
-					</OverflowX>
-
-					{/* Pagination */}
-					<div className="px-6 py-4 bg-gray-50 dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700">
-						<PaginationControls
-							page={page}
-							pageSize={pageSize}
-							totalPages={paginationTotalPages ?? 1}
-							onPageChange={setPage}
-							onPageSizeChange={setPageSize}
-							pageSizes={[10, 25, 50, 100]}
+					{/* Summary Cards */}
+					<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-6 mb-8">
+						<SummaryCard
+							icon={<ConfirmationNumberIcon className="w-6 h-6 text-white" />}
+							title="Total Tickets"
+							value={totalTicketsInDb || 0}
+							description="Total recorded tickets in database"
+							iconBg="bg-blue-600"
+						/>
+						<SummaryCard
+							icon={<GroupIcon className="w-6 h-6 text-white" />}
+							title="Unique Customers"
+							value={uniqueCustomersCount}
+							description="Number of unique customers"
+							iconBg="bg-green-600"
+						/>
+						<SummaryCard
+							icon={<HowToRegIcon className="w-6 h-6 text-white" />}
+							title="Unique Agents"
+							value={uniqueAgentsCount}
+							description="Number of unique agents"
+							iconBg="bg-purple-600"
+						/>
+						<SummaryCard
+							icon={<ConfirmationNumberIcon className="w-6 h-6 text-white" />}
+							title="Overtime Duration"
+							value={durationStats.invalidDuration}
+							description="Tickets with duration > 24 hours"
+							iconBg="bg-red-600"
+						/>
+						<SummaryCard
+							icon={<ConfirmationNumberIcon className="w-6 h-6 text-white" />}
+							title="Long Duration"
+							value={durationStats.longDuration}
+							description="Tickets with duration > 8 hours"
+							iconBg="bg-amber-600"
+						/>
+						<SummaryCard
+							icon={<ConfirmationNumberIcon className="w-6 h-6 text-white" />}
+							title="Zero Duration"
+							value={durationStats.zeroDuration}
+							description="Tickets with 0 duration"
+							iconBg="bg-gray-600"
 						/>
 					</div>
-				</CardContent>
-			</Card>
+
+					{/* Search and Filter Controls */}
+					<Card className="mb-6 shadow-sm">
+						<CardContent className="p-6">
+							<div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+								<div className="relative max-w-md w-full">
+									<div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+										<Search className="h-4 w-4 text-gray-400" />
+									</div>
+									<input
+										type="text"
+										className="w-full pl-10 pr-4 py-2.5 text-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+										placeholder="Search tickets, customers, descriptions..."
+										value={search}
+										onChange={(e) => {
+											setSearch(e.target.value);
+											setPage(1);
+										}}
+									/>
+								</div>
+								<div className="flex items-center gap-3">
+									<div className="flex items-center gap-2">
+										<Filter className="h-4 w-4 text-gray-500" />
+									</div>
+									<select
+										value={validasiFilter}
+										onChange={(e) => {
+											setValidasiFilter(e.target.value as any);
+											setPage(1);
+										}}
+										className="px-3 py-2 text-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+									>
+										<option value="all">All Records</option>
+										<option value="valid">Valid Customers</option>
+										<option value="invalid">Invalid Customers</option>
+									</select>
+
+									<div className="flex items-center gap-2">
+										<Filter className="h-4 w-4 text-gray-500" />
+									</div>
+									<select
+										value={durationFilter}
+										onChange={(e) => {
+											setDurationFilter(e.target.value as any);
+											setPage(1);
+										}}
+										className="px-3 py-2 text-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+									>
+										<option value="all">All Durations</option>
+										<option value="invalid">Overtime (&gt;24h)</option>
+										<option value="long">Long (8-24h)</option>
+										<option value="zero">Zero Duration</option>
+									</select>
+
+									<div className="flex items-center gap-2">
+										<Filter className="h-4 w-4 text-gray-500" />
+									</div>
+									<select
+										value={monthFilter}
+										onChange={(e) => {
+											setMonthFilter(e.target.value);
+											setPage(1);
+										}}
+										className="px-3 py-2 text-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+									>
+										<option value="all">All Months</option>
+										<option value="01">January</option>
+										<option value="02">February</option>
+										<option value="03">March</option>
+										<option value="04">April</option>
+										<option value="05">May</option>
+										<option value="06">June</option>
+										<option value="07">July</option>
+										<option value="08">August</option>
+										<option value="09">September</option>
+										<option value="10">October</option>
+										<option value="11">November</option>
+										<option value="12">December</option>
+									</select>
+
+									<div className="flex items-center gap-2">
+										<Filter className="h-4 w-4 text-gray-500" />
+									</div>
+									<select
+										value={yearFilter}
+										onChange={(e) => {
+											setYearFilter(e.target.value);
+											setPage(1);
+										}}
+										className="px-3 py-2 text-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+									>
+										<option value="all">All Years</option>
+										{allYearsInData.map((y) => (
+											<option key={y} value={y}>
+												{y}
+											</option>
+										))}
+									</select>
+								</div>
+							</div>
+						</CardContent>
+					</Card>
+
+					{/* Data Table */}
+					<Card className="shadow-sm">
+						<CardHeader className="pb-4">
+							<div className="flex items-center justify-between">
+								<div>
+									<CardTitle className="flex items-center gap-2">
+										<FileSpreadsheet className="w-5 h-5 text-blue-600" />
+										<CardHeaderTitle className="text-base md:text-lg">
+											Ticket Records
+										</CardHeaderTitle>
+									</CardTitle>
+									<CardHeaderDescription className="text-xs mt-1">
+										Showing {paged.length} of {filtered.length} tickets
+										{validasiFilter !== "all" && (
+											<Badge
+												variant="info"
+												className="ml-2 text-[8px] px-1 py-0.5 opacity-90"
+											>
+												{validasiFilter === "valid"
+													? "Valid Customers Only"
+													: "Invalid Customers Only"}
+											</Badge>
+										)}
+										{durationFilter !== "all" && (
+											<Badge
+												variant="warning"
+												className="ml-2 text-[8px] px-1 py-0.5 opacity-90"
+											>
+												{durationFilter === "invalid"
+													? "Overtime Duration (>24h)"
+													: durationFilter === "long"
+														? "Long Duration (8-24h)"
+														: durationFilter === "zero"
+															? "Zero Duration"
+															: ""}
+											</Badge>
+										)}
+										{monthFilter !== "all" && (
+											<Badge
+												variant="secondary"
+												className="ml-2 text-[8px] px-1 py-0.5 opacity-90"
+											>
+												{new Date(0, parseInt(monthFilter) - 1).toLocaleString(
+													"default",
+													{ month: "long" },
+												)}
+											</Badge>
+										)}
+										{yearFilter !== "all" && (
+											<Badge
+												variant="secondary"
+												className="ml-2 text-[8px] px-1 py-0.5 opacity-90"
+											>
+												{yearFilter}
+											</Badge>
+										)}
+									</CardHeaderDescription>
+								</div>
+							</div>
+						</CardHeader>
+						<CardContent className="p-0">
+							<OverflowX minWidth={800}>
+								<div className="inline-block min-w-full align-middle">
+									<div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
+										<table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+											<thead className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-gray-800 dark:to-gray-700">
+												<tr>
+													{columns.map((col) => (
+														<th
+															key={col.key}
+															className="px-2 py-2 text-left text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider whitespace-nowrap border-r border-gray-200 dark:border-gray-600 last:border-r-0"
+															style={{ width: col.width, minWidth: col.width }}
+														>
+															<div className="flex items-center gap-2">
+																<span>{col.label}</span>
+															</div>
+														</th>
+													))}
+												</tr>
+											</thead>
+											<tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
+												{paged.length === 0 ? (
+													<tr>
+														<td
+															colSpan={columns.length}
+															className="text-center py-12 text-gray-500 dark:text-gray-400"
+														>
+															<div className="flex flex-col items-center gap-3">
+																<div className="w-12 h-12 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center">
+																	<FileSpreadsheet className="w-6 h-6 text-gray-400" />
+																</div>
+																<div className="text-center">
+																	<p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+																		No tickets found
+																	</p>
+																	<p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+																		{search
+																			? "Try adjusting your search criteria"
+																			: "No data available"}
+																	</p>
+																</div>
+															</div>
+														</td>
+													</tr>
+												) : (
+													paged.map((row, i) => {
+														const is2025 = row._is2025;
+														const isValid = row._isValid;
+														return (
+															<tr
+																key={i}
+																className={
+																	i % 2 === 0
+																		? "bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors duration-150"
+																		: "bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-150"
+																}
+															>
+																{columns.map((col) => (
+																	<td
+																		key={col.key}
+																		className="px-2 py-1 text-xs text-gray-900 dark:text-gray-100 align-top border-r border-gray-200 dark:border-gray-600 last:border-r-0"
+																		style={{
+																			width: col.width,
+																			minWidth: col.width,
+																		}}
+																	>
+																		<div className="whitespace-pre-line max-w-full overflow-hidden">
+																			{col.render
+																				? col.render(row[col.key], row)
+																				: row[col.key] || ""}
+																		</div>
+																		{is2025 && !isValid && col.key === "name" && (
+																			<Badge
+																				variant="danger"
+																				className="mt-1 text-[8px] px-1 py-0.5 opacity-90"
+																			>
+																				Invalid Customer
+																			</Badge>
+																		)}
+																	</td>
+																))}
+															</tr>
+														);
+													})
+												)}
+											</tbody>
+										</table>
+									</div>
+								</div>
+							</OverflowX>
+
+							{/* Pagination */}
+							<div className="px-6 py-4 bg-gray-50 dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700">
+								<PaginationControls
+									page={page}
+									pageSize={pageSize}
+									totalPages={paginationTotalPages ?? 1}
+									onPageChange={setPage}
+									onPageSizeChange={setPageSize}
+									pageSizes={[10, 25, 50, 100]}
+								/>
+							</div>
+						</CardContent>
+					</Card>
+				</>
+			)}
 		</PageWrapper>
 	);
 };

@@ -1,4 +1,3 @@
-import React from "react";
 // Icons
 import HomeIcon from "@mui/icons-material/Home";
 import TableChartIcon from "@mui/icons-material/TableChart";

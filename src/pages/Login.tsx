@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { LoginForm } from "@/components/login-form";
-import { API_CONFIG } from "@/lib/config";
+import { authAPI, menuPermissionAPI } from "@/lib/api";
 import { logger } from "@/lib/logger";
 
 const Login: React.FC = () => {
@@ -17,29 +17,35 @@ const Login: React.FC = () => {
 		setError("");
 		setLoading(true);
 		try {
-			const response = await fetch(`${API_CONFIG.baseURL}/login`, {
-				method: "POST",
-				headers: {
-					"Content-Type": "application/json",
-				},
-				body: JSON.stringify({ username, password, recaptchaToken }),
-			});
+			// Menggunakan authAPI yang sudah terstandarisasi
+			const data = await authAPI.login(username, password, recaptchaToken);
 
-			const data = await response.json();
-
-			if (response.ok && data.success) {
+			if (data && data.token) {
 				// Store authentication data
 				localStorage.setItem("auth_token", data.token);
 				localStorage.setItem("user", JSON.stringify(data.user));
 				localStorage.setItem("session_id", data.sessionId);
 
+				// Fetch menu permissions using standardized API
+				try {
+					const permissions = await menuPermissionAPI.getPermissions();
+					// Transform to match existing storage format if necessary
+					// getPermissions returns MenuPermission[]
+					const userRole = data.user.role;
+					const rolePerms = permissions.find(p => p.role === userRole);
+					localStorage.setItem("menuPermissions", JSON.stringify(rolePerms ? rolePerms.menus : []));
+				} catch (permErr) {
+					logger.error("Failed to load menu permissions:", permErr);
+					// Continue to navigate even if permissions fail
+				}
+
 				navigate("/summary-dashboard");
 			} else {
-				setError(data.error || "Username atau password salah");
+				setError("Username atau password salah");
 			}
-		} catch (err) {
+		} catch (err: any) {
 			logger.error("Login error:", err);
-			setError("Terjadi kesalahan koneksi, coba lagi");
+			setError(err.message || "Terjadi kesalahan koneksi, coba lagi");
 		} finally {
 			setLoading(false);
 		}

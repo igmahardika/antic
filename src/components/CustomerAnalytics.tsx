@@ -50,7 +50,7 @@ import * as RadixDialog from "@radix-ui/react-dialog";
 import { usePageUrlState } from "@/hooks/usePageUrlState";
 import { PaginationControls } from "@/components";
 import { logger } from "@/lib/logger";
-import { 
+import {
 	isClosedTicket,
 	getTicketStatus
 } from "@/utils/ticketStatus";
@@ -157,28 +157,47 @@ const CustomerAnalytics = () => {
 
 	// --- Agregasi customer dari tiket hasil filter ---
 	const customerCards = useMemo(() => {
-		if (!filteredTickets) return [];
+		if (!filteredTickets || !allTickets) return [];
+
+		// Create a map of ALL tickets grouped by customerId for faster access
+		// This replaces the nested .filter() call later, making it O(N+M) instead of O(N*M)
+		const fullHistoryMap = new Map<string, ITicket[]>();
+		allTickets.forEach(t => {
+			const cid = t.customerId || "Unknown";
+			if (!fullHistoryMap.has(cid)) fullHistoryMap.set(cid, []);
+			fullHistoryMap.get(cid)!.push(t);
+		});
+
 		// LOGGING: Show number of customer cards
 		logger.info(
-			"[KanbanBoard] customerCards:",
+			"[KanbanBoard] customerCards processing:",
 			filteredTickets.length,
 			"tickets,",
 			new Set(filteredTickets.map((t) => t.customerId || "Unknown")).size,
 			"unique customers",
 		);
+
 		// Map customer hanya dari filteredTickets
-		const map = new Map();
+		const currentPeriodMap = new Map<string, ITicket[]>();
 		filteredTickets.forEach((t) => {
 			const customerId = t.customerId || "Unknown";
-			if (!map.has(customerId)) {
-				map.set(customerId, []);
+			if (!currentPeriodMap.has(customerId)) {
+				currentPeriodMap.set(customerId, []);
 			}
-			map.get(customerId).push(t);
+			currentPeriodMap.get(customerId)!.push(t);
 		});
+
+		// Ambil bulan & tahun dari filter untuk trend analysis
+		const { endMonth, selectedYear } = analytics;
+		const y = Number(selectedYear);
+		const mEnd = Number(endMonth) - 1;
+		const mPrev = mEnd - 1;
+
 		// Hanya customer yang punya tiket di periode filter
-		return Array.from(map.entries()).map(([customerId, tickets]) => {
+		return Array.from(currentPeriodMap.entries()).map(([customerId, tickets]) => {
 			// Use configurable risk classification
 			const repClass = getRiskClassification(tickets.length);
+
 			// Analisis insight
 			const analysis = {
 				description: tickets.map((t) => t.description).filter(Boolean),
@@ -186,34 +205,31 @@ const CustomerAnalytics = () => {
 				handling: tickets.map((t) => t.handling).filter(Boolean),
 				conclusion: "",
 			};
-			// fullTicketHistory hanya untuk insight/historical, tidak mempengaruhi summary
-			const fullTicketHistory = allTickets.filter(
-				(t) => (t.customerId || "Unknown") === customerId,
-			);
+
+			// Gunakan map yang sudah di-pregroup, jauh lebih cepat dari .filter()
+			const fullTicketHistory = fullHistoryMap.get(customerId) || [];
+
 			// Trend analysis: bandingkan jumlah tiket bulan ini vs bulan sebelumnya
 			let trend: "Naik" | "Turun" | "Stabil" = "Stabil";
 			if (tickets.length > 0) {
-				// Ambil bulan & tahun dari filter
-				const { endMonth, selectedYear } = analytics;
-				const y = Number(selectedYear);
-				const mEnd = Number(endMonth) - 1;
-				const mPrev = mEnd - 1;
 				// Bulan ini
-				const ticketsThisMonth = tickets.filter((t) => {
+				const ticketsThisMonthCount = tickets.filter((t) => {
 					const openDate = parseDateSafe(t.openTime);
-					if (!openDate) return false;
-					return openDate.getFullYear() === y && openDate.getMonth() === mEnd;
-				});
-				// Bulan sebelumnya
-				const ticketsPrevMonth = tickets.filter((t) => {
+					return openDate && openDate.getFullYear() === y && openDate.getMonth() === mEnd;
+				}).length;
+
+				// Bulan sebelumnya (harus cek dari tickets periode ini atau tickets histori?)
+				// Logika asli mengecek dari 'tickets' (yang sudah difilter range). 
+				// Jika range > 1 bulan, tickets bisa punya data bulan sebelumnya.
+				const ticketsPrevMonthCount = tickets.filter((t) => {
 					const openDate = parseDateSafe(t.openTime);
-					if (!openDate) return false;
-					return openDate.getFullYear() === y && openDate.getMonth() === mPrev;
-				});
-				if (ticketsThisMonth.length > ticketsPrevMonth.length) trend = "Naik";
-				else if (ticketsThisMonth.length < ticketsPrevMonth.length)
-					trend = "Turun";
+					return openDate && openDate.getFullYear() === y && openDate.getMonth() === mPrev;
+				}).length;
+
+				if (ticketsThisMonthCount > ticketsPrevMonthCount) trend = "Naik";
+				else if (ticketsThisMonthCount < ticketsPrevMonthCount) trend = "Turun";
 			}
+
 			return {
 				id: customerId,
 				name: tickets[0]?.name || customerId,
@@ -268,12 +284,12 @@ const CustomerAnalytics = () => {
 	const filteredCustomers = useMemo(() => {
 		if (!customerCards) return [];
 		let filtered = customerCards;
-		
+
 		// Apply risk filter
 		if (repClassFilter && repClassFilter !== "Total") {
 			filtered = customerCards.filter((c) => c.repClass === repClassFilter);
 		}
-		
+
 		// Apply search filter
 		if (searchQuery.trim()) {
 			const query = searchQuery.toLowerCase().trim();
@@ -284,7 +300,7 @@ const CustomerAnalytics = () => {
 				return nameMatch || customerIdMatch || repClassMatch;
 			});
 		}
-		
+
 		return filtered.slice().sort((a, b) => {
 			const aTickets = a.ticketCount || 0;
 			const bTickets = b.ticketCount || 0;
@@ -754,179 +770,179 @@ const CustomerAnalytics = () => {
 		try {
 			// tickets: tiket customer ini sesuai filter waktu & risk
 			const closed = tickets.filter(isClosedTicket).length;
-		const percentClosed =
-			tickets.length > 0
-				? Math.round((Number(closed) / Number(tickets.length)) * 100)
-				: 0;
-		// Top agent
-		const agentCount = {};
-		tickets.forEach((t) => {
-			if (t.openBy) agentCount[t.openBy] = (agentCount[t.openBy] || 0) + 1;
-		});
-		const topAgent =
-			Object.entries(agentCount).sort(
-				(a, b) => Number(b[1]) - Number(a[1]),
-			)[0]?.[0] || "-";
-		// Top issue
-		const issueCount = {};
-		tickets.forEach((t) => {
-			if (t.description)
-				issueCount[t.description] = (issueCount[t.description] || 0) + 1;
-		});
-		const topIssue =
-			Object.entries(issueCount).sort(
-				(a, b) => Number(b[1]) - Number(a[1]),
-			)[0]?.[0] || "-";
-		// Last open ticket
-		const lastTicket = tickets
-			.slice()
-			.sort(
-				(a, b) => {
-					const dateA = parseDateSafe(a.openTime);
-					const dateB = parseDateSafe(b.openTime);
-					if (!dateA || !dateB) return 0;
-					return dateB.getTime() - dateA.getTime();
-				}
-			)[0];
-		// Trend badge
-		let trendBadge = null;
-		if (customer.trend === "Naik")
-			trendBadge = (
-				<span className="px-2 py-1 rounded-md bg-green-100 text-green-700 text-xs font-semibold dark:bg-green-200 dark:text-green-900">
-					↑ Up
-				</span>
-			);
-		else if (customer.trend === "Turun")
-			trendBadge = (
-				<span className="px-2 py-1 rounded-md bg-red-100 text-red-700 text-xs font-semibold dark:bg-red-200 dark:text-red-900">
-					↓ Down
-				</span>
-			);
-		else if (customer.trend === "Stabil")
-			trendBadge = (
-				<span className="px-2 py-1 rounded-md bg-gray-100 text-gray-700 text-xs font-semibold dark:bg-gray-200 dark:text-gray-900">
-					→ Stable
-				</span>
-			);
+			const percentClosed =
+				tickets.length > 0
+					? Math.round((Number(closed) / Number(tickets.length)) * 100)
+					: 0;
+			// Top agent
+			const agentCount = {};
+			tickets.forEach((t) => {
+				if (t.openBy) agentCount[t.openBy] = (agentCount[t.openBy] || 0) + 1;
+			});
+			const topAgent =
+				Object.entries(agentCount).sort(
+					(a, b) => Number(b[1]) - Number(a[1]),
+				)[0]?.[0] || "-";
+			// Top issue
+			const issueCount = {};
+			tickets.forEach((t) => {
+				if (t.description)
+					issueCount[t.description] = (issueCount[t.description] || 0) + 1;
+			});
+			const topIssue =
+				Object.entries(issueCount).sort(
+					(a, b) => Number(b[1]) - Number(a[1]),
+				)[0]?.[0] || "-";
+			// Last open ticket
+			const lastTicket = tickets
+				.slice()
+				.sort(
+					(a, b) => {
+						const dateA = parseDateSafe(a.openTime);
+						const dateB = parseDateSafe(b.openTime);
+						if (!dateA || !dateB) return 0;
+						return dateB.getTime() - dateA.getTime();
+					}
+				)[0];
+			// Trend badge
+			let trendBadge = null;
+			if (customer.trend === "Naik")
+				trendBadge = (
+					<span className="px-2 py-1 rounded-md bg-green-100 text-green-700 text-xs font-semibold dark:bg-green-200 dark:text-green-900">
+						↑ Up
+					</span>
+				);
+			else if (customer.trend === "Turun")
+				trendBadge = (
+					<span className="px-2 py-1 rounded-md bg-red-100 text-red-700 text-xs font-semibold dark:bg-red-200 dark:text-red-900">
+						↓ Down
+					</span>
+				);
+			else if (customer.trend === "Stabil")
+				trendBadge = (
+					<span className="px-2 py-1 rounded-md bg-gray-100 text-gray-700 text-xs font-semibold dark:bg-gray-200 dark:text-gray-900">
+						→ Stable
+					</span>
+				);
 
-		return (
-			<TooltipProvider delayDuration={200}>
-				<Tooltip>
-					<TooltipTrigger asChild>
-						<div
-							className="bg-white dark:bg-zinc-900 text-card-foreground rounded-xl shadow-sm border border-gray-200 dark:border-zinc-800 p-6 flex flex-col min-h-[240px] transition-all duration-300 min-w-0 overflow-hidden cursor-pointer hover:shadow-xl hover:scale-[1.02]"
-							onClick={() => setOpenDialogId(customer.id)}
-						>
-							{/* Header with customer info and badges */}
-							<div className="flex items-start justify-between mb-4">
-								<div className="flex items-center gap-3 flex-1 min-w-0">
-									<div className="w-10 h-10 min-w-10 min-h-10 rounded-lg flex items-center justify-center bg-gradient-to-br from-blue-500 to-blue-600 shadow-sm">
-										<GroupIcon
-											className="text-white"
-											style={{ fontSize: 20 }}
-										/>
+			return (
+				<TooltipProvider delayDuration={200}>
+					<Tooltip>
+						<TooltipTrigger asChild>
+							<div
+								className="bg-white dark:bg-zinc-900 text-card-foreground rounded-xl shadow-sm border border-gray-200 dark:border-zinc-800 p-6 flex flex-col min-h-[240px] transition-all duration-300 min-w-0 overflow-hidden cursor-pointer hover:shadow-xl hover:scale-[1.02]"
+								onClick={() => setOpenDialogId(customer.id)}
+							>
+								{/* Header with customer info and badges */}
+								<div className="flex items-start justify-between mb-4">
+									<div className="flex items-center gap-3 flex-1 min-w-0">
+										<div className="w-10 h-10 min-w-10 min-h-10 rounded-lg flex items-center justify-center bg-gradient-to-br from-blue-500 to-blue-600 shadow-sm">
+											<GroupIcon
+												className="text-white"
+												style={{ fontSize: 20 }}
+											/>
+										</div>
+										<div className="flex-1 min-w-0">
+											<h3 className="text-base font-bold text-card-foreground leading-tight line-clamp-2">
+												{customer.name}
+											</h3>
+											<p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+												ID: {customer.customerId}
+											</p>
+										</div>
 									</div>
-									<div className="flex-1 min-w-0">
-										<h3 className="text-base font-bold text-card-foreground leading-tight line-clamp-2">
-											{customer.name}
-										</h3>
-										<p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-											ID: {customer.customerId}
-										</p>
+									<div className="flex flex-col items-end gap-1 ml-2">
+										<Badge
+											variant="info"
+											className="text-xs font-semibold px-2 py-1"
+										>
+											{customer.ticketCount}
+										</Badge>
+										{trendBadge}
 									</div>
 								</div>
-								<div className="flex flex-col items-end gap-1 ml-2">
-									<Badge
-										variant="info"
-										className="text-xs font-semibold px-2 py-1"
-									>
-										{customer.ticketCount}
-									</Badge>
-									{trendBadge}
-								</div>
-							</div>
 
-							{/* Metrics section */}
-							<div className="space-y-3 mb-4">
-								<div className="flex items-center justify-between">
-									<span className="text-xs font-medium text-gray-600 dark:text-gray-400">
-										Resolution Rate
-									</span>
-									<span className="text-sm font-bold text-green-600 dark:text-green-400">
-										{percentClosed}%
-									</span>
+								{/* Metrics section */}
+								<div className="space-y-3 mb-4">
+									<div className="flex items-center justify-between">
+										<span className="text-xs font-medium text-gray-600 dark:text-gray-400">
+											Resolution Rate
+										</span>
+										<span className="text-sm font-bold text-green-600 dark:text-green-400">
+											{percentClosed}%
+										</span>
+									</div>
+									<div className="w-full bg-gray-200 dark:bg-zinc-700 rounded-full h-1.5">
+										<div
+											className="bg-green-500 h-1.5 rounded-full transition-all duration-300"
+											style={{ width: `${percentClosed}%` }}
+										></div>
+									</div>
+									<div className="flex justify-between text-xs text-gray-500 dark:text-gray-400">
+										<span>Closed: {closed}</span>
+										<span>Total: {tickets.length}</span>
+									</div>
 								</div>
-								<div className="w-full bg-gray-200 dark:bg-zinc-700 rounded-full h-1.5">
-									<div
-										className="bg-green-500 h-1.5 rounded-full transition-all duration-300"
-										style={{ width: `${percentClosed}%` }}
-									></div>
-								</div>
-								<div className="flex justify-between text-xs text-gray-500 dark:text-gray-400">
-									<span>Closed: {closed}</span>
-									<span>Total: {tickets.length}</span>
-								</div>
-							</div>
 
-							{/* Additional info */}
-							<div className="space-y-2 mt-auto">
-								<div className="flex items-center gap-2 text-xs">
-									<HowToRegIcon className="text-blue-500 w-3 h-3 flex-shrink-0" />
-									<span className="text-gray-600 dark:text-gray-400">
-										Top Agent:
-									</span>
-									<span className="font-medium text-card-foreground truncate">
-										{topAgent}
-									</span>
+								{/* Additional info */}
+								<div className="space-y-2 mt-auto">
+									<div className="flex items-center gap-2 text-xs">
+										<HowToRegIcon className="text-blue-500 w-3 h-3 flex-shrink-0" />
+										<span className="text-gray-600 dark:text-gray-400">
+											Top Agent:
+										</span>
+										<span className="font-medium text-card-foreground truncate">
+											{topAgent}
+										</span>
+									</div>
+									<div className="flex items-start gap-2 text-xs">
+										<Badge
+											variant="warning"
+											className="text-xs flex-shrink-0 px-1.5 py-0.5"
+										>
+											Issue
+										</Badge>
+										<span className="text-gray-600 dark:text-gray-400 line-clamp-2 leading-tight">
+											{topIssue}
+										</span>
+									</div>
 								</div>
-								<div className="flex items-start gap-2 text-xs">
-									<Badge
-										variant="warning"
-										className="text-xs flex-shrink-0 px-1.5 py-0.5"
-									>
-										Issue
-									</Badge>
-									<span className="text-gray-600 dark:text-gray-400 line-clamp-2 leading-tight">
-										{topIssue}
-									</span>
+							</div>
+						</TooltipTrigger>
+						<TooltipContent side="top" className="max-w-xs text-sm">
+							<div className="font-semibold mb-2 text-blue-900 dark:text-blue-200">
+								Customer Preview
+							</div>
+							<div className="space-y-1 text-xs">
+								<div>
+									<span className="font-medium text-gray-700 dark:text-gray-200">
+										Top Issue:
+									</span>{" "}
+									{topIssue}
+								</div>
+								<div>
+									<span className="font-medium text-gray-700 dark:text-gray-200">
+										Last Ticket:
+									</span>{" "}
+									{lastTicket
+										? `${formatDateTimeDDMMYYYY(lastTicket.openTime)}`
+										: "-"}
+								</div>
+								<div>
+									<span className="font-medium text-gray-700 dark:text-gray-200">
+										Risk Trend:
+									</span>{" "}
+									{customer.trend === "Naik"
+										? "Up"
+										: customer.trend === "Turun"
+											? "Down"
+											: "Stable"}
 								</div>
 							</div>
-						</div>
-					</TooltipTrigger>
-					<TooltipContent side="top" className="max-w-xs text-sm">
-						<div className="font-semibold mb-2 text-blue-900 dark:text-blue-200">
-							Customer Preview
-						</div>
-						<div className="space-y-1 text-xs">
-							<div>
-								<span className="font-medium text-gray-700 dark:text-gray-200">
-									Top Issue:
-								</span>{" "}
-								{topIssue}
-							</div>
-							<div>
-								<span className="font-medium text-gray-700 dark:text-gray-200">
-									Last Ticket:
-								</span>{" "}
-								{lastTicket
-									? `${formatDateTimeDDMMYYYY(lastTicket.openTime)}`
-									: "-"}
-							</div>
-							<div>
-								<span className="font-medium text-gray-700 dark:text-gray-200">
-									Risk Trend:
-								</span>{" "}
-								{customer.trend === "Naik"
-									? "Up"
-									: customer.trend === "Turun"
-										? "Down"
-										: "Stable"}
-							</div>
-						</div>
-					</TooltipContent>
-				</Tooltip>
-			</TooltipProvider>
-		);
+						</TooltipContent>
+					</Tooltip>
+				</TooltipProvider>
+			);
 		} catch (error) {
 			logger.error("CustomerCard error:", error);
 			return <ErrorFallback error={error.message} customer={customer} />;
@@ -1245,9 +1261,9 @@ const CustomerAnalytics = () => {
 		const avgHandling =
 			customer.allTickets.length > 0
 				? customer.allTickets.reduce(
-						(acc, t) => acc + (t.handlingDuration?.rawHours || 0),
-						0,
-					) / customer.allTickets.length
+					(acc, t) => acc + (t.handlingDuration?.rawHours || 0),
+					0,
+				) / customer.allTickets.length
 				: 0;
 
 		// Find top issue
@@ -1476,11 +1492,11 @@ const CustomerAnalytics = () => {
 													const openDate = parseDateSafe(t.openTime);
 													return openDate
 														? openDate.toLocaleDateString("en-GB") +
-															" " +
-															openDate.toLocaleTimeString("en-GB", {
-																hour: "2-digit",
-																minute: "2-digit",
-															})
+														" " +
+														openDate.toLocaleTimeString("en-GB", {
+															hour: "2-digit",
+															minute: "2-digit",
+														})
 														: "-";
 												})()}
 											</Text>
@@ -1586,11 +1602,11 @@ const CustomerAnalytics = () => {
 												const openDate = parseDateSafe(t.openTime);
 												return openDate
 													? openDate.toLocaleDateString("en-GB") +
-														" " +
-														openDate.toLocaleTimeString("en-GB", {
-															hour: "2-digit",
-															minute: "2-digit",
-														})
+													" " +
+													openDate.toLocaleTimeString("en-GB", {
+														hour: "2-digit",
+														minute: "2-digit",
+													})
 													: "-";
 											})()}
 										</Text>
@@ -1768,7 +1784,7 @@ const CustomerAnalytics = () => {
 								)}
 							</div>
 						</div>
-						
+
 						{/* Time Filter */}
 						<div className="scale-90 transform origin-right">
 							<TimeFilter
@@ -1793,8 +1809,8 @@ const CustomerAnalytics = () => {
 						const riskInfo =
 							item.key !== "Total"
 								? riskCategories.find(
-										(rc) => rc.label === normalizeRiskLabel(item.key),
-									)
+									(rc) => rc.label === normalizeRiskLabel(item.key),
+								)
 								: null;
 						const icon = {
 							Normal: <CheckCircleIcon className="w-6 h-6 text-white" />,
@@ -1924,7 +1940,7 @@ const CustomerAnalytics = () => {
 							{searchQuery ? "No Search Results" : "No Customers Found"}
 						</h3>
 						<p className="text-gray-500 dark:text-gray-400 mb-4">
-							{searchQuery 
+							{searchQuery
 								? `No customers found matching "${searchQuery}". Try adjusting your search terms.`
 								: "No customers match the current filter criteria."
 							}
@@ -2252,7 +2268,7 @@ const CustomerAnalytics = () => {
 												try {
 													const excelData = selectedCustomer.allTickets.map(
 														(ticket) => ({
-															"Ticket ID": ticket.ticketId || "-",
+															"Ticket ID": ticket.id || "-",
 															Customer: selectedCustomer.name,
 															"Customer ID": selectedCustomer.customerId,
 															Description: ticket.description || "-",
@@ -2293,7 +2309,7 @@ const CustomerAnalytics = () => {
 												try {
 													const csvData = selectedCustomer.allTickets.map(
 														(ticket) => ({
-															"Ticket ID": ticket.ticketId || "-",
+															"Ticket ID": ticket.id || "-",
 															Customer: selectedCustomer.name,
 															"Customer ID": selectedCustomer.customerId,
 															Description: ticket.description || "-",
