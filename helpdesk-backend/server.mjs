@@ -8,6 +8,7 @@ import cors from 'cors';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import session from 'express-session';
+import RedisStore from 'connect-redis';
 import { createPool } from 'mysql2/promise';
 import fetch from 'node-fetch';
 import redisManager from './config/redis.mjs';
@@ -116,8 +117,16 @@ app.set('trust proxy', 1);
 app.use(express.json({ limit: '100mb' }));
 app.use(express.urlencoded({ extended: true, limit: '100mb' }));
 
+// 3. MySQL pool & Redis
+// -----------------------------------------------------------------------------
+await redisManager.connect();
+
 app.use(
   session({
+    store: new RedisStore({
+      client: redisManager.getClient(),
+      prefix: "hms_session:",
+    }),
     secret: process.env.SESSION_SECRET || 'change-me-session-secret',
     resave: false,
     saveUninitialized: false,
@@ -129,8 +138,7 @@ app.use(
     },
   }),
 );
-// 3. MySQL pool & Redis
-// -----------------------------------------------------------------------------
+
 const db = createPool({
   host: process.env.DB_HOST || 'localhost',
   user: process.env.DB_USER || 'root',
@@ -140,7 +148,6 @@ const db = createPool({
   waitForConnections: true,
   connectionLimit: 10,
 });
-await redisManager.connect();
 
 // -----------------------------------------------------------------------------
 // 4. Auth helpers
