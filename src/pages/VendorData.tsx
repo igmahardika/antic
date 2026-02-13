@@ -1,6 +1,4 @@
 import React, { useState, useEffect } from "react";
-import { useLiveQuery } from "dexie-react-hooks";
-import { db } from "@/lib/db";
 import PageWrapper from "@/components/PageWrapper";
 import PageHeader from "@/components/ui/PageHeader";
 import SummaryCard from "@/components/ui/SummaryCard";
@@ -42,18 +40,7 @@ import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import CancelIcon from "@mui/icons-material/Cancel";
-
-interface Vendor {
-	id?: number;
-	name: string;
-	description?: string;
-	contactPerson?: string;
-	email?: string;
-	phone?: string;
-	isActive: boolean;
-	createdAt?: Date;
-	updatedAt?: Date;
-}
+import { Vendor } from "@/lib/api";
 
 const VendorData: React.FC = () => {
 	const [isLoading, setIsLoading] = useState(true);
@@ -61,6 +48,7 @@ const VendorData: React.FC = () => {
 	const [isDialogOpen, setIsDialogOpen] = useState(false);
 	const [editingVendor, setEditingVendor] = useState<Vendor | null>(null);
 	const [formData, setFormData] = useState<Vendor>({
+		id: 0,
 		name: "",
 		description: "",
 		contactPerson: "",
@@ -72,24 +60,25 @@ const VendorData: React.FC = () => {
 	const [filterActive, setFilterActive] = useState<boolean | null>(null);
 
 	// Load vendors from database
-	const allVendors = useLiveQuery(async () => {
-		try {
-			const vendorData = await db.vendors.toArray();
-			logger.info("✅ VendorData: Successfully loaded", vendorData.length, "vendors from database");
-			return vendorData;
-		} catch (error) {
-			logger.error("❌ VendorData: Failed to load vendors from database:", error);
-			return [];
-		}
+	// Load vendors from cache/API
+	useEffect(() => {
+		const fetchVendors = async () => {
+			try {
+				const { cacheService } = await import('@/services/cacheService');
+				const vendorData = await cacheService.getVendors();
+				logger.info("✅ VendorData: Successfully loaded", vendorData.length, "vendors from cache/API");
+				setVendors(vendorData);
+			} catch (error) {
+				logger.error("❌ VendorData: Failed to load vendors:", error);
+			} finally {
+				setIsLoading(false);
+			}
+		};
+		fetchVendors();
 	}, []);
 
 	// Update vendors state when data changes
-	useEffect(() => {
-		if (allVendors) {
-			setVendors(allVendors);
-			setIsLoading(false);
-		}
-	}, [allVendors]);
+
 
 	// Filter vendors based on search and active status
 	const filteredVendors = vendors.filter((vendor) => {
@@ -97,9 +86,9 @@ const VendorData: React.FC = () => {
 			vendor.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
 			vendor.contactPerson?.toLowerCase().includes(searchTerm.toLowerCase()) ||
 			vendor.email?.toLowerCase().includes(searchTerm.toLowerCase());
-		
+
 		const matchesActive = filterActive === null || vendor.isActive === filterActive;
-		
+
 		return matchesSearch && matchesActive;
 	});
 
@@ -112,8 +101,10 @@ const VendorData: React.FC = () => {
 	};
 
 	// Reset form
+	// Reset form
 	const resetForm = () => {
 		setFormData({
+			id: 0,
 			name: "",
 			description: "",
 			contactPerson: "",
@@ -127,31 +118,30 @@ const VendorData: React.FC = () => {
 	// Handle add/edit vendor
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
-		
+
 		if (!formData.name.trim()) {
 			alert("Vendor name is required");
 			return;
 		}
 
 		try {
-			const now = new Date();
-			
-			if (editingVendor) {
+			// Dynamically import to avoid circular dependency
+			const { vendorAPI } = await import('@/lib/api');
+			const { cacheService } = await import('@/services/cacheService');
+
+			if (editingVendor && editingVendor.id) {
 				// Update existing vendor
-				await db.vendors.update(editingVendor.id!, {
-					...formData,
-					updatedAt: now,
-				});
+				await vendorAPI.updateVendor(editingVendor.id, formData);
 				logger.info("✅ VendorData: Updated vendor:", formData.name);
 			} else {
 				// Add new vendor
-				await db.vendors.add({
-					...formData,
-					createdAt: now,
-					updatedAt: now,
-				});
+				await vendorAPI.addVendor(formData);
 				logger.info("✅ VendorData: Added new vendor:", formData.name);
 			}
+
+			await cacheService.invalidateVendors();
+			const updatedVendors = await cacheService.getVendors();
+			setVendors(updatedVendors);
 
 			resetForm();
 			setIsDialogOpen(false);
@@ -170,13 +160,21 @@ const VendorData: React.FC = () => {
 
 	// Handle delete vendor
 	const handleDelete = async (vendor: Vendor) => {
+		if (!vendor.id) return;
 		if (!confirm(`Are you sure you want to delete vendor "${vendor.name}"?`)) {
 			return;
 		}
 
 		try {
-			await db.vendors.delete(vendor.id!);
+			const { vendorAPI } = await import('@/lib/api');
+			const { cacheService } = await import('@/services/cacheService');
+
+			await vendorAPI.deleteVendor(vendor.id);
 			logger.info("✅ VendorData: Deleted vendor:", vendor.name);
+
+			await cacheService.invalidateVendors();
+			const updatedVendors = await cacheService.getVendors();
+			setVendors(updatedVendors);
 		} catch (error) {
 			logger.error("❌ VendorData: Failed to delete vendor:", error);
 			alert("Failed to delete vendor. Please try again.");
@@ -185,12 +183,17 @@ const VendorData: React.FC = () => {
 
 	// Handle toggle active status
 	const handleToggleActive = async (vendor: Vendor) => {
+		if (!vendor.id) return;
 		try {
-			await db.vendors.update(vendor.id!, {
-				isActive: !vendor.isActive,
-				updatedAt: new Date(),
-			});
+			const { vendorAPI } = await import('@/lib/api');
+			const { cacheService } = await import('@/services/cacheService');
+
+			await vendorAPI.toggleActive(vendor.id, !vendor.isActive);
 			logger.info("✅ VendorData: Toggled active status for vendor:", vendor.name);
+
+			await cacheService.invalidateVendors();
+			const updatedVendors = await cacheService.getVendors();
+			setVendors(updatedVendors);
 		} catch (error) {
 			logger.error("❌ VendorData: Failed to toggle active status:", error);
 			alert("Failed to update vendor status. Please try again.");
@@ -264,7 +267,7 @@ const VendorData: React.FC = () => {
 											{editingVendor ? "Edit Vendor" : "Add New Vendor"}
 										</DialogTitle>
 										<DialogDescription>
-											{editingVendor 
+											{editingVendor
 												? "Update vendor information below."
 												: "Fill in the vendor information below."
 											}

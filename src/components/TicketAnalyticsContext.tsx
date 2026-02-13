@@ -107,19 +107,39 @@ export const TicketAnalyticsProvider = ({ children }) => {
 		});
 	}, [allTickets]);
 
-	const allYearsInData = useMemo(() => {
-		if (!allTickets) return [];
-		const yearSet = new Set();
-		allTickets.forEach((t) => {
-			if (t.openTime) {
-				const d = new Date(t.openTime);
-				if (!isNaN(d.getTime())) {
-					yearSet.add(String(d.getFullYear()));
+	// Fetch available years from API
+	const [allYearsInData, setAllYearsInData] = useState<string[]>([]);
+
+	useEffect(() => {
+		const fetchYears = async () => {
+			try {
+				const { ticketAPI } = await import("@/lib/api");
+				const { years } = await ticketAPI.getTicketYears();
+				if (Array.isArray(years)) {
+					setAllYearsInData(years.map(String));
+				}
+			} catch (error) {
+				logger.error("Failed to fetch ticket years:", error);
+				// Fallback: derive from data if API fails
+				if (allTickets && allTickets.length > 0) {
+					const yearSet = new Set();
+					allTickets.forEach((t) => {
+						if (t.openTime) {
+							const d = new Date(t.openTime);
+							if (!isNaN(d.getTime())) {
+								yearSet.add(String(d.getFullYear()));
+							}
+						}
+					});
+					setAllYearsInData(Array.from(yearSet).sort().reverse() as string[]);
+				} else {
+					setAllYearsInData(["2026", "2025", "2024"]);
 				}
 			}
-		});
-		return Array.from(yearSet).sort();
-	}, [allTickets]);
+		};
+		fetchYears();
+	}, [allTickets]); // Re-fetch/re-calc if allTickets changes (fallback scenario) or on mount
+
 
 	// Filter waktu
 	const { cutoffStart, cutoffEnd } = useMemo(() => {

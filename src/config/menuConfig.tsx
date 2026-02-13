@@ -80,6 +80,18 @@ export const menuConfig = [
         ],
     },
     {
+        name: "Workload",
+        path: "/workload",
+        icon: <BarChartIcon sx={{ fontSize: 16 }} />,
+        children: [
+            {
+                name: "Workload Analytics",
+                path: "/workload/analytics",
+                icon: <BarChartIcon sx={{ fontSize: 16 }} />,
+            },
+        ],
+    },
+    {
         name: "Master Data",
         path: "/masterdata",
         icon: <StorageIcon sx={{ fontSize: 16 }} />,

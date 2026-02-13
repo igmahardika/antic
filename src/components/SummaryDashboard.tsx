@@ -20,6 +20,7 @@ import PageWrapper from "@/components/PageWrapper";
 import PageHeader from "@/components/ui/PageHeader";
 import { formatDurationDHM } from "@/lib/utils";
 import { logger } from "@/lib/logger";
+import { WorkloadSection } from "@/components/workload";
 
 // MUI Icons for consistency with project standards
 import FlashOnIcon from "@mui/icons-material/FlashOn";
@@ -218,50 +219,47 @@ const SummaryDashboard = ({
 		return { total, closed, closedRate, slaPct, frtAvg, artAvg, backlog };
 	}, [filteredTickets]);
 
-	// Extract all years from monthlyStatsData.labels
-	const allYears: string[] = useMemo(() => {
-		if (!monthlyStatsData || !monthlyStatsData.labels) return [];
-		const years = new Set<string>();
-		monthlyStatsData.labels.forEach((label) => {
-			const year = label.split(" ").pop();
-			if (year) years.add(year);
-		});
-		return Array.from(years).sort((a, b) => parseInt(a) - parseInt(b));
-	}, [monthlyStatsData]);
+	// State for year filter
+	const [selectedYear, setSelectedYear] = useState<string>("All Years");
+	const [availableYears, setAvailableYears] = useState<string[]>([]);
 
-	// State for selected year (default: last year in data)
-	const [selectedYear, setSelectedYear] = useState(() => {
-		if (allYears.length > 0) return allYears[allYears.length - 1];
-		return "";
-	});
-
-	// Update selectedYear if allYears changes
+	// Fetch available years from API
 	React.useEffect(() => {
-		if (allYears.length > 0 && !allYears.includes(selectedYear)) {
-			setSelectedYear(allYears[allYears.length - 1]);
-		}
-	}, [allYears, selectedYear]);
+		const fetchYears = async () => {
+			try {
+				const { ticketAPI } = await import("@/lib/api");
+				const { years } = await ticketAPI.getTicketYears();
+				if (Array.isArray(years)) {
+					setAvailableYears(years.map(String));
+				}
+			} catch (error) {
+				console.error("Failed to fetch ticket years:", error);
+				// Fallback to default years if API fails
+				setAvailableYears(["2026", "2025", "2024"]);
+			}
+		};
+		fetchYears();
+	}, []);
 
 	// Filter monthly data for selected year
 	const filteredMonthlyStatsData = useMemo(() => {
-		if (!monthlyStatsData || !monthlyStatsData.labels || !selectedYear)
-			return null;
+		if (!monthlyStatsData || !monthlyStatsData.labels || selectedYear === "All Years")
+			return monthlyStatsData;
+
 		// Find indices for selected year
 		const indices = monthlyStatsData.labels
-			.map((label, idx) => (label.endsWith(selectedYear) ? idx : -1))
-			.filter((idx) => idx !== -1);
+			.map((label: string, idx: number) => (label.endsWith(selectedYear) ? idx : -1))
+			.filter((idx: number) => idx !== -1);
+
 		if (indices.length === 0) return null;
+
 		return {
-			labels: indices.map((idx) =>
+			labels: indices.map((idx: number) =>
 				monthlyStatsData.labels[idx].replace(" " + selectedYear, ""),
 			),
-			datasets: monthlyStatsData.datasets.map((ds) => ({
+			datasets: monthlyStatsData.datasets.map((ds: any) => ({
 				...ds,
-				data: indices.map((idx) => ds.data[idx]),
-				fill: true,
-				backgroundColor: ds.backgroundColor,
-				borderColor: ds.borderColor,
-				label: ds.label,
+				data: indices.map((idx: number) => ds.data[idx]),
 			})),
 		};
 	}, [monthlyStatsData, selectedYear]);
@@ -298,22 +296,23 @@ const SummaryDashboard = ({
 	}, [monthlyStatsData]);
 
 	// Agent leaderboard by year (computed from filteredTickets)
-	const [agentYear, setAgentYear] = useState<string>("");
-	React.useEffect(() => {
-		if (allYears.length > 0 && !agentYear)
-			setAgentYear(allYears[allYears.length - 1]);
-	}, [allYears, agentYear]);
-
+	// Agent leaderboard by year (computed from filteredTickets)
+	// Logic to filter agents based on selectedYear
 	const agentLeaderboard = useMemo(() => {
-		if (!agentYear) return [] as any[];
+		// Use selectedYear directly instead of agentYear
+		// If All Years, we don't filter by year
+		const targetYear = selectedYear === "All Years" ? null : selectedYear;
+
 		const raw: AgentTicket[] = (
 			Array.isArray(filteredTickets) ? filteredTickets : []
 		)
 			.filter((t: any) => {
 				if (!t.openTime) return false;
+				if (!targetYear) return true; // Include all if "All Years"
+
 				const d = new Date(t.openTime);
 				return (
-					!isNaN(d.getTime()) && String(d.getFullYear()) === String(agentYear)
+					!isNaN(d.getTime()) && String(d.getFullYear()) === String(targetYear)
 				);
 			})
 			.map((t: any) => ({
@@ -391,7 +390,7 @@ const SummaryDashboard = ({
 			})
 			.sort((a, b) => b.score - a.score)
 			.slice(0, 10);
-	}, [filteredTickets, agentYear, allYears]);
+	}, [filteredTickets, selectedYear, availableYears]);
 
 	// Get latest value for badge display
 	const latestMonthlyValue = useMemo(() => {
@@ -626,9 +625,10 @@ const SummaryDashboard = ({
 								value={selectedYear as string}
 								onChange={(e) => setSelectedYear(e.target.value)}
 							>
-								{allYears.map((year) => (
-									<option key={year as string} value={year as string}>
-										{year as string}
+								<option value="All Years">All Years</option>
+								{availableYears.map((year) => (
+									<option key={year} value={year}>
+										{year}
 									</option>
 								))}
 							</select>
@@ -1242,13 +1242,14 @@ const SummaryDashboard = ({
 					</CardTitle>
 					<div className="flex items-center gap-2">
 						<select
-							className="rounded-lg px-3 py-2 text-sm bg-white dark:bg-zinc-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
-							value={agentYear}
-							onChange={(e) => setAgentYear(e.target.value)}
+							className="bg-white border border-gray-200 text-gray-700 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
+							value={selectedYear}
+							onChange={(e) => setSelectedYear(e.target.value)}
 						>
-							{allYears.map((y) => (
-								<option key={y} value={y}>
-									{y}
+							<option value="All Years">All Years</option>
+							{availableYears.map((year) => (
+								<option key={year} value={year}>
+									{year}
 								</option>
 							))}
 						</select>
@@ -1486,6 +1487,9 @@ const SummaryDashboard = ({
 					</div>
 				</CardContent>
 			</Card>
+
+			{/* Workload Analytics Section */}
+			<WorkloadSection />
 		</div>
 	);
 

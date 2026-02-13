@@ -152,8 +152,8 @@ function getShift(dateStr: string) {
 }
 // ====================================================================
 
-// Automated Insight Generator Hook
-function useInsightFromTicketAnalytics({
+// Automated Insight Generator
+function getInsightFromTicketAnalytics({
 	monthlyStatsData,
 	classificationData,
 	customerStats,
@@ -347,7 +347,7 @@ const TicketAnalytics = ({ }: TicketAnalyticsProps) => {
 	} = useTicketAnalytics() || {};
 	const [allCustomers, setAllCustomers] = useState<any[]>([]);
 
-	React.useEffect(() => {
+	useEffect(() => {
 		const fetchCustomers = async () => {
 			try {
 				const { cacheService } = await import("@/services/cacheService");
@@ -1135,7 +1135,7 @@ const TicketAnalytics = ({ }: TicketAnalyticsProps) => {
 				description: s.description,
 			}));
 	}, [ticketAnalyticsData]);
-	const insights = useInsightFromTicketAnalytics({
+	const insights = getInsightFromTicketAnalytics({
 		monthlyStatsData,
 		classificationData,
 		customerStats,
@@ -1280,1874 +1280,1698 @@ const TicketAnalytics = ({ }: TicketAnalyticsProps) => {
 		}
 	}, [allCustomers, kategoriList, customerKategoriMap, gridDataWithCustomerSync]);
 
-	// Guard clause for when data tidak tersedia
-	if (!gridData || gridData.length === 0) {
-		return (
-			<div className="flex flex-col items-center justify-center h-full text-gray-500 p-8">
-				<h3 className="text-lg md:text-xl font-semibold mb-2 text-card-foreground">
-					Data Analisis Tiket
-				</h3>
-				<p>
-					Tidak ada data yang cukup untuk ditampilkan. Unggah file untuk
-					memulai.
-				</p>
-			</div>
-		);
-	}
-
-
+	// Render content
 	return (
 		<PageWrapper maxW="4xl">
-			{/* Header Section */}
-			<div className="mb-8">
-				<div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-					<div>
-						<h1 className="text-3xl font-bold text-card-foreground mb-2">
-							Ticket Analytics
-						</h1>
-						<p className="text-gray-600 dark:text-gray-400 text-base">
-							Comprehensive analysis of ticket performance and trends
-						</p>
-					</div>
-					<div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-						{/* Time Filter */}
-						<div className="scale-90 transform origin-right">
-							<TimeFilter
-								startMonth={startMonth}
-								setStartMonth={setStartMonth}
-								endMonth={endMonth}
-								setEndMonth={setEndMonth}
-								selectedYear={selectedYear}
-								setSelectedYear={setSelectedYear}
-								monthOptions={monthOptions}
-								allYearsInData={allYearsInData}
-								onRefresh={refresh}
-							/>
-						</div>
-
-						{/* Normalize Toggle */}
-						<div className="flex items-center gap-2">
-							<label className="inline-flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300 cursor-pointer select-none">
-								<input
-									type="checkbox"
-									checked={normalizePer1000}
-									onChange={(e) => setNormalizePer1000(e.target.checked)}
-									className="h-4 w-4 rounded border-gray-300 focus:ring-blue-500"
-								/>
-								<span className="text-sm font-medium">
-									Normalize per 1,000 clients
-								</span>
-							</label>
-						</div>
-					</div>
+			{(!gridData || gridData.length === 0) ? (
+				<div className="flex flex-col items-center justify-center h-full text-gray-500 p-8">
+					<h3 className="text-lg md:text-xl font-semibold mb-2 text-card-foreground">
+						Data Analisis Tiket
+					</h3>
+					<p>
+						Tidak ada data yang cukup untuk ditampilkan. Unggah file untuk
+						memulai.
+					</p>
 				</div>
-			</div>
-
-			{/* Summary Cards - Top Row (4 cards) */}
-			<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-				{/* Total Tickets */}
-				<SummaryCard
-					icon={<ConfirmationNumberIcon className="w-6 h-6 text-white" />}
-					title="Total Tickets"
-					value={stats.find((s) => s.title === "Total Tickets")?.value || "0"}
-					description={
-						stats.find((s) => s.title === "Total Tickets")?.description || ""
-					}
-					iconBg="bg-blue-600"
-				/>
-
-				{/* Closed */}
-				<SummaryCard
-					icon={<CheckCircleIcon className="w-6 h-6 text-white" />}
-					title="Closed"
-					value={stats.find((s) => s.title === "Closed")?.value || "0"}
-					description={
-						stats.find((s) => s.title === "Closed")?.description || ""
-					}
-					iconBg="bg-green-600"
-				/>
-
-				{/* Open */}
-				<SummaryCard
-					icon={<ErrorOutlineIcon className="w-6 h-6 text-white" />}
-					title="Open"
-					value={stats.find((s) => s.title === "Open")?.value || "0"}
-					description={stats.find((s) => s.title === "Open")?.description || ""}
-					iconBg="bg-orange-500"
-				/>
-
-				{/* SLA Attainment */}
-				<SummaryCard
-					icon={<AccessTimeIcon className="w-6 h-6 text-white" />}
-					title="SLA Attainment"
-					value={`${advancedKpis.slaAttainment.toFixed(1)}%`}
-					description="Closed ≤ SLA target (by severity) di periode terpilih"
-					iconBg="bg-indigo-600"
-				/>
-			</div>
-
-			{/* Summary Cards - Second Row (4 cards) */}
-			<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-				{/* Overdue */}
-				<SummaryCard
-					icon={<AccessTimeIcon className="w-6 h-6 text-white" />}
-					title="Overdue"
-					value={stats.find((s) => s.title === "Overdue")?.value || "0"}
-					description={
-						stats.find((s) => s.title === "Overdue")?.description || ""
-					}
-					iconBg="bg-red-600"
-				/>
-
-				{/* Escalated */}
-				<SummaryCard
-					icon={<WarningAmberIcon className="w-6 h-6 text-white" />}
-					title="Escalated"
-					value={stats.find((s) => s.title === "Escalated")?.value || "0"}
-					description={
-						stats.find((s) => s.title === "Escalated")?.description || ""
-					}
-					iconBg="bg-yellow-500"
-				/>
-
-				{/* Close Rate (Periode) */}
-				<SummaryCard
-					icon={<CheckCircleIcon className="w-6 h-6 text-white" />}
-					title="Close Rate (Periode)"
-					value={`${advancedKpis.closeRatePeriod.toFixed(1)}%`}
-					description="Closed / total tiket yang DIBUKA di periode"
-					iconBg="bg-green-600"
-				/>
-
-				{/* Resolution Rate (Lifetime) */}
-				<SummaryCard
-					icon={<HowToRegIcon className="w-6 h-6 text-white" />}
-					title="Resolution Rate (Lifetime)"
-					value={`${advancedKpis.resolutionRateLifetime.toFixed(1)}%`}
-					description="Closed / total semua tiket (histori)"
-					iconBg="bg-slate-600"
-				/>
-			</div>
-
-			{/* Backlog Cards - Third Row (3 cards) */}
-			<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-				{(() => {
-					const now = new Date();
-					// Gunakan definisi yang sama dengan Open tickets (logika kompleks)
-					// Use standardized backlog calculation
-					const allTickets = Array.isArray(gridData) ? gridData : [];
-					const backlogStats = getBacklogStats(allTickets);
-
-					// Use standardized backlog age calculation
-					const backlogTickets = allTickets.filter(isBacklogTicket);
-					const agesH = backlogTickets
-						.map((t) => {
-							const open = parseDateSafe(t?.openTime);
-							return open ? (now.getTime() - open.getTime()) / 3_600_000 : null;
-						})
-						.filter((n) => Number.isFinite(n)) as number[];
-					const p50 = percentile(agesH, 0.5) ?? 0;
-					const p90 = percentile(agesH, 0.9) ?? 0;
-
-					return (
-						<>
-							<SummaryCard
-								icon={<ErrorOutlineIcon className="w-6 h-6 text-white" />}
-								title="Backlog (Open)"
-								value={backlogStats.backlog.toLocaleString()}
-								description="Tiket backlog berdasarkan status standar"
-								iconBg="bg-yellow-600"
-							/>
-							<SummaryCard
-								icon={<AccessTimeIcon className="w-6 h-6 text-white" />}
-								title="Backlog Age P50"
-								value={formatDurationHMS(p50)}
-								description="Median umur backlog (jam)"
-								iconBg="bg-sky-600"
-							/>
-							<SummaryCard
-								icon={<AccessTimeIcon className="w-6 h-6 text-white" />}
-								title="Backlog Age P90"
-								value={formatDurationHMS(p90)}
-								description="90% backlog lebih muda dari ini"
-								iconBg="bg-indigo-600"
-							/>
-						</>
-					);
-				})()}
-			</div>
-
-			{/* Automated Insights - Professional & Informative Design */}
-			{insights && (
-				<div className="mb-6">
-					<div className="bg-card text-card-foreground rounded-xl shadow-sm p-6">
-						<div className="flex items-center justify-between mb-4">
+			) : (
+				<>
+					{/* Header Section */}
+					<div className="mb-8">
+						<div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
 							<div>
-								<h2 className="text-xl font-bold text-card-foreground">
-									Automated Insights
-								</h2>
-								<p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-									Real-time analysis based on ticket data and performance
-									metrics
+								<h1 className="text-3xl font-bold text-card-foreground mb-2">
+									Ticket Analytics
+								</h1>
+								<p className="text-gray-600 dark:text-gray-400 text-base">
+									Comprehensive analysis of ticket performance and trends
 								</p>
 							</div>
-							<div className="flex items-center gap-2">
-								<div className="w-2 h-2 bg-green-500 rounded-full"></div>
-								<span className="text-sm text-gray-600 dark:text-gray-400 font-medium">
-									Live
-								</span>
-							</div>
-						</div>
-
-						<div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-							{/* Key Metrics */}
-							<div className="space-y-4">
-								<h3 className="text-lg font-semibold text-card-foreground border-b border-gray-200 dark:border-zinc-700 pb-2">
-									Key Metrics
-								</h3>
-
-								{/* Bulan tersibuk */}
-								{insights.busiestMonth && (
-									<div className="p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-										<div className="flex items-center justify-between mb-1">
-											<div className="flex items-center gap-1">
-												<BarChartIcon className="text-blue-500 text-xs" />
-												<span className="font-semibold text-xs text-card-foreground">
-													Bulan Tersibuk
-												</span>
-											</div>
-											<Badge variant="info" className="text-blue-600 text-xs">
-												Peak
-											</Badge>
-										</div>
-										<div className="text-sm font-bold text-blue-600 dark:text-blue-400 mb-0.5">
-											{insights.busiestMonth.label}
-										</div>
-										<div className="text-xs text-muted-foreground mb-0.5">
-											{insights.busiestMonth.count} tiket diproses
-										</div>
-										{insights.busiestMonth.trend && (
-											<div
-												className={`text-xs font-medium ${insights.busiestMonth.trend > 0
-													? "text-green-600 dark:text-green-400"
-													: "text-red-600 dark:text-red-400"
-													}`}
-											>
-												{insights.busiestMonth.trend > 0 ? (
-													<TrendingUpIcon className="w-3 h-3 inline mr-1" />
-												) : (
-													<TrendingDownIcon className="w-3 h-3 inline mr-1" />
-												)}{" "}
-												{Math.abs(insights.busiestMonth.trend)}% dari bulan
-												sebelumnya
-											</div>
-										)}
-									</div>
-								)}
-
-								{/* Kategori dominan */}
-								{insights.topCategory && (
-									<div className="p-2 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
-										<div className="flex items-center justify-between mb-1">
-											<div className="flex items-center gap-1">
-												<LabelIcon className="text-purple-500 text-xs" />
-												<span className="font-semibold text-xs text-card-foreground">
-													Kategori Dominan
-												</span>
-											</div>
-											<Badge variant="info" className="text-purple-600 text-xs">
-												Top
-											</Badge>
-										</div>
-										<div className="text-sm font-bold text-purple-600 dark:text-purple-400 mb-0.5">
-											{insights.topCategory.cat}
-										</div>
-										<div className="text-xs text-muted-foreground mb-0.5">
-											{insights.topCategory.count} tiket (
-											{(
-												(insights.topCategory.count /
-													(Array.isArray(gridData) ? gridData.length : 1)) *
-												100
-											).toFixed(1)}
-											% dari total)
-										</div>
-										{typeof insights.topCategory.trend === "number" && (
-											<div
-												className={`text-xs font-medium ${insights.topCategory.trend > 0
-													? "text-green-600 dark:text-green-400"
-													: "text-red-600 dark:text-red-400"
-													}`}
-											>
-												{insights.topCategory.trend > 0 ? (
-													<TrendingUpIcon className="w-3 h-3 inline mr-1" />
-												) : (
-													<TrendingDownIcon className="w-3 h-3 inline mr-1" />
-												)}{" "}
-												{Math.abs(insights.topCategory.trend).toFixed(1)}% tren{" "}
-												{insights.topCategory.trend > 0 ? "naik" : "turun"}
-											</div>
-										)}
-									</div>
-								)}
-
-								{/* Pelanggan kronis/ekstrem */}
-								{insights.chronicPercent && (
-									<div className="p-2 bg-orange-50 dark:bg-orange-900/20 rounded-lg">
-										<div className="flex items-center justify-between mb-1">
-											<div className="flex items-center gap-1">
-												<WarningIcon className="text-orange-500 text-xs" />
-												<span className="font-semibold text-xs text-card-foreground">
-													Pelanggan Kronis/Ekstrem
-												</span>
-											</div>
-											<Badge
-												variant="warning"
-												className="text-orange-600 text-xs"
-											>
-												Alert
-											</Badge>
-										</div>
-										<div className="text-sm font-bold text-orange-600 dark:text-orange-400 mb-0.5">
-											{insights.chronicPercent}%
-										</div>
-										<div className="text-xs text-muted-foreground">
-											Pelanggan dengan &gt;10 tiket (kategori Kronis/Ekstrem)
-										</div>
-									</div>
-								)}
-							</div>
-
-							{/* Performance Insights */}
-							<div className="space-y-2">
-								<h3 className="text-sm font-semibold text-card-foreground border-b border-gray-200 dark:border-zinc-700 pb-1">
-									Performance Insights
-								</h3>
-
-								{/* Complaint Penetration */}
-								{typeof complaintPenetrationByType !== "undefined" && (
-									<div className="p-2 bg-red-50 dark:bg-red-900/20 rounded-lg ">
-										<div className="flex items-center justify-between mb-1">
-											<div className="flex items-center gap-1">
-												<ShowChartIcon className="text-red-500 text-xs" />
-												<span className="font-semibold text-xs text-card-foreground">
-													Rasio Komplain Tertinggi
-												</span>
-											</div>
-											<Badge variant="danger" className="text-red-600 text-xs">
-												High
-											</Badge>
-										</div>
-										<div className="text-sm font-bold text-red-600 dark:text-red-400 mb-0.5">
-											{complaintPenetrationByType.maxType}
-										</div>
-										<div className="text-xs text-muted-foreground">
-											{complaintPenetrationByType.maxValue}% penetrasi komplain
-										</div>
-									</div>
-								)}
-
-								{/* Handling Time Insights */}
-								<div className="space-y-3">
-									{typeof safeMaxAvg !== "undefined" && safeMaxAvg.shift && (
-										<div className="p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
-											<div className="flex items-center gap-2 mb-1">
-												<AssignmentIcon className="text-yellow-500 text-xs" />
-												<span className="font-medium text-card-foreground">
-													Handling Time Shift
-												</span>
-											</div>
-											<div className="text-sm font-bold text-yellow-600 dark:text-yellow-400">
-												{safeMaxAvg.shift}: {safeMaxAvg.formattedAvg}
-											</div>
-										</div>
-									)}
-
-									{typeof safeMaxAvgCat !== "undefined" &&
-										safeMaxAvgCat.cat && (
-											<div className="p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
-												<div className="flex items-center gap-2 mb-1">
-													<AssignmentIcon className="text-yellow-500 text-xs" />
-													<span className="font-medium text-card-foreground">
-														Handling Time Kategori
-													</span>
-												</div>
-												<div className="text-sm font-bold text-yellow-600 dark:text-yellow-400">
-													{safeMaxAvgCat.cat}: {safeMaxAvgCat.formattedAvg}
-												</div>
-											</div>
-										)}
+							<div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+								{/* Time Filter */}
+								<div className="scale-90 transform origin-right">
+									<TimeFilter
+										startMonth={startMonth}
+										setStartMonth={setStartMonth}
+										endMonth={endMonth}
+										setEndMonth={setEndMonth}
+										selectedYear={selectedYear}
+										setSelectedYear={setSelectedYear}
+										monthOptions={monthOptions}
+										allYearsInData={allYearsInData}
+										onRefresh={refresh}
+									/>
 								</div>
 
-								{/* Category Penetration */}
-								{typeof complaintPenetrationByCategory !== "undefined" && (
-									<div className="p-2 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg">
-										<div className="flex items-center justify-between mb-1">
-											<div className="flex items-center gap-1">
-												<TrackChangesIcon className="text-indigo-500 text-xs" />
-												<span className="font-semibold text-xs text-card-foreground">
-													Penetrasi Kategori
-												</span>
-											</div>
-											<Badge variant="info" className="text-indigo-600 text-xs">
-												Focus
-											</Badge>
-										</div>
-										<div className="text-sm font-bold text-indigo-600 dark:text-indigo-400 mb-0.5">
-											{complaintPenetrationByCategory.maxCategory}
-										</div>
-										<div className="text-xs text-muted-foreground">
-											{complaintPenetrationByCategory.maxValue}% penetrasi
-											komplain
-										</div>
-									</div>
-								)}
+								{/* Normalize Toggle */}
+								<div className="flex items-center gap-2">
+									<label className="inline-flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300 cursor-pointer select-none">
+										<input
+											type="checkbox"
+											checked={normalizePer1000}
+											onChange={(e) => setNormalizePer1000(e.target.checked)}
+											className="h-4 w-4 rounded border-gray-300 focus:ring-blue-500"
+										/>
+										<span className="text-sm font-medium">
+											Normalize per 1,000 clients
+										</span>
+									</label>
+								</div>
 							</div>
 						</div>
+					</div>
 
-						{/* Automated Recommendations */}
-						{insightCards && insightCards.length > 0 && (
-							<div className="mt-3 pt-3 border-t border-gray-200 dark:border-zinc-700">
-								<h3 className="text-sm font-semibold text-card-foreground mb-2">
-									Automated Recommendations
-								</h3>
-								<div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-									{insightCards.map((card, index) => (
-										<div
-											key={index}
-											className={`p-2 rounded-lg transition-all duration-200 ${card.type === "warning"
-												? "bg-red-50 dark:bg-red-900/20"
-												: card.type === "success"
-													? "bg-green-50 dark:bg-green-900/20"
-													: "bg-blue-50 dark:bg-blue-900/20"
-												}`}
-										>
-											<div className="flex items-start gap-1">
-												<span
-													className={`text-xs ${card.type === "warning"
-														? "text-red-500"
+					{/* Summary Cards - Top Row (4 cards) */}
+					<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+						{/* Total Tickets */}
+						<SummaryCard
+							icon={<ConfirmationNumberIcon className="w-6 h-6 text-white" />}
+							title="Total Tickets"
+							value={stats.find((s) => s.title === "Total Tickets")?.value || "0"}
+							description={
+								stats.find((s) => s.title === "Total Tickets")?.description || ""
+							}
+							iconBg="bg-blue-600"
+						/>
+
+						{/* Closed */}
+						<SummaryCard
+							icon={<CheckCircleIcon className="w-6 h-6 text-white" />}
+							title="Closed"
+							value={stats.find((s) => s.title === "Closed")?.value || "0"}
+							description={
+								stats.find((s) => s.title === "Closed")?.description || ""
+							}
+							iconBg="bg-green-600"
+						/>
+
+						{/* Open */}
+						<SummaryCard
+							icon={<ErrorOutlineIcon className="w-6 h-6 text-white" />}
+							title="Open"
+							value={stats.find((s) => s.title === "Open")?.value || "0"}
+							description={stats.find((s) => s.title === "Open")?.description || ""}
+							iconBg="bg-orange-500"
+						/>
+
+						{/* SLA Attainment */}
+						<SummaryCard
+							icon={<AccessTimeIcon className="w-6 h-6 text-white" />}
+							title="SLA Attainment"
+							value={`${advancedKpis.slaAttainment.toFixed(1)}%`}
+							description="Closed ≤ SLA target (by severity) di periode terpilih"
+							iconBg="bg-indigo-600"
+						/>
+					</div>
+
+					{/* Summary Cards - Second Row (4 cards) */}
+					<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+						{/* Overdue */}
+						<SummaryCard
+							icon={<AccessTimeIcon className="w-6 h-6 text-white" />}
+							title="Overdue"
+							value={stats.find((s) => s.title === "Overdue")?.value || "0"}
+							description={
+								stats.find((s) => s.title === "Overdue")?.description || ""
+							}
+							iconBg="bg-red-600"
+						/>
+
+						{/* Escalated */}
+						<SummaryCard
+							icon={<WarningAmberIcon className="w-6 h-6 text-white" />}
+							title="Escalated"
+							value={stats.find((s) => s.title === "Escalated")?.value || "0"}
+							description={
+								stats.find((s) => s.title === "Escalated")?.description || ""
+							}
+							iconBg="bg-yellow-500"
+						/>
+
+						{/* Close Rate (Periode) */}
+						<SummaryCard
+							icon={<CheckCircleIcon className="w-6 h-6 text-white" />}
+							title="Close Rate (Periode)"
+							value={`${advancedKpis.closeRatePeriod.toFixed(1)}%`}
+							description="Closed / total tiket yang DIBUKA di periode"
+							iconBg="bg-green-600"
+						/>
+
+						{/* Resolution Rate (Lifetime) */}
+						<SummaryCard
+							icon={<HowToRegIcon className="w-6 h-6 text-white" />}
+							title="Resolution Rate (Lifetime)"
+							value={`${advancedKpis.resolutionRateLifetime.toFixed(1)}%`}
+							description="Closed / total semua tiket (histori)"
+							iconBg="bg-slate-600"
+						/>
+					</div>
+
+					{/* Backlog Cards - Third Row (3 cards) */}
+					<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+						{(() => {
+							const now = new Date();
+							// Gunakan definisi yang sama dengan Open tickets (logika kompleks)
+							// Use standardized backlog calculation
+							const allTickets = Array.isArray(gridData) ? gridData : [];
+							const backlogStats = getBacklogStats(allTickets);
+
+							// Use standardized backlog age calculation
+							const backlogTickets = allTickets.filter(isBacklogTicket);
+							const agesH = backlogTickets
+								.map((t) => {
+									const open = parseDateSafe(t?.openTime);
+									return open ? (now.getTime() - open.getTime()) / 3_600_000 : null;
+								})
+								.filter((n) => Number.isFinite(n)) as number[];
+							const p50 = percentile(agesH, 0.5) ?? 0;
+							const p90 = percentile(agesH, 0.9) ?? 0;
+
+							return (
+								<>
+									<SummaryCard
+										icon={<ErrorOutlineIcon className="w-6 h-6 text-white" />}
+										title="Backlog (Open)"
+										value={backlogStats.backlog.toLocaleString()}
+										description="Tiket backlog berdasarkan status standar"
+										iconBg="bg-yellow-600"
+									/>
+									<SummaryCard
+										icon={<AccessTimeIcon className="w-6 h-6 text-white" />}
+										title="Backlog Age P50"
+										value={formatDurationHMS(p50)}
+										description="Median umur backlog (jam)"
+										iconBg="bg-sky-600"
+									/>
+									<SummaryCard
+										icon={<AccessTimeIcon className="w-6 h-6 text-white" />}
+										title="Backlog Age P90"
+										value={formatDurationHMS(p90)}
+										description="90% backlog lebih muda dari ini"
+										iconBg="bg-indigo-600"
+									/>
+								</>
+							);
+						})()}
+					</div>
+
+					{/* Automated Insights - Professional & Informative Design */}
+					{insights && (
+						<div className="mb-6">
+							<div className="bg-card text-card-foreground rounded-xl shadow-sm p-6">
+								<div className="flex items-center justify-between mb-4">
+									<div>
+										<h2 className="text-xl font-bold text-card-foreground">
+											Automated Insights
+										</h2>
+										<p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+											Real-time analysis based on ticket data and performance
+											metrics
+										</p>
+									</div>
+									<div className="flex items-center gap-2">
+										<div className="w-2 h-2 bg-green-500 rounded-full"></div>
+										<span className="text-sm text-gray-600 dark:text-gray-400 font-medium">
+											Live
+										</span>
+									</div>
+								</div>
+
+								<div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+									{/* Key Metrics */}
+									<div className="space-y-4">
+										<h3 className="text-lg font-semibold text-card-foreground border-b border-gray-200 dark:border-zinc-700 pb-2">
+											Key Metrics
+										</h3>
+
+										{/* Bulan tersibuk */}
+										{insights.busiestMonth && (
+											<div className="p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+												<div className="flex items-center justify-between mb-1">
+													<div className="flex items-center gap-1">
+														<BarChartIcon className="text-blue-500 text-xs" />
+														<span className="font-semibold text-xs text-card-foreground">
+															Bulan Tersibuk
+														</span>
+													</div>
+													<Badge variant="info" className="text-blue-600 text-xs">
+														Peak
+													</Badge>
+												</div>
+												<div className="text-sm font-bold text-blue-600 dark:text-blue-400 mb-0.5">
+													{insights.busiestMonth.label}
+												</div>
+												<div className="text-xs text-muted-foreground mb-0.5">
+													{insights.busiestMonth.count} tiket diproses
+												</div>
+												{insights.busiestMonth.trend && (
+													<div
+														className={`text-xs font-medium ${insights.busiestMonth.trend > 0
+															? "text-green-600 dark:text-green-400"
+															: "text-red-600 dark:text-red-400"
+															}`}
+													>
+														{insights.busiestMonth.trend > 0 ? (
+															<TrendingUpIcon className="w-3 h-3 inline mr-1" />
+														) : (
+															<TrendingDownIcon className="w-3 h-3 inline mr-1" />
+														)}{" "}
+														{Math.abs(insights.busiestMonth.trend)}% dari bulan
+														sebelumnya
+													</div>
+												)}
+											</div>
+										)}
+
+										{/* Kategori dominan */}
+										{insights.topCategory && (
+											<div className="p-2 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
+												<div className="flex items-center justify-between mb-1">
+													<div className="flex items-center gap-1">
+														<LabelIcon className="text-purple-500 text-xs" />
+														<span className="font-semibold text-xs text-card-foreground">
+															Kategori Dominan
+														</span>
+													</div>
+													<Badge variant="info" className="text-purple-600 text-xs">
+														Top
+													</Badge>
+												</div>
+												<div className="text-sm font-bold text-purple-600 dark:text-purple-400 mb-0.5">
+													{insights.topCategory.cat}
+												</div>
+												<div className="text-xs text-muted-foreground mb-0.5">
+													{insights.topCategory.count} tiket (
+													{(
+														(insights.topCategory.count /
+															(Array.isArray(gridData) ? gridData.length : 1)) *
+														100
+													).toFixed(1)}
+													% dari total)
+												</div>
+												{typeof insights.topCategory.trend === "number" && (
+													<div
+														className={`text-xs font-medium ${insights.topCategory.trend > 0
+															? "text-green-600 dark:text-green-400"
+															: "text-red-600 dark:text-red-400"
+															}`}
+													>
+														{insights.topCategory.trend > 0 ? (
+															<TrendingUpIcon className="w-3 h-3 inline mr-1" />
+														) : (
+															<TrendingDownIcon className="w-3 h-3 inline mr-1" />
+														)}{" "}
+														{Math.abs(insights.topCategory.trend).toFixed(1)}% tren{" "}
+														{insights.topCategory.trend > 0 ? "naik" : "turun"}
+													</div>
+												)}
+											</div>
+										)}
+
+										{/* Pelanggan kronis/ekstrem */}
+										{insights.chronicPercent && (
+											<div className="p-2 bg-orange-50 dark:bg-orange-900/20 rounded-lg">
+												<div className="flex items-center justify-between mb-1">
+													<div className="flex items-center gap-1">
+														<WarningIcon className="text-orange-500 text-xs" />
+														<span className="font-semibold text-xs text-card-foreground">
+															Pelanggan Kronis/Ekstrem
+														</span>
+													</div>
+													<Badge
+														variant="warning"
+														className="text-orange-600 text-xs"
+													>
+														Alert
+													</Badge>
+												</div>
+												<div className="text-sm font-bold text-orange-600 dark:text-orange-400 mb-0.5">
+													{insights.chronicPercent}%
+												</div>
+												<div className="text-xs text-muted-foreground">
+													Pelanggan dengan &gt;10 tiket (kategori Kronis/Ekstrem)
+												</div>
+											</div>
+										)}
+									</div>
+
+									{/* Performance Insights */}
+									<div className="space-y-2">
+										<h3 className="text-sm font-semibold text-card-foreground border-b border-gray-200 dark:border-zinc-700 pb-1">
+											Performance Insights
+										</h3>
+
+										{/* Complaint Penetration */}
+										{typeof complaintPenetrationByType !== "undefined" && (
+											<div className="p-2 bg-red-50 dark:bg-red-900/20 rounded-lg ">
+												<div className="flex items-center justify-between mb-1">
+													<div className="flex items-center gap-1">
+														<ShowChartIcon className="text-red-500 text-xs" />
+														<span className="font-semibold text-xs text-card-foreground">
+															Rasio Komplain Tertinggi
+														</span>
+													</div>
+													<Badge variant="danger" className="text-red-600 text-xs">
+														High
+													</Badge>
+												</div>
+												<div className="text-sm font-bold text-red-600 dark:text-red-400 mb-0.5">
+													{complaintPenetrationByType.maxType}
+												</div>
+												<div className="text-xs text-muted-foreground">
+													{complaintPenetrationByType.maxValue}% penetrasi komplain
+												</div>
+											</div>
+										)}
+
+										{/* Handling Time Insights */}
+										<div className="space-y-3">
+											{typeof safeMaxAvg !== "undefined" && safeMaxAvg.shift && (
+												<div className="p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
+													<div className="flex items-center gap-2 mb-1">
+														<AssignmentIcon className="text-yellow-500 text-xs" />
+														<span className="font-medium text-card-foreground">
+															Handling Time Shift
+														</span>
+													</div>
+													<div className="text-sm font-bold text-yellow-600 dark:text-yellow-400">
+														{safeMaxAvg.shift}: {safeMaxAvg.formattedAvg}
+													</div>
+												</div>
+											)}
+
+											{typeof safeMaxAvgCat !== "undefined" &&
+												safeMaxAvgCat.cat && (
+													<div className="p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
+														<div className="flex items-center gap-2 mb-1">
+															<AssignmentIcon className="text-yellow-500 text-xs" />
+															<span className="font-medium text-card-foreground">
+																Handling Time Kategori
+															</span>
+														</div>
+														<div className="text-sm font-bold text-yellow-600 dark:text-yellow-400">
+															{safeMaxAvgCat.cat}: {safeMaxAvgCat.formattedAvg}
+														</div>
+													</div>
+												)}
+										</div>
+
+										{/* Category Penetration */}
+										{typeof complaintPenetrationByCategory !== "undefined" && (
+											<div className="p-2 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg">
+												<div className="flex items-center justify-between mb-1">
+													<div className="flex items-center gap-1">
+														<TrackChangesIcon className="text-indigo-500 text-xs" />
+														<span className="font-semibold text-xs text-card-foreground">
+															Penetrasi Kategori
+														</span>
+													</div>
+													<Badge variant="info" className="text-indigo-600 text-xs">
+														Focus
+													</Badge>
+												</div>
+												<div className="text-sm font-bold text-indigo-600 dark:text-indigo-400 mb-0.5">
+													{complaintPenetrationByCategory.maxCategory}
+												</div>
+												<div className="text-xs text-muted-foreground">
+													{complaintPenetrationByCategory.maxValue}% penetrasi
+													komplain
+												</div>
+											</div>
+										)}
+									</div>
+								</div>
+
+								{/* Automated Recommendations */}
+								{insightCards && insightCards.length > 0 && (
+									<div className="mt-3 pt-3 border-t border-gray-200 dark:border-zinc-700">
+										<h3 className="text-sm font-semibold text-card-foreground mb-2">
+											Automated Recommendations
+										</h3>
+										<div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+											{insightCards.map((card, index) => (
+												<div
+													key={index}
+													className={`p-2 rounded-lg transition-all duration-200 ${card.type === "warning"
+														? "bg-red-50 dark:bg-red-900/20"
 														: card.type === "success"
-															? "text-green-500"
-															: "text-blue-500"
+															? "bg-green-50 dark:bg-green-900/20"
+															: "bg-blue-50 dark:bg-blue-900/20"
 														}`}
 												>
-													{card.icon}
-												</span>
-												<div className="flex-1">
-													<div className="flex items-center gap-1 mb-0.5">
-														<h4 className="font-semibold text-xs text-card-foreground">
-															{card.title}
-														</h4>
-														{card.badge && (
-															<Badge
-																variant={
-																	card.type === "warning"
-																		? "danger"
-																		: card.type === "success"
-																			? "success"
-																			: "info"
-																}
-																className="text-xs"
-															>
-																{card.badge}
-															</Badge>
-														)}
+													<div className="flex items-start gap-1">
+														<span
+															className={`text-xs ${card.type === "warning"
+																? "text-red-500"
+																: card.type === "success"
+																	? "text-green-500"
+																	: "text-blue-500"
+																}`}
+														>
+															{card.icon}
+														</span>
+														<div className="flex-1">
+															<div className="flex items-center gap-1 mb-0.5">
+																<h4 className="font-semibold text-xs text-card-foreground">
+																	{card.title}
+																</h4>
+																{card.badge && (
+																	<Badge
+																		variant={
+																			card.type === "warning"
+																				? "danger"
+																				: card.type === "success"
+																					? "success"
+																					: "info"
+																		}
+																		className="text-xs"
+																	>
+																		{card.badge}
+																	</Badge>
+																)}
+															</div>
+															<p className="text-xs text-muted-foreground leading-relaxed">
+																{card.description}
+															</p>
+														</div>
 													</div>
-													<p className="text-xs text-muted-foreground leading-relaxed">
-														{card.description}
-													</p>
 												</div>
-											</div>
+											))}
 										</div>
-									))}
-								</div>
+									</div>
+								)}
 							</div>
-						)}
-					</div>
-				</div>
-			)}
+						</div>
+					)}
 
-			{/* Export Buttons */}
-			<div className="flex gap-4 mb-8">
-				<PDFDownloadLink
-					document={
-						<Document>
-							<Page size="A4" style={pdfPageStyle}>
-								<View style={{ marginBottom: 16 }}>
-									<Text style={{ fontSize: 20, fontWeight: 700 }}>
-										Ticket Analytics Report
-									</Text>
-									<Text style={{ fontSize: 10, color: "#888", marginTop: 2 }}>
-										Exported: {new Date().toLocaleString()}
-									</Text>
-								</View>
-								{/* Summary Cards */}
-								<Text style={pdfSectionTitle}>Summary</Text>
-								<View style={{ flexDirection: "row", marginBottom: 18 }}>
-									{stats.slice(0, 5).map((s, i) => (
-										<View
-											key={i}
-											style={{
-												flex: 1,
-												marginRight: i < 4 ? 8 : 0,
-												backgroundColor: pdfSummaryCardColors[i]?.bg,
-												borderRadius: 8,
-												padding: 10,
-												minWidth: 90,
-												alignItems: "center",
-												justifyContent: "center",
-												border: `1px solid ${pdfSummaryCardColors[i]?.bg}`,
-											}}
-										>
-											<Text
-												style={{
-													fontSize: 12,
-													fontWeight: 700,
-													color: pdfSummaryCardColors[i]?.color,
-													marginBottom: 2,
-												}}
-											>
-												{s.title}
+					{/* Export Buttons */}
+					<div className="flex gap-4 mb-8">
+						<PDFDownloadLink
+							document={
+								<Document>
+									<Page size="A4" style={pdfPageStyle}>
+										<View style={{ marginBottom: 16 }}>
+											<Text style={{ fontSize: 20, fontWeight: 700 }}>
+												Ticket Analytics Report
 											</Text>
-											<Text
-												style={{
-													fontSize: 18,
-													fontWeight: 900,
-													color: pdfSummaryCardColors[i]?.color,
-												}}
-											>
-												{s.value}
-											</Text>
-											<Text
-												style={{
-													fontSize: 9,
-													color: "#666",
-													textAlign: "center",
-												}}
-											>
-												{s.description}
+											<Text style={{ fontSize: 10, color: "#888", marginTop: 2 }}>
+												Exported: {new Date().toLocaleString()}
 											</Text>
 										</View>
-									))}
-								</View>
-								{/* Automated Insights */}
-								{insights && (
-									<View style={{ marginBottom: 16 }}>
-										<Text style={pdfSectionTitle}>Automated Insights</Text>
-										{insights.busiestMonth && (
-											<Text style={{ fontSize: 10 }}>
-												Bulan tersibuk:{" "}
-												<Text style={{ color: "#0ea5e9", fontWeight: 700 }}>
-													{insights.busiestMonth.label}
-												</Text>{" "}
-												dengan{" "}
-												<Text style={{ color: "#0ea5e9", fontWeight: 700 }}>
-													{insights.busiestMonth.count}
-												</Text>{" "}
-												tiket
-												{insights.busiestMonth.trend && (
-													<Text style={{ color: "#16a34a", fontWeight: 700 }}>
-														{" "}
-														({insights.busiestMonth.trend > 0 ? "+" : ""}
-														{insights.busiestMonth.trend}% dari bulan
-														sebelumnya)
-													</Text>
-												)}
-												.
-											</Text>
-										)}
-										{insights.topCategory && (
-											<Text style={{ fontSize: 10 }}>
-												Kategori dominan:{" "}
-												<Text style={{ color: "#a21caf", fontWeight: 700 }}>
-													{insights.topCategory.cat}
-												</Text>{" "}
-												(
-												<Text style={{ color: "#a21caf", fontWeight: 700 }}>
-													{insights.topCategory.count}
-												</Text>{" "}
-												tiket)
-												{typeof insights.topCategory.trend === "number" && (
+										{/* Summary Cards */}
+										<Text style={pdfSectionTitle}>Summary</Text>
+										<View style={{ flexDirection: "row", marginBottom: 18 }}>
+											{stats.slice(0, 5).map((s, i) => (
+												<View
+													key={i}
+													style={{
+														flex: 1,
+														marginRight: i < 4 ? 8 : 0,
+														backgroundColor: pdfSummaryCardColors[i]?.bg,
+														borderRadius: 8,
+														padding: 10,
+														minWidth: 90,
+														alignItems: "center",
+														justifyContent: "center",
+														border: `1px solid ${pdfSummaryCardColors[i]?.bg}`,
+													}}
+												>
 													<Text
 														style={{
-															color:
-																insights.topCategory.trend > 0
-																	? "#16a34a"
-																	: "#dc2626",
+															fontSize: 12,
 															fontWeight: 700,
+															color: pdfSummaryCardColors[i]?.color,
+															marginBottom: 2,
 														}}
 													>
-														, tren{" "}
-														{insights.topCategory.trend > 0 ? "naik" : "turun"}{" "}
-														{Math.abs(insights.topCategory.trend).toFixed(1)}%
+														{s.title}
+													</Text>
+													<Text
+														style={{
+															fontSize: 18,
+															fontWeight: 900,
+															color: pdfSummaryCardColors[i]?.color,
+														}}
+													>
+														{s.value}
+													</Text>
+													<Text
+														style={{
+															fontSize: 9,
+															color: "#666",
+															textAlign: "center",
+														}}
+													>
+														{s.description}
+													</Text>
+												</View>
+											))}
+										</View>
+										{/* Automated Insights */}
+										{insights && (
+											<View style={{ marginBottom: 16 }}>
+												<Text style={pdfSectionTitle}>Automated Insights</Text>
+												{insights.busiestMonth && (
+													<Text style={{ fontSize: 10 }}>
+														Bulan tersibuk:{" "}
+														<Text style={{ color: "#0ea5e9", fontWeight: 700 }}>
+															{insights.busiestMonth.label}
+														</Text>{" "}
+														dengan{" "}
+														<Text style={{ color: "#0ea5e9", fontWeight: 700 }}>
+															{insights.busiestMonth.count}
+														</Text>{" "}
+														tiket
+														{insights.busiestMonth.trend && (
+															<Text style={{ color: "#16a34a", fontWeight: 700 }}>
+																{" "}
+																({insights.busiestMonth.trend > 0 ? "+" : ""}
+																{insights.busiestMonth.trend}% dari bulan
+																sebelumnya)
+															</Text>
+														)}
+														.
 													</Text>
 												)}
-												.
-											</Text>
-										)}
-										{insights.chronicPercent && (
-											<Text style={{ fontSize: 10 }}>
-												<Text style={{ color: "#f59e42", fontWeight: 700 }}>
-													{insights.chronicPercent}%
-												</Text>{" "}
-												pelanggan termasuk kategori Kronis/Ekstrem (lebih dari
-												10 tiket).
-											</Text>
-										)}
-									</View>
-								)}
-								{/* Ticket per Shift Table (per bulan) */}
-								<Text style={pdfSectionTitle}>
-									Ticket per Shift (per Month)
-								</Text>
-								<View
-									style={{
-										flexDirection: "row",
-										borderBottom: "1px solid #38bdf8",
-									}}
-								>
-									<Text style={pdfTableHeaderStyleColor}>Month</Text>
-									<Text style={pdfTableHeaderStyleColor}>Pagi</Text>
-									<Text style={pdfTableHeaderStyleColor}>Sore</Text>
-									<Text style={pdfTableHeaderStyleColor}>Malam</Text>
-								</View>
-								{(() => {
-									const monthMap = {};
-									(Array.isArray(gridData) ? gridData : []).forEach((t) => {
-										if (!t.openTime) return;
-										const d = new Date(t.openTime);
-										if (isNaN(d.getTime())) return;
-										const month = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-										if (!monthMap[month])
-											monthMap[month] = { Pagi: 0, Sore: 0, Malam: 0 };
-										const shift = getShift(t.openTime);
-										if (monthMap[month][shift] !== undefined)
-											monthMap[month][shift] += 1;
-									});
-									const months = Object.keys(monthMap).sort((a, b) => new Date(a + "-01").getTime() - new Date(b + "-01").getTime());
-									return months.map((month, idx) => (
-										<View
-											key={month}
-											style={{
-												flexDirection: "row",
-												...(idx % 2 === 0
-													? pdfTableRowEvenColor
-													: pdfTableRowOddColor),
-											}}
-										>
-											<Text style={pdfTableCellStyle}>{month}</Text>
-											<Text style={pdfTableCellStyle}>
-												{monthMap[month].Pagi}
-											</Text>
-											<Text style={pdfTableCellStyle}>
-												{monthMap[month].Sore}
-											</Text>
-											<Text style={pdfTableCellStyle}>
-												{monthMap[month].Malam}
-											</Text>
-										</View>
-									));
-								})()}
-								{/* Ticket per Month Table (total) */}
-								<Text style={pdfSectionTitle}>Ticket per Month (Total)</Text>
-								<View
-									style={{
-										flexDirection: "row",
-										borderBottom: "1px solid #38bdf8",
-									}}
-								>
-									<Text style={pdfTableHeaderStyleColor}>Month</Text>
-									<Text style={pdfTableHeaderStyleColor}>Total Tickets</Text>
-								</View>
-								{(() => {
-									const monthMap = {};
-									(Array.isArray(gridData) ? gridData : []).forEach((t) => {
-										if (!t.openTime) return;
-										const d = new Date(t.openTime);
-										if (isNaN(d.getTime())) return;
-										const month = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-										if (!monthMap[month]) monthMap[month] = 0;
-										monthMap[month] += 1;
-									});
-									const months = Object.keys(monthMap).sort((a, b) => new Date(a + "-01").getTime() - new Date(b + "-01").getTime());
-									return months.map((month, idx) => (
-										<View
-											key={month}
-											style={{
-												flexDirection: "row",
-												...(idx % 2 === 0
-													? pdfTableRowEvenColor
-													: pdfTableRowOddColor),
-											}}
-										>
-											<Text style={pdfTableCellStyle}>{month}</Text>
-											<Text style={pdfTableCellStyle}>{monthMap[month]}</Text>
-										</View>
-									));
-								})()}
-								{/* Shift Breakdown Table */}
-								<Text style={pdfSectionTitle}>Shift Breakdown (Total)</Text>
-								<View
-									style={{
-										flexDirection: "row",
-										borderBottom: "1px solid #38bdf8",
-									}}
-								>
-									<Text style={pdfTableHeaderStyleColor}>Shift</Text>
-									<Text style={pdfTableHeaderStyleColor}>Tickets</Text>
-								</View>
-								{(() => {
-									const shiftCount = { Pagi: 0, Sore: 0, Malam: 0, Unknown: 0 };
-									(Array.isArray(gridData) ? gridData : []).forEach((t) => {
-										const shift = getShift(t.openTime);
-										shiftCount[shift] = (shiftCount[shift] || 0) + 1;
-									});
-									return Object.entries(shiftCount)
-										.filter(([shift]) => shift !== "Unknown")
-										.map(([shift, count], idx) => (
-											<View
-												key={shift}
-												style={{
-													flexDirection: "row",
-													...(idx % 2 === 0
-														? pdfTableRowEvenColor
-														: pdfTableRowOddColor),
-												}}
-											>
-												<Text style={pdfTableCellStyle}>{shift}</Text>
-												<Text style={pdfTableCellStyle}>{count}</Text>
-											</View>
-										));
-								})()}
-								{/* Ticket List (first 20) */}
-								<Text style={pdfSectionTitle}>Ticket List (first 20)</Text>
-								<View
-									style={{
-										border: "1px solid #38bdf8",
-										borderRadius: 6,
-										overflow: "hidden",
-										marginBottom: 10,
-									}}
-								>
-									{/* Header */}
-									<View
-										style={{
-											flexDirection: "row",
-											backgroundColor: "#38bdf8",
-											borderBottom: "1px solid #38bdf8",
-										}}
-									>
-										<Text
-											style={{
-												...pdfTableHeaderStyleColor,
-												flex: 2,
-												borderRight: "1px solid #38bdf8",
-											}}
-										>
-											Subject
-										</Text>
-										<Text
-											style={{
-												...pdfTableHeaderStyleColor,
-												flex: 1,
-												borderRight: "1px solid #38bdf8",
-											}}
-										>
-											Agent
-										</Text>
-										<Text
-											style={{
-												...pdfTableHeaderStyleColor,
-												flex: 1,
-												borderRight: "1px solid #38bdf8",
-											}}
-										>
-											Customer
-										</Text>
-										<Text
-											style={{
-												...pdfTableHeaderStyleColor,
-												flex: 1.5,
-												borderRight: "1px solid #38bdf8",
-											}}
-										>
-											Open Time
-										</Text>
-										<Text style={{ ...pdfTableHeaderStyleColor, flex: 1 }}>
-											Status
-										</Text>
-									</View>
-									{/* Rows */}
-									{(Array.isArray(gridData) ? gridData.slice(0, 20) : []).map(
-										(t, i) => (
-											<View
-												key={i}
-												style={{
-													flexDirection: "row",
-													...(i % 2 === 0
-														? pdfTableRowEvenColor
-														: pdfTableRowOddColor),
-													borderBottom: "1px solid #bae6fd",
-												}}
-											>
-												<Text
-													style={{
-														...pdfTableCellStyle,
-														flex: 2,
-														borderRight: "1px solid #e0f2fe",
-													}}
-												>
-													{t.description && t.description.trim()
-														? t.description
-														: "-"}
-												</Text>
-												<Text
-													style={{
-														...pdfTableCellStyle,
-														flex: 1,
-														borderRight: "1px solid #e0f2fe",
-													}}
-												>
-													{t.openBy && t.openBy.trim() ? t.openBy : "-"}
-												</Text>
-												<Text
-													style={{
-														...pdfTableCellStyle,
-														flex: 1,
-														borderRight: "1px solid #e0f2fe",
-													}}
-												>
-													{t.name && t.name.trim()
-														? t.name
-														: t.customerId || "-"}
-												</Text>
-												<Text
-													style={{
-														...pdfTableCellStyle,
-														flex: 1.5,
-														borderRight: "1px solid #e0f2fe",
-													}}
-												>
-													{t.openTime ? t.openTime.replace("T", " ") : "-"}
-												</Text>
-												<Text style={{ ...pdfTableCellStyle, flex: 1 }}>
-													<Text style={pdfStatusBadge(t.status)}>
-														{t.status || "-"}
+												{insights.topCategory && (
+													<Text style={{ fontSize: 10 }}>
+														Kategori dominan:{" "}
+														<Text style={{ color: "#a21caf", fontWeight: 700 }}>
+															{insights.topCategory.cat}
+														</Text>{" "}
+														(
+														<Text style={{ color: "#a21caf", fontWeight: 700 }}>
+															{insights.topCategory.count}
+														</Text>{" "}
+														tiket)
+														{typeof insights.topCategory.trend === "number" && (
+															<Text
+																style={{
+																	color:
+																		insights.topCategory.trend > 0
+																			? "#16a34a"
+																			: "#dc2626",
+																	fontWeight: 700,
+																}}
+															>
+																, tren{" "}
+																{insights.topCategory.trend > 0 ? "naik" : "turun"}{" "}
+																{Math.abs(insights.topCategory.trend).toFixed(1)}%
+															</Text>
+														)}
+														.
 													</Text>
-												</Text>
+												)}
+												{insights.chronicPercent && (
+													<Text style={{ fontSize: 10 }}>
+														<Text style={{ color: "#f59e42", fontWeight: 700 }}>
+															{insights.chronicPercent}%
+														</Text>{" "}
+														pelanggan termasuk kategori Kronis/Ekstrem (lebih dari
+														10 tiket).
+													</Text>
+												)}
 											</View>
-										),
-									)}
-								</View>
-							</Page>
-						</Document>
-					}
-					fileName="ticket-analytics-report.pdf"
-				>
-					{({ loading }) => (
-						<button className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg shadow-sm transition-colors duration-200">
-							{loading ? "Preparing PDF..." : "Export PDF"}
-						</button>
-					)}
-				</PDFDownloadLink>
-				<button
-					className="bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-6 rounded-lg shadow-sm transition-colors duration-200"
-					onClick={handleExportCSV}
-				>
-					Export CSV
-				</button>
-			</div>
-
-			{/* --- Agent Ticket per Shift Chart (Area) --- */}
-
-			{/* --- ANALYTICS CARDS GRID --- */}
-			<div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-10 w-full">
-				{/* 1. Tickets per Month */}
-				<Card className="bg-card text-card-foreground rounded-2xl shadow-lg">
-					<CardHeader>
-						<CardTitle className="flex items-center gap-2">
-							<ShowChartIcon className="w-5 h-5 text-green-600" />
-							<CardHeaderTitle className="text-base md:text-lg">
-								Tickets per Month
-							</CardHeaderTitle>
-						</CardTitle>
-						<CardHeaderDescription className="text-xs">
-							Monthly ticket volume trends
-						</CardHeaderDescription>
-					</CardHeader>
-					<CardContent className="pt-2 h-auto flex flex-col gap-4 min-w-0">
-						<div className="w-full h-[300px] min-w-0">
-							<ResponsiveContainer width="100%" height={300}>
-								<AreaChart
-									data={toRechartsData(
-										monthlyStatsData.labels,
-										monthlyStatsData.datasets,
-									)}
-									margin={{ top: 20, right: 30, left: 0, bottom: 0 }}
-								>
-									<defs>
-										<linearGradient
-											id="colorIncoming"
-											x1="0"
-											y1="0"
-											x2="0"
-											y2="1"
+										)}
+										{/* Ticket per Shift Table (per bulan) */}
+										<Text style={pdfSectionTitle}>
+											Ticket per Shift (per Month)
+										</Text>
+										<View
+											style={{
+												flexDirection: "row",
+												borderBottom: "1px solid #38bdf8",
+											}}
 										>
-											<stop offset="5%" stopColor="#6366F1" stopOpacity={0.6} />
-											<stop
-												offset="95%"
-												stopColor="#6366F1"
-												stopOpacity={0.05}
-											/>
-										</linearGradient>
-										<linearGradient
-											id="colorClosed"
-											x1="0"
-											y1="0"
-											x2="0"
-											y2="1"
-										>
-											<stop offset="5%" stopColor="#EC4899" stopOpacity={0.6} />
-											<stop
-												offset="95%"
-												stopColor="#EC4899"
-												stopOpacity={0.05}
-											/>
-										</linearGradient>
-									</defs>
-									<XAxis
-										dataKey="label"
-										tickLine={false}
-										axisLine={false}
-										tickMargin={12}
-										minTickGap={24}
-										tick={{
-											fill: "hsl(var(--muted-foreground))",
-											fontSize: 11,
-											fontWeight: 500,
-										}}
-									/>
-									<YAxis
-										tickLine={false}
-										axisLine={false}
-										tickMargin={12}
-										minTickGap={24}
-										tick={{
-											fill: "hsl(var(--muted-foreground))",
-											fontSize: 11,
-											fontWeight: 500,
-										}}
-									/>
-									<CartesianGrid
-										strokeDasharray="3 3"
-										vertical={false}
-										stroke="hsl(var(--border))"
-										opacity={0.3}
-									/>
-									<RechartsTooltip content={<TicketAnalyticsTooltip />} />
-									<RechartsLegend
-										wrapperStyle={{ fontSize: "11px", fontWeight: "500" }}
-									/>
-									{/* Area harus incoming dulu, lalu closed, dan dataKey case sensitive */}
-									<Area
-										type="monotone"
-										dataKey="incoming"
-										stroke="#6366F1"
-										fill="url(#colorIncoming)"
-										name="Incoming"
-										strokeWidth={1.5}
-									/>
-									<Area
-										type="monotone"
-										dataKey="closed"
-										stroke="#EC4899"
-										fill="url(#colorClosed)"
-										name="Closed"
-										strokeWidth={1.5}
-									/>
-								</AreaChart>
-							</ResponsiveContainer>
-						</div>
-						{/* Table */}
-						<div className="overflow-x-auto w-full">
-							<h4 className="text-sm font-semibold text-card-foreground mb-3">
-								Monthly Ticket Values
-							</h4>
-							<table className="w-full text-xs border-collapse">
-								<thead>
-									<tr className="border-b border-border">
-										<th className="text-left p-2 font-medium text-muted-foreground">
-											Type
-										</th>
-										{monthlyStatsData.labels.map((month) => (
-											<th
-												key={month}
-												className="text-center p-2 font-medium text-muted-foreground"
-											>
-												{month}
-											</th>
-										))}
-									</tr>
-								</thead>
-								<tbody>
-									<tr className="border-b border-border hover:bg-muted/50">
-										<td
-											className="p-2 font-medium text-card-foreground"
-											style={{ color: "#EC4899" }}
-										>
-											Closed
-										</td>
-										{monthlyStatsData.labels.map((month, idx) => (
-											<td
-												key={month}
-												className="text-center p-2 text-card-foreground"
-											>
-												{monthlyStatsData.datasets[0]?.data[idx] ?? 0}
-											</td>
-										))}
-									</tr>
-									<tr className="border-b border-border hover:bg-muted/50">
-										<td
-											className="p-2 font-medium text-card-foreground"
-											style={{ color: "#6366F1" }}
-										>
-											Incoming
-										</td>
-										{monthlyStatsData.labels.map((month, idx) => (
-											<td
-												key={month}
-												className="text-center p-2 text-card-foreground"
-											>
-												{monthlyStatsData.datasets[1]?.data[idx] ?? 0}
-											</td>
-										))}
-									</tr>
-								</tbody>
-							</table>
-						</div>
-					</CardContent>
-				</Card>
-				{/* 2. Agent Tickets per Shift */}
-				<Card className="bg-card text-card-foreground rounded-2xl shadow-lg">
-					<CardHeader>
-						<CardTitle className="flex items-center gap-2">
-							<ShowChartIcon className="w-5 h-5 text-blue-600" />
-							<CardHeaderTitle className="text-base md:text-lg">
-								Agent Tickets per Shift
-							</CardHeaderTitle>
-						</CardTitle>
-						<CardHeaderDescription className="text-xs">
-							Ticket distribution across different shifts
-						</CardHeaderDescription>
-					</CardHeader>
-					<CardContent className="pt-2 h-auto flex flex-col gap-4 min-w-0">
-						<div className="w-full h-[300px] min-w-0">
-							<ResponsiveContainer width="100%" height={300}>
-								<AreaChart
-									data={agentShiftAreaData}
-									margin={{ top: 20, right: 30, left: 0, bottom: 0 }}
-								>
-									<defs>
-										<linearGradient id="colorMalam" x1="0" y1="0" x2="0" y2="1">
-											<stop offset="5%" stopColor="#ef4444" stopOpacity={0.6} />
-											<stop
-												offset="95%"
-												stopColor="#ef4444"
-												stopOpacity={0.05}
-											/>
-										</linearGradient>
-										<linearGradient id="colorPagi" x1="0" y1="0" x2="0" y2="1">
-											<stop offset="5%" stopColor="#22c55e" stopOpacity={0.6} />
-											<stop
-												offset="95%"
-												stopColor="#22c55e"
-												stopOpacity={0.05}
-											/>
-										</linearGradient>
-										<linearGradient id="colorSore" x1="0" y1="0" x2="0" y2="1">
-											<stop offset="5%" stopColor="#3b82f6" stopOpacity={0.6} />
-											<stop
-												offset="95%"
-												stopColor="#3b82f6"
-												stopOpacity={0.05}
-											/>
-										</linearGradient>
-									</defs>
-									<XAxis
-										dataKey="month"
-										tickLine={false}
-										axisLine={false}
-										tickMargin={12}
-										minTickGap={24}
-										tick={{
-											fill: "hsl(var(--muted-foreground))",
-											fontSize: 11,
-											fontWeight: 500,
-										}}
-									/>
-									<YAxis
-										tickLine={false}
-										axisLine={false}
-										tickMargin={12}
-										minTickGap={24}
-										allowDecimals={false}
-										tick={{
-											fill: "hsl(var(--muted-foreground))",
-											fontSize: 11,
-											fontWeight: 500,
-										}}
-									/>
-									<CartesianGrid
-										strokeDasharray="3 3"
-										vertical={false}
-										stroke="hsl(var(--border))"
-										opacity={0.3}
-									/>
-									<RechartsTooltip content={<TicketAnalyticsTooltip />} />
-									<RechartsLegend
-										wrapperStyle={{ fontSize: "11px", fontWeight: "500" }}
-									/>
-									<Area
-										type="monotone"
-										dataKey="Malam"
-										stroke="#ef4444"
-										fill="url(#colorMalam)"
-										name="Malam (01:00–07:59)"
-										strokeWidth={1.5}
-									/>
-									<Area
-										type="monotone"
-										dataKey="Pagi"
-										stroke="#22c55e"
-										fill="url(#colorPagi)"
-										name="Pagi (08:00–16:59)"
-										strokeWidth={1.5}
-									/>
-									<Area
-										type="monotone"
-										dataKey="Sore"
-										stroke="#3b82f6"
-										fill="url(#colorSore)"
-										name="Sore (00:00–00:59 & 17:00–23:59)"
-										strokeWidth={1.5}
-									/>
-								</AreaChart>
-							</ResponsiveContainer>
-						</div>
-						{/* Table */}
-						<div className="overflow-x-auto w-full">
-							<h4 className="text-sm font-semibold text-card-foreground mb-3">
-								Monthly Shift Values
-							</h4>
-							<table className="w-full text-xs border-collapse">
-								<thead>
-									<tr className="border-b border-border">
-										<th className="text-left p-2 font-medium text-muted-foreground">
-											Shift
-										</th>
-										{agentShiftAreaData.map((row) => (
-											<th
-												key={row.month}
-												className="text-center p-2 font-medium text-muted-foreground"
-											>
-												{row.month}
-											</th>
-										))}
-									</tr>
-								</thead>
-								<tbody>
-									<tr className="border-b border-border hover:bg-muted/50">
-										<td
-											className="p-2 font-medium text-card-foreground"
-											style={{ color: "#22c55e" }}
-										>
-											Pagi
-										</td>
-										{agentShiftAreaData.map((row) => (
-											<td
-												key={row.month}
-												className="text-center p-2 text-card-foreground"
-											>
-												{row.Pagi}
-											</td>
-										))}
-									</tr>
-									<tr className="border-b border-border hover:bg-muted/50">
-										<td
-											className="p-2 font-medium text-card-foreground"
-											style={{ color: "#3b82f6" }}
-										>
-											Sore
-										</td>
-										{agentShiftAreaData.map((row) => (
-											<td
-												key={row.month}
-												className="text-center p-2 text-card-foreground"
-											>
-												{row.Sore}
-											</td>
-										))}
-									</tr>
-									<tr className="border-b border-border hover:bg-muted/50">
-										<td
-											className="p-2 font-medium text-card-foreground"
-											style={{ color: "#ef4444" }}
-										>
-											Malam
-										</td>
-										{agentShiftAreaData.map((row) => (
-											<td
-												key={row.month}
-												className="text-center p-2 text-card-foreground"
-											>
-												{row.Malam}
-											</td>
-										))}
-									</tr>
-								</tbody>
-							</table>
-						</div>
-					</CardContent>
-				</Card>
-				{/* 3. Tickets by Client Type */}
-				<Card className="bg-card text-card-foreground rounded-2xl shadow-lg">
-					<CardHeader>
-						<CardTitle className="flex items-center gap-2">
-							<ShowChartIcon className="w-5 h-5 text-purple-600" />
-							<CardHeaderTitle className="text-base md:text-lg">
-								Tickets by Client Type
-							</CardHeaderTitle>
-						</CardTitle>
-						<CardHeaderDescription className="text-xs">
-							Monthly ticket distribution by client type
-						</CardHeaderDescription>
-					</CardHeader>
-					<CardContent>
-						<ResponsiveContainer width="100%" height={300}>
-							<AreaChart
-								data={(() => {
-									const months = Object.keys(tiketPerJenisKlienPerBulan).sort((a, b) => new Date(a + "-01").getTime() - new Date(b + "-01").getTime());
-									return months.map((month) => {
-										const row: any = { month };
-										jenisKlienList.forEach((jk) => {
-											const tickets =
-												tiketPerJenisKlienPerBulan[month]?.[jk] || 0;
-											if (normalizePer1000) {
-												const denom =
-													customerMonthRowCountByType.get(month)?.[jk] || 0;
-												row[jk] =
-													denom > 0
-														? +((tickets / denom) * 1000).toFixed(2)
-														: 0;
-											} else {
-												row[jk] = tickets;
-											}
-										});
-										return row;
-									});
-								})()}
-								margin={{ top: 20, right: 30, left: 0, bottom: 0 }}
-							>
-								<defs>
-									<linearGradient
-										id="colorBroadband"
-										x1="0"
-										y1="0"
-										x2="0"
-										y2="1"
-									>
-										<stop offset="5%" stopColor="#3b82f6" stopOpacity={0.6} />
-										<stop offset="95%" stopColor="#3b82f6" stopOpacity={0.05} />
-									</linearGradient>
-									<linearGradient
-										id="colorBroadbandBusiness"
-										x1="0"
-										y1="0"
-										x2="0"
-										y2="1"
-									>
-										<stop offset="5%" stopColor="#22c55e" stopOpacity={0.6} />
-										<stop offset="95%" stopColor="#22c55e" stopOpacity={0.05} />
-									</linearGradient>
-									<linearGradient
-										id="colorDedicated"
-										x1="0"
-										y1="0"
-										x2="0"
-										y2="1"
-									>
-										<stop offset="5%" stopColor="#f59e42" stopOpacity={0.6} />
-										<stop offset="95%" stopColor="#f59e42" stopOpacity={0.05} />
-									</linearGradient>
-								</defs>
-								<XAxis
-									dataKey="month"
-									tickLine={false}
-									axisLine={false}
-									tickMargin={12}
-									minTickGap={24}
-									tick={{
-										fill: "hsl(var(--muted-foreground))",
-										fontSize: 11,
-										fontWeight: 500,
-									}}
-								/>
-								<YAxis
-									tickLine={false}
-									axisLine={false}
-									tickMargin={12}
-									minTickGap={24}
-									allowDecimals={false}
-									tick={{
-										fill: "hsl(var(--muted-foreground))",
-										fontSize: 11,
-										fontWeight: 500,
-									}}
-								/>
-								<CartesianGrid
-									strokeDasharray="3 3"
-									vertical={false}
-									stroke="hsl(var(--border))"
-									opacity={0.3}
-								/>
-								<RechartsTooltip content={<TicketAnalyticsTooltip />} />
-								<RechartsLegend
-									wrapperStyle={{ fontSize: "11px", fontWeight: "500" }}
-								/>
-								<Area
-									type="monotone"
-									dataKey="Broadband"
-									stroke="#3b82f6"
-									fill="url(#colorBroadband)"
-									name="Broadband"
-									strokeWidth={1.5}
-								/>
-								<Area
-									type="monotone"
-									dataKey="Broadband Business"
-									stroke="#22c55e"
-									fill="url(#colorBroadbandBusiness)"
-									name="Broadband Business"
-									strokeWidth={1.5}
-								/>
-								<Area
-									type="monotone"
-									dataKey="Dedicated"
-									stroke="#f59e42"
-									fill="url(#colorDedicated)"
-									name="Dedicated"
-									strokeWidth={1.5}
-								/>
-							</AreaChart>
-						</ResponsiveContainer>
-						{/* Table */}
-						<div className="overflow-x-auto w-full">
-							<h4 className="text-sm font-semibold text-card-foreground mb-3">
-								Monthly Client Type Values
-							</h4>
-							<table className="w-full text-xs border-collapse">
-								<thead>
-									<tr className="border-b border-border">
-										<th className="text-left p-2 font-medium text-muted-foreground">
-											Client Type
-										</th>
-										{Object.keys(tiketPerJenisKlienPerBulan)
-											.sort((a, b) => new Date(a + "-01").getTime() - new Date(b + "-01").getTime())
-											.map((month) => (
-												<th
+											<Text style={pdfTableHeaderStyleColor}>Month</Text>
+											<Text style={pdfTableHeaderStyleColor}>Pagi</Text>
+											<Text style={pdfTableHeaderStyleColor}>Sore</Text>
+											<Text style={pdfTableHeaderStyleColor}>Malam</Text>
+										</View>
+										{(() => {
+											const monthMap = {};
+											(Array.isArray(gridData) ? gridData : []).forEach((t) => {
+												if (!t.openTime) return;
+												const d = new Date(t.openTime);
+												if (isNaN(d.getTime())) return;
+												const month = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+												if (!monthMap[month])
+													monthMap[month] = { Pagi: 0, Sore: 0, Malam: 0 };
+												const shift = getShift(t.openTime);
+												if (monthMap[month][shift] !== undefined)
+													monthMap[month][shift] += 1;
+											});
+											const months = Object.keys(monthMap).sort((a, b) => new Date(a + "-01").getTime() - new Date(b + "-01").getTime());
+											return months.map((month, idx) => (
+												<View
 													key={month}
-													className="text-center p-2 font-medium text-muted-foreground"
+													style={{
+														flexDirection: "row",
+														...(idx % 2 === 0
+															? pdfTableRowEvenColor
+															: pdfTableRowOddColor),
+													}}
 												>
-													{month}
-												</th>
-											))}
-									</tr>
-								</thead>
-								<tbody>
-									{jenisKlienList.map((jk) => (
-										<tr
-											key={jk}
-											className="border-b border-border hover:bg-muted/50"
+													<Text style={pdfTableCellStyle}>{month}</Text>
+													<Text style={pdfTableCellStyle}>
+														{monthMap[month].Pagi}
+													</Text>
+													<Text style={pdfTableCellStyle}>
+														{monthMap[month].Sore}
+													</Text>
+													<Text style={pdfTableCellStyle}>
+														{monthMap[month].Malam}
+													</Text>
+												</View>
+											));
+										})()}
+										{/* Ticket per Month Table (total) */}
+										<Text style={pdfSectionTitle}>Ticket per Month (Total)</Text>
+										<View
+											style={{
+												flexDirection: "row",
+												borderBottom: "1px solid #38bdf8",
+											}}
 										>
-											<td
-												className="p-2 font-medium text-card-foreground"
+											<Text style={pdfTableHeaderStyleColor}>Month</Text>
+											<Text style={pdfTableHeaderStyleColor}>Total Tickets</Text>
+										</View>
+										{(() => {
+											const monthMap = {};
+											(Array.isArray(gridData) ? gridData : []).forEach((t) => {
+												if (!t.openTime) return;
+												const d = new Date(t.openTime);
+												if (isNaN(d.getTime())) return;
+												const month = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+												if (!monthMap[month]) monthMap[month] = 0;
+												monthMap[month] += 1;
+											});
+											const months = Object.keys(monthMap).sort((a, b) => new Date(a + "-01").getTime() - new Date(b + "-01").getTime());
+											return months.map((month, idx) => (
+												<View
+													key={month}
+													style={{
+														flexDirection: "row",
+														...(idx % 2 === 0
+															? pdfTableRowEvenColor
+															: pdfTableRowOddColor),
+													}}
+												>
+													<Text style={pdfTableCellStyle}>{month}</Text>
+													<Text style={pdfTableCellStyle}>{monthMap[month]}</Text>
+												</View>
+											));
+										})()}
+										{/* Shift Breakdown Table */}
+										<Text style={pdfSectionTitle}>Shift Breakdown (Total)</Text>
+										<View
+											style={{
+												flexDirection: "row",
+												borderBottom: "1px solid #38bdf8",
+											}}
+										>
+											<Text style={pdfTableHeaderStyleColor}>Shift</Text>
+											<Text style={pdfTableHeaderStyleColor}>Tickets</Text>
+										</View>
+										{(() => {
+											const shiftCount = { Pagi: 0, Sore: 0, Malam: 0, Unknown: 0 };
+											(Array.isArray(gridData) ? gridData : []).forEach((t) => {
+												const shift = getShift(t.openTime);
+												shiftCount[shift] = (shiftCount[shift] || 0) + 1;
+											});
+											return Object.entries(shiftCount)
+												.filter(([shift]) => shift !== "Unknown")
+												.map(([shift, count], idx) => (
+													<View
+														key={shift}
+														style={{
+															flexDirection: "row",
+															...(idx % 2 === 0
+																? pdfTableRowEvenColor
+																: pdfTableRowOddColor),
+														}}
+													>
+														<Text style={pdfTableCellStyle}>{shift}</Text>
+														<Text style={pdfTableCellStyle}>{count}</Text>
+													</View>
+												));
+										})()}
+										{/* Ticket List (first 20) */}
+										<Text style={pdfSectionTitle}>Ticket List (first 20)</Text>
+										<View
+											style={{
+												border: "1px solid #38bdf8",
+												borderRadius: 6,
+												overflow: "hidden",
+												marginBottom: 10,
+											}}
+										>
+											{/* Header */}
+											<View
 												style={{
-													color:
-														jk === "Broadband"
-															? "#3b82f6"
-															: jk === "Broadband Business"
-																? "#22c55e"
-																: "#f59e42",
+													flexDirection: "row",
+													backgroundColor: "#38bdf8",
+													borderBottom: "1px solid #38bdf8",
 												}}
 											>
-												{jk}
-											</td>
-											{Object.keys(tiketPerJenisKlienPerBulan)
-												.sort((a, b) => new Date(a + "-01").getTime() - new Date(b + "-01").getTime())
-												.map((month) => {
+												<Text
+													style={{
+														...pdfTableHeaderStyleColor,
+														flex: 2,
+														borderRight: "1px solid #38bdf8",
+													}}
+												>
+													Subject
+												</Text>
+												<Text
+													style={{
+														...pdfTableHeaderStyleColor,
+														flex: 1,
+														borderRight: "1px solid #38bdf8",
+													}}
+												>
+													Agent
+												</Text>
+												<Text
+													style={{
+														...pdfTableHeaderStyleColor,
+														flex: 1,
+														borderRight: "1px solid #38bdf8",
+													}}
+												>
+													Customer
+												</Text>
+												<Text
+													style={{
+														...pdfTableHeaderStyleColor,
+														flex: 1.5,
+														borderRight: "1px solid #38bdf8",
+													}}
+												>
+													Open Time
+												</Text>
+												<Text style={{ ...pdfTableHeaderStyleColor, flex: 1 }}>
+													Status
+												</Text>
+											</View>
+											{/* Rows */}
+											{(Array.isArray(gridData) ? gridData.slice(0, 20) : []).map(
+												(t, i) => (
+													<View
+														key={i}
+														style={{
+															flexDirection: "row",
+															...(i % 2 === 0
+																? pdfTableRowEvenColor
+																: pdfTableRowOddColor),
+															borderBottom: "1px solid #bae6fd",
+														}}
+													>
+														<Text
+															style={{
+																...pdfTableCellStyle,
+																flex: 2,
+																borderRight: "1px solid #e0f2fe",
+															}}
+														>
+															{t.description && t.description.trim()
+																? t.description
+																: "-"}
+														</Text>
+														<Text
+															style={{
+																...pdfTableCellStyle,
+																flex: 1,
+																borderRight: "1px solid #e0f2fe",
+															}}
+														>
+															{t.openBy && t.openBy.trim() ? t.openBy : "-"}
+														</Text>
+														<Text
+															style={{
+																...pdfTableCellStyle,
+																flex: 1,
+																borderRight: "1px solid #e0f2fe",
+															}}
+														>
+															{t.name && t.name.trim()
+																? t.name
+																: t.customerId || "-"}
+														</Text>
+														<Text
+															style={{
+																...pdfTableCellStyle,
+																flex: 1.5,
+																borderRight: "1px solid #e0f2fe",
+															}}
+														>
+															{t.openTime ? t.openTime.replace("T", " ") : "-"}
+														</Text>
+														<Text style={{ ...pdfTableCellStyle, flex: 1 }}>
+															<Text style={pdfStatusBadge(t.status)}>
+																{t.status || "-"}
+															</Text>
+														</Text>
+													</View>
+												),
+											)}
+										</View>
+									</Page>
+								</Document>
+							}
+							fileName="ticket-analytics-report.pdf"
+						>
+							{({ loading }) => (
+								<button className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg shadow-sm transition-colors duration-200">
+									{loading ? "Preparing PDF..." : "Export PDF"}
+								</button>
+							)}
+						</PDFDownloadLink>
+						<button
+							className="bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-6 rounded-lg shadow-sm transition-colors duration-200"
+							onClick={handleExportCSV}
+						>
+							Export CSV
+						</button>
+					</div>
+
+					{/* --- Agent Ticket per Shift Chart (Area) --- */}
+
+					{/* --- ANALYTICS CARDS GRID --- */}
+					<div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-10 w-full">
+						{/* 1. Tickets per Month */}
+						<Card className="bg-card text-card-foreground rounded-2xl shadow-lg">
+							<CardHeader>
+								<CardTitle className="flex items-center gap-2">
+									<ShowChartIcon className="w-5 h-5 text-green-600" />
+									<CardHeaderTitle className="text-base md:text-lg">
+										Tickets per Month
+									</CardHeaderTitle>
+								</CardTitle>
+								<CardHeaderDescription className="text-xs">
+									Monthly ticket volume trends
+								</CardHeaderDescription>
+							</CardHeader>
+							<CardContent className="pt-2 h-auto flex flex-col gap-4 min-w-0">
+								<div className="w-full h-[300px] min-w-0">
+									<ResponsiveContainer width="100%" height={300}>
+										<AreaChart
+											data={toRechartsData(
+												monthlyStatsData.labels,
+												monthlyStatsData.datasets,
+											)}
+											margin={{ top: 20, right: 30, left: 0, bottom: 0 }}
+										>
+											<defs>
+												<linearGradient
+													id="colorIncoming"
+													x1="0"
+													y1="0"
+													x2="0"
+													y2="1"
+												>
+													<stop offset="5%" stopColor="#6366F1" stopOpacity={0.6} />
+													<stop
+														offset="95%"
+														stopColor="#6366F1"
+														stopOpacity={0.05}
+													/>
+												</linearGradient>
+												<linearGradient
+													id="colorClosed"
+													x1="0"
+													y1="0"
+													x2="0"
+													y2="1"
+												>
+													<stop offset="5%" stopColor="#EC4899" stopOpacity={0.6} />
+													<stop
+														offset="95%"
+														stopColor="#EC4899"
+														stopOpacity={0.05}
+													/>
+												</linearGradient>
+											</defs>
+											<XAxis
+												dataKey="label"
+												tickLine={false}
+												axisLine={false}
+												tickMargin={12}
+												minTickGap={24}
+												tick={{
+													fill: "hsl(var(--muted-foreground))",
+													fontSize: 11,
+													fontWeight: 500,
+												}}
+											/>
+											<YAxis
+												tickLine={false}
+												axisLine={false}
+												tickMargin={12}
+												minTickGap={24}
+												tick={{
+													fill: "hsl(var(--muted-foreground))",
+													fontSize: 11,
+													fontWeight: 500,
+												}}
+											/>
+											<CartesianGrid
+												strokeDasharray="3 3"
+												vertical={false}
+												stroke="hsl(var(--border))"
+												opacity={0.3}
+											/>
+											<RechartsTooltip content={<TicketAnalyticsTooltip />} />
+											<RechartsLegend
+												wrapperStyle={{ fontSize: "11px", fontWeight: "500" }}
+											/>
+											{/* Area harus incoming dulu, lalu closed, dan dataKey case sensitive */}
+											<Area
+												type="monotone"
+												dataKey="incoming"
+												stroke="#6366F1"
+												fill="url(#colorIncoming)"
+												name="Incoming"
+												strokeWidth={1.5}
+											/>
+											<Area
+												type="monotone"
+												dataKey="closed"
+												stroke="#EC4899"
+												fill="url(#colorClosed)"
+												name="Closed"
+												strokeWidth={1.5}
+											/>
+										</AreaChart>
+									</ResponsiveContainer>
+								</div>
+								{/* Table */}
+								<div className="overflow-x-auto w-full">
+									<h4 className="text-sm font-semibold text-card-foreground mb-3">
+										Monthly Ticket Values
+									</h4>
+									<table className="w-full text-xs border-collapse">
+										<thead>
+											<tr className="border-b border-border">
+												<th className="text-left p-2 font-medium text-muted-foreground">
+													Type
+												</th>
+												{monthlyStatsData.labels.map((month) => (
+													<th
+														key={month}
+														className="text-center p-2 font-medium text-muted-foreground"
+													>
+														{month}
+													</th>
+												))}
+											</tr>
+										</thead>
+										<tbody>
+											<tr className="border-b border-border hover:bg-muted/50">
+												<td
+													className="p-2 font-medium text-card-foreground"
+													style={{ color: "#EC4899" }}
+												>
+													Closed
+												</td>
+												{monthlyStatsData.labels.map((month, idx) => (
+													<td
+														key={month}
+														className="text-center p-2 text-card-foreground"
+													>
+														{monthlyStatsData.datasets[0]?.data[idx] ?? 0}
+													</td>
+												))}
+											</tr>
+											<tr className="border-b border-border hover:bg-muted/50">
+												<td
+													className="p-2 font-medium text-card-foreground"
+													style={{ color: "#6366F1" }}
+												>
+													Incoming
+												</td>
+												{monthlyStatsData.labels.map((month, idx) => (
+													<td
+														key={month}
+														className="text-center p-2 text-card-foreground"
+													>
+														{monthlyStatsData.datasets[1]?.data[idx] ?? 0}
+													</td>
+												))}
+											</tr>
+										</tbody>
+									</table>
+								</div>
+							</CardContent>
+						</Card>
+						{/* 2. Agent Tickets per Shift */}
+						<Card className="bg-card text-card-foreground rounded-2xl shadow-lg">
+							<CardHeader>
+								<CardTitle className="flex items-center gap-2">
+									<ShowChartIcon className="w-5 h-5 text-blue-600" />
+									<CardHeaderTitle className="text-base md:text-lg">
+										Agent Tickets per Shift
+									</CardHeaderTitle>
+								</CardTitle>
+								<CardHeaderDescription className="text-xs">
+									Ticket distribution across different shifts
+								</CardHeaderDescription>
+							</CardHeader>
+							<CardContent className="pt-2 h-auto flex flex-col gap-4 min-w-0">
+								<div className="w-full h-[300px] min-w-0">
+									<ResponsiveContainer width="100%" height={300}>
+										<AreaChart
+											data={agentShiftAreaData}
+											margin={{ top: 20, right: 30, left: 0, bottom: 0 }}
+										>
+											<defs>
+												<linearGradient id="colorMalam" x1="0" y1="0" x2="0" y2="1">
+													<stop offset="5%" stopColor="#ef4444" stopOpacity={0.6} />
+													<stop
+														offset="95%"
+														stopColor="#ef4444"
+														stopOpacity={0.05}
+													/>
+												</linearGradient>
+												<linearGradient id="colorPagi" x1="0" y1="0" x2="0" y2="1">
+													<stop offset="5%" stopColor="#22c55e" stopOpacity={0.6} />
+													<stop
+														offset="95%"
+														stopColor="#22c55e"
+														stopOpacity={0.05}
+													/>
+												</linearGradient>
+												<linearGradient id="colorSore" x1="0" y1="0" x2="0" y2="1">
+													<stop offset="5%" stopColor="#3b82f6" stopOpacity={0.6} />
+													<stop
+														offset="95%"
+														stopColor="#3b82f6"
+														stopOpacity={0.05}
+													/>
+												</linearGradient>
+											</defs>
+											<XAxis
+												dataKey="month"
+												tickLine={false}
+												axisLine={false}
+												tickMargin={12}
+												minTickGap={24}
+												tick={{
+													fill: "hsl(var(--muted-foreground))",
+													fontSize: 11,
+													fontWeight: 500,
+												}}
+											/>
+											<YAxis
+												tickLine={false}
+												axisLine={false}
+												tickMargin={12}
+												minTickGap={24}
+												allowDecimals={false}
+												tick={{
+													fill: "hsl(var(--muted-foreground))",
+													fontSize: 11,
+													fontWeight: 500,
+												}}
+											/>
+											<CartesianGrid
+												strokeDasharray="3 3"
+												vertical={false}
+												stroke="hsl(var(--border))"
+												opacity={0.3}
+											/>
+											<RechartsTooltip content={<TicketAnalyticsTooltip />} />
+											<RechartsLegend
+												wrapperStyle={{ fontSize: "11px", fontWeight: "500" }}
+											/>
+											<Area
+												type="monotone"
+												dataKey="Malam"
+												stroke="#ef4444"
+												fill="url(#colorMalam)"
+												name="Malam (01:00–07:59)"
+												strokeWidth={1.5}
+											/>
+											<Area
+												type="monotone"
+												dataKey="Pagi"
+												stroke="#22c55e"
+												fill="url(#colorPagi)"
+												name="Pagi (08:00–16:59)"
+												strokeWidth={1.5}
+											/>
+											<Area
+												type="monotone"
+												dataKey="Sore"
+												stroke="#3b82f6"
+												fill="url(#colorSore)"
+												name="Sore (00:00–00:59 & 17:00–23:59)"
+												strokeWidth={1.5}
+											/>
+										</AreaChart>
+									</ResponsiveContainer>
+								</div>
+								{/* Table */}
+								<div className="overflow-x-auto w-full">
+									<h4 className="text-sm font-semibold text-card-foreground mb-3">
+										Monthly Shift Values
+									</h4>
+									<table className="w-full text-xs border-collapse">
+										<thead>
+											<tr className="border-b border-border">
+												<th className="text-left p-2 font-medium text-muted-foreground">
+													Shift
+												</th>
+												{agentShiftAreaData.map((row) => (
+													<th
+														key={row.month}
+														className="text-center p-2 font-medium text-muted-foreground"
+													>
+														{row.month}
+													</th>
+												))}
+											</tr>
+										</thead>
+										<tbody>
+											<tr className="border-b border-border hover:bg-muted/50">
+												<td
+													className="p-2 font-medium text-card-foreground"
+													style={{ color: "#22c55e" }}
+												>
+													Pagi
+												</td>
+												{agentShiftAreaData.map((row) => (
+													<td
+														key={row.month}
+														className="text-center p-2 text-card-foreground"
+													>
+														{row.Pagi}
+													</td>
+												))}
+											</tr>
+											<tr className="border-b border-border hover:bg-muted/50">
+												<td
+													className="p-2 font-medium text-card-foreground"
+													style={{ color: "#3b82f6" }}
+												>
+													Sore
+												</td>
+												{agentShiftAreaData.map((row) => (
+													<td
+														key={row.month}
+														className="text-center p-2 text-card-foreground"
+													>
+														{row.Sore}
+													</td>
+												))}
+											</tr>
+											<tr className="border-b border-border hover:bg-muted/50">
+												<td
+													className="p-2 font-medium text-card-foreground"
+													style={{ color: "#ef4444" }}
+												>
+													Malam
+												</td>
+												{agentShiftAreaData.map((row) => (
+													<td
+														key={row.month}
+														className="text-center p-2 text-card-foreground"
+													>
+														{row.Malam}
+													</td>
+												))}
+											</tr>
+										</tbody>
+									</table>
+								</div>
+							</CardContent>
+						</Card>
+						{/* 3. Tickets by Client Type */}
+						<Card className="bg-card text-card-foreground rounded-2xl shadow-lg">
+							<CardHeader>
+								<CardTitle className="flex items-center gap-2">
+									<ShowChartIcon className="w-5 h-5 text-purple-600" />
+									<CardHeaderTitle className="text-base md:text-lg">
+										Tickets by Client Type
+									</CardHeaderTitle>
+								</CardTitle>
+								<CardHeaderDescription className="text-xs">
+									Monthly ticket distribution by client type
+								</CardHeaderDescription>
+							</CardHeader>
+							<CardContent>
+								<ResponsiveContainer width="100%" height={300}>
+									<AreaChart
+										data={(() => {
+											const months = Object.keys(tiketPerJenisKlienPerBulan).sort((a, b) => new Date(a + "-01").getTime() - new Date(b + "-01").getTime());
+											return months.map((month) => {
+												const row: any = { month };
+												jenisKlienList.forEach((jk) => {
 													const tickets =
 														tiketPerJenisKlienPerBulan[month]?.[jk] || 0;
-													const val = normalizePer1000
-														? (() => {
-															const denom =
-																customerMonthRowCountByType.get(month)?.[
-																jk
-																] || 0;
-															return denom > 0
-																? `${((tickets / denom) * 1000).toFixed(2)}`
-																: "0";
-														})()
-														: `${tickets}`;
-													return (
-														<td
-															key={month}
-															className="text-center p-2 text-card-foreground"
-														>
-															{val}
-														</td>
-													);
-												})}
-										</tr>
-									))}
-								</tbody>
-								<tfoot>
-									<tr className="border-b border-border">
-										<td className="p-2 font-bold text-card-foreground">
-											Total
-										</td>
-										{Object.keys(tiketPerJenisKlienPerBulan)
-											.sort((a, b) => new Date(a + "-01").getTime() - new Date(b + "-01").getTime())
-											.map((month) => {
-												const obj =
-													customerMonthRowCountByType.get(month) || {};
-												const totalTickets = jenisKlienList.reduce(
-													(s, jk) =>
-														s + (tiketPerJenisKlienPerBulan[month]?.[jk] || 0),
-													0,
-												);
-												const totalActive =
-													(obj["Dedicated"] || 0) +
-													(obj["Broadband Business"] || 0) +
-													(obj["Broadband"] || 0);
-												const totalVal = normalizePer1000
-													? totalActive > 0
-														? ((totalTickets / totalActive) * 1000).toFixed(2)
-														: "0"
-													: String(totalTickets);
-												return (
-													<td
-														key={month}
-														className="text-center p-2 font-bold text-card-foreground"
-													>
-														{totalVal}
-													</td>
-												);
-											})}
-									</tr>
-								</tfoot>
-							</table>
-						</div>
-					</CardContent>
-				</Card>
-				{/* 4. Tickets by Client Category */}
-				<Card className="bg-card text-card-foreground rounded-2xl shadow-lg">
-					<CardHeader>
-						<CardTitle className="flex items-center gap-2 text-base">
-							<ShowChartIcon className="w-5 h-5 text-indigo-600" /> Tickets by
-							Client Category
-						</CardTitle>
-						<CardDescription className="text-xs">
-							Monthly ticket distribution by client category
-						</CardDescription>
-					</CardHeader>
-					<CardContent>
-						<ResponsiveContainer width="100%" height={300}>
-							<AreaChart
-								data={(() => {
-									const months = Object.keys(tiketPerKategoriPerBulan).sort((a, b) => new Date(a + "-01").getTime() - new Date(b + "-01").getTime());
-									return months.map((month) => {
-										const row: any = { month };
-										kategoriList.forEach((kat) => {
-											const tickets =
-												tiketPerKategoriPerBulan[month]?.[kat] || 0;
-											if (normalizePer1000) {
-												const denom =
-													customerMonthRowCountByCategory.get(month)?.[kat] ||
-													0;
-												row[kat] =
-													denom > 0
-														? +((tickets / denom) * 1000).toFixed(2)
-														: 0;
-											} else {
-												row[kat] = tickets;
-											}
-										});
-										return row;
-									});
-								})()}
-								margin={{ top: 20, right: 30, left: 0, bottom: 0 }}
-							>
-								<defs>
-									{kategoriList.map((kat, idx) => (
-										<linearGradient
-											key={kat}
-											id={`colorKategori${kat.replace(/\s/g, "")}`}
-											x1="0"
-											y1="0"
-											x2="0"
-											y2="1"
-										>
-											<stop
-												offset="5%"
-												stopColor={AREA_COLORS[idx % AREA_COLORS.length]}
-												stopOpacity={0.6}
-											/>
-											<stop
-												offset="95%"
-												stopColor={AREA_COLORS[idx % AREA_COLORS.length]}
-												stopOpacity={0.05}
-											/>
-										</linearGradient>
-									))}
-								</defs>
-								<XAxis
-									dataKey="month"
-									tickLine={false}
-									axisLine={false}
-									tickMargin={12}
-									minTickGap={24}
-									tick={{
-										fill: "hsl(var(--muted-foreground))",
-										fontSize: 11,
-										fontWeight: 500,
-									}}
-								/>
-								<YAxis
-									tickLine={false}
-									axisLine={false}
-									tickMargin={12}
-									minTickGap={24}
-									allowDecimals={false}
-									tick={{
-										fill: "hsl(var(--muted-foreground))",
-										fontSize: 11,
-										fontWeight: 500,
-									}}
-								/>
-								<CartesianGrid
-									strokeDasharray="3 3"
-									vertical={false}
-									stroke="hsl(var(--border))"
-									opacity={0.3}
-								/>
-								<RechartsTooltip content={<TicketAnalyticsTooltip />} />
-								<RechartsLegend
-									wrapperStyle={{ fontSize: "11px", fontWeight: "500" }}
-								/>
-								{kategoriList.map((kat, idx) => (
-									<Area
-										key={kat}
-										type="monotone"
-										dataKey={kat}
-										stroke={AREA_COLORS[idx % AREA_COLORS.length]}
-										fill={`url(#colorKategori${kat.replace(/\s/g, "")})`}
-										name={kat}
-										strokeWidth={1.5}
-									/>
-								))}
-							</AreaChart>
-						</ResponsiveContainer>
-						{/* Table */}
-						<div className="overflow-x-auto w-full">
-							<h4 className="text-sm font-semibold text-card-foreground mb-3">
-								Monthly Client Category Values
-							</h4>
-							<table className="w-full text-xs border-collapse">
-								<thead>
-									<tr className="border-b border-border">
-										<th className="text-left p-2 font-medium text-muted-foreground">
-											Client Category
-										</th>
-										{Object.keys(tiketPerKategoriPerBulan)
-											.sort((a, b) => new Date(a + "-01").getTime() - new Date(b + "-01").getTime())
-											.map((month) => (
-												<th
-													key={month}
-													className="text-center p-2 font-medium text-muted-foreground"
-												>
-													{month}
-												</th>
-											))}
-									</tr>
-								</thead>
-								<tbody>
-									{kategoriList.map((kat, idx) => (
-										<tr
-											key={kat}
-											className="border-b border-border hover:bg-muted/50"
-										>
-											<td
-												className="p-2 font-medium text-card-foreground"
-												style={{ color: AREA_COLORS[idx % AREA_COLORS.length] }}
+													if (normalizePer1000) {
+														const denom =
+															customerMonthRowCountByType.get(month)?.[jk] || 0;
+														row[jk] =
+															denom > 0
+																? +((tickets / denom) * 1000).toFixed(2)
+																: 0;
+													} else {
+														row[jk] = tickets;
+													}
+												});
+												return row;
+											});
+										})()}
+										margin={{ top: 20, right: 30, left: 0, bottom: 0 }}
+									>
+										<defs>
+											<linearGradient
+												id="colorBroadband"
+												x1="0"
+												y1="0"
+												x2="0"
+												y2="1"
 											>
-												{kat}
-											</td>
-											{Object.keys(tiketPerKategoriPerBulan)
-												.sort((a, b) => new Date(a + "-01").getTime() - new Date(b + "-01").getTime())
-												.map((month) => {
+												<stop offset="5%" stopColor="#3b82f6" stopOpacity={0.6} />
+												<stop offset="95%" stopColor="#3b82f6" stopOpacity={0.05} />
+											</linearGradient>
+											<linearGradient
+												id="colorBroadbandBusiness"
+												x1="0"
+												y1="0"
+												x2="0"
+												y2="1"
+											>
+												<stop offset="5%" stopColor="#22c55e" stopOpacity={0.6} />
+												<stop offset="95%" stopColor="#22c55e" stopOpacity={0.05} />
+											</linearGradient>
+											<linearGradient
+												id="colorDedicated"
+												x1="0"
+												y1="0"
+												x2="0"
+												y2="1"
+											>
+												<stop offset="5%" stopColor="#f59e42" stopOpacity={0.6} />
+												<stop offset="95%" stopColor="#f59e42" stopOpacity={0.05} />
+											</linearGradient>
+										</defs>
+										<XAxis
+											dataKey="month"
+											tickLine={false}
+											axisLine={false}
+											tickMargin={12}
+											minTickGap={24}
+											tick={{
+												fill: "hsl(var(--muted-foreground))",
+												fontSize: 11,
+												fontWeight: 500,
+											}}
+										/>
+										<YAxis
+											tickLine={false}
+											axisLine={false}
+											tickMargin={12}
+											minTickGap={24}
+											allowDecimals={false}
+											tick={{
+												fill: "hsl(var(--muted-foreground))",
+												fontSize: 11,
+												fontWeight: 500,
+											}}
+										/>
+										<CartesianGrid
+											strokeDasharray="3 3"
+											vertical={false}
+											stroke="hsl(var(--border))"
+											opacity={0.3}
+										/>
+										<RechartsTooltip content={<TicketAnalyticsTooltip />} />
+										<RechartsLegend
+											wrapperStyle={{ fontSize: "11px", fontWeight: "500" }}
+										/>
+										<Area
+											type="monotone"
+											dataKey="Broadband"
+											stroke="#3b82f6"
+											fill="url(#colorBroadband)"
+											name="Broadband"
+											strokeWidth={1.5}
+										/>
+										<Area
+											type="monotone"
+											dataKey="Broadband Business"
+											stroke="#22c55e"
+											fill="url(#colorBroadbandBusiness)"
+											name="Broadband Business"
+											strokeWidth={1.5}
+										/>
+										<Area
+											type="monotone"
+											dataKey="Dedicated"
+											stroke="#f59e42"
+											fill="url(#colorDedicated)"
+											name="Dedicated"
+											strokeWidth={1.5}
+										/>
+									</AreaChart>
+								</ResponsiveContainer>
+								{/* Table */}
+								<div className="overflow-x-auto w-full">
+									<h4 className="text-sm font-semibold text-card-foreground mb-3">
+										Monthly Client Type Values
+									</h4>
+									<table className="w-full text-xs border-collapse">
+										<thead>
+											<tr className="border-b border-border">
+												<th className="text-left p-2 font-medium text-muted-foreground">
+													Client Type
+												</th>
+												{Object.keys(tiketPerJenisKlienPerBulan)
+													.sort((a, b) => new Date(a + "-01").getTime() - new Date(b + "-01").getTime())
+													.map((month) => (
+														<th
+															key={month}
+															className="text-center p-2 font-medium text-muted-foreground"
+														>
+															{month}
+														</th>
+													))}
+											</tr>
+										</thead>
+										<tbody>
+											{jenisKlienList.map((jk) => (
+												<tr
+													key={jk}
+													className="border-b border-border hover:bg-muted/50"
+												>
+													<td
+														className="p-2 font-medium text-card-foreground"
+														style={{
+															color:
+																jk === "Broadband"
+																	? "#3b82f6"
+																	: jk === "Broadband Business"
+																		? "#22c55e"
+																		: "#f59e42",
+														}}
+													>
+														{jk}
+													</td>
+													{Object.keys(tiketPerJenisKlienPerBulan)
+														.sort((a, b) => new Date(a + "-01").getTime() - new Date(b + "-01").getTime())
+														.map((month) => {
+															const tickets =
+																tiketPerJenisKlienPerBulan[month]?.[jk] || 0;
+															const val = normalizePer1000
+																? (() => {
+																	const denom =
+																		customerMonthRowCountByType.get(month)?.[
+																		jk
+																		] || 0;
+																	return denom > 0
+																		? `${((tickets / denom) * 1000).toFixed(2)}`
+																		: "0";
+																})()
+																: `${tickets}`;
+															return (
+																<td
+																	key={month}
+																	className="text-center p-2 text-card-foreground"
+																>
+																	{val}
+																</td>
+															);
+														})}
+												</tr>
+											))}
+										</tbody>
+										<tfoot>
+											<tr className="border-b border-border">
+												<td className="p-2 font-bold text-card-foreground">
+													Total
+												</td>
+												{Object.keys(tiketPerJenisKlienPerBulan)
+													.sort((a, b) => new Date(a + "-01").getTime() - new Date(b + "-01").getTime())
+													.map((month) => {
+														const obj =
+															customerMonthRowCountByType.get(month) || {};
+														const totalTickets = jenisKlienList.reduce(
+															(s, jk) =>
+																s + (tiketPerJenisKlienPerBulan[month]?.[jk] || 0),
+															0,
+														);
+														const totalActive =
+															(obj["Dedicated"] || 0) +
+															(obj["Broadband Business"] || 0) +
+															(obj["Broadband"] || 0);
+														const totalVal = normalizePer1000
+															? totalActive > 0
+																? ((totalTickets / totalActive) * 1000).toFixed(2)
+																: "0"
+															: String(totalTickets);
+														return (
+															<td
+																key={month}
+																className="text-center p-2 font-bold text-card-foreground"
+															>
+																{totalVal}
+															</td>
+														);
+													})}
+											</tr>
+										</tfoot>
+									</table>
+								</div>
+							</CardContent>
+						</Card>
+						{/* 4. Tickets by Client Category */}
+						<Card className="bg-card text-card-foreground rounded-2xl shadow-lg">
+							<CardHeader>
+								<CardTitle className="flex items-center gap-2 text-base">
+									<ShowChartIcon className="w-5 h-5 text-indigo-600" /> Tickets by
+									Client Category
+								</CardTitle>
+								<CardDescription className="text-xs">
+									Monthly ticket distribution by client category
+								</CardDescription>
+							</CardHeader>
+							<CardContent>
+								<ResponsiveContainer width="100%" height={300}>
+									<AreaChart
+										data={(() => {
+											const months = Object.keys(tiketPerKategoriPerBulan).sort((a, b) => new Date(a + "-01").getTime() - new Date(b + "-01").getTime());
+											return months.map((month) => {
+												const row: any = { month };
+												kategoriList.forEach((kat) => {
 													const tickets =
 														tiketPerKategoriPerBulan[month]?.[kat] || 0;
-													const val = normalizePer1000
-														? (() => {
-															const denom =
-																customerMonthRowCountByCategory.get(month)?.[
-																kat
-																] || 0;
-															return denom > 0
-																? `${((tickets / denom) * 1000).toFixed(2)}`
-																: "0";
-														})()
-														: `${tickets}`;
-													return (
-														<td
-															key={month}
-															className="text-center p-2 text-card-foreground"
-														>
-															{val}
-														</td>
-													);
-												})}
-										</tr>
-									))}
-								</tbody>
-								<tfoot>
-									<tr className="border-b border-border">
-										<td className="p-2 font-bold text-card-foreground">
-											Total
-										</td>
-										{Object.keys(tiketPerKategoriPerBulan)
-											.sort((a, b) => new Date(a + "-01").getTime() - new Date(b + "-01").getTime())
-											.map((month) => {
-												// Total tickets across ALL categories this month
-												const totalTickets = kategoriList.reduce((sum, kat) => {
-													const tickets = tiketPerKategoriPerBulan[month]?.[kat] || 0;
-													return sum + tickets;
-												}, 0);
-												return (
-													<td
-														key={month}
-														className="text-center p-2 font-bold text-card-foreground"
-													>
-														{totalTickets}
-													</td>
-												);
-											})}
-									</tr>
-								</tfoot>
-							</table>
-						</div>
-					</CardContent>
-				</Card>
-				{/* 5. Unique Complaining Clients by Type */}
-				<Card className="bg-card text-card-foreground rounded-2xl shadow-lg">
-					<CardHeader>
-						<CardTitle className="flex items-center gap-2 text-base">
-							<ShowChartIcon className="w-5 h-5 text-teal-600" /> Unique
-							Complaining Clients by Type
-						</CardTitle>
-						<CardDescription className="text-xs">
-							Number of unique clients with complaints by type
-						</CardDescription>
-					</CardHeader>
-					<CardContent>
-						<ResponsiveContainer width="100%" height={300}>
-							<AreaChart
-								data={(() => {
-									const months = Object.keys(tiketPerJenisKlienPerBulan).sort((a, b) => new Date(a + "-01").getTime() - new Date(b + "-01").getTime());
-									return months.map((month) => {
-										const row: any = { month };
-										jenisKlienList.forEach((jk) => {
-											row[jk] = Array.from(
-												new Set(
-													gridDataWithCustomerSync
-														.filter((t) => {
-															const d = new Date(t.openTime);
-															const m = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-															const name = (t.name || "").trim().toLowerCase();
-															const jenis =
-																customerJenisKlienMap.get(name) || "Unknown";
-															const cls = (t.classification || "")
-																.toString()
-																.trim()
-																.toLowerCase();
-															const activeMonths =
-																customerMonthMap.get(name) || [];
-															return (
-																m === month &&
-																jenis === jk &&
-																name &&
-																// Relax activeMonths check: if not available or empty, assume active
-																(activeMonths.length === 0 || activeMonths.includes(month)) &&
-																!/^(gangguan\s*)?di\s*luar\s*layanan|request$/i.test(cls)
-															);
-														})
-														.map((t) => (t.name || "").trim().toLowerCase()),
-												),
-											).length;
-										});
-										return row;
-									});
-								})()}
-								margin={{ top: 20, right: 30, left: 0, bottom: 0 }}
-							>
-								<defs>
-									<linearGradient
-										id="colorBroadbandU"
-										x1="0"
-										y1="0"
-										x2="0"
-										y2="1"
+													if (normalizePer1000) {
+														const denom =
+															customerMonthRowCountByCategory.get(month)?.[kat] ||
+															0;
+														row[kat] =
+															denom > 0
+																? +((tickets / denom) * 1000).toFixed(2)
+																: 0;
+													} else {
+														row[kat] = tickets;
+													}
+												});
+												return row;
+											});
+										})()}
+										margin={{ top: 20, right: 30, left: 0, bottom: 0 }}
 									>
-										<stop offset="5%" stopColor="#3b82f6" stopOpacity={0.6} />
-										<stop offset="95%" stopColor="#3b82f6" stopOpacity={0.05} />
-									</linearGradient>
-									<linearGradient
-										id="colorBroadbandBusinessU"
-										x1="0"
-										y1="0"
-										x2="0"
-										y2="1"
-									>
-										<stop offset="5%" stopColor="#22c55e" stopOpacity={0.6} />
-										<stop offset="95%" stopColor="#22c55e" stopOpacity={0.05} />
-									</linearGradient>
-									<linearGradient
-										id="colorDedicatedU"
-										x1="0"
-										y1="0"
-										x2="0"
-										y2="1"
-									>
-										<stop offset="5%" stopColor="#f59e42" stopOpacity={0.6} />
-										<stop offset="95%" stopColor="#f59e42" stopOpacity={0.05} />
-									</linearGradient>
-								</defs>
-								<XAxis
-									dataKey="month"
-									tickLine={false}
-									axisLine={false}
-									tickMargin={12}
-									minTickGap={24}
-									tick={{
-										fill: "hsl(var(--muted-foreground))",
-										fontSize: 11,
-										fontWeight: 500,
-									}}
-								/>
-								<YAxis
-									tickLine={false}
-									axisLine={false}
-									tickMargin={12}
-									minTickGap={24}
-									allowDecimals={false}
-									tick={{
-										fill: "hsl(var(--muted-foreground))",
-										fontSize: 11,
-										fontWeight: 500,
-									}}
-								/>
-								<CartesianGrid
-									strokeDasharray="3 3"
-									vertical={false}
-									stroke="hsl(var(--border))"
-									opacity={0.3}
-								/>
-								<RechartsTooltip content={<TicketAnalyticsTooltip />} />
-								<RechartsLegend
-									wrapperStyle={{ fontSize: "11px", fontWeight: "500" }}
-								/>
-								<Area
-									type="monotone"
-									dataKey="Broadband"
-									stroke="#3b82f6"
-									fill="url(#colorBroadbandU)"
-									name="Broadband"
-									strokeWidth={1.5}
-								/>
-								<Area
-									type="monotone"
-									dataKey="Broadband Business"
-									stroke="#22c55e"
-									fill="url(#colorBroadbandBusinessU)"
-									name="Broadband Business"
-									strokeWidth={1.5}
-								/>
-								<Area
-									type="monotone"
-									dataKey="Dedicated"
-									stroke="#f59e42"
-									fill="url(#colorDedicatedU)"
-									name="Dedicated"
-									strokeWidth={1.5}
-								/>
-							</AreaChart>
-						</ResponsiveContainer>
-						{/* Table */}
-						<div className="overflow-x-auto w-full">
-							<h4 className="text-sm font-semibold text-card-foreground mb-3">
-								Monthly Unique Client Type Values
-							</h4>
-							<table className="w-full text-xs border-collapse">
-								<thead>
-									<tr className="border-b border-border">
-										<th className="text-left p-2 font-medium text-muted-foreground">
-											Client Type
-										</th>
-										{Object.keys(tiketPerJenisKlienPerBulan)
-											.sort((a, b) => new Date(a + "-01").getTime() - new Date(b + "-01").getTime())
-											.map((month) => (
-												<th
-													key={month}
-													className="text-center p-2 font-medium text-muted-foreground"
+										<defs>
+											{kategoriList.map((kat, idx) => (
+												<linearGradient
+													key={kat}
+													id={`colorKategori${kat.replace(/\s/g, "")}`}
+													x1="0"
+													y1="0"
+													x2="0"
+													y2="1"
 												>
-													{month}
-												</th>
+													<stop
+														offset="5%"
+														stopColor={AREA_COLORS[idx % AREA_COLORS.length]}
+														stopOpacity={0.6}
+													/>
+													<stop
+														offset="95%"
+														stopColor={AREA_COLORS[idx % AREA_COLORS.length]}
+														stopOpacity={0.05}
+													/>
+												</linearGradient>
 											))}
-									</tr>
-								</thead>
-								<tbody>
-									{jenisKlienList.map((jk) => (
-										<tr
-											key={jk}
-											className="border-b border-border hover:bg-muted/50"
-										>
-											<td
-												className="p-2 font-medium text-card-foreground"
-												style={{
-													color:
-														jk === "Broadband"
-															? "#3b82f6"
-															: jk === "Broadband Business"
-																? "#22c55e"
-																: "#f59e42",
-												}}
-											>
-												{jk}
-											</td>
-											{Object.keys(tiketPerJenisKlienPerBulan)
-												.sort((a, b) => new Date(a + "-01").getTime() - new Date(b + "-01").getTime())
-												.map((month) => {
-													const uniqueClients = Array.from(
+										</defs>
+										<XAxis
+											dataKey="month"
+											tickLine={false}
+											axisLine={false}
+											tickMargin={12}
+											minTickGap={24}
+											tick={{
+												fill: "hsl(var(--muted-foreground))",
+												fontSize: 11,
+												fontWeight: 500,
+											}}
+										/>
+										<YAxis
+											tickLine={false}
+											axisLine={false}
+											tickMargin={12}
+											minTickGap={24}
+											allowDecimals={false}
+											tick={{
+												fill: "hsl(var(--muted-foreground))",
+												fontSize: 11,
+												fontWeight: 500,
+											}}
+										/>
+										<CartesianGrid
+											strokeDasharray="3 3"
+											vertical={false}
+											stroke="hsl(var(--border))"
+											opacity={0.3}
+										/>
+										<RechartsTooltip content={<TicketAnalyticsTooltip />} />
+										<RechartsLegend
+											wrapperStyle={{ fontSize: "11px", fontWeight: "500" }}
+										/>
+										{kategoriList.map((kat, idx) => (
+											<Area
+												key={kat}
+												type="monotone"
+												dataKey={kat}
+												stroke={AREA_COLORS[idx % AREA_COLORS.length]}
+												fill={`url(#colorKategori${kat.replace(/\s/g, "")})`}
+												name={kat}
+												strokeWidth={1.5}
+											/>
+										))}
+									</AreaChart>
+								</ResponsiveContainer>
+								{/* Table */}
+								<div className="overflow-x-auto w-full">
+									<h4 className="text-sm font-semibold text-card-foreground mb-3">
+										Monthly Client Category Values
+									</h4>
+									<table className="w-full text-xs border-collapse">
+										<thead>
+											<tr className="border-b border-border">
+												<th className="text-left p-2 font-medium text-muted-foreground">
+													Client Category
+												</th>
+												{Object.keys(tiketPerKategoriPerBulan)
+													.sort((a, b) => new Date(a + "-01").getTime() - new Date(b + "-01").getTime())
+													.map((month) => (
+														<th
+															key={month}
+															className="text-center p-2 font-medium text-muted-foreground"
+														>
+															{month}
+														</th>
+													))}
+											</tr>
+										</thead>
+										<tbody>
+											{kategoriList.map((kat, idx) => (
+												<tr
+													key={kat}
+													className="border-b border-border hover:bg-muted/50"
+												>
+													<td
+														className="p-2 font-medium text-card-foreground"
+														style={{ color: AREA_COLORS[idx % AREA_COLORS.length] }}
+													>
+														{kat}
+													</td>
+													{Object.keys(tiketPerKategoriPerBulan)
+														.sort((a, b) => new Date(a + "-01").getTime() - new Date(b + "-01").getTime())
+														.map((month) => {
+															const tickets =
+																tiketPerKategoriPerBulan[month]?.[kat] || 0;
+															const val = normalizePer1000
+																? (() => {
+																	const denom =
+																		customerMonthRowCountByCategory.get(month)?.[
+																		kat
+																		] || 0;
+																	return denom > 0
+																		? `${((tickets / denom) * 1000).toFixed(2)}`
+																		: "0";
+																})()
+																: `${tickets}`;
+															return (
+																<td
+																	key={month}
+																	className="text-center p-2 text-card-foreground"
+																>
+																	{val}
+																</td>
+															);
+														})}
+												</tr>
+											))}
+										</tbody>
+										<tfoot>
+											<tr className="border-b border-border">
+												<td className="p-2 font-bold text-card-foreground">
+													Total
+												</td>
+												{Object.keys(tiketPerKategoriPerBulan)
+													.sort((a, b) => new Date(a + "-01").getTime() - new Date(b + "-01").getTime())
+													.map((month) => {
+														// Total tickets across ALL categories this month
+														const totalTickets = kategoriList.reduce((sum, kat) => {
+															const tickets = tiketPerKategoriPerBulan[month]?.[kat] || 0;
+															return sum + tickets;
+														}, 0);
+														return (
+															<td
+																key={month}
+																className="text-center p-2 font-bold text-card-foreground"
+															>
+																{totalTickets}
+															</td>
+														);
+													})}
+											</tr>
+										</tfoot>
+									</table>
+								</div>
+							</CardContent>
+						</Card>
+						{/* 5. Unique Complaining Clients by Type */}
+						<Card className="bg-card text-card-foreground rounded-2xl shadow-lg">
+							<CardHeader>
+								<CardTitle className="flex items-center gap-2 text-base">
+									<ShowChartIcon className="w-5 h-5 text-teal-600" /> Unique
+									Complaining Clients by Type
+								</CardTitle>
+								<CardDescription className="text-xs">
+									Number of unique clients with complaints by type
+								</CardDescription>
+							</CardHeader>
+							<CardContent>
+								<ResponsiveContainer width="100%" height={300}>
+									<AreaChart
+										data={(() => {
+											const months = Object.keys(tiketPerJenisKlienPerBulan).sort((a, b) => new Date(a + "-01").getTime() - new Date(b + "-01").getTime());
+											return months.map((month) => {
+												const row: any = { month };
+												jenisKlienList.forEach((jk) => {
+													row[jk] = Array.from(
 														new Set(
 															gridDataWithCustomerSync
 																.filter((t) => {
 																	const d = new Date(t.openTime);
 																	const m = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-																	const name = (t.name || "")
-																		.trim()
-																		.toLowerCase();
+																	const name = (t.name || "").trim().toLowerCase();
 																	const jenis =
-																		customerJenisKlienMap.get(name) ||
-																		"Unknown";
+																		customerJenisKlienMap.get(name) || "Unknown";
 																	const cls = (t.classification || "")
 																		.toString()
 																		.trim()
@@ -3158,235 +2982,760 @@ const TicketAnalytics = ({ }: TicketAnalyticsProps) => {
 																		m === month &&
 																		jenis === jk &&
 																		name &&
-																		// Relax activeMonths check
+																		// Relax activeMonths check: if not available or empty, assume active
 																		(activeMonths.length === 0 || activeMonths.includes(month)) &&
 																		!/^(gangguan\s*)?di\s*luar\s*layanan|request$/i.test(cls)
 																	);
 																})
-																.map((t) =>
-																	(t.name || "").trim().toLowerCase(),
-																),
+																.map((t) => (t.name || "").trim().toLowerCase()),
 														),
 													).length;
-													return (
-														<td
-															key={month}
-															className="text-center p-2 text-card-foreground"
-														>
-															{uniqueClients}
-														</td>
-													);
-												})}
-										</tr>
-									))}
-								</tbody>
-								<tfoot>
-									<tr className="border-b border-border">
-										<td className="p-2 font-bold text-card-foreground">
-											Total
-										</td>
-										{Object.keys(tiketPerJenisKlienPerBulan)
-											.sort((a, b) => new Date(a + "-01").getTime() - new Date(b + "-01").getTime())
-											.map((month) => {
-												// Total unique clients across ALL types this month (union, active, excluded classifications)
-												const unionSet = new Set<string>(
-													gridDataWithCustomerSync
-														.filter((t) => {
-															const d = new Date(t.openTime);
-															const m = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-															if (m !== month) return false;
-															const name = (t.name || "").trim().toLowerCase();
-															if (!name) return false;
-															const cls = (t.classification || "")
-																.toString()
-																.trim()
-																.toLowerCase();
-															if (
-																/^(gangguan\s*)?di\s*luar\s*layanan|request$/i.test(cls)
-															)
-																return false;
-															const activeMonths =
-																customerMonthMap.get(name) || [];
-															// Relax activeMonths check
-															return activeMonths.length === 0 || activeMonths.includes(month);
-														})
-														.map((t) => (t.name || "").trim().toLowerCase()),
-												);
-												return (
-													<td
-														key={month}
-														className="text-center p-2 font-bold text-card-foreground"
-													>
-														{unionSet.size}
-													</td>
-												);
-											})}
-									</tr>
-								</tfoot>
-							</table>
-						</div>
-					</CardContent>
-				</Card>
-				{/* 6. Unique Complaining Clients by Category */}
-				<Card className="bg-card text-card-foreground rounded-2xl shadow-lg">
-					<CardHeader>
-						<CardTitle className="flex items-center gap-2 text-base">
-							<ShowChartIcon className="w-5 h-5 text-orange-600" /> Unique
-							Complaining Clients by Category
-						</CardTitle>
-						<CardDescription className="text-xs">
-							Number of unique clients with complaints by category
-						</CardDescription>
-					</CardHeader>
-					<CardContent>
-						<div className="w-full h-[300px] min-w-0">
-							<ResponsiveContainer width="100%" height={300}>
-								<AreaChart
-									data={(() => {
-										const months = Object.keys(tiketPerKategoriPerBulan).sort((a, b) => new Date(a + "-01").getTime() - new Date(b + "-01").getTime());
-										return months.map((month) => {
-											const row: any = { month };
-											kategoriList.forEach((kat) => {
-												row[kat] = Array.from(
-													new Set(
-														gridDataWithCustomerSync
-															.filter((t) => {
-																const d = new Date(t.openTime);
-																const m = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-																const name = (t.name || "")
-																	.trim()
-																	.toLowerCase();
-																const kategori =
-																	customerKategoriMap.get(name) || "Unknown";
-																const cls = (t.classification || "")
-																	.toString()
-																	.trim()
-																	.toLowerCase();
-																const activeMonths =
-																	customerMonthMap.get(name) || [];
-																return (
-																	m === month &&
-																	kategori === kat &&
-																	name &&
-																	(activeMonths.length === 0 || activeMonths.includes(month)) &&
-																	!/^(gangguan\s*)?di\s*luar\s*layanan|request$/i.test(cls)
-																);
-															})
-															.map((t) => (t.name || "").trim().toLowerCase()),
-													),
-												).length;
+												});
+												return row;
 											});
-											return row;
-										});
-									})()}
-									margin={{ top: 20, right: 30, left: 0, bottom: 0 }}
-								>
-									<defs>
-										{kategoriList.map((kat, idx) => (
+										})()}
+										margin={{ top: 20, right: 30, left: 0, bottom: 0 }}
+									>
+										<defs>
 											<linearGradient
-												key={kat}
-												id={`colorUKategori${kat.replace(/\s/g, "")}`}
+												id="colorBroadbandU"
 												x1="0"
 												y1="0"
 												x2="0"
 												y2="1"
 											>
-												<stop
-													offset="5%"
-													stopColor={AREA_COLORS[idx % AREA_COLORS.length]}
-													stopOpacity={0.6}
-												/>
-												<stop
-													offset="95%"
-													stopColor={AREA_COLORS[idx % AREA_COLORS.length]}
-													stopOpacity={0.05}
-												/>
+												<stop offset="5%" stopColor="#3b82f6" stopOpacity={0.6} />
+												<stop offset="95%" stopColor="#3b82f6" stopOpacity={0.05} />
 											</linearGradient>
-										))}
-									</defs>
-									<XAxis
-										dataKey="month"
-										tickLine={false}
-										axisLine={false}
-										tickMargin={12}
-										minTickGap={24}
-										tick={{
-											fill: "hsl(var(--muted-foreground))",
-											fontSize: 11,
-											fontWeight: 500,
-										}}
-									/>
-									<YAxis
-										tickLine={false}
-										axisLine={false}
-										tickMargin={12}
-										minTickGap={24}
-										allowDecimals={false}
-										tick={{
-											fill: "hsl(var(--muted-foreground))",
-											fontSize: 11,
-											fontWeight: 500,
-										}}
-									/>
-									<CartesianGrid
-										strokeDasharray="3 3"
-										vertical={false}
-										stroke="hsl(var(--border))"
-										opacity={0.3}
-									/>
-									<RechartsTooltip content={<TicketAnalyticsTooltip />} />
-									<RechartsLegend
-										wrapperStyle={{ fontSize: "11px", fontWeight: "500" }}
-									/>
-									{kategoriList.map((kat, idx) => (
+											<linearGradient
+												id="colorBroadbandBusinessU"
+												x1="0"
+												y1="0"
+												x2="0"
+												y2="1"
+											>
+												<stop offset="5%" stopColor="#22c55e" stopOpacity={0.6} />
+												<stop offset="95%" stopColor="#22c55e" stopOpacity={0.05} />
+											</linearGradient>
+											<linearGradient
+												id="colorDedicatedU"
+												x1="0"
+												y1="0"
+												x2="0"
+												y2="1"
+											>
+												<stop offset="5%" stopColor="#f59e42" stopOpacity={0.6} />
+												<stop offset="95%" stopColor="#f59e42" stopOpacity={0.05} />
+											</linearGradient>
+										</defs>
+										<XAxis
+											dataKey="month"
+											tickLine={false}
+											axisLine={false}
+											tickMargin={12}
+											minTickGap={24}
+											tick={{
+												fill: "hsl(var(--muted-foreground))",
+												fontSize: 11,
+												fontWeight: 500,
+											}}
+										/>
+										<YAxis
+											tickLine={false}
+											axisLine={false}
+											tickMargin={12}
+											minTickGap={24}
+											allowDecimals={false}
+											tick={{
+												fill: "hsl(var(--muted-foreground))",
+												fontSize: 11,
+												fontWeight: 500,
+											}}
+										/>
+										<CartesianGrid
+											strokeDasharray="3 3"
+											vertical={false}
+											stroke="hsl(var(--border))"
+											opacity={0.3}
+										/>
+										<RechartsTooltip content={<TicketAnalyticsTooltip />} />
+										<RechartsLegend
+											wrapperStyle={{ fontSize: "11px", fontWeight: "500" }}
+										/>
 										<Area
-											key={kat}
 											type="monotone"
-											dataKey={kat}
-											stroke={AREA_COLORS[idx % AREA_COLORS.length]}
-											fill={`url(#colorUKategori${kat.replace(/\s/g, "")})`}
-											name={kat}
+											dataKey="Broadband"
+											stroke="#3b82f6"
+											fill="url(#colorBroadbandU)"
+											name="Broadband"
 											strokeWidth={1.5}
 										/>
-									))}
-								</AreaChart>
-							</ResponsiveContainer>
-						</div>
-						{/* Table */}
-						<div className="overflow-x-auto w-full">
-							<h4 className="text-sm font-semibold text-card-foreground mb-3">
-								Unique Clients by Category
-							</h4>
-							<table className="w-full text-xs border-collapse">
-								<thead>
-									<tr className="border-b border-border">
-										<th className="text-left p-2 font-medium text-muted-foreground">
-											Category
-										</th>
-										{Object.keys(tiketPerKategoriPerBulan)
-											.sort((a, b) => new Date(a + "-01").getTime() - new Date(b + "-01").getTime())
-											.map((month) => (
-												<th
-													key={month}
-													className="text-center p-2 font-medium text-muted-foreground"
-												>
-													{month}
+										<Area
+											type="monotone"
+											dataKey="Broadband Business"
+											stroke="#22c55e"
+											fill="url(#colorBroadbandBusinessU)"
+											name="Broadband Business"
+											strokeWidth={1.5}
+										/>
+										<Area
+											type="monotone"
+											dataKey="Dedicated"
+											stroke="#f59e42"
+											fill="url(#colorDedicatedU)"
+											name="Dedicated"
+											strokeWidth={1.5}
+										/>
+									</AreaChart>
+								</ResponsiveContainer>
+								{/* Table */}
+								<div className="overflow-x-auto w-full">
+									<h4 className="text-sm font-semibold text-card-foreground mb-3">
+										Monthly Unique Client Type Values
+									</h4>
+									<table className="w-full text-xs border-collapse">
+										<thead>
+											<tr className="border-b border-border">
+												<th className="text-left p-2 font-medium text-muted-foreground">
+													Client Type
 												</th>
+												{Object.keys(tiketPerJenisKlienPerBulan)
+													.sort((a, b) => new Date(a + "-01").getTime() - new Date(b + "-01").getTime())
+													.map((month) => (
+														<th
+															key={month}
+															className="text-center p-2 font-medium text-muted-foreground"
+														>
+															{month}
+														</th>
+													))}
+											</tr>
+										</thead>
+										<tbody>
+											{jenisKlienList.map((jk) => (
+												<tr
+													key={jk}
+													className="border-b border-border hover:bg-muted/50"
+												>
+													<td
+														className="p-2 font-medium text-card-foreground"
+														style={{
+															color:
+																jk === "Broadband"
+																	? "#3b82f6"
+																	: jk === "Broadband Business"
+																		? "#22c55e"
+																		: "#f59e42",
+														}}
+													>
+														{jk}
+													</td>
+													{Object.keys(tiketPerJenisKlienPerBulan)
+														.sort((a, b) => new Date(a + "-01").getTime() - new Date(b + "-01").getTime())
+														.map((month) => {
+															const uniqueClients = Array.from(
+																new Set(
+																	gridDataWithCustomerSync
+																		.filter((t) => {
+																			const d = new Date(t.openTime);
+																			const m = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+																			const name = (t.name || "")
+																				.trim()
+																				.toLowerCase();
+																			const jenis =
+																				customerJenisKlienMap.get(name) ||
+																				"Unknown";
+																			const cls = (t.classification || "")
+																				.toString()
+																				.trim()
+																				.toLowerCase();
+																			const activeMonths =
+																				customerMonthMap.get(name) || [];
+																			return (
+																				m === month &&
+																				jenis === jk &&
+																				name &&
+																				// Relax activeMonths check
+																				(activeMonths.length === 0 || activeMonths.includes(month)) &&
+																				!/^(gangguan\s*)?di\s*luar\s*layanan|request$/i.test(cls)
+																			);
+																		})
+																		.map((t) =>
+																			(t.name || "").trim().toLowerCase(),
+																		),
+																),
+															).length;
+															return (
+																<td
+																	key={month}
+																	className="text-center p-2 text-card-foreground"
+																>
+																	{uniqueClients}
+																</td>
+															);
+														})}
+												</tr>
 											))}
-									</tr>
-								</thead>
-								<tbody>
-									{kategoriList.map((kat) => (
-										<tr
-											key={kat}
-											className="border-b border-border hover:bg-muted/50"
+										</tbody>
+										<tfoot>
+											<tr className="border-b border-border">
+												<td className="p-2 font-bold text-card-foreground">
+													Total
+												</td>
+												{Object.keys(tiketPerJenisKlienPerBulan)
+													.sort((a, b) => new Date(a + "-01").getTime() - new Date(b + "-01").getTime())
+													.map((month) => {
+														// Total unique clients across ALL types this month (union, active, excluded classifications)
+														const unionSet = new Set<string>(
+															gridDataWithCustomerSync
+																.filter((t) => {
+																	const d = new Date(t.openTime);
+																	const m = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+																	if (m !== month) return false;
+																	const name = (t.name || "").trim().toLowerCase();
+																	if (!name) return false;
+																	const cls = (t.classification || "")
+																		.toString()
+																		.trim()
+																		.toLowerCase();
+																	if (
+																		/^(gangguan\s*)?di\s*luar\s*layanan|request$/i.test(cls)
+																	)
+																		return false;
+																	const activeMonths =
+																		customerMonthMap.get(name) || [];
+																	// Relax activeMonths check
+																	return activeMonths.length === 0 || activeMonths.includes(month);
+																})
+																.map((t) => (t.name || "").trim().toLowerCase()),
+														);
+														return (
+															<td
+																key={month}
+																className="text-center p-2 font-bold text-card-foreground"
+															>
+																{unionSet.size}
+															</td>
+														);
+													})}
+											</tr>
+										</tfoot>
+									</table>
+								</div>
+							</CardContent>
+						</Card>
+						{/* 6. Unique Complaining Clients by Category */}
+						<Card className="bg-card text-card-foreground rounded-2xl shadow-lg">
+							<CardHeader>
+								<CardTitle className="flex items-center gap-2 text-base">
+									<ShowChartIcon className="w-5 h-5 text-orange-600" /> Unique
+									Complaining Clients by Category
+								</CardTitle>
+								<CardDescription className="text-xs">
+									Number of unique clients with complaints by category
+								</CardDescription>
+							</CardHeader>
+							<CardContent>
+								<div className="w-full h-[300px] min-w-0">
+									<ResponsiveContainer width="100%" height={300}>
+										<AreaChart
+											data={(() => {
+												const months = Object.keys(tiketPerKategoriPerBulan).sort((a, b) => new Date(a + "-01").getTime() - new Date(b + "-01").getTime());
+												return months.map((month) => {
+													const row: any = { month };
+													kategoriList.forEach((kat) => {
+														row[kat] = Array.from(
+															new Set(
+																gridDataWithCustomerSync
+																	.filter((t) => {
+																		const d = new Date(t.openTime);
+																		const m = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+																		const name = (t.name || "")
+																			.trim()
+																			.toLowerCase();
+																		const kategori =
+																			customerKategoriMap.get(name) || "Unknown";
+																		const cls = (t.classification || "")
+																			.toString()
+																			.trim()
+																			.toLowerCase();
+																		const activeMonths =
+																			customerMonthMap.get(name) || [];
+																		return (
+																			m === month &&
+																			kategori === kat &&
+																			name &&
+																			(activeMonths.length === 0 || activeMonths.includes(month)) &&
+																			!/^(gangguan\s*)?di\s*luar\s*layanan|request$/i.test(cls)
+																		);
+																	})
+																	.map((t) => (t.name || "").trim().toLowerCase()),
+															),
+														).length;
+													});
+													return row;
+												});
+											})()}
+											margin={{ top: 20, right: 30, left: 0, bottom: 0 }}
 										>
-											<td className="p-2 font-medium text-card-foreground">
-												{kat}
-											</td>
-											{Object.keys(tiketPerKategoriPerBulan)
-												.sort((a, b) => new Date(a + "-01").getTime() - new Date(b + "-01").getTime())
-												.map((month) => {
+											<defs>
+												{kategoriList.map((kat, idx) => (
+													<linearGradient
+														key={kat}
+														id={`colorUKategori${kat.replace(/\s/g, "")}`}
+														x1="0"
+														y1="0"
+														x2="0"
+														y2="1"
+													>
+														<stop
+															offset="5%"
+															stopColor={AREA_COLORS[idx % AREA_COLORS.length]}
+															stopOpacity={0.6}
+														/>
+														<stop
+															offset="95%"
+															stopColor={AREA_COLORS[idx % AREA_COLORS.length]}
+															stopOpacity={0.05}
+														/>
+													</linearGradient>
+												))}
+											</defs>
+											<XAxis
+												dataKey="month"
+												tickLine={false}
+												axisLine={false}
+												tickMargin={12}
+												minTickGap={24}
+												tick={{
+													fill: "hsl(var(--muted-foreground))",
+													fontSize: 11,
+													fontWeight: 500,
+												}}
+											/>
+											<YAxis
+												tickLine={false}
+												axisLine={false}
+												tickMargin={12}
+												minTickGap={24}
+												allowDecimals={false}
+												tick={{
+													fill: "hsl(var(--muted-foreground))",
+													fontSize: 11,
+													fontWeight: 500,
+												}}
+											/>
+											<CartesianGrid
+												strokeDasharray="3 3"
+												vertical={false}
+												stroke="hsl(var(--border))"
+												opacity={0.3}
+											/>
+											<RechartsTooltip content={<TicketAnalyticsTooltip />} />
+											<RechartsLegend
+												wrapperStyle={{ fontSize: "11px", fontWeight: "500" }}
+											/>
+											{kategoriList.map((kat, idx) => (
+												<Area
+													key={kat}
+													type="monotone"
+													dataKey={kat}
+													stroke={AREA_COLORS[idx % AREA_COLORS.length]}
+													fill={`url(#colorUKategori${kat.replace(/\s/g, "")})`}
+													name={kat}
+													strokeWidth={1.5}
+												/>
+											))}
+										</AreaChart>
+									</ResponsiveContainer>
+								</div>
+								{/* Table */}
+								<div className="overflow-x-auto w-full">
+									<h4 className="text-sm font-semibold text-card-foreground mb-3">
+										Unique Clients by Category
+									</h4>
+									<table className="w-full text-xs border-collapse">
+										<thead>
+											<tr className="border-b border-border">
+												<th className="text-left p-2 font-medium text-muted-foreground">
+													Category
+												</th>
+												{Object.keys(tiketPerKategoriPerBulan)
+													.sort((a, b) => new Date(a + "-01").getTime() - new Date(b + "-01").getTime())
+													.map((month) => (
+														<th
+															key={month}
+															className="text-center p-2 font-medium text-muted-foreground"
+														>
+															{month}
+														</th>
+													))}
+											</tr>
+										</thead>
+										<tbody>
+											{kategoriList.map((kat) => (
+												<tr
+													key={kat}
+													className="border-b border-border hover:bg-muted/50"
+												>
+													<td className="p-2 font-medium text-card-foreground">
+														{kat}
+													</td>
+													{Object.keys(tiketPerKategoriPerBulan)
+														.sort((a, b) => new Date(a + "-01").getTime() - new Date(b + "-01").getTime())
+														.map((month) => {
+															const uniqueClients = Array.from(
+																new Set(
+																	gridDataWithCustomerSync
+																		.filter((t) => {
+																			const d = new Date(t.openTime);
+																			const m = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+																			const name = (t.name || "").trim().toLowerCase();
+																			const kategori =
+																				customerKategoriMap.get(name) || "Unknown";
+																			const cls = (t.classification || "")
+																				.toString()
+																				.trim()
+																				.toLowerCase();
+																			const activeMonths =
+																				customerMonthMap.get(name) || [];
+																			return (
+																				m === month &&
+																				kategori === kat &&
+																				name &&
+																				// Relax activeMonths check
+																				(activeMonths.length === 0 || activeMonths.includes(month)) &&
+																				!/^(gangguan\s*)?di\s*luar\s*layanan|request$/i.test(cls)
+																			);
+																		})
+																		.map((t) =>
+																			(t.name || "").trim().toLowerCase(),
+																		),
+																),
+															).length;
+															return (
+																<td
+																	key={month}
+																	className="text-center p-2 text-card-foreground"
+																>
+																	{uniqueClients}
+																</td>
+															);
+														})}
+												</tr>
+											))}
+										</tbody>
+										<tfoot>
+											<tr className="border-b border-border hover:bg-muted/50">
+												<td className="p-2 font-bold text-card-foreground">
+													Total
+												</td>
+												{Object.keys(tiketPerKategoriPerBulan)
+													.sort((a, b) => new Date(a + "-01").getTime() - new Date(b + "-01").getTime())
+													.map((month) => {
+														// Total unique clients across ALL categories this month (union, active, excluded classifications)
+														const unionSet = new Set<string>(
+															gridDataWithCustomerSync
+																.filter((t) => {
+																	const d = new Date(t.openTime);
+																	const m = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+																	if (m !== month) return false;
+																	const name = (t.name || "").trim().toLowerCase();
+																	if (!name) return false;
+																	const cls = (t.classification || "")
+																		.toString()
+																		.trim()
+																		.toLowerCase();
+																	if (
+																		/^(gangguan\s*)?di\s*luar\s*layanan|request$/i.test(cls)
+																	)
+																		return false;
+																	const activeMonths =
+																		customerMonthMap.get(name) || [];
+																	// Relax activeMonths check
+																	return activeMonths.length === 0 || activeMonths.includes(month);
+																})
+																.map((t) => (t.name || "").trim().toLowerCase()),
+														);
+														return (
+															<td
+																key={month}
+																className="text-center p-2 font-bold text-card-foreground"
+															>
+																{unionSet.size}
+															</td>
+														);
+													})}
+											</tr>
+										</tfoot>
+									</table>
+								</div>
+							</CardContent>
+						</Card>
+						{/* 7. Complaint Penetration Ratio by Type */}
+						<Card className="bg-card text-card-foreground rounded-2xl shadow-lg">
+							<CardHeader>
+								<CardTitle className="flex items-center gap-2 text-base">
+									<ShowChartIcon className="w-5 h-5 text-red-600" /> Complaint
+									Penetration Ratio by Type
+								</CardTitle>
+								<CardDescription className="text-xs">
+									Complaint penetration ratio by client type
+								</CardDescription>
+							</CardHeader>
+							<CardContent>
+								<div className="w-full h-[300px] min-w-0">
+									<ResponsiveContainer width="100%" height={300}>
+										<AreaChart
+											data={(() => {
+												const months = Object.keys(
+													tiketPerJenisKlienPerBulan,
+												).sort((a, b) => new Date(a + "-01").getTime() - new Date(b + "-01").getTime());
+												return months.map((month) => {
+													const row: any = { month };
+													jenisKlienList.forEach((jk) => {
+														const denom = customerMonthRowCountByType.get(month)?.[jk] || 0;
+														const numer = Array.from(
+															new Set(
+																gridDataWithCustomerSync
+																	.filter((t) => {
+																		const d = new Date(t.openTime);
+																		const m = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+																		const jenis =
+																			customerJenisKlienMap.get(
+																				(t.name || "").trim().toLowerCase(),
+																			) || "Unknown";
+																		const cls = (t.classification || "")
+																			.toString()
+																			.trim()
+																			.toLowerCase();
+																		return (
+																			m === month &&
+																			jenis === jk &&
+																			t.name &&
+																			t.name.trim() &&
+																			!/^(gangguan\s*)?di\s*luar\s*layanan|request$/i.test(cls)
+																		);
+																	})
+																	.map((t) => (t.name || "").trim().toLowerCase()),
+															),
+														).length;
+														row[jk] = denom > 0 ? (numer / denom) * 100 : 0;
+													});
+													return row;
+												});
+											})()}
+											margin={{ top: 20, right: 30, left: 0, bottom: 0 }}
+										>
+											<defs>
+												<linearGradient
+													id="colorBroadbandP"
+													x1="0"
+													y1="0"
+													x2="0"
+													y2="1"
+												>
+													<stop offset="5%" stopColor="#3b82f6" stopOpacity={0.6} />
+													<stop
+														offset="95%"
+														stopColor="#3b82f6"
+														stopOpacity={0.05}
+													/>
+												</linearGradient>
+												<linearGradient
+													id="colorBroadbandBusinessP"
+													x1="0"
+													y1="0"
+													x2="0"
+													y2="1"
+												>
+													<stop offset="5%" stopColor="#22c55e" stopOpacity={0.6} />
+													<stop
+														offset="95%"
+														stopColor="#22c55e"
+														stopOpacity={0.05}
+													/>
+												</linearGradient>
+												<linearGradient
+													id="colorDedicatedP"
+													x1="0"
+													y1="0"
+													x2="0"
+													y2="1"
+												>
+													<stop offset="5%" stopColor="#f59e42" stopOpacity={0.6} />
+													<stop
+														offset="95%"
+														stopColor="#f59e42"
+														stopOpacity={0.05}
+													/>
+												</linearGradient>
+											</defs>
+											<XAxis
+												dataKey="month"
+												tickLine={false}
+												axisLine={false}
+												tickMargin={12}
+												minTickGap={24}
+												tick={{
+													fill: "hsl(var(--muted-foreground))",
+													fontSize: 11,
+													fontWeight: 500,
+												}}
+											/>
+											<YAxis
+												tickLine={false}
+												axisLine={false}
+												tickMargin={12}
+												minTickGap={24}
+												allowDecimals={true}
+												tick={{
+													fill: "hsl(var(--muted-foreground))",
+													fontSize: 11,
+													fontWeight: 500,
+												}}
+											/>
+											<CartesianGrid
+												strokeDasharray="3 3"
+												vertical={false}
+												stroke="hsl(var(--border))"
+												opacity={0.3}
+											/>
+											<RechartsTooltip content={<TicketAnalyticsTooltip />} />
+											<RechartsLegend
+												wrapperStyle={{ fontSize: "11px", fontWeight: "500" }}
+											/>
+											<Area
+												type="monotone"
+												dataKey="Broadband"
+												stroke="#3b82f6"
+												fill="url(#colorBroadbandP)"
+												name="Broadband"
+												strokeWidth={1.5}
+											/>
+											<Area
+												type="monotone"
+												dataKey="Broadband Business"
+												stroke="#22c55e"
+												fill="url(#colorBroadbandBusinessP)"
+												name="Broadband Business"
+												strokeWidth={1.5}
+											/>
+											<Area
+												type="monotone"
+												dataKey="Dedicated"
+												stroke="#f59e42"
+												fill="url(#colorDedicatedP)"
+												name="Dedicated"
+												strokeWidth={1.5}
+											/>
+										</AreaChart>
+									</ResponsiveContainer>
+								</div>
+								{/* Table */}
+								<div className="overflow-x-auto w-full">
+									<h4 className="text-sm font-semibold text-card-foreground mb-3">
+										Penetration Ratio by Type
+									</h4>
+									<table className="w-full text-xs border-collapse">
+										<thead>
+											<tr className="border-b border-border">
+												<th className="text-left p-2 font-medium text-muted-foreground">
+													Type
+												</th>
+												{Object.keys(tiketPerJenisKlienPerBulan)
+													.sort((a, b) => new Date(a + "-01").getTime() - new Date(b + "-01").getTime())
+													.map((month) => (
+														<th
+															key={month}
+															className="text-center p-2 font-medium text-muted-foreground"
+														>
+															{month}
+														</th>
+													))}
+											</tr>
+										</thead>
+										<tbody>
+											{jenisKlienList.map((jk) => (
+												<tr
+													key={jk}
+													className="border-b border-border hover:bg-muted/50"
+												>
+													<td className="p-2 font-medium text-card-foreground">
+														{jk}
+													</td>
+													{Object.keys(tiketPerJenisKlienPerBulan)
+														.sort((a, b) => new Date(a + "-01").getTime() - new Date(b + "-01").getTime())
+														.map((month) => {
+															const denom = customerMonthRowCountByType.get(month)?.[jk] || 0;
+															const numer = Array.from(
+																new Set(
+																	gridDataWithCustomerSync
+																		.filter((t) => {
+																			const d = new Date(t.openTime);
+																			const m = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+																			const jenis =
+																				customerJenisKlienMap.get(
+																					(t.name || "").trim().toLowerCase(),
+																				) || "Unknown";
+																			const cls = (t.classification || "")
+																				.toString()
+																				.trim()
+																				.toLowerCase();
+																			const activeMonths =
+																				customerMonthMap.get((t.name || "").trim().toLowerCase()) || [];
+																			return (
+																				m === month &&
+																				jenis === jk &&
+																				t.name &&
+																				t.name.trim() &&
+																				// Relax activeMonths check
+																				(activeMonths.length === 0 || activeMonths.includes(month)) &&
+																				!/^(gangguan\s*)?di\s*luar\s*layanan|request$/i.test(cls)
+																			);
+																		})
+																		.map((t) =>
+																			(t.name || "").trim().toLowerCase(),
+																		),
+																),
+															).length;
+															const ratio = denom > 0 ? (numer / denom) * 100 : 0;
+															return (
+																<td
+																	key={month}
+																	className="text-center p-2 text-card-foreground"
+																>
+																	{ratio.toFixed(2)}%
+																</td>
+															);
+														})}
+												</tr>
+											))}
+										</tbody>
+									</table>
+								</div>
+							</CardContent>
+						</Card>
+						{/* 8. Complaint Penetration Ratio by Category */}
+						<Card className="bg-card text-card-foreground rounded-2xl shadow-lg">
+							<CardHeader>
+								<CardTitle className="flex items-center gap-2 text-base">
+									<ShowChartIcon className="w-5 h-5 text-pink-600" /> Complaint
+									Penetration Ratio by Category
+								</CardTitle>
+								<CardDescription className="text-xs">
+									Complaint penetration ratio by client category
+								</CardDescription>
+							</CardHeader>
+							<CardContent>
+								<ResponsiveContainer width="100%" height={300}>
+									<AreaChart
+										data={(() => {
+											const months = Object.keys(tiketPerKategoriPerBulan).sort((a, b) => new Date(a + "-01").getTime() - new Date(b + "-01").getTime());
+											return months.map((month) => {
+												const row: any = { month };
+												kategoriList.forEach((kat) => {
+													// Klien unik yang komplain bulan ini
 													const uniqueClients = Array.from(
 														new Set(
 															gridDataWithCustomerSync
@@ -3406,943 +3755,458 @@ const TicketAnalytics = ({ }: TicketAnalyticsProps) => {
 																		m === month &&
 																		kategori === kat &&
 																		name &&
-																		// Relax activeMonths check
 																		(activeMonths.length === 0 || activeMonths.includes(month)) &&
 																		!/^(gangguan\s*)?di\s*luar\s*layanan|request$/i.test(cls)
 																	);
 																})
-																.map((t) =>
-																	(t.name || "").trim().toLowerCase(),
-																),
-														),
-													).length;
-													return (
-														<td
-															key={month}
-															className="text-center p-2 text-card-foreground"
-														>
-															{uniqueClients}
-														</td>
-													);
-												})}
-										</tr>
-									))}
-								</tbody>
-								<tfoot>
-									<tr className="border-b border-border hover:bg-muted/50">
-										<td className="p-2 font-bold text-card-foreground">
-											Total
-										</td>
-										{Object.keys(tiketPerKategoriPerBulan)
-											.sort((a, b) => new Date(a + "-01").getTime() - new Date(b + "-01").getTime())
-											.map((month) => {
-												// Total unique clients across ALL categories this month (union, active, excluded classifications)
-												const unionSet = new Set<string>(
-													gridDataWithCustomerSync
-														.filter((t) => {
-															const d = new Date(t.openTime);
-															const m = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-															if (m !== month) return false;
-															const name = (t.name || "").trim().toLowerCase();
-															if (!name) return false;
-															const cls = (t.classification || "")
-																.toString()
-																.trim()
-																.toLowerCase();
-															if (
-																/^(gangguan\s*)?di\s*luar\s*layanan|request$/i.test(cls)
-															)
-																return false;
-															const activeMonths =
-																customerMonthMap.get(name) || [];
-															// Relax activeMonths check
-															return activeMonths.length === 0 || activeMonths.includes(month);
-														})
-														.map((t) => (t.name || "").trim().toLowerCase()),
-												);
-												return (
-													<td
-														key={month}
-														className="text-center p-2 font-bold text-card-foreground"
-													>
-														{unionSet.size}
-													</td>
-												);
-											})}
-									</tr>
-								</tfoot>
-							</table>
-						</div>
-					</CardContent>
-				</Card>
-				{/* 7. Complaint Penetration Ratio by Type */}
-				<Card className="bg-card text-card-foreground rounded-2xl shadow-lg">
-					<CardHeader>
-						<CardTitle className="flex items-center gap-2 text-base">
-							<ShowChartIcon className="w-5 h-5 text-red-600" /> Complaint
-							Penetration Ratio by Type
-						</CardTitle>
-						<CardDescription className="text-xs">
-							Complaint penetration ratio by client type
-						</CardDescription>
-					</CardHeader>
-					<CardContent>
-						<div className="w-full h-[300px] min-w-0">
-							<ResponsiveContainer width="100%" height={300}>
-								<AreaChart
-									data={(() => {
-										const months = Object.keys(
-											tiketPerJenisKlienPerBulan,
-										).sort((a, b) => new Date(a + "-01").getTime() - new Date(b + "-01").getTime());
-										return months.map((month) => {
-											const row: any = { month };
-											jenisKlienList.forEach((jk) => {
-												const denom = customerMonthRowCountByType.get(month)?.[jk] || 0;
-												const numer = Array.from(
-													new Set(
-														gridDataWithCustomerSync
-															.filter((t) => {
-																const d = new Date(t.openTime);
-																const m = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-																const jenis =
-																	customerJenisKlienMap.get(
-																		(t.name || "").trim().toLowerCase(),
-																	) || "Unknown";
-																const cls = (t.classification || "")
-																	.toString()
-																	.trim()
-																	.toLowerCase();
-																return (
-																	m === month &&
-																	jenis === jk &&
-																	t.name &&
-																	t.name.trim() &&
-																	!/^(gangguan\s*)?di\s*luar\s*layanan|request$/i.test(cls)
-																);
-															})
-															.map((t) => (t.name || "").trim().toLowerCase()),
-													),
-												).length;
-												row[jk] = denom > 0 ? (numer / denom) * 100 : 0;
-											});
-											return row;
-										});
-									})()}
-									margin={{ top: 20, right: 30, left: 0, bottom: 0 }}
-								>
-									<defs>
-										<linearGradient
-											id="colorBroadbandP"
-											x1="0"
-											y1="0"
-											x2="0"
-											y2="1"
-										>
-											<stop offset="5%" stopColor="#3b82f6" stopOpacity={0.6} />
-											<stop
-												offset="95%"
-												stopColor="#3b82f6"
-												stopOpacity={0.05}
-											/>
-										</linearGradient>
-										<linearGradient
-											id="colorBroadbandBusinessP"
-											x1="0"
-											y1="0"
-											x2="0"
-											y2="1"
-										>
-											<stop offset="5%" stopColor="#22c55e" stopOpacity={0.6} />
-											<stop
-												offset="95%"
-												stopColor="#22c55e"
-												stopOpacity={0.05}
-											/>
-										</linearGradient>
-										<linearGradient
-											id="colorDedicatedP"
-											x1="0"
-											y1="0"
-											x2="0"
-											y2="1"
-										>
-											<stop offset="5%" stopColor="#f59e42" stopOpacity={0.6} />
-											<stop
-												offset="95%"
-												stopColor="#f59e42"
-												stopOpacity={0.05}
-											/>
-										</linearGradient>
-									</defs>
-									<XAxis
-										dataKey="month"
-										tickLine={false}
-										axisLine={false}
-										tickMargin={12}
-										minTickGap={24}
-										tick={{
-											fill: "hsl(var(--muted-foreground))",
-											fontSize: 11,
-											fontWeight: 500,
-										}}
-									/>
-									<YAxis
-										tickLine={false}
-										axisLine={false}
-										tickMargin={12}
-										minTickGap={24}
-										allowDecimals={true}
-										tick={{
-											fill: "hsl(var(--muted-foreground))",
-											fontSize: 11,
-											fontWeight: 500,
-										}}
-									/>
-									<CartesianGrid
-										strokeDasharray="3 3"
-										vertical={false}
-										stroke="hsl(var(--border))"
-										opacity={0.3}
-									/>
-									<RechartsTooltip content={<TicketAnalyticsTooltip />} />
-									<RechartsLegend
-										wrapperStyle={{ fontSize: "11px", fontWeight: "500" }}
-									/>
-									<Area
-										type="monotone"
-										dataKey="Broadband"
-										stroke="#3b82f6"
-										fill="url(#colorBroadbandP)"
-										name="Broadband"
-										strokeWidth={1.5}
-									/>
-									<Area
-										type="monotone"
-										dataKey="Broadband Business"
-										stroke="#22c55e"
-										fill="url(#colorBroadbandBusinessP)"
-										name="Broadband Business"
-										strokeWidth={1.5}
-									/>
-									<Area
-										type="monotone"
-										dataKey="Dedicated"
-										stroke="#f59e42"
-										fill="url(#colorDedicatedP)"
-										name="Dedicated"
-										strokeWidth={1.5}
-									/>
-								</AreaChart>
-							</ResponsiveContainer>
-						</div>
-						{/* Table */}
-						<div className="overflow-x-auto w-full">
-							<h4 className="text-sm font-semibold text-card-foreground mb-3">
-								Penetration Ratio by Type
-							</h4>
-							<table className="w-full text-xs border-collapse">
-								<thead>
-									<tr className="border-b border-border">
-										<th className="text-left p-2 font-medium text-muted-foreground">
-											Type
-										</th>
-										{Object.keys(tiketPerJenisKlienPerBulan)
-											.sort((a, b) => new Date(a + "-01").getTime() - new Date(b + "-01").getTime())
-											.map((month) => (
-												<th
-													key={month}
-													className="text-center p-2 font-medium text-muted-foreground"
-												>
-													{month}
-												</th>
-											))}
-									</tr>
-								</thead>
-								<tbody>
-									{jenisKlienList.map((jk) => (
-										<tr
-											key={jk}
-											className="border-b border-border hover:bg-muted/50"
-										>
-											<td className="p-2 font-medium text-card-foreground">
-												{jk}
-											</td>
-											{Object.keys(tiketPerJenisKlienPerBulan)
-												.sort((a, b) => new Date(a + "-01").getTime() - new Date(b + "-01").getTime())
-												.map((month) => {
-													const denom = customerMonthRowCountByType.get(month)?.[jk] || 0;
-													const numer = Array.from(
-														new Set(
-															gridDataWithCustomerSync
-																.filter((t) => {
-																	const d = new Date(t.openTime);
-																	const m = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-																	const jenis =
-																		customerJenisKlienMap.get(
-																			(t.name || "").trim().toLowerCase(),
-																		) || "Unknown";
-																	const cls = (t.classification || "")
-																		.toString()
-																		.trim()
-																		.toLowerCase();
-																	const activeMonths =
-																		customerMonthMap.get((t.name || "").trim().toLowerCase()) || [];
-																	return (
-																		m === month &&
-																		jenis === jk &&
-																		t.name &&
-																		t.name.trim() &&
-																		// Relax activeMonths check
-																		(activeMonths.length === 0 || activeMonths.includes(month)) &&
-																		!/^(gangguan\s*)?di\s*luar\s*layanan|request$/i.test(cls)
-																	);
-																})
-																.map((t) =>
-																	(t.name || "").trim().toLowerCase(),
-																),
-														),
-													).length;
-													const ratio = denom > 0 ? (numer / denom) * 100 : 0;
-													return (
-														<td
-															key={month}
-															className="text-center p-2 text-card-foreground"
-														>
-															{ratio.toFixed(2)}%
-														</td>
-													);
-												})}
-										</tr>
-									))}
-								</tbody>
-							</table>
-						</div>
-					</CardContent>
-				</Card>
-				{/* 8. Complaint Penetration Ratio by Category */}
-				<Card className="bg-card text-card-foreground rounded-2xl shadow-lg">
-					<CardHeader>
-						<CardTitle className="flex items-center gap-2 text-base">
-							<ShowChartIcon className="w-5 h-5 text-pink-600" /> Complaint
-							Penetration Ratio by Category
-						</CardTitle>
-						<CardDescription className="text-xs">
-							Complaint penetration ratio by client category
-						</CardDescription>
-					</CardHeader>
-					<CardContent>
-						<ResponsiveContainer width="100%" height={300}>
-							<AreaChart
-								data={(() => {
-									const months = Object.keys(tiketPerKategoriPerBulan).sort((a, b) => new Date(a + "-01").getTime() - new Date(b + "-01").getTime());
-									return months.map((month) => {
-										const row: any = { month };
-										kategoriList.forEach((kat) => {
-											// Klien unik yang komplain bulan ini
-											const uniqueClients = Array.from(
-												new Set(
-													gridDataWithCustomerSync
-														.filter((t) => {
-															const d = new Date(t.openTime);
-															const m = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-															const name = (t.name || "").trim().toLowerCase();
-															const kategori =
-																customerKategoriMap.get(name) || "Unknown";
-															const cls = (t.classification || "")
-																.toString()
-																.trim()
-																.toLowerCase();
-															const activeMonths =
-																customerMonthMap.get(name) || [];
-															return (
-																m === month &&
-																kategori === kat &&
-																name &&
-																(activeMonths.length === 0 || activeMonths.includes(month)) &&
-																!/^(gangguan\s*)?di\s*luar\s*layanan|request$/i.test(cls)
-															);
-														})
-														.map((t) => (t.name || "").trim().toLowerCase()),
-												),
-											).length;
-											// Denominator: total rows uploaded for that category this month
-											const obj =
-												customerMonthRowCountByCategory.get(month) || {};
-											const totalClients = obj[kat] || 0;
-											row[kat] =
-												totalClients > 0
-													? (uniqueClients / totalClients) * 100
-													: 0;
-										});
-										return row;
-									});
-								})()}
-								margin={{ top: 20, right: 30, left: 0, bottom: 0 }}
-							>
-								<defs>
-									{kategoriList.map((kat, idx) => (
-										<linearGradient
-											key={kat}
-											id={`colorPKategori${kat.replace(/\s/g, "")}`}
-											x1="0"
-											y1="0"
-											x2="0"
-											y2="1"
-										>
-											<stop
-												offset="5%"
-												stopColor={AREA_COLORS[idx % AREA_COLORS.length]}
-												stopOpacity={0.6}
-											/>
-											<stop
-												offset="95%"
-												stopColor={AREA_COLORS[idx % AREA_COLORS.length]}
-												stopOpacity={0.05}
-											/>
-										</linearGradient>
-									))}
-								</defs>
-								<XAxis
-									dataKey="month"
-									tickLine={false}
-									axisLine={false}
-									tickMargin={12}
-									minTickGap={24}
-									tick={{
-										fill: "hsl(var(--muted-foreground))",
-										fontSize: 11,
-										fontWeight: 500,
-									}}
-								/>
-								<YAxis
-									tickLine={false}
-									axisLine={false}
-									tickMargin={12}
-									minTickGap={24}
-									allowDecimals={true}
-									tick={{
-										fill: "hsl(var(--muted-foreground))",
-										fontSize: 11,
-										fontWeight: 500,
-									}}
-								/>
-								<CartesianGrid
-									strokeDasharray="3 3"
-									vertical={false}
-									stroke="hsl(var(--border))"
-									opacity={0.3}
-								/>
-								<RechartsTooltip content={<TicketAnalyticsTooltip />} />
-								<RechartsLegend
-									wrapperStyle={{ fontSize: "11px", fontWeight: "500" }}
-								/>
-								{kategoriList.map((kat, idx) => (
-									<Area
-										key={kat}
-										type="monotone"
-										dataKey={kat}
-										stroke={AREA_COLORS[idx % AREA_COLORS.length]}
-										fill={`url(#colorPKategori${kat.replace(/\s/g, "")})`}
-										name={kat}
-										strokeWidth={1.5}
-									/>
-								))}
-							</AreaChart>
-						</ResponsiveContainer>
-						{/* Table */}
-						<div className="overflow-x-auto w-full">
-							<h4 className="text-sm font-semibold text-card-foreground mb-3">
-								Penetration Ratio by Category
-							</h4>
-							<table className="w-full text-xs border-collapse">
-								<thead>
-									<tr className="border-b border-border">
-										<th className="text-left p-2 font-medium text-muted-foreground">
-											Category
-										</th>
-										{Object.keys(tiketPerKategoriPerBulan)
-											.sort((a, b) => new Date(a + "-01").getTime() - new Date(b + "-01").getTime())
-											.map((month) => (
-												<th
-													key={month}
-													className="text-center p-2 font-medium text-muted-foreground"
-												>
-													{month}
-												</th>
-											))}
-									</tr>
-								</thead>
-								<tbody>
-									{kategoriList.map((kat) => (
-										<tr
-											key={kat}
-											className="border-b border-border hover:bg-muted/50"
-										>
-											<td className="p-2 font-medium text-card-foreground">
-												{kat}
-											</td>
-											{Object.keys(tiketPerKategoriPerBulan)
-												.sort((a, b) => new Date(a + "-01").getTime() - new Date(b + "-01").getTime())
-												.map((month) => {
-													// Klien unik yang komplain bulan ini (aktif + exclude klasifikasi)
-													const uniqueClients = Array.from(
-														new Set(
-															gridDataWithCustomerSync
-																.filter((t) => {
-																	const d = new Date(t.openTime);
-																	const m = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-																	const name = (t.name || "")
-																		.trim()
-																		.toLowerCase();
-																	const kategori =
-																		customerKategoriMap.get(name) || "Unknown";
-																	const cls = (t.classification || "")
-																		.toString()
-																		.trim()
-																		.toLowerCase();
-																	const activeMonths =
-																		customerMonthMap.get(name) || [];
-																	return (
-																		m === month &&
-																		kategori === kat &&
-																		name &&
-																		// Relax activeMonths check
-																		(activeMonths.length === 0 || activeMonths.includes(month)) &&
-																		!/^(gangguan\s*)?di\s*luar\s*layanan|request$/i.test(cls)
-																	);
-																})
-																.map((t) =>
-																	(t.name || "").trim().toLowerCase(),
-																),
+																.map((t) => (t.name || "").trim().toLowerCase()),
 														),
 													).length;
 													// Denominator: total rows uploaded for that category this month
 													const obj =
 														customerMonthRowCountByCategory.get(month) || {};
 													const totalClients = obj[kat] || 0;
-													const ratio =
+													row[kat] =
 														totalClients > 0
 															? (uniqueClients / totalClients) * 100
 															: 0;
-													return (
-														<td
-															key={month}
-															className="text-center p-2 text-card-foreground"
-														>
-															{ratio.toFixed(2)}%
-														</td>
-													);
-												})}
-										</tr>
-									))}
-								</tbody>
-							</table>
-						</div>
-					</CardContent>
-				</Card>
-				{/* Active Clients per Month */}
-				<Card className="bg-card text-card-foreground rounded-2xl shadow-lg">
-					<CardHeader>
-						<CardTitle className="flex items-center gap-2 text-base">
-							<ShowChartIcon className="w-5 h-5 text-cyan-600" /> Active Clients
-							per Month
-						</CardTitle>
-						<CardDescription className="text-xs">
-							Monthly active clients vs complaint clients
-						</CardDescription>
-					</CardHeader>
-					<CardContent className="overflow-x-auto">
-						<div className="w-full h-[300px] min-w-0">
-							<ResponsiveContainer width="100%" height={300}>
-								<AreaChart
-									data={(() => {
-										const months = Object.keys(
-											tiketPerJenisKlienPerBulan,
-										).sort((a, b) => new Date(a + "-01").getTime() - new Date(b + "-01").getTime());
-										return months.map((month) => {
-											// Unique active names this month
-											const activeNames = new Set(
-												Array.from(customerMonthMap.entries())
-													.filter(
-														([_name, monthsArr]) =>
-															Array.isArray(monthsArr) &&
-															(monthsArr.length === 0 || monthsArr.includes(month)),
-													)
-													.map(([name]) => (name || "").trim().toLowerCase()),
-											);
-											const totalActive = activeNames.size;
-											const complainCount = (() => {
-												const names = new Set(
-													gridDataWithCustomerSync
-														.filter((t) => {
-															const d = new Date(t.openTime);
-															const m = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-															if (m !== month) return false;
-															const cls = (t.classification || "")
-																.toString()
-																.trim()
-																.toLowerCase();
-															if (!t.name || !t.name.trim()) return false;
-															return (
-																!/^(gangguan\s*)?di\s*luar\s*layanan|request$/i.test(cls)
-															);
-														})
-														.map((t) => (t.name || "").trim().toLowerCase()),
-												);
-												// Only count those that are active in this month
-												let count = 0;
-												names.forEach((n) => {
-													if (activeNames.has(n)) count += 1;
 												});
-												return count;
-											})();
-											return {
-												month,
-												"Active Clients": totalActive,
-												"Complaint Clients": complainCount,
-											};
-										});
-									})()}
-									margin={{ top: 20, right: 30, left: 0, bottom: 0 }}
-								>
-									<defs>
-										<linearGradient
-											id="colorActiveClients"
-											x1="0"
-											y1="0"
-											x2="0"
-											y2="1"
-										>
-											<stop offset="5%" stopColor="#6366F1" stopOpacity={0.6} />
-											<stop
-												offset="95%"
-												stopColor="#6366F1"
-												stopOpacity={0.05}
-											/>
-										</linearGradient>
-										<linearGradient
-											id="colorComplaintClients"
-											x1="0"
-											y1="0"
-											x2="0"
-											y2="1"
-										>
-											<stop offset="5%" stopColor="#F43F5E" stopOpacity={0.6} />
-											<stop
-												offset="95%"
-												stopColor="#F43F5E"
-												stopOpacity={0.05}
-											/>
-										</linearGradient>
-									</defs>
-									<XAxis
-										dataKey="month"
-										tickLine={false}
-										axisLine={false}
-										tickMargin={12}
-										minTickGap={24}
-										tick={{
-											fill: "hsl(var(--muted-foreground))",
-											fontSize: 11,
-											fontWeight: 500,
-										}}
-									/>
-									<YAxis
-										tickLine={false}
-										axisLine={false}
-										tickMargin={12}
-										minTickGap={24}
-										tick={{
-											fill: "hsl(var(--muted-foreground))",
-											fontSize: 11,
-											fontWeight: 500,
-										}}
-									/>
-									<CartesianGrid
-										strokeDasharray="3 3"
-										vertical={false}
-										stroke="hsl(var(--border))"
-										opacity={0.3}
-									/>
-									<RechartsTooltip content={<TicketAnalyticsTooltip />} />
-									<RechartsLegend
-										wrapperStyle={{ fontSize: "11px", fontWeight: "500" }}
-									/>
-									<Area
-										type="monotone"
-										dataKey="Active Clients"
-										stroke="#6366F1"
-										fill="url(#colorActiveClients)"
-										name="Active Clients"
-										strokeWidth={1.5}
-									/>
-									<Area
-										type="monotone"
-										dataKey="Complaint Clients"
-										stroke="#F43F5E"
-										fill="url(#colorComplaintClients)"
-										name="Complaint Clients"
-										strokeWidth={1.5}
-									/>
-								</AreaChart>
-							</ResponsiveContainer>
-						</div>
-						<div className="overflow-x-auto w-full">
-							<h4 className="text-sm font-semibold text-card-foreground mb-3">
-								Active vs Complaint Clients
-							</h4>
-							<table className="w-full text-xs border-collapse">
-								<thead>
-									<tr className="border-b border-border">
-										<th className="text-left p-2 font-medium text-muted-foreground">
-											Type
-										</th>
-										{Object.keys(tiketPerJenisKlienPerBulan)
-											.sort((a, b) => new Date(a + "-01").getTime() - new Date(b + "-01").getTime())
-											.map((month) => (
-												<th
-													key={month}
-													className="text-center p-2 font-medium text-muted-foreground"
-												>
-													{month}
-												</th>
-											))}
-									</tr>
-								</thead>
-								<tbody>
-									<tr className="border-b border-border hover:bg-muted/50">
-										<td className="p-2 font-medium text-card-foreground">
-											Active Clients
-										</td>
-										{Object.keys(tiketPerJenisKlienPerBulan)
-											.sort((a, b) => new Date(a + "-01").getTime() - new Date(b + "-01").getTime())
-											.map((month) => {
-												const activeNames = new Set(
-													Array.from(customerMonthMap.entries())
-														.filter(
-															([_name, monthsArr]) =>
-																Array.isArray(monthsArr) &&
-																(monthsArr.length === 0 || monthsArr.includes(month)),
-														)
-														.map(([name]) => (name || "").trim().toLowerCase()),
-												);
-												return (
-													<td
-														key={month}
-														className="text-center p-2 text-card-foreground"
-													>
-														{activeNames.size}
-													</td>
-												);
-											})}
-									</tr>
-									<tr className="border-b border-border hover:bg-muted/50">
-										<td className="p-2 font-medium text-card-foreground">
-											Complaint Clients
-										</td>
-										{Object.keys(tiketPerJenisKlienPerBulan)
-											.sort((a, b) => new Date(a + "-01").getTime() - new Date(b + "-01").getTime())
-											.map((month) => {
-												// Complaining clients that are also active this month (union)
-												const activeNames = new Set(
-													Array.from(customerMonthMap.entries())
-														.filter(
-															([_name, monthsArr]) =>
-																Array.isArray(monthsArr) &&
-																(monthsArr.length === 0 || monthsArr.includes(month)),
-														)
-														.map(([name]) => (name || "").trim().toLowerCase()),
-												);
-												const complainNames = new Set(
-													gridDataWithCustomerSync
-														.filter((t) => {
-															const d = new Date(t.openTime);
-															const m = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-															if (m !== month) return false;
-															const cls = (t.classification || "")
-																.toString()
-																.trim()
-																.toLowerCase();
-															if (!t.name || !t.name.trim()) return false;
-															return (
-																!/^(gangguan\s*)?di\s*luar\s*layanan|request$/i.test(cls)
-															);
-														})
-														.map((t) => (t.name || "").trim().toLowerCase()),
-												);
-												let uniqueActiveComplain = 0;
-												complainNames.forEach((n) => {
-													if (activeNames.has(n)) uniqueActiveComplain += 1;
-												});
-												return (
-													<td
-														key={month}
-														className="text-center p-2 text-card-foreground"
-													>
-														{uniqueActiveComplain}
-													</td>
-												);
-											})}
-									</tr>
-								</tbody>
-							</table>
-						</div>
-					</CardContent>
-				</Card>
-
-				{/* Active Clients by Service Type - removed per request */}
-
-				{/* 9. Total Complaint Penetration Ratio */}
-				<Card className="bg-card text-card-foreground rounded-2xl shadow-lg">
-					<CardHeader>
-						<CardTitle className="flex items-center gap-2 text-base">
-							<ShowChartIcon className="w-5 h-5 text-emerald-600" /> Total
-							Complaint Penetration Ratio
-						</CardTitle>
-						<CardDescription className="text-xs">
-							Overall complaint penetration ratio across all clients
-						</CardDescription>
-					</CardHeader>
-					<CardContent>
-						<ResponsiveContainer width="100%" height={300}>
-							<AreaChart
-								data={(() => {
-									const months = Object.keys(tiketPerJenisKlienPerBulan).sort((a, b) => new Date(a + "-01").getTime() - new Date(b + "-01").getTime());
-									return months.map((month) => {
-										// Active unique names this month
-										const activeNames = new Set(
-											Array.from(customerMonthMap.entries())
-												.filter(
-													([_name, monthsArr]) =>
-														Array.isArray(monthsArr) &&
-														(monthsArr.length === 0 || monthsArr.includes(month)),
-												)
-												.map(([name]) => (name || "").trim().toLowerCase()),
-										);
-										// Distinct complaining names in this month (filtered classifications)
-										const complainNames = new Set(
-											gridDataWithCustomerSync
-												.filter((t) => {
-													const d = new Date(t.openTime);
-													const m = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-													if (m !== month) return false;
-													const cls = (t.classification || "")
-														.toString()
-														.trim()
-														.toLowerCase();
-													if (!t.name || !t.name.trim()) return false;
-													return (
-														!/^(gangguan\s*)?di\s*luar\s*layanan|request$/i.test(cls)
-													);
-												})
-												.map((t) => (t.name || "").trim().toLowerCase()),
-										);
-										// Numerator: only complaining names that are also active this month
-										let uniqueClients = 0;
-										complainNames.forEach((n) => {
-											if (activeNames.has(n)) uniqueClients += 1;
-										});
-										// Denominator: unique active customers
-										const totalClients = activeNames.size;
-										return {
-											month,
-											"Total Ratio":
-												totalClients > 0
-													? (uniqueClients / totalClients) * 100
-													: 0,
-										};
-									});
-								})()}
-								margin={{ top: 20, right: 30, left: 0, bottom: 0 }}
-							>
-								<defs>
-									<linearGradient
-										id="colorTotalRatio"
-										x1="0"
-										y1="0"
-										x2="0"
-										y2="1"
+												return row;
+											});
+										})()}
+										margin={{ top: 20, right: 30, left: 0, bottom: 0 }}
 									>
-										<stop offset="5%" stopColor="#6366F1" stopOpacity={0.6} />
-										<stop offset="95%" stopColor="#6366F1" stopOpacity={0.05} />
-									</linearGradient>
-								</defs>
-								<XAxis
-									dataKey="month"
-									tickLine={false}
-									axisLine={false}
-									tickMargin={12}
-									minTickGap={24}
-									tick={{
-										fill: "hsl(var(--muted-foreground))",
-										fontSize: 11,
-										fontWeight: 500,
-									}}
-								/>
-								<YAxis
-									tickLine={false}
-									axisLine={false}
-									tickMargin={12}
-									minTickGap={24}
-									allowDecimals={true}
-									tick={{
-										fill: "hsl(var(--muted-foreground))",
-										fontSize: 11,
-										fontWeight: 500,
-									}}
-								/>
-								<CartesianGrid
-									strokeDasharray="3 3"
-									vertical={false}
-									stroke="hsl(var(--border))"
-									opacity={0.3}
-								/>
-								<RechartsTooltip content={<TicketAnalyticsTooltip />} />
-								<RechartsLegend
-									wrapperStyle={{ fontSize: "11px", fontWeight: "500" }}
-								/>
-								<Area
-									type="monotone"
-									dataKey="Total Ratio"
-									stroke="#6366F1"
-									fill="url(#colorTotalRatio)"
-									name="Total Ratio"
-									strokeWidth={1.5}
-								/>
-							</AreaChart>
-						</ResponsiveContainer>
-						{/* Table */}
-						<div className="overflow-x-auto w-full">
-							<h4 className="text-sm font-semibold text-card-foreground mb-3">
-								Total Penetration Ratio
-							</h4>
-							<table className="w-full text-xs border-collapse">
-								<thead>
-									<tr className="border-b border-border">
-										<th className="text-left p-2 font-medium text-muted-foreground">
-											Month
-										</th>
-										{Object.keys(tiketPerJenisKlienPerBulan)
-											.sort((a, b) => new Date(a + "-01").getTime() - new Date(b + "-01").getTime())
-											.map((month) => (
-												<th
-													key={month}
-													className="text-center p-2 font-medium text-muted-foreground"
+										<defs>
+											{kategoriList.map((kat, idx) => (
+												<linearGradient
+													key={kat}
+													id={`colorPKategori${kat.replace(/\s/g, "")}`}
+													x1="0"
+													y1="0"
+													x2="0"
+													y2="1"
 												>
-													{month}
-												</th>
+													<stop
+														offset="5%"
+														stopColor={AREA_COLORS[idx % AREA_COLORS.length]}
+														stopOpacity={0.6}
+													/>
+													<stop
+														offset="95%"
+														stopColor={AREA_COLORS[idx % AREA_COLORS.length]}
+														stopOpacity={0.05}
+													/>
+												</linearGradient>
 											))}
-									</tr>
-								</thead>
-								<tbody>
-									<tr className="border-b border-border hover:bg-muted/50">
-										<td className="p-2 font-medium text-card-foreground">
-											Total Ratio
-										</td>
-										{Object.keys(tiketPerJenisKlienPerBulan)
-											.sort((a, b) => new Date(a + "-01").getTime() - new Date(b + "-01").getTime())
-											.map((month) => {
-												// Active names this month
+										</defs>
+										<XAxis
+											dataKey="month"
+											tickLine={false}
+											axisLine={false}
+											tickMargin={12}
+											minTickGap={24}
+											tick={{
+												fill: "hsl(var(--muted-foreground))",
+												fontSize: 11,
+												fontWeight: 500,
+											}}
+										/>
+										<YAxis
+											tickLine={false}
+											axisLine={false}
+											tickMargin={12}
+											minTickGap={24}
+											allowDecimals={true}
+											tick={{
+												fill: "hsl(var(--muted-foreground))",
+												fontSize: 11,
+												fontWeight: 500,
+											}}
+										/>
+										<CartesianGrid
+											strokeDasharray="3 3"
+											vertical={false}
+											stroke="hsl(var(--border))"
+											opacity={0.3}
+										/>
+										<RechartsTooltip content={<TicketAnalyticsTooltip />} />
+										<RechartsLegend
+											wrapperStyle={{ fontSize: "11px", fontWeight: "500" }}
+										/>
+										{kategoriList.map((kat, idx) => (
+											<Area
+												key={kat}
+												type="monotone"
+												dataKey={kat}
+												stroke={AREA_COLORS[idx % AREA_COLORS.length]}
+												fill={`url(#colorPKategori${kat.replace(/\s/g, "")})`}
+												name={kat}
+												strokeWidth={1.5}
+											/>
+										))}
+									</AreaChart>
+								</ResponsiveContainer>
+								{/* Table */}
+								<div className="overflow-x-auto w-full">
+									<h4 className="text-sm font-semibold text-card-foreground mb-3">
+										Penetration Ratio by Category
+									</h4>
+									<table className="w-full text-xs border-collapse">
+										<thead>
+											<tr className="border-b border-border">
+												<th className="text-left p-2 font-medium text-muted-foreground">
+													Category
+												</th>
+												{Object.keys(tiketPerKategoriPerBulan)
+													.sort((a, b) => new Date(a + "-01").getTime() - new Date(b + "-01").getTime())
+													.map((month) => (
+														<th
+															key={month}
+															className="text-center p-2 font-medium text-muted-foreground"
+														>
+															{month}
+														</th>
+													))}
+											</tr>
+										</thead>
+										<tbody>
+											{kategoriList.map((kat) => (
+												<tr
+													key={kat}
+													className="border-b border-border hover:bg-muted/50"
+												>
+													<td className="p-2 font-medium text-card-foreground">
+														{kat}
+													</td>
+													{Object.keys(tiketPerKategoriPerBulan)
+														.sort((a, b) => new Date(a + "-01").getTime() - new Date(b + "-01").getTime())
+														.map((month) => {
+															// Klien unik yang komplain bulan ini (aktif + exclude klasifikasi)
+															const uniqueClients = Array.from(
+																new Set(
+																	gridDataWithCustomerSync
+																		.filter((t) => {
+																			const d = new Date(t.openTime);
+																			const m = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+																			const name = (t.name || "")
+																				.trim()
+																				.toLowerCase();
+																			const kategori =
+																				customerKategoriMap.get(name) || "Unknown";
+																			const cls = (t.classification || "")
+																				.toString()
+																				.trim()
+																				.toLowerCase();
+																			const activeMonths =
+																				customerMonthMap.get(name) || [];
+																			return (
+																				m === month &&
+																				kategori === kat &&
+																				name &&
+																				// Relax activeMonths check
+																				(activeMonths.length === 0 || activeMonths.includes(month)) &&
+																				!/^(gangguan\s*)?di\s*luar\s*layanan|request$/i.test(cls)
+																			);
+																		})
+																		.map((t) =>
+																			(t.name || "").trim().toLowerCase(),
+																		),
+																),
+															).length;
+															// Denominator: total rows uploaded for that category this month
+															const obj =
+																customerMonthRowCountByCategory.get(month) || {};
+															const totalClients = obj[kat] || 0;
+															const ratio =
+																totalClients > 0
+																	? (uniqueClients / totalClients) * 100
+																	: 0;
+															return (
+																<td
+																	key={month}
+																	className="text-center p-2 text-card-foreground"
+																>
+																	{ratio.toFixed(2)}%
+																</td>
+															);
+														})}
+												</tr>
+											))}
+										</tbody>
+									</table>
+								</div>
+							</CardContent>
+						</Card>
+						{/* Active Clients per Month */}
+						<Card className="bg-card text-card-foreground rounded-2xl shadow-lg">
+							<CardHeader>
+								<CardTitle className="flex items-center gap-2 text-base">
+									<ShowChartIcon className="w-5 h-5 text-cyan-600" /> Active Clients
+									per Month
+								</CardTitle>
+								<CardDescription className="text-xs">
+									Monthly active clients vs complaint clients
+								</CardDescription>
+							</CardHeader>
+							<CardContent className="overflow-x-auto">
+								<div className="w-full h-[300px] min-w-0">
+									<ResponsiveContainer width="100%" height={300}>
+										<AreaChart
+											data={(() => {
+												const months = Object.keys(
+													tiketPerJenisKlienPerBulan,
+												).sort((a, b) => new Date(a + "-01").getTime() - new Date(b + "-01").getTime());
+												return months.map((month) => {
+													// Unique active names this month
+													const activeNames = new Set(
+														Array.from(customerMonthMap.entries())
+															.filter(
+																([_name, monthsArr]) =>
+																	Array.isArray(monthsArr) &&
+																	(monthsArr.length === 0 || monthsArr.includes(month)),
+															)
+															.map(([name]) => (name || "").trim().toLowerCase()),
+													);
+													const totalActive = activeNames.size;
+													const complainCount = (() => {
+														const names = new Set(
+															gridDataWithCustomerSync
+																.filter((t) => {
+																	const d = new Date(t.openTime);
+																	const m = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+																	if (m !== month) return false;
+																	const cls = (t.classification || "")
+																		.toString()
+																		.trim()
+																		.toLowerCase();
+																	if (!t.name || !t.name.trim()) return false;
+																	return (
+																		!/^(gangguan\s*)?di\s*luar\s*layanan|request$/i.test(cls)
+																	);
+																})
+																.map((t) => (t.name || "").trim().toLowerCase()),
+														);
+														// Only count those that are active in this month
+														let count = 0;
+														names.forEach((n) => {
+															if (activeNames.has(n)) count += 1;
+														});
+														return count;
+													})();
+													return {
+														month,
+														"Active Clients": totalActive,
+														"Complaint Clients": complainCount,
+													};
+												});
+											})()}
+											margin={{ top: 20, right: 30, left: 0, bottom: 0 }}
+										>
+											<defs>
+												<linearGradient
+													id="colorActiveClients"
+													x1="0"
+													y1="0"
+													x2="0"
+													y2="1"
+												>
+													<stop offset="5%" stopColor="#6366F1" stopOpacity={0.6} />
+													<stop
+														offset="95%"
+														stopColor="#6366F1"
+														stopOpacity={0.05}
+													/>
+												</linearGradient>
+												<linearGradient
+													id="colorComplaintClients"
+													x1="0"
+													y1="0"
+													x2="0"
+													y2="1"
+												>
+													<stop offset="5%" stopColor="#F43F5E" stopOpacity={0.6} />
+													<stop
+														offset="95%"
+														stopColor="#F43F5E"
+														stopOpacity={0.05}
+													/>
+												</linearGradient>
+											</defs>
+											<XAxis
+												dataKey="month"
+												tickLine={false}
+												axisLine={false}
+												tickMargin={12}
+												minTickGap={24}
+												tick={{
+													fill: "hsl(var(--muted-foreground))",
+													fontSize: 11,
+													fontWeight: 500,
+												}}
+											/>
+											<YAxis
+												tickLine={false}
+												axisLine={false}
+												tickMargin={12}
+												minTickGap={24}
+												tick={{
+													fill: "hsl(var(--muted-foreground))",
+													fontSize: 11,
+													fontWeight: 500,
+												}}
+											/>
+											<CartesianGrid
+												strokeDasharray="3 3"
+												vertical={false}
+												stroke="hsl(var(--border))"
+												opacity={0.3}
+											/>
+											<RechartsTooltip content={<TicketAnalyticsTooltip />} />
+											<RechartsLegend
+												wrapperStyle={{ fontSize: "11px", fontWeight: "500" }}
+											/>
+											<Area
+												type="monotone"
+												dataKey="Active Clients"
+												stroke="#6366F1"
+												fill="url(#colorActiveClients)"
+												name="Active Clients"
+												strokeWidth={1.5}
+											/>
+											<Area
+												type="monotone"
+												dataKey="Complaint Clients"
+												stroke="#F43F5E"
+												fill="url(#colorComplaintClients)"
+												name="Complaint Clients"
+												strokeWidth={1.5}
+											/>
+										</AreaChart>
+									</ResponsiveContainer>
+								</div>
+								<div className="overflow-x-auto w-full">
+									<h4 className="text-sm font-semibold text-card-foreground mb-3">
+										Active vs Complaint Clients
+									</h4>
+									<table className="w-full text-xs border-collapse">
+										<thead>
+											<tr className="border-b border-border">
+												<th className="text-left p-2 font-medium text-muted-foreground">
+													Type
+												</th>
+												{Object.keys(tiketPerJenisKlienPerBulan)
+													.sort((a, b) => new Date(a + "-01").getTime() - new Date(b + "-01").getTime())
+													.map((month) => (
+														<th
+															key={month}
+															className="text-center p-2 font-medium text-muted-foreground"
+														>
+															{month}
+														</th>
+													))}
+											</tr>
+										</thead>
+										<tbody>
+											<tr className="border-b border-border hover:bg-muted/50">
+												<td className="p-2 font-medium text-card-foreground">
+													Active Clients
+												</td>
+												{Object.keys(tiketPerJenisKlienPerBulan)
+													.sort((a, b) => new Date(a + "-01").getTime() - new Date(b + "-01").getTime())
+													.map((month) => {
+														const activeNames = new Set(
+															Array.from(customerMonthMap.entries())
+																.filter(
+																	([_name, monthsArr]) =>
+																		Array.isArray(monthsArr) &&
+																		(monthsArr.length === 0 || monthsArr.includes(month)),
+																)
+																.map(([name]) => (name || "").trim().toLowerCase()),
+														);
+														return (
+															<td
+																key={month}
+																className="text-center p-2 text-card-foreground"
+															>
+																{activeNames.size}
+															</td>
+														);
+													})}
+											</tr>
+											<tr className="border-b border-border hover:bg-muted/50">
+												<td className="p-2 font-medium text-card-foreground">
+													Complaint Clients
+												</td>
+												{Object.keys(tiketPerJenisKlienPerBulan)
+													.sort((a, b) => new Date(a + "-01").getTime() - new Date(b + "-01").getTime())
+													.map((month) => {
+														// Complaining clients that are also active this month (union)
+														const activeNames = new Set(
+															Array.from(customerMonthMap.entries())
+																.filter(
+																	([_name, monthsArr]) =>
+																		Array.isArray(monthsArr) &&
+																		(monthsArr.length === 0 || monthsArr.includes(month)),
+																)
+																.map(([name]) => (name || "").trim().toLowerCase()),
+														);
+														const complainNames = new Set(
+															gridDataWithCustomerSync
+																.filter((t) => {
+																	const d = new Date(t.openTime);
+																	const m = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+																	if (m !== month) return false;
+																	const cls = (t.classification || "")
+																		.toString()
+																		.trim()
+																		.toLowerCase();
+																	if (!t.name || !t.name.trim()) return false;
+																	return (
+																		!/^(gangguan\s*)?di\s*luar\s*layanan|request$/i.test(cls)
+																	);
+																})
+																.map((t) => (t.name || "").trim().toLowerCase()),
+														);
+														let uniqueActiveComplain = 0;
+														complainNames.forEach((n) => {
+															if (activeNames.has(n)) uniqueActiveComplain += 1;
+														});
+														return (
+															<td
+																key={month}
+																className="text-center p-2 text-card-foreground"
+															>
+																{uniqueActiveComplain}
+															</td>
+														);
+													})}
+											</tr>
+										</tbody>
+									</table>
+								</div>
+							</CardContent>
+						</Card>
+
+						{/* Active Clients by Service Type - removed per request */}
+
+						{/* 9. Total Complaint Penetration Ratio */}
+						<Card className="bg-card text-card-foreground rounded-2xl shadow-lg">
+							<CardHeader>
+								<CardTitle className="flex items-center gap-2 text-base">
+									<ShowChartIcon className="w-5 h-5 text-emerald-600" /> Total
+									Complaint Penetration Ratio
+								</CardTitle>
+								<CardDescription className="text-xs">
+									Overall complaint penetration ratio across all clients
+								</CardDescription>
+							</CardHeader>
+							<CardContent>
+								<ResponsiveContainer width="100%" height={300}>
+									<AreaChart
+										data={(() => {
+											const months = Object.keys(tiketPerJenisKlienPerBulan).sort((a, b) => new Date(a + "-01").getTime() - new Date(b + "-01").getTime());
+											return months.map((month) => {
+												// Active unique names this month
 												const activeNames = new Set(
 													Array.from(customerMonthMap.entries())
 														.filter(
@@ -4352,7 +4216,7 @@ const TicketAnalytics = ({ }: TicketAnalyticsProps) => {
 														)
 														.map(([name]) => (name || "").trim().toLowerCase()),
 												);
-												// Distinct complainants this month (filtered classifications)
+												// Distinct complaining names in this month (filtered classifications)
 												const complainNames = new Set(
 													gridDataWithCustomerSync
 														.filter((t) => {
@@ -4370,1143 +4234,1278 @@ const TicketAnalytics = ({ }: TicketAnalyticsProps) => {
 														})
 														.map((t) => (t.name || "").trim().toLowerCase()),
 												);
-												// Numerator: complainants who are also active this month
+												// Numerator: only complaining names that are also active this month
 												let uniqueClients = 0;
 												complainNames.forEach((n) => {
 													if (activeNames.has(n)) uniqueClients += 1;
 												});
-												const ratio =
-													activeNames.size > 0
-														? (uniqueClients / activeNames.size) * 100
-														: 0;
-												return (
-													<td
-														key={month}
-														className="text-center p-2 text-card-foreground"
-													>
-														{ratio.toFixed(2)}%
-													</td>
-												);
-											})}
-									</tr>
-								</tbody>
-							</table>
-						</div>
-					</CardContent>
-				</Card>
-			</div>
-
-			{/* Category Hotspot Analysis - Professional & Informative Design */}
-			{topComplaintsTable && topComplaintsTable.length > 0 && (
-				<div className="mb-12">
-					<div className="bg-card text-card-foreground  rounded-2xl shadow-lg p-6">
-						<div className="flex items-center justify-between mb-6">
-							<div>
-								<h2 className="text-xl font-bold text-card-foreground">
-									Category Hotspot Analysis
-								</h2>
-								<p className="text-sm text-muted-foreground mt-1">
-									Analisis kategori berdasarkan <strong>Impact Score</strong>{" "}
-									yang dihitung dari jumlah tiket × rata-rata durasi
-									penyelesaian
-								</p>
-							</div>
-							<div className="flex items-center gap-4 text-xs text-muted-foreground">
-								<div className="flex items-center gap-1">
-									<div className="w-3 h-3 bg-gradient-to-r from-red-400 to-red-600 rounded"></div>
-									<span>High Impact</span>
-									<span className="text-xs text-muted-foreground">
-										(&gt;70% dari max score)
-									</span>
-								</div>
-								<div className="flex items-center gap-1">
-									<div className="w-3 h-3 bg-gradient-to-r from-yellow-400 to-yellow-600 rounded"></div>
-									<span>Medium Impact</span>
-									<span className="text-xs text-muted-foreground">
-										(40-70% dari max score)
-									</span>
-								</div>
-								<div className="flex items-center gap-1">
-									<div className="w-3 h-3 bg-gradient-to-r from-green-400 to-green-600 rounded"></div>
-									<span>Low Impact</span>
-									<span className="text-xs text-muted-foreground">
-										(&lt;40% dari max score)
-									</span>
-								</div>
-							</div>
-						</div>
-
-						<div className="grid gap-4">
-							{topComplaintsTable.slice(0, 10).map((item, index) => {
-								// ====================== IMPACT SCORE SUPPORT (NEW) ======================
-								const { catP90Map, catEscalationRate, impactScore } = (() => {
-									const m: Record<string, number> = {};
-									catStats.forEach((cs) => {
-										m[cs.cat] = cs.p90 ?? 0;
-									});
-
-									const mCount: Record<
-										string,
-										{ total: number; escal: number }
-									> = {};
-									(Array.isArray(gridData) ? gridData : []).forEach((t) => {
-										const cat = t?.category || "Unknown";
-										(mCount[cat] ||= { total: 0, escal: 0 }).total += 1;
-										const s = String(t?.status || "").toLowerCase();
-										if (s === "escalated") mCount[cat].escal += 1;
-									});
-									const out: Record<string, number> = {};
-									Object.entries(mCount).forEach(
-										([k, v]) => (out[k] = v.total ? v.escal / v.total : 0),
-									);
-
-									const impactScoreFn = (
-										x: {
-											tickets: number;
-											p90Hours: number;
-											escalRate: number;
-											severityScore: number;
-										},
-										w = { w1: 1, w2: 2, w3: 3, w4: 2 },
-									) =>
-										x.tickets * w.w1 +
-										x.p90Hours * w.w2 +
-										x.severityScore * w.w3 +
-										x.escalRate * 100 * w.w4;
-
-									return {
-										catP90Map: m,
-										catEscalationRate: out,
-										impactScore: impactScoreFn,
-									};
-								})();
-
-								const computedImpact = Number.isFinite(item?.impactScore)
-									? item.impactScore
-									: impactScore({
-										tickets: item.count || 0,
-										p90Hours: catP90Map[item.category] || 0,
-										escalRate: catEscalationRate[item.category] || 0,
-										severityScore: 2, // fallback: P3
-									});
-
-								// --- Trend Calculation (MoM) ---
-								let trendValue: number | null = null;
-								if (
-									monthlyStatsData &&
-									monthlyStatsData.labels &&
-									monthlyStatsData.labels.length > 1
-								) {
-									const monthKeys = monthlyStatsData.labels;
-									const catTicketsPerMonth: number[] = monthKeys.map(
-										(label) => {
-											const [monthName, year] = label.split(" ");
-											const monthIdx = [
-												"Jan",
-												"Feb",
-												"Mar",
-												"Apr",
-												"Mei",
-												"Jun",
-												"Jul",
-												"Agu",
-												"Sep",
-												"Okt",
-												"Nov",
-												"Des",
-											].indexOf(monthName);
-											const tickets = gridData.filter((t) => {
-												if (t.category !== item.category) return false;
-												if (!t.openTime) return false;
-												const d = new Date(t.openTime);
-												return (
-													d.getFullYear() === Number(year) &&
-													d.getMonth() === monthIdx
-												);
+												// Denominator: unique active customers
+												const totalClients = activeNames.size;
+												return {
+													month,
+													"Total Ratio":
+														totalClients > 0
+															? (uniqueClients / totalClients) * 100
+															: 0,
+												};
 											});
-											return tickets.length;
-										},
-									);
-									if (catTicketsPerMonth.length > 1) {
-										const prev =
-											catTicketsPerMonth[catTicketsPerMonth.length - 2];
-										const curr =
-											catTicketsPerMonth[catTicketsPerMonth.length - 1];
-										if (prev > 0) {
-											trendValue = ((curr - prev) / Math.abs(prev)) * 100;
-										}
-									}
-								}
-
-								// --- Contribution Calculation ---
-								const totalTickets = gridData.length;
-								const contrib =
-									totalTickets > 0 ? (item.count / totalTickets) * 100 : 0;
-
-								// Get impact color based on score
-								const getImpactColor = (score: number, maxScore: number) => {
-									const ratio = score / maxScore;
-									if (ratio > 0.7) return "from-red-400 to-red-600";
-									if (ratio > 0.4) return "from-yellow-400 to-yellow-600";
-									return "from-green-400 to-green-600";
-								};
-
-								const maxImpact =
-									topComplaintsTable[0]?.impactScore || computedImpact;
-								const impactColor = getImpactColor(computedImpact, maxImpact);
-
-								return (
-									<div
-										key={index}
-										className="bg-gray-50 dark:bg-zinc-800/50 rounded-lg p-4  hover:shadow-md transition-all duration-200"
+										})()}
+										margin={{ top: 20, right: 30, left: 0, bottom: 0 }}
 									>
-										<div className="flex items-start justify-between">
-											{/* Left: Rank & Category Info */}
-											<div className="flex items-start gap-4 flex-1">
-												<div className="flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-r from-blue-500 to-blue-600 text-white font-bold text-sm shadow-sm">
-													#{index + 1}
-												</div>
-												<div className="flex-1">
-													<div className="flex items-center gap-3 mb-2">
-														<h3 className="font-semibold text-card-foreground text-lg">
-															{item.category}
-														</h3>
-														<span className="bg-blue-100 dark:bg-blue-900/50 text-blue-800 dark:text-blue-200 px-2 py-1 rounded-full text-xs font-medium">
-															{item.count} tiket
-														</span>
-													</div>
-													<div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-3">
-														<div>
-															<div className="text-xs text-muted-foreground">
-																Avg Duration
-															</div>
-															<div className="font-mono text-sm font-medium text-card-foreground">
-																{item.avgDurationFormatted}
-															</div>
-															<div className="text-xs text-muted-foreground">
-																Rata-rata waktu penyelesaian
-															</div>
-														</div>
-														<div>
-															<div className="text-xs text-muted-foreground">
-																Contribution
-															</div>
-															<div className="text-sm font-medium text-card-foreground">
-																{contrib.toFixed(1)}%
-															</div>
-															<div className="text-xs text-muted-foreground">
-																% dari total tiket
-															</div>
-														</div>
-														<div>
-															<div className="text-xs text-muted-foreground">
-																Trend (MoM)
-															</div>
-															<div className="flex items-center gap-1">
-																{trendValue !== null ? (
-																	<>
-																		<span
-																			className={`text-xs ${trendValue > 0 ? "text-green-600 dark:text-green-400" : trendValue < 0 ? "text-red-600 dark:text-red-400" : "text-muted-foreground"}`}
-																		>
-																			{trendValue > 0 ? (
-																				<TrendingUpIcon className="w-3 h-3" />
-																			) : trendValue < 0 ? (
-																				<TrendingDownIcon className="w-3 h-3" />
-																			) : (
-																				<TrendingFlatIcon className="w-3 h-3" />
-																			)}
-																		</span>
-																		<span className="text-sm font-medium">
-																			{trendValue > 0 ? "+" : ""}
-																			{trendValue.toFixed(1)}%
-																		</span>
-																	</>
-																) : (
-																	<span className="text-xs text-gray-400">
-																		-
-																	</span>
-																)}
-															</div>
-															<div className="text-xs text-muted-foreground">
-																Month over Month
-															</div>
-														</div>
-														<div>
-															<div className="text-xs text-muted-foreground">
-																Top Sub
-															</div>
-															<div
-																className="text-sm font-medium text-card-foreground truncate"
-																title={item.topSubCategory}
+										<defs>
+											<linearGradient
+												id="colorTotalRatio"
+												x1="0"
+												y1="0"
+												x2="0"
+												y2="1"
+											>
+												<stop offset="5%" stopColor="#6366F1" stopOpacity={0.6} />
+												<stop offset="95%" stopColor="#6366F1" stopOpacity={0.05} />
+											</linearGradient>
+										</defs>
+										<XAxis
+											dataKey="month"
+											tickLine={false}
+											axisLine={false}
+											tickMargin={12}
+											minTickGap={24}
+											tick={{
+												fill: "hsl(var(--muted-foreground))",
+												fontSize: 11,
+												fontWeight: 500,
+											}}
+										/>
+										<YAxis
+											tickLine={false}
+											axisLine={false}
+											tickMargin={12}
+											minTickGap={24}
+											allowDecimals={true}
+											tick={{
+												fill: "hsl(var(--muted-foreground))",
+												fontSize: 11,
+												fontWeight: 500,
+											}}
+										/>
+										<CartesianGrid
+											strokeDasharray="3 3"
+											vertical={false}
+											stroke="hsl(var(--border))"
+											opacity={0.3}
+										/>
+										<RechartsTooltip content={<TicketAnalyticsTooltip />} />
+										<RechartsLegend
+											wrapperStyle={{ fontSize: "11px", fontWeight: "500" }}
+										/>
+										<Area
+											type="monotone"
+											dataKey="Total Ratio"
+											stroke="#6366F1"
+											fill="url(#colorTotalRatio)"
+											name="Total Ratio"
+											strokeWidth={1.5}
+										/>
+									</AreaChart>
+								</ResponsiveContainer>
+								{/* Table */}
+								<div className="overflow-x-auto w-full">
+									<h4 className="text-sm font-semibold text-card-foreground mb-3">
+										Total Penetration Ratio
+									</h4>
+									<table className="w-full text-xs border-collapse">
+										<thead>
+											<tr className="border-b border-border">
+												<th className="text-left p-2 font-medium text-muted-foreground">
+													Month
+												</th>
+												{Object.keys(tiketPerJenisKlienPerBulan)
+													.sort((a, b) => new Date(a + "-01").getTime() - new Date(b + "-01").getTime())
+													.map((month) => (
+														<th
+															key={month}
+															className="text-center p-2 font-medium text-muted-foreground"
+														>
+															{month}
+														</th>
+													))}
+											</tr>
+										</thead>
+										<tbody>
+											<tr className="border-b border-border hover:bg-muted/50">
+												<td className="p-2 font-medium text-card-foreground">
+													Total Ratio
+												</td>
+												{Object.keys(tiketPerJenisKlienPerBulan)
+													.sort((a, b) => new Date(a + "-01").getTime() - new Date(b + "-01").getTime())
+													.map((month) => {
+														// Active names this month
+														const activeNames = new Set(
+															Array.from(customerMonthMap.entries())
+																.filter(
+																	([_name, monthsArr]) =>
+																		Array.isArray(monthsArr) &&
+																		(monthsArr.length === 0 || monthsArr.includes(month)),
+																)
+																.map(([name]) => (name || "").trim().toLowerCase()),
+														);
+														// Distinct complainants this month (filtered classifications)
+														const complainNames = new Set(
+															gridDataWithCustomerSync
+																.filter((t) => {
+																	const d = new Date(t.openTime);
+																	const m = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+																	if (m !== month) return false;
+																	const cls = (t.classification || "")
+																		.toString()
+																		.trim()
+																		.toLowerCase();
+																	if (!t.name || !t.name.trim()) return false;
+																	return (
+																		!/^(gangguan\s*)?di\s*luar\s*layanan|request$/i.test(cls)
+																	);
+																})
+																.map((t) => (t.name || "").trim().toLowerCase()),
+														);
+														// Numerator: complainants who are also active this month
+														let uniqueClients = 0;
+														complainNames.forEach((n) => {
+															if (activeNames.has(n)) uniqueClients += 1;
+														});
+														const ratio =
+															activeNames.size > 0
+																? (uniqueClients / activeNames.size) * 100
+																: 0;
+														return (
+															<td
+																key={month}
+																className="text-center p-2 text-card-foreground"
 															>
-																{item.topSubCategory}
-															</div>
-															<div className="text-xs text-muted-foreground">
-																Sub-kategori terbanyak
-															</div>
-														</div>
-													</div>
+																{ratio.toFixed(2)}%
+															</td>
+														);
+													})}
+											</tr>
+										</tbody>
+									</table>
+								</div>
+							</CardContent>
+						</Card>
+					</div>
 
-													{/* Impact Score Bar */}
-													<div>
-														<div className="flex items-center justify-between text-xs text-muted-foreground mb-1">
-															<div className="flex items-center gap-2">
-																<span>Impact Score</span>
-																<div className="group relative">
-																	<svg
-																		className="w-4 h-4 text-blue-500 cursor-help"
-																		fill="currentColor"
-																		viewBox="0 0 20 20"
+					{/* Category Hotspot Analysis - Professional & Informative Design */}
+					{topComplaintsTable && topComplaintsTable.length > 0 && (
+						<div className="mb-12">
+							<div className="bg-card text-card-foreground  rounded-2xl shadow-lg p-6">
+								<div className="flex items-center justify-between mb-6">
+									<div>
+										<h2 className="text-xl font-bold text-card-foreground">
+											Category Hotspot Analysis
+										</h2>
+										<p className="text-sm text-muted-foreground mt-1">
+											Analisis kategori berdasarkan <strong>Impact Score</strong>{" "}
+											yang dihitung dari jumlah tiket × rata-rata durasi
+											penyelesaian
+										</p>
+									</div>
+									<div className="flex items-center gap-4 text-xs text-muted-foreground">
+										<div className="flex items-center gap-1">
+											<div className="w-3 h-3 bg-gradient-to-r from-red-400 to-red-600 rounded"></div>
+											<span>High Impact</span>
+											<span className="text-xs text-muted-foreground">
+												(&gt;70% dari max score)
+											</span>
+										</div>
+										<div className="flex items-center gap-1">
+											<div className="w-3 h-3 bg-gradient-to-r from-yellow-400 to-yellow-600 rounded"></div>
+											<span>Medium Impact</span>
+											<span className="text-xs text-muted-foreground">
+												(40-70% dari max score)
+											</span>
+										</div>
+										<div className="flex items-center gap-1">
+											<div className="w-3 h-3 bg-gradient-to-r from-green-400 to-green-600 rounded"></div>
+											<span>Low Impact</span>
+											<span className="text-xs text-muted-foreground">
+												(&lt;40% dari max score)
+											</span>
+										</div>
+									</div>
+								</div>
+
+								<div className="grid gap-4">
+									{topComplaintsTable.slice(0, 10).map((item, index) => {
+										// ====================== IMPACT SCORE SUPPORT (NEW) ======================
+										const { catP90Map, catEscalationRate, impactScore } = (() => {
+											const m: Record<string, number> = {};
+											catStats.forEach((cs) => {
+												m[cs.cat] = cs.p90 ?? 0;
+											});
+
+											const mCount: Record<
+												string,
+												{ total: number; escal: number }
+											> = {};
+											(Array.isArray(gridData) ? gridData : []).forEach((t) => {
+												const cat = t?.category || "Unknown";
+												(mCount[cat] ||= { total: 0, escal: 0 }).total += 1;
+												const s = String(t?.status || "").toLowerCase();
+												if (s === "escalated") mCount[cat].escal += 1;
+											});
+											const out: Record<string, number> = {};
+											Object.entries(mCount).forEach(
+												([k, v]) => (out[k] = v.total ? v.escal / v.total : 0),
+											);
+
+											const impactScoreFn = (
+												x: {
+													tickets: number;
+													p90Hours: number;
+													escalRate: number;
+													severityScore: number;
+												},
+												w = { w1: 1, w2: 2, w3: 3, w4: 2 },
+											) =>
+												x.tickets * w.w1 +
+												x.p90Hours * w.w2 +
+												x.severityScore * w.w3 +
+												x.escalRate * 100 * w.w4;
+
+											return {
+												catP90Map: m,
+												catEscalationRate: out,
+												impactScore: impactScoreFn,
+											};
+										})();
+
+										const computedImpact = Number.isFinite(item?.impactScore)
+											? item.impactScore
+											: impactScore({
+												tickets: item.count || 0,
+												p90Hours: catP90Map[item.category] || 0,
+												escalRate: catEscalationRate[item.category] || 0,
+												severityScore: 2, // fallback: P3
+											});
+
+										// --- Trend Calculation (MoM) ---
+										let trendValue: number | null = null;
+										if (
+											monthlyStatsData &&
+											monthlyStatsData.labels &&
+											monthlyStatsData.labels.length > 1
+										) {
+											const monthKeys = monthlyStatsData.labels;
+											const catTicketsPerMonth: number[] = monthKeys.map(
+												(label) => {
+													const [monthName, year] = label.split(" ");
+													const monthIdx = [
+														"Jan",
+														"Feb",
+														"Mar",
+														"Apr",
+														"Mei",
+														"Jun",
+														"Jul",
+														"Agu",
+														"Sep",
+														"Okt",
+														"Nov",
+														"Des",
+													].indexOf(monthName);
+													const tickets = gridData.filter((t) => {
+														if (t.category !== item.category) return false;
+														if (!t.openTime) return false;
+														const d = new Date(t.openTime);
+														return (
+															d.getFullYear() === Number(year) &&
+															d.getMonth() === monthIdx
+														);
+													});
+													return tickets.length;
+												},
+											);
+											if (catTicketsPerMonth.length > 1) {
+												const prev =
+													catTicketsPerMonth[catTicketsPerMonth.length - 2];
+												const curr =
+													catTicketsPerMonth[catTicketsPerMonth.length - 1];
+												if (prev > 0) {
+													trendValue = ((curr - prev) / Math.abs(prev)) * 100;
+												}
+											}
+										}
+
+										// --- Contribution Calculation ---
+										const totalTickets = gridData.length;
+										const contrib =
+											totalTickets > 0 ? (item.count / totalTickets) * 100 : 0;
+
+										// Get impact color based on score
+										const getImpactColor = (score: number, maxScore: number) => {
+											const ratio = score / maxScore;
+											if (ratio > 0.7) return "from-red-400 to-red-600";
+											if (ratio > 0.4) return "from-yellow-400 to-yellow-600";
+											return "from-green-400 to-green-600";
+										};
+
+										const maxImpact =
+											topComplaintsTable[0]?.impactScore || computedImpact;
+										const impactColor = getImpactColor(computedImpact, maxImpact);
+
+										return (
+											<div
+												key={index}
+												className="bg-gray-50 dark:bg-zinc-800/50 rounded-lg p-4  hover:shadow-md transition-all duration-200"
+											>
+												<div className="flex items-start justify-between">
+													{/* Left: Rank & Category Info */}
+													<div className="flex items-start gap-4 flex-1">
+														<div className="flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-r from-blue-500 to-blue-600 text-white font-bold text-sm shadow-sm">
+															#{index + 1}
+														</div>
+														<div className="flex-1">
+															<div className="flex items-center gap-3 mb-2">
+																<h3 className="font-semibold text-card-foreground text-lg">
+																	{item.category}
+																</h3>
+																<span className="bg-blue-100 dark:bg-blue-900/50 text-blue-800 dark:text-blue-200 px-2 py-1 rounded-full text-xs font-medium">
+																	{item.count} tiket
+																</span>
+															</div>
+															<div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-3">
+																<div>
+																	<div className="text-xs text-muted-foreground">
+																		Avg Duration
+																	</div>
+																	<div className="font-mono text-sm font-medium text-card-foreground">
+																		{item.avgDurationFormatted}
+																	</div>
+																	<div className="text-xs text-muted-foreground">
+																		Rata-rata waktu penyelesaian
+																	</div>
+																</div>
+																<div>
+																	<div className="text-xs text-muted-foreground">
+																		Contribution
+																	</div>
+																	<div className="text-sm font-medium text-card-foreground">
+																		{contrib.toFixed(1)}%
+																	</div>
+																	<div className="text-xs text-muted-foreground">
+																		% dari total tiket
+																	</div>
+																</div>
+																<div>
+																	<div className="text-xs text-muted-foreground">
+																		Trend (MoM)
+																	</div>
+																	<div className="flex items-center gap-1">
+																		{trendValue !== null ? (
+																			<>
+																				<span
+																					className={`text-xs ${trendValue > 0 ? "text-green-600 dark:text-green-400" : trendValue < 0 ? "text-red-600 dark:text-red-400" : "text-muted-foreground"}`}
+																				>
+																					{trendValue > 0 ? (
+																						<TrendingUpIcon className="w-3 h-3" />
+																					) : trendValue < 0 ? (
+																						<TrendingDownIcon className="w-3 h-3" />
+																					) : (
+																						<TrendingFlatIcon className="w-3 h-3" />
+																					)}
+																				</span>
+																				<span className="text-sm font-medium">
+																					{trendValue > 0 ? "+" : ""}
+																					{trendValue.toFixed(1)}%
+																				</span>
+																			</>
+																		) : (
+																			<span className="text-xs text-gray-400">
+																				-
+																			</span>
+																		)}
+																	</div>
+																	<div className="text-xs text-muted-foreground">
+																		Month over Month
+																	</div>
+																</div>
+																<div>
+																	<div className="text-xs text-muted-foreground">
+																		Top Sub
+																	</div>
+																	<div
+																		className="text-sm font-medium text-card-foreground truncate"
+																		title={item.topSubCategory}
 																	>
-																		<path
-																			fillRule="evenodd"
-																			d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 3 3 0 100-6zm0 8a1 1 0 100-2 1 1 0 000 2z"
-																			clipRule="evenodd"
-																		/>
-																	</svg>
-																	<div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 text-xs rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
-																		<div className="font-semibold mb-1">
-																			Impact Score Formula:
-																		</div>
-																		<div>Jumlah Tiket × Rata-rata Durasi</div>
-																		<div className="text-blue-300 dark:text-blue-700 mt-1">
-																			{item.count} ×{" "}
-																			{item.avgDuration.toFixed(2)} jam ={" "}
-																			{computedImpact.toFixed(2)}
-																		</div>
-																		<div className="text-xs text-gray-300 dark:text-gray-600 mt-1">
-																			Semakin tinggi score = Semakin banyak
-																			resources yang dikonsumsi
-																		</div>
-																		<div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-zinc-900 dark:border-t-zinc-100"></div>
+																		{item.topSubCategory}
+																	</div>
+																	<div className="text-xs text-muted-foreground">
+																		Sub-kategori terbanyak
 																	</div>
 																</div>
 															</div>
-															<span className="font-bold text-card-foreground">
-																{computedImpact.toFixed(2)}
-															</span>
-														</div>
-														<Progress
-															value={(computedImpact / maxImpact) * 100}
-															className={`h-2 bg-gradient-to-r ${impactColor} transition-all duration-700`}
-														/>
-														<div className="flex items-center justify-between text-xs text-muted-foreground mt-1">
-															<span className="text-xs">
-																{item.count} tiket ×{" "}
-																{item.avgDuration.toFixed(2)} jam
-															</span>
-															<span
-																className={`text-xs font-medium ${impactColor.includes("red")
-																	? "text-red-600 dark:text-red-400"
-																	: impactColor.includes("yellow")
-																		? "text-yellow-600 dark:text-yellow-400"
-																		: "text-green-600 dark:text-green-400"
-																	}`}
-															>
-																{impactColor.includes("red")
-																	? "High Impact"
-																	: impactColor.includes("yellow")
-																		? "Medium Impact"
-																		: "Low Impact"}
-															</span>
+
+															{/* Impact Score Bar */}
+															<div>
+																<div className="flex items-center justify-between text-xs text-muted-foreground mb-1">
+																	<div className="flex items-center gap-2">
+																		<span>Impact Score</span>
+																		<div className="group relative">
+																			<svg
+																				className="w-4 h-4 text-blue-500 cursor-help"
+																				fill="currentColor"
+																				viewBox="0 0 20 20"
+																			>
+																				<path
+																					fillRule="evenodd"
+																					d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 3 3 0 100-6zm0 8a1 1 0 100-2 1 1 0 000 2z"
+																					clipRule="evenodd"
+																				/>
+																			</svg>
+																			<div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 text-xs rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
+																				<div className="font-semibold mb-1">
+																					Impact Score Formula:
+																				</div>
+																				<div>Jumlah Tiket × Rata-rata Durasi</div>
+																				<div className="text-blue-300 dark:text-blue-700 mt-1">
+																					{item.count} ×{" "}
+																					{item.avgDuration.toFixed(2)} jam ={" "}
+																					{computedImpact.toFixed(2)}
+																				</div>
+																				<div className="text-xs text-gray-300 dark:text-gray-600 mt-1">
+																					Semakin tinggi score = Semakin banyak
+																					resources yang dikonsumsi
+																				</div>
+																				<div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-zinc-900 dark:border-t-zinc-100"></div>
+																			</div>
+																		</div>
+																	</div>
+																	<span className="font-bold text-card-foreground">
+																		{computedImpact.toFixed(2)}
+																	</span>
+																</div>
+																<Progress
+																	value={(computedImpact / maxImpact) * 100}
+																	className={`h-2 bg-gradient-to-r ${impactColor} transition-all duration-700`}
+																/>
+																<div className="flex items-center justify-between text-xs text-muted-foreground mt-1">
+																	<span className="text-xs">
+																		{item.count} tiket ×{" "}
+																		{item.avgDuration.toFixed(2)} jam
+																	</span>
+																	<span
+																		className={`text-xs font-medium ${impactColor.includes("red")
+																			? "text-red-600 dark:text-red-400"
+																			: impactColor.includes("yellow")
+																				? "text-yellow-600 dark:text-yellow-400"
+																				: "text-green-600 dark:text-green-400"
+																			}`}
+																	>
+																		{impactColor.includes("red")
+																			? "High Impact"
+																			: impactColor.includes("yellow")
+																				? "Medium Impact"
+																				: "Low Impact"}
+																	</span>
+																</div>
+															</div>
 														</div>
 													</div>
 												</div>
 											</div>
+										);
+									})}
+
+									{/* Show more button if there are more than 10 items */}
+									{topComplaintsTable.length > 10 && (
+										<div className="text-center pt-4">
+											<button className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 text-sm font-medium">
+												Tampilkan {topComplaintsTable.length - 10} kategori
+												lainnya...
+											</button>
 										</div>
-									</div>
-								);
-							})}
-
-							{/* Show more button if there are more than 10 items */}
-							{topComplaintsTable.length > 10 && (
-								<div className="text-center pt-4">
-									<button className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 text-sm font-medium">
-										Tampilkan {topComplaintsTable.length - 10} kategori
-										lainnya...
-									</button>
-								</div>
-							)}
-						</div>
-					</div>
-				</div>
-			)}
-
-			{/* Classification Analytics - Modern & Professional Design */}
-			<div className="mb-12">
-				<div className="bg-card text-card-foreground  rounded-2xl shadow-lg p-6">
-					<div className="flex items-center justify-between mb-6">
-						<div>
-							<h2 className="text-xl font-bold text-card-foreground">
-								Classification Analytics
-							</h2>
-							<p className="text-sm text-muted-foreground mt-1">
-								Analisis klasifikasi pelanggan berdasarkan frekuensi komplain
-							</p>
-						</div>
-						<div className="flex items-center gap-2">
-							<div className="w-3 h-3 bg-green-500 rounded-full"></div>
-							<span className="text-xs text-muted-foreground">Normal</span>
-							<div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
-							<span className="text-xs text-muted-foreground">Persisten</span>
-							<div className="w-3 h-3 bg-orange-500 rounded-full"></div>
-							<span className="text-xs text-muted-foreground">Kronis</span>
-							<div className="w-3 h-3 bg-red-500 rounded-full"></div>
-							<span className="text-xs text-muted-foreground">Ekstrem</span>
-						</div>
-					</div>
-
-					{/* Summary Overview Cards */}
-					{(() => {
-						const totalCustomers = Object.values(classificationData).reduce((sum: number, d: any) => sum + (Number(d?.count) || 0), 0);
-						const normalCount = Number((classificationData.normal as any)?.count) || 0;
-						const persistenCount = Number((classificationData.persisten as any)?.count) || 0;
-						const kronisCount = Number((classificationData.kronis as any)?.count) || 0;
-						const ekstremCount = Number((classificationData.ekstrem as any)?.count) || 0;
-						const atRiskCount = persistenCount + kronisCount + ekstremCount;
-
-						return (
-							<div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-								<SummaryCard
-									icon={<ConfirmationNumberIcon className="w-6 h-6 text-white" />}
-									title="Total Customers"
-									value={totalCustomers.toString()}
-									description="Total pelanggan yang diklasifikasi"
-									iconBg="bg-blue-600"
-								/>
-								<SummaryCard
-									icon={<CheckCircleIcon className="w-6 h-6 text-white" />}
-									title="Normal"
-									value={normalCount.toString()}
-									description={`${Number(totalCustomers) > 0 ? ((Number(normalCount) / Number(totalCustomers)) * 100).toFixed(1) : "0"}% dari total`}
-									iconBg="bg-green-600"
-								/>
-								<SummaryCard
-									icon={<WarningAmberIcon className="w-6 h-6 text-white" />}
-									title="At Risk"
-									value={atRiskCount.toString()}
-									description={`${Number(totalCustomers) > 0 ? ((Number(atRiskCount) / Number(totalCustomers)) * 100).toFixed(1) : "0"}% dari total`}
-									iconBg="bg-yellow-600"
-								/>
-								<SummaryCard
-									icon={<ErrorOutlineIcon className="w-6 h-6 text-white" />}
-									title="Critical"
-									value={(kronisCount + ekstremCount).toString()}
-									description={`${Number(totalCustomers) > 0 ? (((Number(kronisCount) + Number(ekstremCount)) / Number(totalCustomers)) * 100).toFixed(1) : "0"}% dari total`}
-									iconBg="bg-red-600"
-								/>
-							</div>
-						);
-					})()}
-
-					{/* Sorting and Filtering Controls */}
-					<div className="flex items-center justify-between mb-4">
-						<div className="flex items-center gap-4">
-							<div className="flex items-center gap-2">
-								<LabelIcon className="w-4 h-4 text-muted-foreground" />
-								<span className="text-sm text-muted-foreground">Sort by:</span>
-								<select
-									className="text-xs bg-background border border-gray-200 dark:border-gray-700 rounded px-2 py-1"
-									value={classificationSortBy}
-									onChange={(e) => setClassificationSortBy(e.target.value as "count" | "trend" | "priority")}
-								>
-									<option value="count">Count</option>
-									<option value="trend">Trend</option>
-									<option value="priority">Priority</option>
-								</select>
-							</div>
-							<div className="flex items-center gap-2">
-								<BarChartIcon className="w-4 h-4 text-muted-foreground" />
-								<span className="text-sm text-muted-foreground">Show:</span>
-								<select
-									className="text-xs bg-background border border-gray-200 dark:border-gray-700 rounded px-2 py-1"
-									value={classificationFilter}
-									onChange={(e) => setClassificationFilter(e.target.value as "all" | "critical" | "at-risk")}
-								>
-									<option value="all">All Classifications</option>
-									<option value="critical">Critical Only</option>
-									<option value="at-risk">At Risk Only</option>
-								</select>
-							</div>
-						</div>
-
-						{/* Active Filter Indicator */}
-						<div className="flex items-center gap-2">
-							{(classificationFilter !== "all" || classificationSortBy !== "count") && (
-								<div className="flex items-center gap-2 text-xs text-muted-foreground">
-									<span>Active filters:</span>
-									{classificationFilter !== "all" && (
-										<Badge variant="info" className="text-[8px] px-1 py-0.5">
-											{classificationFilter === "critical" ? "Critical Only" : "At Risk Only"}
-										</Badge>
-									)}
-									{classificationSortBy !== "count" && (
-										<Badge variant="secondary" className="text-[8px] px-1 py-0.5">
-											Sorted by {classificationSortBy}
-										</Badge>
 									)}
 								</div>
-							)}
+							</div>
 						</div>
-					</div>
+					)}
 
-					<div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-						{(() => {
-							// Filter data berdasarkan kriteria
-							let filteredData = Object.entries(classificationData);
+					{/* Classification Analytics - Modern & Professional Design */}
+					<div className="mb-12">
+						<div className="bg-card text-card-foreground  rounded-2xl shadow-lg p-6">
+							<div className="flex items-center justify-between mb-6">
+								<div>
+									<h2 className="text-xl font-bold text-card-foreground">
+										Classification Analytics
+									</h2>
+									<p className="text-sm text-muted-foreground mt-1">
+										Analisis klasifikasi pelanggan berdasarkan frekuensi komplain
+									</p>
+								</div>
+								<div className="flex items-center gap-2">
+									<div className="w-3 h-3 bg-green-500 rounded-full"></div>
+									<span className="text-xs text-muted-foreground">Normal</span>
+									<div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
+									<span className="text-xs text-muted-foreground">Persisten</span>
+									<div className="w-3 h-3 bg-orange-500 rounded-full"></div>
+									<span className="text-xs text-muted-foreground">Kronis</span>
+									<div className="w-3 h-3 bg-red-500 rounded-full"></div>
+									<span className="text-xs text-muted-foreground">Ekstrem</span>
+								</div>
+							</div>
 
-							if (classificationFilter === "critical") {
-								filteredData = filteredData.filter(([classification]) =>
-									classification.toLowerCase() === "kronis" ||
-									classification.toLowerCase() === "ekstrem"
-								);
-							} else if (classificationFilter === "at-risk") {
-								filteredData = filteredData.filter(([classification]) =>
-									classification.toLowerCase() === "persisten" ||
-									classification.toLowerCase() === "kronis" ||
-									classification.toLowerCase() === "ekstrem"
-								);
-							}
-
-							// Sort data berdasarkan kriteria yang dipilih
-							filteredData = filteredData.sort(([aClassification, a], [bClassification, b]) => {
-								const aData = a as any;
-								const bData = b as any;
-
-								switch (classificationSortBy) {
-									case "count":
-										return bData.count - aData.count;
-									case "trend":
-										// Sort berdasarkan trend terakhir (naik/turun)
-										const aTrend = aData.trendline?.data?.slice(-1)[0] || 0;
-										const bTrend = bData.trendline?.data?.slice(-1)[0] || 0;
-										return bTrend - aTrend;
-									case "priority":
-										// Sort berdasarkan prioritas: Ekstrem > Kronis > Persisten > Normal
-										const priorityOrder = { "ekstrem": 4, "kronis": 3, "persisten": 2, "normal": 1 };
-										const aPriority = priorityOrder[aClassification.toLowerCase()] || 0;
-										const bPriority = priorityOrder[bClassification.toLowerCase()] || 0;
-										return bPriority - aPriority;
-									default:
-										return bData.count - aData.count;
-								}
-							});
-
-							return filteredData;
-						})().map(
-							([classification, details]) => {
-								const d = details as {
-									count: number;
-									sub: { [key: string]: number };
-									trendline?: { labels: string[]; data: number[] };
-								};
-								const trend =
-									d.trendline && d.trendline.data.length > 1
-										? d.trendline.data.map((val, i, arr) => {
-											if (i === 0) return null;
-											const prev = arr[i - 1];
-											if (prev === 0) return null;
-											const percent = ((val - prev) / Math.abs(prev)) * 100;
-											return percent;
-										})
-										: [];
-
-								// Color mapping untuk setiap klasifikasi
-								const getClassificationColor = (classType: string) => {
-									switch (classType.toLowerCase()) {
-										case "normal":
-											return "bg-green-50 border-green-200 dark:bg-green-900/20 dark:border-green-800";
-										case "persisten":
-											return "bg-yellow-50 border-yellow-200 dark:bg-yellow-900/20 dark:border-yellow-800";
-										case "kronis":
-											return "bg-orange-50 border-orange-200 dark:bg-orange-900/20 dark:border-orange-800";
-										case "ekstrem":
-											return "bg-red-50 border-red-200 dark:bg-red-900/20 dark:border-red-800";
-										default:
-											return "bg-gray-50 border-gray-200 dark:bg-gray-900/20 dark:border-gray-800";
-									}
-								};
-
-								const getClassificationIconColor = (classType: string) => {
-									switch (classType.toLowerCase()) {
-										case "normal":
-											return "text-green-600 dark:text-green-400";
-										case "persisten":
-											return "text-yellow-600 dark:text-yellow-400";
-										case "kronis":
-											return "text-orange-600 dark:text-orange-400";
-										case "ekstrem":
-											return "text-red-600 dark:text-red-400";
-										default:
-											return "text-muted-foreground";
-									}
-								};
+							{/* Summary Overview Cards */}
+							{(() => {
+								const totalCustomers = Object.values(classificationData).reduce((sum: number, d: any) => sum + (Number(d?.count) || 0), 0);
+								const normalCount = Number((classificationData.normal as any)?.count) || 0;
+								const persistenCount = Number((classificationData.persisten as any)?.count) || 0;
+								const kronisCount = Number((classificationData.kronis as any)?.count) || 0;
+								const ekstremCount = Number((classificationData.ekstrem as any)?.count) || 0;
+								const atRiskCount = persistenCount + kronisCount + ekstremCount;
 
 								return (
-									<div
-										key={classification}
-										className={`rounded-xl p-4 ${getClassificationColor(classification)} transition-all duration-200 hover:shadow-md`}
-									>
-										{/* Header */}
-										<div className="flex items-center justify-between mb-3">
-											<div className="flex items-center gap-3">
-												<div
-													className={`w-8 h-8 rounded-lg flex items-center justify-center ${getClassificationIconColor(classification)} bg-background text-foreground shadow-sm`}
-												>
-													<span className="text-sm font-bold">
-														{classification.charAt(0)}
-													</span>
-												</div>
-												<div>
-													<h3 className="font-semibold text-card-foreground">
-														{classification}
-													</h3>
-													<p className="text-xs text-muted-foreground">
-														{d.count} pelanggan
-													</p>
-												</div>
-											</div>
-											<div className="text-right">
-												<div className="flex items-center gap-2 mb-1">
-													<div className="text-base font-bold text-card-foreground">
-														{d.count}
-													</div>
-													<div className="flex items-center gap-1">
-														{d.count > 50 && (
-															<Badge variant="danger" className="text-[8px] px-1 py-0.5">
-																High Volume
-															</Badge>
-														)}
-														{trend.length > 0 && trend[trend.length - 1] > 20 && (
-															<Badge variant="warning" className="text-[8px] px-1 py-0.5">
-																Rising
-															</Badge>
-														)}
-														{d.count < 5 && (
-															<Badge variant="secondary" className="text-[8px] px-1 py-0.5">
-																Low Volume
-															</Badge>
-														)}
-													</div>
-												</div>
-												<div className="text-xs text-muted-foreground">
-													total
-												</div>
-											</div>
-										</div>
+									<div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+										<SummaryCard
+											icon={<ConfirmationNumberIcon className="w-6 h-6 text-white" />}
+											title="Total Customers"
+											value={totalCustomers.toString()}
+											description="Total pelanggan yang diklasifikasi"
+											iconBg="bg-blue-600"
+										/>
+										<SummaryCard
+											icon={<CheckCircleIcon className="w-6 h-6 text-white" />}
+											title="Normal"
+											value={normalCount.toString()}
+											description={`${Number(totalCustomers) > 0 ? ((Number(normalCount) / Number(totalCustomers)) * 100).toFixed(1) : "0"}% dari total`}
+											iconBg="bg-green-600"
+										/>
+										<SummaryCard
+											icon={<WarningAmberIcon className="w-6 h-6 text-white" />}
+											title="At Risk"
+											value={atRiskCount.toString()}
+											description={`${Number(totalCustomers) > 0 ? ((Number(atRiskCount) / Number(totalCustomers)) * 100).toFixed(1) : "0"}% dari total`}
+											iconBg="bg-yellow-600"
+										/>
+										<SummaryCard
+											icon={<ErrorOutlineIcon className="w-6 h-6 text-white" />}
+											title="Critical"
+											value={(kronisCount + ekstremCount).toString()}
+											description={`${Number(totalCustomers) > 0 ? (((Number(kronisCount) + Number(ekstremCount)) / Number(totalCustomers)) * 100).toFixed(1) : "0"}% dari total`}
+											iconBg="bg-red-600"
+										/>
+									</div>
+								);
+							})()}
 
-										{/* Simplified Trend Data */}
-										{d.trendline && d.trendline.labels.length > 0 && (
-											<div className="mb-3">
-												<div className="text-xs text-muted-foreground mb-2">Trend 3 bulan terakhir</div>
-												<div className="flex items-center justify-between bg-background text-foreground rounded-lg px-3 py-2">
-													<div className="flex items-center gap-2">
-														<span className="text-xs font-medium text-gray-700 dark:text-gray-300">
-															{d.trendline.labels.slice(-3).join(' → ')}
-														</span>
-														<span className="font-mono text-sm font-bold text-card-foreground">
-															{d.trendline.data.slice(-3).join(' → ')}
-														</span>
-													</div>
-													{trend.length > 0 && trend[trend.length - 1] !== null && (
+							{/* Sorting and Filtering Controls */}
+							<div className="flex items-center justify-between mb-4">
+								<div className="flex items-center gap-4">
+									<div className="flex items-center gap-2">
+										<LabelIcon className="w-4 h-4 text-muted-foreground" />
+										<span className="text-sm text-muted-foreground">Sort by:</span>
+										<select
+											className="text-xs bg-background border border-gray-200 dark:border-gray-700 rounded px-2 py-1"
+											value={classificationSortBy}
+											onChange={(e) => setClassificationSortBy(e.target.value as "count" | "trend" | "priority")}
+										>
+											<option value="count">Count</option>
+											<option value="trend">Trend</option>
+											<option value="priority">Priority</option>
+										</select>
+									</div>
+									<div className="flex items-center gap-2">
+										<BarChartIcon className="w-4 h-4 text-muted-foreground" />
+										<span className="text-sm text-muted-foreground">Show:</span>
+										<select
+											className="text-xs bg-background border border-gray-200 dark:border-gray-700 rounded px-2 py-1"
+											value={classificationFilter}
+											onChange={(e) => setClassificationFilter(e.target.value as "all" | "critical" | "at-risk")}
+										>
+											<option value="all">All Classifications</option>
+											<option value="critical">Critical Only</option>
+											<option value="at-risk">At Risk Only</option>
+										</select>
+									</div>
+								</div>
+
+								{/* Active Filter Indicator */}
+								<div className="flex items-center gap-2">
+									{(classificationFilter !== "all" || classificationSortBy !== "count") && (
+										<div className="flex items-center gap-2 text-xs text-muted-foreground">
+											<span>Active filters:</span>
+											{classificationFilter !== "all" && (
+												<Badge variant="info" className="text-[8px] px-1 py-0.5">
+													{classificationFilter === "critical" ? "Critical Only" : "At Risk Only"}
+												</Badge>
+											)}
+											{classificationSortBy !== "count" && (
+												<Badge variant="secondary" className="text-[8px] px-1 py-0.5">
+													Sorted by {classificationSortBy}
+												</Badge>
+											)}
+										</div>
+									)}
+								</div>
+							</div>
+
+							<div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+								{(() => {
+									// Filter data berdasarkan kriteria
+									let filteredData = Object.entries(classificationData);
+
+									if (classificationFilter === "critical") {
+										filteredData = filteredData.filter(([classification]) =>
+											classification.toLowerCase() === "kronis" ||
+											classification.toLowerCase() === "ekstrem"
+										);
+									} else if (classificationFilter === "at-risk") {
+										filteredData = filteredData.filter(([classification]) =>
+											classification.toLowerCase() === "persisten" ||
+											classification.toLowerCase() === "kronis" ||
+											classification.toLowerCase() === "ekstrem"
+										);
+									}
+
+									// Sort data berdasarkan kriteria yang dipilih
+									filteredData = filteredData.sort(([aClassification, a], [bClassification, b]) => {
+										const aData = a as any;
+										const bData = b as any;
+
+										switch (classificationSortBy) {
+											case "count":
+												return bData.count - aData.count;
+											case "trend":
+												// Sort berdasarkan trend terakhir (naik/turun)
+												const aTrend = aData.trendline?.data?.slice(-1)[0] || 0;
+												const bTrend = bData.trendline?.data?.slice(-1)[0] || 0;
+												return bTrend - aTrend;
+											case "priority":
+												// Sort berdasarkan prioritas: Ekstrem > Kronis > Persisten > Normal
+												const priorityOrder = { "ekstrem": 4, "kronis": 3, "persisten": 2, "normal": 1 };
+												const aPriority = priorityOrder[aClassification.toLowerCase()] || 0;
+												const bPriority = priorityOrder[bClassification.toLowerCase()] || 0;
+												return bPriority - aPriority;
+											default:
+												return bData.count - aData.count;
+										}
+									});
+
+									return filteredData;
+								})().map(
+									([classification, details]) => {
+										const d = details as {
+											count: number;
+											sub: { [key: string]: number };
+											trendline?: { labels: string[]; data: number[] };
+										};
+										const trend =
+											d.trendline && d.trendline.data.length > 1
+												? d.trendline.data.map((val, i, arr) => {
+													if (i === 0) return null;
+													const prev = arr[i - 1];
+													if (prev === 0) return null;
+													const percent = ((val - prev) / Math.abs(prev)) * 100;
+													return percent;
+												})
+												: [];
+
+										// Color mapping untuk setiap klasifikasi
+										const getClassificationColor = (classType: string) => {
+											switch (classType.toLowerCase()) {
+												case "normal":
+													return "bg-green-50 border-green-200 dark:bg-green-900/20 dark:border-green-800";
+												case "persisten":
+													return "bg-yellow-50 border-yellow-200 dark:bg-yellow-900/20 dark:border-yellow-800";
+												case "kronis":
+													return "bg-orange-50 border-orange-200 dark:bg-orange-900/20 dark:border-orange-800";
+												case "ekstrem":
+													return "bg-red-50 border-red-200 dark:bg-red-900/20 dark:border-red-800";
+												default:
+													return "bg-gray-50 border-gray-200 dark:bg-gray-900/20 dark:border-gray-800";
+											}
+										};
+
+										const getClassificationIconColor = (classType: string) => {
+											switch (classType.toLowerCase()) {
+												case "normal":
+													return "text-green-600 dark:text-green-400";
+												case "persisten":
+													return "text-yellow-600 dark:text-yellow-400";
+												case "kronis":
+													return "text-orange-600 dark:text-orange-400";
+												case "ekstrem":
+													return "text-red-600 dark:text-red-400";
+												default:
+													return "text-muted-foreground";
+											}
+										};
+
+										return (
+											<div
+												key={classification}
+												className={`rounded-xl p-4 ${getClassificationColor(classification)} transition-all duration-200 hover:shadow-md`}
+											>
+												{/* Header */}
+												<div className="flex items-center justify-between mb-3">
+													<div className="flex items-center gap-3">
 														<div
-															className={`flex items-center gap-1 text-xs font-medium ${trend[trend.length - 1]! > 0
-																? "text-green-600 dark:text-green-400"
-																: trend[trend.length - 1]! < 0
-																	? "text-red-600 dark:text-red-400"
-																	: "text-muted-foreground"
-																}`}
+															className={`w-8 h-8 rounded-lg flex items-center justify-center ${getClassificationIconColor(classification)} bg-background text-foreground shadow-sm`}
 														>
-															<span>
-																{trend[trend.length - 1]! > 0 ? (
-																	<TrendingUpIcon className="w-3 h-3" />
-																) : trend[trend.length - 1]! < 0 ? (
-																	<TrendingDownIcon className="w-3 h-3" />
-																) : (
-																	<TrendingFlatIcon className="w-3 h-3" />
+															<span className="text-sm font-bold">
+																{classification.charAt(0)}
+															</span>
+														</div>
+														<div>
+															<h3 className="font-semibold text-card-foreground">
+																{classification}
+															</h3>
+															<p className="text-xs text-muted-foreground">
+																{d.count} pelanggan
+															</p>
+														</div>
+													</div>
+													<div className="text-right">
+														<div className="flex items-center gap-2 mb-1">
+															<div className="text-base font-bold text-card-foreground">
+																{d.count}
+															</div>
+															<div className="flex items-center gap-1">
+																{d.count > 50 && (
+																	<Badge variant="danger" className="text-[8px] px-1 py-0.5">
+																		High Volume
+																	</Badge>
 																)}
-															</span>
-															<span>
-																{trend[trend.length - 1]! > 0 ? "+" : ""}
-																{trend[trend.length - 1]!.toFixed(1)}%
-															</span>
+																{trend.length > 0 && trend[trend.length - 1] > 20 && (
+																	<Badge variant="warning" className="text-[8px] px-1 py-0.5">
+																		Rising
+																	</Badge>
+																)}
+																{d.count < 5 && (
+																	<Badge variant="secondary" className="text-[8px] px-1 py-0.5">
+																		Low Volume
+																	</Badge>
+																)}
+															</div>
+														</div>
+														<div className="text-xs text-muted-foreground">
+															total
+														</div>
+													</div>
+												</div>
+
+												{/* Simplified Trend Data */}
+												{d.trendline && d.trendline.labels.length > 0 && (
+													<div className="mb-3">
+														<div className="text-xs text-muted-foreground mb-2">Trend 3 bulan terakhir</div>
+														<div className="flex items-center justify-between bg-background text-foreground rounded-lg px-3 py-2">
+															<div className="flex items-center gap-2">
+																<span className="text-xs font-medium text-gray-700 dark:text-gray-300">
+																	{d.trendline.labels.slice(-3).join(' → ')}
+																</span>
+																<span className="font-mono text-sm font-bold text-card-foreground">
+																	{d.trendline.data.slice(-3).join(' → ')}
+																</span>
+															</div>
+															{trend.length > 0 && trend[trend.length - 1] !== null && (
+																<div
+																	className={`flex items-center gap-1 text-xs font-medium ${trend[trend.length - 1]! > 0
+																		? "text-green-600 dark:text-green-400"
+																		: trend[trend.length - 1]! < 0
+																			? "text-red-600 dark:text-red-400"
+																			: "text-muted-foreground"
+																		}`}
+																>
+																	<span>
+																		{trend[trend.length - 1]! > 0 ? (
+																			<TrendingUpIcon className="w-3 h-3" />
+																		) : trend[trend.length - 1]! < 0 ? (
+																			<TrendingDownIcon className="w-3 h-3" />
+																		) : (
+																			<TrendingFlatIcon className="w-3 h-3" />
+																		)}
+																	</span>
+																	<span>
+																		{trend[trend.length - 1]! > 0 ? "+" : ""}
+																		{trend[trend.length - 1]!.toFixed(1)}%
+																	</span>
+																</div>
+															)}
+														</div>
+													</div>
+												)}
+
+												{/* Improved Sub-classification */}
+												{d.sub && Object.keys(d.sub).length > 0 && (
+													<div>
+														<div className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-2">
+															Top Sub-klasifikasi
+														</div>
+														<div className="space-y-2">
+															{Object.entries(d.sub)
+																.sort((a, b) => b[1] - a[1])
+																.slice(0, 3)
+																.map(([sub, count]) => {
+																	const percentage = d.count > 0 ? (count / d.count) * 100 : 0;
+																	return (
+																		<div key={sub} className="flex items-center justify-between">
+																			<span className="text-xs text-gray-700 dark:text-gray-300 truncate flex-1 mr-2">
+																				{sub}
+																			</span>
+																			<div className="flex items-center gap-2 flex-shrink-0">
+																				<div className="w-16 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+																					<div
+																						className="h-full bg-blue-500 transition-all duration-300"
+																						style={{ width: `${Math.min(percentage, 100)}%` }}
+																					></div>
+																				</div>
+																				<span className="text-xs font-bold text-card-foreground min-w-[20px] text-right">
+																					{count}
+																				</span>
+																			</div>
+																		</div>
+																	);
+																})}
+														</div>
+													</div>
+												)}
+											</div>
+										);
+									},
+								)}
+							</div>
+						</div>
+					</div>
+
+					{/* Handling Time Analytics - Professional & Informative Design */}
+					<div className="mb-12">
+						<div className="bg-card text-card-foreground  rounded-2xl shadow-lg p-6">
+							<div className="flex items-center justify-between mb-6">
+								<div>
+									<h2 className="text-xl font-bold text-card-foreground">
+										Handling Time Analytics
+									</h2>
+									<p className="text-sm text-muted-foreground mt-1">
+										Analisis waktu penanganan berdasarkan shift dan kategori
+									</p>
+								</div>
+								<div className="flex items-center gap-4 text-xs text-muted-foreground">
+									<div className="flex items-center gap-1">
+										<div className="w-3 h-3 bg-blue-500 rounded"></div>
+										<span>Average</span>
+									</div>
+									<div className="flex items-center gap-1">
+										<div className="w-3 h-3 bg-orange-500 rounded"></div>
+										<span>Median</span>
+									</div>
+									<div className="flex items-center gap-1">
+										<div className="w-3 h-3 bg-purple-500 rounded"></div>
+										<span>P90</span>
+									</div>
+								</div>
+							</div>
+
+							<div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+								{/* Shift Analysis */}
+								<div>
+									<div className="flex items-center justify-between mb-4">
+										<h3 className="text-lg font-semibold text-card-foreground">
+											Per Shift
+										</h3>
+										<div className="text-xs text-muted-foreground">
+											Rata-rata global:{" "}
+											<span className="font-medium">
+												{formatDurationHMS(avgAllShift)}
+											</span>
+										</div>
+									</div>
+
+									{/* Chart */}
+									<div className="mb-4">
+										<ChartContainer config={chartConfig} className="w-full">
+											<BarChart
+												data={chartData}
+												height={120}
+												margin={{ top: 20, right: 20, left: 0, bottom: 10 }}
+											>
+												<defs>
+													<linearGradient
+														id="shiftAvgGradient"
+														x1="0"
+														y1="0"
+														x2="0"
+														y2="1"
+													>
+														<stop offset="0%" stopColor="#3b82f6" stopOpacity={1} />
+														<stop
+															offset="100%"
+															stopColor="#60a5fa"
+															stopOpacity={1}
+														/>
+													</linearGradient>
+													<linearGradient
+														id="shiftMedianGradient"
+														x1="0"
+														y1="0"
+														x2="0"
+														y2="1"
+													>
+														<stop offset="0%" stopColor="#eab308" stopOpacity={1} />
+														<stop
+															offset="100%"
+															stopColor="#fbbf24"
+															stopOpacity={1}
+														/>
+													</linearGradient>
+												</defs>
+												<CartesianGrid
+													strokeDasharray="3 3"
+													vertical={false}
+													stroke="hsl(var(--border))"
+													opacity={0.3}
+												/>
+												<XAxis dataKey="shift" axisLine={false} tickLine={false} />
+												<YAxis axisLine={false} tickLine={false} />
+												<ChartTooltip
+													cursor={false}
+													content={({ active, payload, label }) => {
+														if (active && payload && payload.length) {
+															return (
+																<div className="bg-background text-foreground rounded-lg shadow-lg  p-3">
+																	<p className="font-semibold text-card-foreground mb-2">
+																		{label}
+																	</p>
+																	{payload.map((entry, index) => (
+																		<p
+																			key={index}
+																			className="text-sm text-muted-foreground"
+																		>
+																			{entry.name}:{" "}
+																			<span className="font-medium text-card-foreground">
+																				{entry.value}
+																			</span>
+																		</p>
+																	))}
+																</div>
+															);
+														}
+														return null;
+													}}
+												/>
+												<Bar
+													dataKey="avg"
+													fill="url(#shiftAvgGradient)"
+													radius={[4, 4, 0, 0]}
+												/>
+												<Bar
+													dataKey="median"
+													fill="url(#shiftMedianGradient)"
+													radius={[4, 4, 0, 0]}
+												/>
+											</BarChart>
+										</ChartContainer>
+									</div>
+
+									{/* Shift Cards */}
+									<div className="space-y-3">
+										{shiftTrends.map((shift) => {
+											const isOutlier = shift.avg > 2 * avgAllShift;
+											const trendColor =
+												shift.trend > 0
+													? "text-red-600 dark:text-red-400"
+													: shift.trend < 0
+														? "text-green-600 dark:text-green-400"
+														: "text-muted-foreground";
+											const trendIcon =
+												shift.trend > 0 ? (
+													<TrendingUpIcon className="w-4 h-4" />
+												) : shift.trend < 0 ? (
+													<TrendingDownIcon className="w-4 h-4" />
+												) : (
+													<TrendingFlatIcon className="w-4 h-4" />
+												);
+
+											return (
+												<div
+													key={shift.shift}
+													className={`p-4 rounded-lg transition-all duration-200 ${isOutlier
+														? "bg-red-50 dark:bg-red-900/20"
+														: "bg-gray-50 dark:bg-zinc-800/50"
+														}`}
+												>
+													<div className="flex items-center justify-between mb-2">
+														<div className="flex items-center gap-3">
+															<div
+																className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm ${isOutlier ? "bg-red-500" : "bg-blue-500"
+																	}`}
+															>
+																{shift.shift.charAt(0)}
+															</div>
+															<div>
+																<h4 className="font-semibold text-card-foreground">
+																	{shift.shift}
+																</h4>
+																<p className="text-xs text-muted-foreground">
+																	{shift.count} tiket
+																</p>
+															</div>
+														</div>
+														<div className="text-right">
+															<div className="text-base font-bold text-card-foreground">
+																{shift.formattedAvg}
+															</div>
+															<div className="text-xs text-muted-foreground">
+																rata-rata
+															</div>
+														</div>
+													</div>
+
+													<div className="grid grid-cols-3 gap-4 text-center">
+														<div>
+															<div className="text-xs text-muted-foreground">
+																Median
+															</div>
+															<div className="font-mono text-sm font-medium text-card-foreground">
+																{shift.formattedMedian}
+															</div>
+														</div>
+														<div>
+															<div className="text-xs text-muted-foreground">
+																P90
+															</div>
+															<div className="font-mono text-sm font-medium text-card-foreground">
+																{formatDurationHMS(shift.p90)}
+															</div>
+														</div>
+														<div>
+															<div className="text-xs text-muted-foreground">
+																Trend
+															</div>
+															<div className={`text-sm font-medium ${trendColor}`}>
+																{trendIcon} {shift.trend > 0 ? "+" : ""}
+																{shift.trend.toFixed(1)}%
+															</div>
+														</div>
+													</div>
+
+													{isOutlier && (
+														<div className="mt-2 p-2 bg-red-100 dark:bg-red-900/30 rounded text-xs text-red-700 dark:text-red-300">
+															<WarningIcon className="w-3 h-3 inline mr-1" />{" "}
+															Anomali: {shift.formattedAvg} vs rata-rata{" "}
+															{formatDurationHMS(avgAllShift)}
 														</div>
 													)}
 												</div>
-											</div>
-										)}
+											);
+										})}
+									</div>
+								</div>
 
-										{/* Improved Sub-classification */}
-										{d.sub && Object.keys(d.sub).length > 0 && (
-											<div>
-												<div className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-2">
-													Top Sub-klasifikasi
-												</div>
-												<div className="space-y-2">
-													{Object.entries(d.sub)
-														.sort((a, b) => b[1] - a[1])
-														.slice(0, 3)
-														.map(([sub, count]) => {
-															const percentage = d.count > 0 ? (count / d.count) * 100 : 0;
+								{/* Category Analysis */}
+								<div>
+									<div className="flex items-center justify-between mb-4">
+										<h3 className="text-lg font-semibold text-card-foreground">
+											Per Kategori
+										</h3>
+										<div className="text-xs text-muted-foreground">
+											Rata-rata global:{" "}
+											<span className="font-medium">
+												{formatDurationHMS(avgAllCat)}
+											</span>
+										</div>
+									</div>
+
+									{/* Chart */}
+									<div className="mb-4">
+										<ChartContainer config={chartConfig} className="w-full">
+											<BarChart
+												data={catChartData}
+												height={120}
+												margin={{ top: 20, right: 20, left: 0, bottom: 10 }}
+											>
+												<defs>
+													<linearGradient
+														id="catAvgGradient"
+														x1="0"
+														y1="0"
+														x2="0"
+														y2="1"
+													>
+														<stop offset="0%" stopColor="#8b5cf6" stopOpacity={1} />
+														<stop
+															offset="100%"
+															stopColor="#a78bfa"
+															stopOpacity={1}
+														/>
+													</linearGradient>
+													<linearGradient
+														id="catMedianGradient"
+														x1="0"
+														y1="0"
+														x2="0"
+														y2="1"
+													>
+														<stop offset="0%" stopColor="#ec4899" stopOpacity={1} />
+														<stop
+															offset="100%"
+															stopColor="#f472b6"
+															stopOpacity={1}
+														/>
+													</linearGradient>
+												</defs>
+												<CartesianGrid
+													strokeDasharray="3 3"
+													vertical={false}
+													stroke="hsl(var(--border))"
+													opacity={0.3}
+												/>
+												<XAxis
+													dataKey="category"
+													axisLine={false}
+													tickLine={false}
+												/>
+												<YAxis axisLine={false} tickLine={false} />
+												<ChartTooltip
+													cursor={false}
+													content={({ active, payload, label }) => {
+														if (active && payload && payload.length) {
 															return (
-																<div key={sub} className="flex items-center justify-between">
-																	<span className="text-xs text-gray-700 dark:text-gray-300 truncate flex-1 mr-2">
-																		{sub}
-																	</span>
-																	<div className="flex items-center gap-2 flex-shrink-0">
-																		<div className="w-16 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-																			<div
-																				className="h-full bg-blue-500 transition-all duration-300"
-																				style={{ width: `${Math.min(percentage, 100)}%` }}
-																			></div>
-																		</div>
-																		<span className="text-xs font-bold text-card-foreground min-w-[20px] text-right">
-																			{count}
-																		</span>
-																	</div>
+																<div className="bg-background text-foreground rounded-lg shadow-lg  p-3">
+																	<p className="font-semibold text-card-foreground mb-2">
+																		{label}
+																	</p>
+																	{payload.map((entry, index) => (
+																		<p
+																			key={index}
+																			className="text-sm text-muted-foreground"
+																		>
+																			{entry.name}:{" "}
+																			<span className="font-medium text-card-foreground">
+																				{entry.value}
+																			</span>
+																		</p>
+																	))}
 																</div>
 															);
-														})}
-												</div>
-											</div>
-										)}
+														}
+														return null;
+													}}
+												/>
+												<Bar
+													dataKey="avg"
+													fill="url(#catAvgGradient)"
+													radius={[4, 4, 0, 0]}
+												/>
+												<Bar
+													dataKey="median"
+													fill="url(#catMedianGradient)"
+													radius={[4, 4, 0, 0]}
+												/>
+											</BarChart>
+										</ChartContainer>
 									</div>
-								);
-							},
-						)}
-					</div>
-				</div>
-			</div>
 
-			{/* Handling Time Analytics - Professional & Informative Design */}
-			<div className="mb-12">
-				<div className="bg-card text-card-foreground  rounded-2xl shadow-lg p-6">
-					<div className="flex items-center justify-between mb-6">
-						<div>
-							<h2 className="text-xl font-bold text-card-foreground">
-								Handling Time Analytics
-							</h2>
-							<p className="text-sm text-muted-foreground mt-1">
-								Analisis waktu penanganan berdasarkan shift dan kategori
-							</p>
-						</div>
-						<div className="flex items-center gap-4 text-xs text-muted-foreground">
-							<div className="flex items-center gap-1">
-								<div className="w-3 h-3 bg-blue-500 rounded"></div>
-								<span>Average</span>
-							</div>
-							<div className="flex items-center gap-1">
-								<div className="w-3 h-3 bg-orange-500 rounded"></div>
-								<span>Median</span>
-							</div>
-							<div className="flex items-center gap-1">
-								<div className="w-3 h-3 bg-purple-500 rounded"></div>
-								<span>P90</span>
-							</div>
-						</div>
-					</div>
+									{/* Category Cards */}
+									<div className="space-y-3">
+										{catTrends.map((cat) => {
+											const isOutlier = cat.avg > 2 * avgAllCat;
+											const trendColor =
+												cat.trend > 0
+													? "text-red-600 dark:text-red-400"
+													: cat.trend < 0
+														? "text-green-600 dark:text-green-400"
+														: "text-muted-foreground";
+											const trendIcon =
+												cat.trend > 0 ? (
+													<TrendingUpIcon className="w-4 h-4" />
+												) : cat.trend < 0 ? (
+													<TrendingDownIcon className="w-4 h-4" />
+												) : (
+													<TrendingFlatIcon className="w-4 h-4" />
+												);
 
-					<div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-						{/* Shift Analysis */}
-						<div>
-							<div className="flex items-center justify-between mb-4">
-								<h3 className="text-lg font-semibold text-card-foreground">
-									Per Shift
-								</h3>
-								<div className="text-xs text-muted-foreground">
-									Rata-rata global:{" "}
-									<span className="font-medium">
-										{formatDurationHMS(avgAllShift)}
-									</span>
+											return (
+												<div
+													key={cat.cat}
+													className={`p-4 rounded-lg transition-all duration-200 ${isOutlier
+														? "bg-red-50 dark:bg-red-900/20"
+														: "bg-gray-50 dark:bg-zinc-800/50"
+														}`}
+												>
+													<div className="flex items-center justify-between mb-2">
+														<div className="flex items-center gap-3">
+															<div
+																className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm ${isOutlier ? "bg-red-500" : "bg-purple-500"
+																	}`}
+															>
+																<AssignmentIcon className="text-white text-xs" />
+															</div>
+															<div>
+																<h4
+																	className="font-semibold text-card-foreground truncate max-w-[120px]"
+																	title={cat.cat}
+																>
+																	{cat.cat}
+																</h4>
+																<p className="text-xs text-muted-foreground">
+																	{cat.count} tiket
+																</p>
+															</div>
+														</div>
+														<div className="text-right">
+															<div className="text-base font-bold text-card-foreground">
+																{cat.formattedAvg}
+															</div>
+															<div className="text-xs text-muted-foreground">
+																rata-rata
+															</div>
+														</div>
+													</div>
+
+													<div className="grid grid-cols-3 gap-4 text-center">
+														<div>
+															<div className="text-xs text-muted-foreground">
+																Median
+															</div>
+															<div className="font-mono text-sm font-medium text-card-foreground">
+																{cat.formattedMedian}
+															</div>
+														</div>
+														<div>
+															<div className="text-xs text-muted-foreground">
+																P90
+															</div>
+															<div className="font-mono text-sm font-medium text-card-foreground">
+																{formatDurationHMS(cat.p90)}
+															</div>
+														</div>
+														<div>
+															<div className="text-xs text-muted-foreground">
+																Trend
+															</div>
+															<div className={`text-sm font-medium ${trendColor}`}>
+																{trendIcon} {cat.trend > 0 ? "+" : ""}
+																{cat.trend.toFixed(1)}%
+															</div>
+														</div>
+													</div>
+
+													{isOutlier && (
+														<div className="mt-2 p-2 bg-red-100 dark:bg-red-900/30 rounded text-xs text-red-700 dark:text-red-300">
+															<WarningIcon className="w-3 h-3 inline mr-1" />{" "}
+															Anomali: {cat.formattedAvg} vs rata-rata{" "}
+															{formatDurationHMS(avgAllCat)}
+														</div>
+													)}
+												</div>
+											);
+										})}
+									</div>
 								</div>
 							</div>
-
-							{/* Chart */}
-							<div className="mb-4">
-								<ChartContainer config={chartConfig} className="w-full">
-									<BarChart
-										data={chartData}
-										height={120}
-										margin={{ top: 20, right: 20, left: 0, bottom: 10 }}
-									>
-										<defs>
-											<linearGradient
-												id="shiftAvgGradient"
-												x1="0"
-												y1="0"
-												x2="0"
-												y2="1"
-											>
-												<stop offset="0%" stopColor="#3b82f6" stopOpacity={1} />
-												<stop
-													offset="100%"
-													stopColor="#60a5fa"
-													stopOpacity={1}
-												/>
-											</linearGradient>
-											<linearGradient
-												id="shiftMedianGradient"
-												x1="0"
-												y1="0"
-												x2="0"
-												y2="1"
-											>
-												<stop offset="0%" stopColor="#eab308" stopOpacity={1} />
-												<stop
-													offset="100%"
-													stopColor="#fbbf24"
-													stopOpacity={1}
-												/>
-											</linearGradient>
-										</defs>
-										<CartesianGrid
-											strokeDasharray="3 3"
-											vertical={false}
-											stroke="hsl(var(--border))"
-											opacity={0.3}
-										/>
-										<XAxis dataKey="shift" axisLine={false} tickLine={false} />
-										<YAxis axisLine={false} tickLine={false} />
-										<ChartTooltip
-											cursor={false}
-											content={({ active, payload, label }) => {
-												if (active && payload && payload.length) {
-													return (
-														<div className="bg-background text-foreground rounded-lg shadow-lg  p-3">
-															<p className="font-semibold text-card-foreground mb-2">
-																{label}
-															</p>
-															{payload.map((entry, index) => (
-																<p
-																	key={index}
-																	className="text-sm text-muted-foreground"
-																>
-																	{entry.name}:{" "}
-																	<span className="font-medium text-card-foreground">
-																		{entry.value}
-																	</span>
-																</p>
-															))}
-														</div>
-													);
-												}
-												return null;
-											}}
-										/>
-										<Bar
-											dataKey="avg"
-											fill="url(#shiftAvgGradient)"
-											radius={[4, 4, 0, 0]}
-										/>
-										<Bar
-											dataKey="median"
-											fill="url(#shiftMedianGradient)"
-											radius={[4, 4, 0, 0]}
-										/>
-									</BarChart>
-								</ChartContainer>
-							</div>
-
-							{/* Shift Cards */}
-							<div className="space-y-3">
-								{shiftTrends.map((shift) => {
-									const isOutlier = shift.avg > 2 * avgAllShift;
-									const trendColor =
-										shift.trend > 0
-											? "text-red-600 dark:text-red-400"
-											: shift.trend < 0
-												? "text-green-600 dark:text-green-400"
-												: "text-muted-foreground";
-									const trendIcon =
-										shift.trend > 0 ? (
-											<TrendingUpIcon className="w-4 h-4" />
-										) : shift.trend < 0 ? (
-											<TrendingDownIcon className="w-4 h-4" />
-										) : (
-											<TrendingFlatIcon className="w-4 h-4" />
-										);
-
-									return (
-										<div
-											key={shift.shift}
-											className={`p-4 rounded-lg transition-all duration-200 ${isOutlier
-												? "bg-red-50 dark:bg-red-900/20"
-												: "bg-gray-50 dark:bg-zinc-800/50"
-												}`}
-										>
-											<div className="flex items-center justify-between mb-2">
-												<div className="flex items-center gap-3">
-													<div
-														className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm ${isOutlier ? "bg-red-500" : "bg-blue-500"
-															}`}
-													>
-														{shift.shift.charAt(0)}
-													</div>
-													<div>
-														<h4 className="font-semibold text-card-foreground">
-															{shift.shift}
-														</h4>
-														<p className="text-xs text-muted-foreground">
-															{shift.count} tiket
-														</p>
-													</div>
-												</div>
-												<div className="text-right">
-													<div className="text-base font-bold text-card-foreground">
-														{shift.formattedAvg}
-													</div>
-													<div className="text-xs text-muted-foreground">
-														rata-rata
-													</div>
-												</div>
-											</div>
-
-											<div className="grid grid-cols-3 gap-4 text-center">
-												<div>
-													<div className="text-xs text-muted-foreground">
-														Median
-													</div>
-													<div className="font-mono text-sm font-medium text-card-foreground">
-														{shift.formattedMedian}
-													</div>
-												</div>
-												<div>
-													<div className="text-xs text-muted-foreground">
-														P90
-													</div>
-													<div className="font-mono text-sm font-medium text-card-foreground">
-														{formatDurationHMS(shift.p90)}
-													</div>
-												</div>
-												<div>
-													<div className="text-xs text-muted-foreground">
-														Trend
-													</div>
-													<div className={`text-sm font-medium ${trendColor}`}>
-														{trendIcon} {shift.trend > 0 ? "+" : ""}
-														{shift.trend.toFixed(1)}%
-													</div>
-												</div>
-											</div>
-
-											{isOutlier && (
-												<div className="mt-2 p-2 bg-red-100 dark:bg-red-900/30 rounded text-xs text-red-700 dark:text-red-300">
-													<WarningIcon className="w-3 h-3 inline mr-1" />{" "}
-													Anomali: {shift.formattedAvg} vs rata-rata{" "}
-													{formatDurationHMS(avgAllShift)}
-												</div>
-											)}
-										</div>
-									);
-								})}
-							</div>
-						</div>
-
-						{/* Category Analysis */}
-						<div>
-							<div className="flex items-center justify-between mb-4">
-								<h3 className="text-lg font-semibold text-card-foreground">
-									Per Kategori
-								</h3>
-								<div className="text-xs text-muted-foreground">
-									Rata-rata global:{" "}
-									<span className="font-medium">
-										{formatDurationHMS(avgAllCat)}
-									</span>
-								</div>
-							</div>
-
-							{/* Chart */}
-							<div className="mb-4">
-								<ChartContainer config={chartConfig} className="w-full">
-									<BarChart
-										data={catChartData}
-										height={120}
-										margin={{ top: 20, right: 20, left: 0, bottom: 10 }}
-									>
-										<defs>
-											<linearGradient
-												id="catAvgGradient"
-												x1="0"
-												y1="0"
-												x2="0"
-												y2="1"
-											>
-												<stop offset="0%" stopColor="#8b5cf6" stopOpacity={1} />
-												<stop
-													offset="100%"
-													stopColor="#a78bfa"
-													stopOpacity={1}
-												/>
-											</linearGradient>
-											<linearGradient
-												id="catMedianGradient"
-												x1="0"
-												y1="0"
-												x2="0"
-												y2="1"
-											>
-												<stop offset="0%" stopColor="#ec4899" stopOpacity={1} />
-												<stop
-													offset="100%"
-													stopColor="#f472b6"
-													stopOpacity={1}
-												/>
-											</linearGradient>
-										</defs>
-										<CartesianGrid
-											strokeDasharray="3 3"
-											vertical={false}
-											stroke="hsl(var(--border))"
-											opacity={0.3}
-										/>
-										<XAxis
-											dataKey="category"
-											axisLine={false}
-											tickLine={false}
-										/>
-										<YAxis axisLine={false} tickLine={false} />
-										<ChartTooltip
-											cursor={false}
-											content={({ active, payload, label }) => {
-												if (active && payload && payload.length) {
-													return (
-														<div className="bg-background text-foreground rounded-lg shadow-lg  p-3">
-															<p className="font-semibold text-card-foreground mb-2">
-																{label}
-															</p>
-															{payload.map((entry, index) => (
-																<p
-																	key={index}
-																	className="text-sm text-muted-foreground"
-																>
-																	{entry.name}:{" "}
-																	<span className="font-medium text-card-foreground">
-																		{entry.value}
-																	</span>
-																</p>
-															))}
-														</div>
-													);
-												}
-												return null;
-											}}
-										/>
-										<Bar
-											dataKey="avg"
-											fill="url(#catAvgGradient)"
-											radius={[4, 4, 0, 0]}
-										/>
-										<Bar
-											dataKey="median"
-											fill="url(#catMedianGradient)"
-											radius={[4, 4, 0, 0]}
-										/>
-									</BarChart>
-								</ChartContainer>
-							</div>
-
-							{/* Category Cards */}
-							<div className="space-y-3">
-								{catTrends.map((cat) => {
-									const isOutlier = cat.avg > 2 * avgAllCat;
-									const trendColor =
-										cat.trend > 0
-											? "text-red-600 dark:text-red-400"
-											: cat.trend < 0
-												? "text-green-600 dark:text-green-400"
-												: "text-muted-foreground";
-									const trendIcon =
-										cat.trend > 0 ? (
-											<TrendingUpIcon className="w-4 h-4" />
-										) : cat.trend < 0 ? (
-											<TrendingDownIcon className="w-4 h-4" />
-										) : (
-											<TrendingFlatIcon className="w-4 h-4" />
-										);
-
-									return (
-										<div
-											key={cat.cat}
-											className={`p-4 rounded-lg transition-all duration-200 ${isOutlier
-												? "bg-red-50 dark:bg-red-900/20"
-												: "bg-gray-50 dark:bg-zinc-800/50"
-												}`}
-										>
-											<div className="flex items-center justify-between mb-2">
-												<div className="flex items-center gap-3">
-													<div
-														className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm ${isOutlier ? "bg-red-500" : "bg-purple-500"
-															}`}
-													>
-														<AssignmentIcon className="text-white text-xs" />
-													</div>
-													<div>
-														<h4
-															className="font-semibold text-card-foreground truncate max-w-[120px]"
-															title={cat.cat}
-														>
-															{cat.cat}
-														</h4>
-														<p className="text-xs text-muted-foreground">
-															{cat.count} tiket
-														</p>
-													</div>
-												</div>
-												<div className="text-right">
-													<div className="text-base font-bold text-card-foreground">
-														{cat.formattedAvg}
-													</div>
-													<div className="text-xs text-muted-foreground">
-														rata-rata
-													</div>
-												</div>
-											</div>
-
-											<div className="grid grid-cols-3 gap-4 text-center">
-												<div>
-													<div className="text-xs text-muted-foreground">
-														Median
-													</div>
-													<div className="font-mono text-sm font-medium text-card-foreground">
-														{cat.formattedMedian}
-													</div>
-												</div>
-												<div>
-													<div className="text-xs text-muted-foreground">
-														P90
-													</div>
-													<div className="font-mono text-sm font-medium text-card-foreground">
-														{formatDurationHMS(cat.p90)}
-													</div>
-												</div>
-												<div>
-													<div className="text-xs text-muted-foreground">
-														Trend
-													</div>
-													<div className={`text-sm font-medium ${trendColor}`}>
-														{trendIcon} {cat.trend > 0 ? "+" : ""}
-														{cat.trend.toFixed(1)}%
-													</div>
-												</div>
-											</div>
-
-											{isOutlier && (
-												<div className="mt-2 p-2 bg-red-100 dark:bg-red-900/30 rounded text-xs text-red-700 dark:text-red-300">
-													<WarningIcon className="w-3 h-3 inline mr-1" />{" "}
-													Anomali: {cat.formattedAvg} vs rata-rata{" "}
-													{formatDurationHMS(avgAllCat)}
-												</div>
-											)}
-										</div>
-									);
-								})}
-							</div>
 						</div>
 					</div>
-				</div>
-			</div>
 
+				</>
+			)}
 		</PageWrapper>
 	);
 };

@@ -1,8 +1,10 @@
-import React from 'react';
+import React, { Suspense } from 'react';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 
 export const withBoundary = (Comp: React.ComponentType<any>) => (props: any) => (
   <ErrorBoundary>
-    <Comp {...props} />
+    <Suspense fallback={null}>
+      <Comp {...props} />
+    </Suspense>
   </ErrorBoundary>
 );

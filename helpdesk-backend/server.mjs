@@ -87,15 +87,16 @@ const validateDuration = (duration) => {
 };
 
 // Helper: Format date for MySQL (YYYY-MM-DD HH:MM:SS)
+// Helper: Format date for MySQL (YYYY-MM-DD HH:MM:SS)
 const formatDateForMySQL = (val) => {
   if (!val) return null;
-  if (val instanceof Date) return val.toISOString().slice(0, 19).replace("T", " ");
-  const str = String(val);
-  // Handle ISO string with T and potentially Z/milliseconds
-  if (str.includes("T")) {
-    return str.slice(0, 19).replace("T", " ");
+  try {
+    const date = val instanceof Date ? val : new Date(val);
+    if (isNaN(date.getTime())) return null;
+    return date.toISOString().slice(0, 19).replace("T", " ");
+  } catch (e) {
+    return null;
   }
-  return str;
 };
 
 // -----------------------------------------------------------------------------
@@ -294,7 +295,7 @@ app.post(['/login', '/api/login'],
 );
 
 // Secure logout endpoint
-app.post('/logout', authenticateTokenWithAudit, async (req, res) => {
+app.post(['/logout', '/api/logout'], authenticateTokenWithAudit, async (req, res) => {
   try {
     await redisManager.deleteSession(req.user.sessionId);
     auditLogger('LOGOUT_SUCCESS', req);
@@ -602,6 +603,18 @@ app.post('/api/menu-permissions', authenticateToken, async (req, res) => {
   }
 });
 
+// Get available ticket years
+app.get('/api/tickets/years', authenticateToken, async (req, res) => {
+  try {
+    const [rows] = await db.query('SELECT DISTINCT YEAR(open_time) as year FROM tickets WHERE open_time IS NOT NULL ORDER BY year DESC');
+    const years = rows.map(r => r.year).filter(y => y > 0);
+    res.json({ success: true, years });
+  } catch (err) {
+    console.error('Get ticket years error:', err);
+    res.status(500).json({ error: 'Failed to fetch ticket years' });
+  }
+});
+
 // -----------------------------------------------------------------------------
 // Tickets API Endpoints
 // -----------------------------------------------------------------------------
@@ -609,7 +622,7 @@ app.post('/api/menu-permissions', authenticateToken, async (req, res) => {
 // Get all tickets
 app.get('/api/tickets', authenticateToken, async (req, res) => {
   try {
-    const { page = 1, limit = 100000, search, category, status, cabang } = req.query;
+    const { page = 1, limit = 50000, search, category, status, cabang } = req.query;
     const offset = (page - 1) * limit;
 
     let whereClause = '1=1';
@@ -1595,3 +1608,293 @@ app.get('/api/vendors', authenticateToken, async (req, res) => {
     res.status(500).json({ error: 'Failed to fetch vendors' });
   }
 });
+
+// =============================================================================
+// WORKLOAD ANALYTICS API ENDPOINTS
+// =============================================================================
+
+import {
+  calculateComplexityScore,
+  calculateUtilizationRate,
+  calculateQueueMetrics,
+  forecastWorkload,
+  calculateCapacityMetrics
+} from './lib/workloadCalculations.mjs';
+
+// Get capacity metrics (team-wide)
+app.get('/api/workload/capacity', authenticateToken, async (req, res) => {
+  try {
+    // Get agent capacity data
+    const [agents] = await db.query('SELECT * FROM agent_capacity WHERE is_active = 1');
+
+    // Get current open tickets count
+    const [ticketCount] = await db.query('SELECT COUNT(*) as count FROM tickets WHERE status != "Closed" AND status != "closed"');
+    const currentTickets = ticketCount[0]?.count || 0;
+
+    // Use default agent capacity if no agents configured
+    const agentData = agents.length > 0 ? agents : [{
+      is_active: 1,
+      max_concurrent_tickets: 10,
+      working_hours_per_day: 8,
+      efficiency_rate: 1.0
+    }];
+
+    const metrics = calculateCapacityMetrics(agentData, currentTickets);
+
+    res.json({ success: true, metrics });
+  } catch (err) {
+    console.error('Get capacity metrics error:', err);
+    res.status(500).json({ error: 'Failed to fetch capacity metrics' });
+  }
+});
+
+// Get agent utilization rates
+app.get('/api/workload/utilization', authenticateToken, async (req, res) => {
+  try {
+    const { period = '30' } = req.query; // days
+    const days = parseInt(period);
+
+    // Get agent capacity
+    const [agents] = await db.query('SELECT * FROM agent_capacity WHERE is_active = TRUE');
+
+    // Get agent handling times in the period
+    const [ticketData] = await db.query(`
+      SELECT 
+        open_by as agent_name,
+        SUM(duration_raw_hours) as total_handling_time,
+        COUNT(*) as ticket_count
+      FROM tickets
+      WHERE open_time >= DATE_SUB(NOW(), INTERVAL ? DAY)
+        AND open_by IS NOT NULL
+      GROUP BY open_by
+    `, [days]);
+
+    // Calculate utilization for each agent
+    const utilization = agents.map(agent => {
+      const agentTickets = ticketData.find(t => t.agent_name === agent.agent_name) || {
+        total_handling_time: 0,
+        ticket_count: 0
+      };
+
+      const metrics = calculateUtilizationRate({
+        ...agent,
+        total_handling_time: parseFloat(agentTickets.total_handling_time) || 0,
+        days_in_period: days
+      });
+
+      return {
+        agent_name: agent.agent_name,
+        ticket_count: agentTickets.ticket_count,
+        ...metrics
+      };
+    });
+
+    res.json({ success: true, data: utilization });
+  } catch (err) {
+    console.error('Get utilization error:', err);
+    res.status(500).json({ error: 'Failed to fetch utilization data' });
+  }
+});
+
+// Get queue metrics
+app.get('/api/workload/queue-metrics', authenticateToken, async (req, res) => {
+  try {
+    // Get all open tickets
+    const [tickets] = await db.query(`
+      SELECT * FROM tickets 
+      WHERE status != 'Closed'
+      ORDER BY open_time ASC
+    `);
+
+    const metrics = calculateQueueMetrics(tickets);
+
+    res.json({ success: true, metrics });
+  } catch (err) {
+    console.error('Get queue metrics error:', err);
+    res.status(500).json({ error: 'Failed to fetch queue metrics' });
+  }
+});
+
+// Get workload forecast
+app.get('/api/workload/forecast', authenticateToken, async (req, res) => {
+  try {
+    const { days = '7' } = req.query;
+    const forecastDays = parseInt(days);
+
+    // Get historical ticket counts (last 30 days)
+    const [historical] = await db.query(`
+      SELECT 
+        DATE(open_time) as date,
+        COUNT(*) as count
+      FROM tickets
+      WHERE open_time >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+      GROUP BY DATE(open_time)
+      ORDER BY date ASC
+    `);
+
+    const historicalData = historical.map(row => ({
+      date: row.date,
+      count: row.count
+    }));
+
+    const forecast = forecastWorkload(historicalData, forecastDays);
+
+    res.json({ success: true, forecast, historical: historicalData });
+  } catch (err) {
+    console.error('Get forecast error:', err);
+    res.status(500).json({ error: 'Failed to generate forecast' });
+  }
+});
+
+// Get complexity analysis
+app.get('/api/workload/complexity-analysis', authenticateToken, async (req, res) => {
+  try {
+    // Get average duration for normalization
+    const [avgDurationResult] = await db.query(`
+      SELECT AVG(duration_raw_hours) as avg_duration
+      FROM tickets
+      WHERE duration_raw_hours > 0 AND duration_raw_hours < 24
+    `);
+
+    const avgDuration = avgDurationResult[0].avg_duration || 4;
+
+    // Get complexity scores from database
+    const [rows] = await db.query(`
+      SELECT 
+        AVG(complexity_score) as avg_complexity,
+        MIN(complexity_score) as min_complexity,
+        MAX(complexity_score) as max_complexity,
+        SUM(CASE WHEN complexity_score < 1.5 THEN 1 ELSE 0 END) as simple_count,
+        SUM(CASE WHEN complexity_score >= 1.5 AND complexity_score < 2.5 THEN 1 ELSE 0 END) as medium_count,
+        SUM(CASE WHEN complexity_score >= 2.5 THEN 1 ELSE 0 END) as complex_count,
+        COUNT(*) as total_count
+      FROM ticket_complexity
+    `);
+
+    const result = rows[0];
+
+    // Handle empty data
+    if (!result || result.total_count === 0) {
+      return res.json({
+        success: true,
+        analysis: {
+          avg_complexity: 0,
+          min_complexity: 0,
+          max_complexity: 0,
+          distribution: {
+            simple: 0,
+            medium: 0,
+            complex: 0
+          },
+          total_analyzed: 0
+        }
+      });
+    }
+
+    const analysis = {
+      avg_complexity: Number((result.avg_complexity || 0).toFixed(2)),
+      min_complexity: Number((result.min_complexity || 0).toFixed(2)),
+      max_complexity: Number((result.max_complexity || 0).toFixed(2)),
+      distribution: {
+        simple: result.simple_count || 0,
+        medium: result.medium_count || 0,
+        complex: result.complex_count || 0
+      },
+      total_analyzed: result.total_count || 0
+    };
+
+    res.json({ success: true, analysis });
+  } catch (err) {
+    console.error('Get complexity analysis error:', err);
+    res.status(500).json({ error: 'Failed to fetch complexity analysis' });
+  }
+});
+
+// Recalculate complexity for all tickets (admin utility)
+app.post('/api/workload/recalculate-complexity', authenticateToken, async (req, res) => {
+  try {
+    // Only allow super admin
+    if (req.user.role !== 'super admin') {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+
+    // Get average duration
+    const [avgDurationResult] = await db.query(`
+      SELECT AVG(duration_raw_hours) as avg_duration
+      FROM tickets
+      WHERE duration_raw_hours > 0 AND duration_raw_hours < 24
+    `);
+    const avgDuration = avgDurationResult[0].avg_duration || 4;
+
+    // Get all tickets
+    const [tickets] = await db.query('SELECT * FROM tickets');
+
+    let updated = 0;
+    for (const ticket of tickets) {
+      const complexity = calculateComplexityScore(ticket, avgDuration);
+
+      await db.query(`
+        INSERT INTO ticket_complexity 
+          (ticket_id, complexity_score, category_weight, duration_factor, handling_count_factor, escalation_factor)
+        VALUES (?, ?, ?, ?, ?, ?)
+        ON DUPLICATE KEY UPDATE
+          complexity_score = VALUES(complexity_score),
+          category_weight = VALUES(category_weight),
+          duration_factor = VALUES(duration_factor),
+          handling_count_factor = VALUES(handling_count_factor),
+          escalation_factor = VALUES(escalation_factor),
+          updated_at = CURRENT_TIMESTAMP
+      `, [
+        ticket.id,
+        complexity.complexity_score,
+        complexity.category_weight,
+        complexity.duration_factor,
+        complexity.handling_count_factor,
+        complexity.escalation_factor
+      ]);
+      updated++;
+    }
+
+    res.json({ success: true, message: `Recalculated complexity for ${updated} tickets` });
+  } catch (err) {
+    console.error('Recalculate complexity error:', err);
+    res.status(500).json({ error: 'Failed to recalculate complexity' });
+  }
+});
+
+// Get/Update agent capacity
+app.get('/api/agent-capacity', authenticateToken, async (req, res) => {
+  try {
+    const [agents] = await db.query('SELECT * FROM agent_capacity ORDER BY agent_name ASC');
+    res.json({ success: true, agents });
+  } catch (err) {
+    console.error('Get agent capacity error:', err);
+    res.status(500).json({ error: 'Failed to fetch agent capacity' });
+  }
+});
+
+app.put('/api/agent-capacity/:agentName', authenticateToken, async (req, res) => {
+  try {
+    if (req.user.role !== 'super admin' && req.user.role !== 'admin') {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+
+    const { agentName } = req.params;
+    const { max_concurrent_tickets, working_hours_per_day, efficiency_rate, is_active } = req.body;
+
+    await db.query(`
+      UPDATE agent_capacity 
+      SET max_concurrent_tickets = ?,
+          working_hours_per_day = ?,
+          efficiency_rate = ?,
+          is_active = ?
+      WHERE agent_name = ?
+    `, [max_concurrent_tickets, working_hours_per_day, efficiency_rate, is_active, agentName]);
+
+    res.json({ success: true, message: `Updated capacity for ${agentName}` });
+  } catch (err) {
+    console.error('Update agent capacity error:', err);
+    res.status(500).json({ error: 'Failed to update agent capacity' });
+  }
+});
+

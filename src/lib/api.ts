@@ -1,12 +1,11 @@
 // API service untuk komunikasi dengan backend MySQL
 import { Incident } from "@/types/incident";
+import { logger } from "@/lib/logger";
 // Allow empty string for relative paths (proxied)
-const API_BASE_URL =
-	import.meta.env.VITE_API_URL !== undefined
-		? import.meta.env.VITE_API_URL
-		: "https://api.hms.nexa.net.id";
+// Allow empty string for relative paths (proxied)
+const API_BASE_URL = "";
 
-console.log("🔌 [API] Base URL initialized:", API_BASE_URL);
+
 
 // Helper function untuk mengambil auth token
 const getAuthToken = (): string | null => {
@@ -60,26 +59,48 @@ export async function apiCall<T>(
 
 			// Handle redirects (301, 302, etc.)
 			if (response.redirected) {
-				console.warn(`API call redirected from ${url} to ${response.url}`);
+				logger.warn(`API call redirected from ${url} to ${response.url}`);
 			}
+
+			// Check response content type
+			const contentType = response.headers.get("content-type");
+			const isJson = contentType && contentType.includes("application/json");
 
 			if (!response.ok) {
-				const errorData = await response.json().catch(() => ({}));
+				if (isJson) {
+					const errorData = await response.json().catch(() => ({}));
 
-				// Handle validation errors with details
-				if (errorData.details && Array.isArray(errorData.details)) {
-					const validationMessages = errorData.details
-						.map((detail: any) => `${detail.field}: ${detail.message}`)
-						.join(", ");
-					throw new Error(`Validation failed: ${validationMessages}`);
+					// Handle validation errors with details
+					if (errorData.details && Array.isArray(errorData.details)) {
+						const validationMessages = errorData.details
+							.map((detail: any) => `${detail.field}: ${detail.message}`)
+							.join(", ");
+						throw new Error(`Validation failed: ${validationMessages}`);
+					}
+
+					throw new Error(
+						errorData.error || errorData.message || `HTTP error! status: ${response.status}`,
+					);
+				} else {
+					const text = await response.text();
+					console.error("Non-JSON API Error Response:", text.substring(0, 500));
+					throw new Error(
+						`API Error ${response.status}: Server returned ${contentType || "unknown type"
+						}`,
+					);
 				}
-
-				throw new Error(
-					errorData.error || `HTTP error! status: ${response.status}`,
-				);
 			}
 
-			return response.json();
+			if (isJson) {
+				return await response.json();
+			} else {
+				const text = await response.text();
+				console.warn(
+					"Received non-JSON success response:",
+					text.substring(0, 200),
+				);
+				return text as unknown as T;
+			}
 		} catch (error) {
 			// Handle CORS and network errors
 			if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
@@ -201,14 +222,14 @@ export const authAPI = {
 		user: User;
 		sessionId: string;
 	}> {
-		return apiCall("/login", {
+		return apiCall("/api/login", {
 			method: "POST",
 			body: JSON.stringify({ username, password, recaptchaToken }),
 		});
 	},
 
 	async logout(): Promise<void> {
-		await apiCall("/logout", {
+		await apiCall("/api/logout", {
 			method: "POST",
 		});
 	},
@@ -297,6 +318,11 @@ export const ticketAPI = {
 
 		if (!response) return { tickets: [], pagination: {} };
 		return { tickets: response.tickets || [], pagination: response.pagination || {} };
+	},
+
+	// Get available ticket years
+	async getTicketYears(): Promise<{ success: boolean; years: number[] }> {
+		return apiCall("/api/tickets/years");
 	},
 
 	// Add new ticket
@@ -399,6 +425,59 @@ export const customerAPI = {
 	async deleteAllCustomers(): Promise<void> {
 		await apiCall("/api/customers/all", {
 			method: "DELETE",
+		});
+	},
+};
+
+export interface Vendor {
+	id: number;
+	name: string;
+	description?: string;
+	contactPerson?: string;
+	email?: string;
+	phone?: string;
+	isActive: boolean;
+	createdAt?: string;
+	updatedAt?: string;
+}
+
+export const vendorAPI = {
+	// Get all vendors
+	async getVendors(): Promise<{ vendors: Vendor[] }> {
+		const response = await apiCall<{ success: boolean; vendors: Vendor[] }>(
+			"/api/vendors",
+		);
+		return { vendors: response.vendors };
+	},
+
+	// Add new vendor
+	async addVendor(vendorData: Omit<Vendor, "id" | "createdAt" | "updatedAt">): Promise<void> {
+		await apiCall("/api/vendors", {
+			method: "POST",
+			body: JSON.stringify(vendorData),
+		});
+	},
+
+	// Update vendor
+	async updateVendor(id: number, vendorData: Partial<Vendor>): Promise<void> {
+		await apiCall(`/api/vendors/${id}`, {
+			method: "PUT",
+			body: JSON.stringify(vendorData),
+		});
+	},
+
+	// Delete vendor
+	async deleteVendor(id: number): Promise<void> {
+		await apiCall(`/api/vendors/${id}`, {
+			method: "DELETE",
+		});
+	},
+
+	// Toggle vendor status
+	async toggleActive(id: number, isActive: boolean): Promise<void> {
+		await apiCall(`/api/vendors/${id}/status`, {
+			method: "PATCH",
+			body: JSON.stringify({ isActive }),
 		});
 	},
 };
@@ -548,6 +627,143 @@ export const uploadSessionAPI = {
 	},
 };
 
+// =============================================================================
+// Workload Analytics API
+// =============================================================================
+
+export interface CapacityMetrics {
+	total_agents: number;
+	total_max_concurrent: number;
+	total_daily_capacity: number;
+	current_tickets: number;
+	utilization_pct: number;
+	remaining_capacity: number;
+	status: 'healthy' | 'near_capacity' | 'overloaded';
+	recommended_agents: number;
+}
+
+export interface UtilizationData {
+	agent_name: string;
+	ticket_count: number;
+	utilization_rate: number;
+	total_handling_time: number;
+	available_capacity: number;
+	remaining_capacity: number;
+}
+
+export interface QueueMetrics {
+	total_in_queue: number;
+	avg_wait_time: number;
+	queue_velocity: number;
+	aging_breakdown: {
+		fresh: number;
+		aging: number;
+		old: number;
+		critical: number;
+	};
+	resolved_last_24h: number;
+}
+
+export interface ForecastData {
+	date: string;
+	predicted_count: number;
+	confidence_low: number;
+	confidence_high: number;
+}
+
+export interface ComplexityAnalysis {
+	avg_complexity: number;
+	min_complexity: number;
+	max_complexity: number;
+	distribution: {
+		simple: number;
+		medium: number;
+		complex: number;
+	};
+	total_analyzed: number;
+}
+
+export interface AgentCapacity {
+	id: number;
+	agent_name: string;
+	max_concurrent_tickets: number;
+	working_hours_per_day: number;
+	efficiency_rate: number;
+	is_active: boolean;
+	created_at: string;
+	updated_at: string;
+}
+
+export const workloadAPI = {
+	async getCapacityMetrics(): Promise<CapacityMetrics> {
+		const response = await apiCall<{ success: boolean; metrics: CapacityMetrics }>(
+			'/api/workload/capacity'
+		);
+		return response.metrics;
+	},
+
+	async getUtilizationRates(period: number = 30): Promise<UtilizationData[]> {
+		const response = await apiCall<{ success: boolean; data: UtilizationData[] }>(
+			`/api/workload/utilization?period=${period}`
+		);
+		return response.data;
+	},
+
+	async getQueueMetrics(): Promise<QueueMetrics> {
+		const response = await apiCall<{ success: boolean; metrics: QueueMetrics }>(
+			'/api/workload/queue-metrics'
+		);
+		return response.metrics;
+	},
+
+	async getForecast(days: number = 7): Promise<{ forecast: ForecastData[]; historical: Array<{ date: string; count: number }> }> {
+		const response = await apiCall<{
+			success: boolean;
+			forecast: ForecastData[];
+			historical: Array<{ date: string; count: number }>
+		}>(
+			`/api/workload/forecast?days=${days}`
+		);
+		return { forecast: response.forecast, historical: response.historical };
+	},
+
+	async getComplexityAnalysis(): Promise<ComplexityAnalysis> {
+		const response = await apiCall<{ success: boolean; analysis: ComplexityAnalysis }>(
+			'/api/workload/complexity-analysis'
+		);
+		return response.analysis;
+	},
+
+	async recalculateComplexity(): Promise<{ message: string }> {
+		const response = await apiCall<{ success: boolean; message: string }>(
+			'/api/workload/recalculate-complexity',
+			{ method: 'POST' }
+		);
+		return { message: response.message };
+	},
+
+	async getAgentCapacity(): Promise<AgentCapacity[]> {
+		const response = await apiCall<{ success: boolean; agents: AgentCapacity[] }>(
+			'/api/agent-capacity'
+		);
+		return response.agents;
+	},
+
+	async updateAgentCapacity(
+		agentName: string,
+		updates: Partial<Omit<AgentCapacity, 'id' | 'agent_name' | 'created_at' | 'updated_at'>>
+	): Promise<{ message: string }> {
+		const response = await apiCall<{ success: boolean; message: string }>(
+			`/api/agent-capacity/${encodeURIComponent(agentName)}`,
+			{
+				method: 'PUT',
+				body: JSON.stringify(updates),
+			}
+		);
+		return { message: response.message };
+	},
+};
+
 export default {
 	userAPI,
 	menuPermissionAPI,
@@ -556,4 +772,6 @@ export default {
 	customerAPI,
 	incidentAPI,
 	uploadSessionAPI,
+	vendorAPI,
+	workloadAPI,
 };

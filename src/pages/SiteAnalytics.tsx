@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, Suspense } from "react";
 
 import { usePerf } from "@/hooks/usePerf";
 import { logger } from "@/lib/logger";
@@ -53,6 +53,7 @@ import SignalCellularAltIcon from "@mui/icons-material/SignalCellularAlt";
 import InfoIcon from "@mui/icons-material/InfoOutlined";
 import WarningIcon from "@mui/icons-material/Warning";
 import BuildIcon from "@mui/icons-material/Build";
+import HourglassEmptyIcon from "@mui/icons-material/HourglassEmpty";
 
 import {
 	Tooltip,
@@ -368,23 +369,6 @@ const SiteAnalytics: React.FC = () => {
 		};
 	}, [filteredIncidents]);
 
-	if (!allIncidents && !analytics) return <div className="p-8">Loading analytics...</div>;
-
-	// Render Empty State
-	if (!analytics) return (
-		<PageWrapper maxW="full">
-			<PageHeader
-				title="Site Analytics"
-				description="Performance and risk analysis of network sites"
-			/>
-			<div className="p-8 text-center border-2 border-dashed rounded-lg">
-				No incident data available for the selected filters.
-			</div>
-		</PageWrapper>
-	);
-
-	const stats = analytics;
-
 	return (
 		<PageWrapper maxW="full">
 			<div className="space-y-6">
@@ -393,451 +377,476 @@ const SiteAnalytics: React.FC = () => {
 					description="Performance and risk analysis of network sites"
 				/>
 
-				{/* Filters */}
-				<div className="flex flex-col md:flex-row gap-4 justify-between items-start md:items-center">
-					<TimeFilter
-						startMonth={startMonth}
-						setStartMonth={setStartMonth}
-						endMonth={endMonth}
-						setEndMonth={setEndMonth}
-						selectedYear={selectedYear}
-						setSelectedYear={setSelectedYear}
-						monthOptions={MONTH_OPTIONS}
-						allYearsInData={availableYears.map(y => y.toString())}
-					/>
-					<div className="text-xs font-semibold text-muted-foreground bg-card border rounded-xl px-4 py-2 shadow-sm h-[48px] flex items-center">
-						ACTIVE SITES: <span className="text-blue-600 ml-2 font-mono text-sm">{stats.uniqueSites}</span>
+				{!analytics ? (
+					<div className="p-12 text-center border-2 border-dashed rounded-xl bg-muted/30">
+						<div className="flex flex-col items-center gap-3">
+							<HourglassEmptyIcon className="w-12 h-12 text-muted-foreground animate-pulse" />
+							<div className="text-lg font-medium text-muted-foreground">
+								{!allIncidents ? "Loading site performance data..." : "No analytics data available for selected filters"}
+							</div>
+							<p className="text-sm text-muted-foreground max-w-md">
+								{!allIncidents
+									? "Retrieving incident data from database..."
+									: "Try adjusting your filters or ensure you have uploaded incident data for this period."}
+							</p>
+						</div>
 					</div>
-				</div>
+				) : (
+					<Suspense
+						fallback={
+							<div className="p-12 text-center text-muted-foreground animate-pulse border-2 border-dashed rounded-xl">
+								Loading site analysis visualizations...
+							</div>
+						}
+					>
+						<>
+							{/* Filters */}
+							<div className="flex flex-col md:flex-row gap-4 justify-between items-start md:items-center">
+								<TimeFilter
+									startMonth={startMonth}
+									setStartMonth={setStartMonth}
+									endMonth={endMonth}
+									setEndMonth={setEndMonth}
+									selectedYear={selectedYear}
+									setSelectedYear={setSelectedYear}
+									monthOptions={MONTH_OPTIONS}
+									allYearsInData={availableYears.map(y => y.toString())}
+								/>
+								<div className="text-xs font-semibold text-muted-foreground bg-card border rounded-xl px-4 py-2 shadow-sm h-[48px] flex items-center">
+									ACTIVE SITES: <span className="text-blue-600 ml-2 font-mono text-sm">{analytics.uniqueSites}</span>
+								</div>
+							</div>
 
-				{/* KPI Cards */}
-				<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-					<SummaryCard
-						title="Active Sites"
-						value={stats.uniqueSites}
-						description={`${stats.totalIncidents} total incidents`}
-						icon={<LocationOnIcon className="text-white" />}
-						iconBg="bg-blue-600"
-						trend={stats.momTrends.sites.value.toFixed(1) + "%"}
-						trendType={stats.momTrends.sites.type}
-					/>
-					<SummaryCard
-						title="MTTR (Total vs Net)"
-						value={formatDurationHMS(stats.avgDuration)}
-						description={`Net: ${formatDurationHMS(stats.avgNetDuration)} (${stats.pauseRatio.toFixed(1)}% Pause)`}
-						icon={<AccessTimeIcon className="text-white" />}
-						iconBg="bg-amber-500"
-						trend={analytics.momTrends.duration.value.toFixed(1) + "%"}
-						trendType={analytics.momTrends.duration.type}
-					/>
-					<SummaryCard
-						title="SLA Compliance"
-						value={`${stats.slaCompliance.toFixed(1)}%`}
-						description="Based on NCAL targets"
-						icon={<CheckCircleIcon className="text-white" />}
-						iconBg="bg-emerald-500"
-					/>
-					<SummaryCard
-						title="Site Reliability"
-						value={`${stats.siteReliability.toFixed(1)}%`}
-						description="Resolution success rate"
-						icon={<TrendingUpIcon className="text-white" />}
-						iconBg="bg-indigo-500"
-						trend={stats.momTrends.reliability.value.toFixed(1) + "%"}
-						trendType={stats.momTrends.reliability.type}
-					/>
-					<SummaryCard
-						title="High Risk Sites"
-						value={stats.highRiskSites}
-						description="Sites requiring attention"
-						icon={<WarningAmberIcon className="text-white" />}
-						iconBg="bg-rose-500"
-					/>
-				</div>
+							{/* KPI Cards */}
+							<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+								<SummaryCard
+									title="Active Sites"
+									value={analytics.uniqueSites}
+									description={`${analytics.totalIncidents} total incidents`}
+									icon={<LocationOnIcon className="text-white" />}
+									iconBg="bg-blue-600"
+									trend={analytics.momTrends.sites.value.toFixed(1) + "%"}
+									trendType={analytics.momTrends.sites.type}
+								/>
+								<SummaryCard
+									title="MTTR (Total vs Net)"
+									value={formatDurationHMS(analytics.avgDuration)}
+									description={`Net: ${formatDurationHMS(analytics.avgNetDuration)} (${analytics.pauseRatio.toFixed(1)}% Pause)`}
+									icon={<AccessTimeIcon className="text-white" />}
+									iconBg="bg-amber-500"
+									trend={analytics.momTrends.duration.value.toFixed(1) + "%"}
+									trendType={analytics.momTrends.duration.type}
+								/>
+								<SummaryCard
+									title="SLA Compliance"
+									value={`${analytics.slaCompliance.toFixed(1)}%`}
+									description="Based on NCAL targets"
+									icon={<CheckCircleIcon className="text-white" />}
+									iconBg="bg-emerald-500"
+								/>
+								<SummaryCard
+									title="Site Reliability"
+									value={`${analytics.siteReliability.toFixed(1)}%`}
+									description="Resolution success rate"
+									icon={<TrendingUpIcon className="text-white" />}
+									iconBg="bg-indigo-500"
+									trend={analytics.momTrends.reliability.value.toFixed(1) + "%"}
+									trendType={analytics.momTrends.reliability.type}
+								/>
+								<SummaryCard
+									title="High Risk Sites"
+									value={analytics.highRiskSites}
+									description="Sites requiring attention"
+									icon={<WarningAmberIcon className="text-white" />}
+									iconBg="bg-rose-500"
+								/>
+							</div>
 
-				{/* Charts Section */}
-				<div className="grid grid-cols-1 gap-6">
-					{/* Monthly Trends - Full Width */}
-					<Card>
-						<CardHeader>
-							<CardTitle className="flex items-center gap-2">
-								<TrendingUpIcon className="text-blue-500" />
-								Site Incident Trends
-							</CardTitle>
-							<CardHeaderDescription>Monthly incident volume and active site count</CardHeaderDescription>
-						</CardHeader>
-						<CardContent className="h-[400px]">
-							<ChartContainer config={{}} className="h-full w-full">
-								<ComposedChart data={stats.trendData}>
-									<CartesianGrid strokeDasharray="3 3" vertical={false} />
-									<XAxis dataKey="month" tick={{ fontSize: 12 }} />
-									<YAxis yAxisId="left" />
-									<YAxis yAxisId="right" orientation="right" />
-									<ChartTooltip
-										content={
-											<ChartTooltipContent
-												formatter={(value, name) => {
-													if (name === "Total Avg" || name === "AvgDuration") {
-														return (
-															<div className="flex items-center gap-2">
-																<div className="h-2 w-2 rounded-full bg-[#f59e0b]" />
-																<span className="text-gray-700 font-medium">Total Avg:</span>
-																<span className="font-mono font-semibold text-gray-900">{formatDurationHMS(Number(value))}</span>
-															</div>
-														);
+							{/* Charts Section */}
+							<div className="grid grid-cols-1 gap-6">
+								{/* Monthly Trends - Full Width */}
+								<Card>
+									<CardHeader>
+										<CardTitle className="flex items-center gap-2">
+											<TrendingUpIcon className="text-blue-500" />
+											Site Incident Trends
+										</CardTitle>
+										<CardHeaderDescription>Monthly incident volume and active site count</CardHeaderDescription>
+									</CardHeader>
+									<CardContent className="h-[400px]">
+										<ChartContainer config={{}} className="h-full w-full">
+											<ComposedChart data={analytics.trendData}>
+												<CartesianGrid strokeDasharray="3 3" vertical={false} />
+												<XAxis dataKey="month" tick={{ fontSize: 12 }} />
+												<YAxis yAxisId="left" />
+												<YAxis yAxisId="right" orientation="right" />
+												<ChartTooltip
+													content={
+														<ChartTooltipContent
+															formatter={(value, name) => {
+																if (name === "Total Avg" || name === "AvgDuration") {
+																	return (
+																		<div className="flex items-center gap-2">
+																			<div className="h-2 w-2 rounded-full bg-[#f59e0b]" />
+																			<span className="text-gray-700 font-medium">Total Avg:</span>
+																			<span className="font-mono font-semibold text-gray-900">{formatDurationHMS(Number(value))}</span>
+																		</div>
+																	);
+																}
+																if (name === "Net Avg" || name === "NetDuration") {
+																	return (
+																		<div className="flex items-center gap-2">
+																			<div className="h-2 w-2 rounded-full bg-[#3b82f6]" />
+																			<span className="text-gray-700 font-medium">Net Avg:</span>
+																			<span className="font-mono font-semibold text-blue-600">{formatDurationHMS(Number(value))}</span>
+																		</div>
+																	);
+																}
+																if (name === "Incidents") {
+																	return (
+																		<div className="flex items-center gap-2">
+																			<div className="h-2 w-2 rounded-full bg-[#3b82f6]" />
+																			<span className="text-gray-700 font-medium">Incidents:</span>
+																			<span className="font-mono font-semibold text-gray-900">{value}</span>
+																		</div>
+																	);
+																}
+																if (name === "ActiveSites") {
+																	return (
+																		<div className="flex items-center gap-2">
+																			<div className="h-2 w-2 rounded-full bg-[#f97316]" />
+																			<span className="text-gray-700 font-medium">Active Sites:</span>
+																			<span className="font-mono font-semibold text-gray-900">{value}</span>
+																		</div>
+																	);
+																}
+																return null;
+															}}
+														/>
 													}
-													if (name === "Net Avg" || name === "NetDuration") {
-														return (
-															<div className="flex items-center gap-2">
-																<div className="h-2 w-2 rounded-full bg-[#3b82f6]" />
-																<span className="text-gray-700 font-medium">Net Avg:</span>
-																<span className="font-mono font-semibold text-blue-600">{formatDurationHMS(Number(value))}</span>
-															</div>
-														);
-													}
-													if (name === "Incidents") {
-														return (
-															<div className="flex items-center gap-2">
-																<div className="h-2 w-2 rounded-full bg-[#3b82f6]" />
-																<span className="text-gray-700 font-medium">Incidents:</span>
-																<span className="font-mono font-semibold text-gray-900">{value}</span>
-															</div>
-														);
-													}
-													if (name === "ActiveSites") {
-														return (
-															<div className="flex items-center gap-2">
-																<div className="h-2 w-2 rounded-full bg-[#f97316]" />
-																<span className="text-gray-700 font-medium">Active Sites:</span>
-																<span className="font-mono font-semibold text-gray-900">{value}</span>
-															</div>
-														);
-													}
-													return null;
-												}}
-											/>
-										}
-									/>
-									<Legend />
-									<Bar
-										yAxisId="left"
-										dataKey="Incidents"
-										fill="#3b82f6"
-										radius={[4, 4, 0, 0]}
-										barSize={40}
-									/>
-									<Line
-										yAxisId="right"
-										type="monotone"
-										dataKey="AvgDuration"
-										stroke="#f59e0b"
-										strokeWidth={2}
-										name="Total Avg"
-									/>
-									<Line
-										yAxisId="right"
-										type="monotone"
-										dataKey="NetDuration"
-										stroke="#3b82f6"
-										strokeWidth={2}
-										strokeDasharray="5 5"
-										name="Net Avg"
-									/>
-								</ComposedChart>
-							</ChartContainer>
-						</CardContent>
-					</Card>
-
-					{/* Side-by-side secondary charts */}
-					<div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-						{/* Top Problematic Sites (by Volume) */}
-						<Card>
-							<CardHeader>
-								<CardTitle className="flex items-center gap-2">
-									<DomainDisabledIcon className="text-rose-500" />
-									Most Affected Sites
-								</CardTitle>
-								<CardHeaderDescription>Sites with highest incident frequency</CardHeaderDescription>
-							</CardHeader>
-							<CardContent className="h-[350px]">
-								<ChartContainer config={{}} className="h-full w-full">
-									<BarChart data={stats.topProblematic} layout="vertical">
-										<CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} />
-										<XAxis type="number" />
-										<YAxis dataKey="site" type="category" width={120} tick={{ fontSize: 11 }} />
-										<ChartTooltip content={<ChartTooltipContent />} />
-										<Bar dataKey="count" fill="#ef4444" radius={[0, 4, 4, 0]} name="Incidents" />
-									</BarChart>
-								</ChartContainer>
-							</CardContent>
-						</Card>
-
-						{/* Longest Duration Sites */}
-						<Card>
-							<CardHeader>
-								<CardTitle className="flex items-center gap-2">
-									<AccessTimeIcon className="text-amber-500" />
-									Longest Downtime Sites
-								</CardTitle>
-								<CardHeaderDescription>Sites with highest average resolution time</CardHeaderDescription>
-							</CardHeader>
-							<CardContent className="h-[350px]">
-								<ChartContainer config={{}} className="h-full w-full">
-									<BarChart data={stats.topDuration} layout="vertical">
-										<CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} />
-										<XAxis type="number" />
-										<YAxis dataKey="site" type="category" width={120} tick={{ fontSize: 11 }} />
-										<ChartTooltip
-											content={
-												<ChartTooltipContent
-													formatter={(value, name) => {
-														if (name === "Avg Duration") {
-															return (
-																<div className="flex items-center gap-2">
-																	<div className="h-2 w-2 rounded-full bg-[#f59e0b]" />
-																	<span className="text-gray-700 font-medium">Avg Duration:</span>
-																	<span className="font-mono font-semibold text-gray-900">{formatDurationHMS(Number(value))}</span>
-																</div>
-															);
-														}
-														return undefined;
-													}}
 												/>
+												<Legend />
+												<Bar
+													yAxisId="left"
+													dataKey="Incidents"
+													fill="#3b82f6"
+													radius={[4, 4, 0, 0]}
+													barSize={40}
+												/>
+												<Line
+													yAxisId="right"
+													type="monotone"
+													dataKey="AvgDuration"
+													stroke="#f59e0b"
+													strokeWidth={2}
+													name="Total Avg"
+												/>
+												<Line
+													yAxisId="right"
+													type="monotone"
+													dataKey="NetDuration"
+													stroke="#3b82f6"
+													strokeWidth={2}
+													strokeDasharray="5 5"
+													name="Net Avg"
+												/>
+											</ComposedChart>
+										</ChartContainer>
+									</CardContent>
+								</Card>
+
+								{/* Side-by-side secondary charts */}
+								<div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+									{/* Top Problematic Sites (by Volume) */}
+									<Card>
+										<CardHeader>
+											<CardTitle className="flex items-center gap-2">
+												<DomainDisabledIcon className="text-rose-500" />
+												Most Affected Sites
+											</CardTitle>
+											<CardHeaderDescription>Sites with highest incident frequency</CardHeaderDescription>
+										</CardHeader>
+										<CardContent className="h-[350px]">
+											<ChartContainer config={{}} className="h-full w-full">
+												<BarChart data={analytics.topProblematic} layout="vertical">
+													<CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} />
+													<XAxis type="number" />
+													<YAxis dataKey="site" type="category" width={120} tick={{ fontSize: 11 }} />
+													<ChartTooltip content={<ChartTooltipContent />} />
+													<Bar dataKey="count" fill="#ef4444" radius={[0, 4, 4, 0]} name="Incidents" />
+												</BarChart>
+											</ChartContainer>
+										</CardContent>
+									</Card>
+
+									{/* Longest Duration Sites */}
+									<Card>
+										<CardHeader>
+											<CardTitle className="flex items-center gap-2">
+												<AccessTimeIcon className="text-amber-500" />
+												Longest Downtime Sites
+											</CardTitle>
+											<CardHeaderDescription>Sites with highest average resolution time</CardHeaderDescription>
+										</CardHeader>
+										<CardContent className="h-[350px]">
+											<ChartContainer config={{}} className="h-full w-full">
+												<BarChart data={analytics.topDuration} layout="vertical">
+													<CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} />
+													<XAxis type="number" />
+													<YAxis dataKey="site" type="category" width={120} tick={{ fontSize: 11 }} />
+													<ChartTooltip
+														content={
+															<ChartTooltipContent
+																formatter={(value, name) => {
+																	if (name === "Avg Duration") {
+																		return (
+																			<div className="flex items-center gap-2">
+																				<div className="h-2 w-2 rounded-full bg-[#f59e0b]" />
+																				<span className="text-gray-700 font-medium">Avg Duration:</span>
+																				<span className="font-mono font-semibold text-gray-900">{formatDurationHMS(Number(value))}</span>
+																			</div>
+																		);
+																	}
+																	return undefined;
+																}}
+															/>
+														}
+													/>
+													<Bar dataKey="avgDur" fill="#f59e0b" radius={[0, 4, 4, 0]} name="Avg Duration" />
+												</BarChart>
+											</ChartContainer>
+										</CardContent>
+									</Card>
+								</div>
+							</div>
+
+							{/* Risk Evolution Matrix */}
+							<Card>
+								<CardHeader>
+									<CardTitle className="flex items-center gap-2">
+										<SignalCellularAltIcon className="text-slate-500" />
+										Detailed Performance Matrix (Top 20 Risk)
+									</CardTitle>
+									<CardHeaderDescription>Comprehensive analysis of highest risk sites</CardHeaderDescription>
+								</CardHeader>
+								<CardContent>
+									<div className="overflow-x-auto">
+										<table className="w-full text-sm">
+											<thead>
+												<tr className="border-b bg-muted/50">
+													<th className="py-3 px-4 text-left font-semibold">Rank</th>
+													<th className="py-3 px-4 text-left font-semibold">Site Name</th>
+													<th className="py-3 px-4 text-center font-semibold text-blue-600">Vol</th>
+													<th className="py-3 px-4 text-center font-semibold text-rose-600">SLA %</th>
+													<th className="py-3 px-4 text-center font-semibold text-emerald-600">Success %</th>
+													<th className="py-3 px-4 text-left font-semibold">Main Problem</th>
+													<th className="py-3 px-4 text-center font-semibold">MTTR (Total vs Net)</th>
+													<th className="py-3 px-4 text-center font-semibold text-amber-600">Pause Gap</th>
+													<th className="py-3 px-4 text-center font-semibold">
+														<TooltipProvider>
+															<div className="flex items-center gap-1 justify-center">
+																Risk Level
+																<Tooltip>
+																	<TooltipTrigger asChild>
+																		<InfoIcon className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
+																	</TooltipTrigger>
+																	<TooltipContent className="max-w-[220px] p-3 text-left">
+																		<p className="text-xs font-bold mb-1">Rumus Risk Score:</p>
+																		<p className="text-[10px] text-muted-foreground leading-relaxed">
+																			(30% Vol) + (30% Durasi) + (20% Resolusi) + (20% SLA Breach)
+																		</p>
+																	</TooltipContent>
+																</Tooltip>
+															</div>
+														</TooltipProvider>
+													</th>
+												</tr>
+											</thead>
+											<tbody>
+												{analytics.siteMetrics.slice(0, 20).map((site: any, idx: number) => (
+													<tr
+														key={idx}
+														className="border-b hover:bg-muted/20 transition-colors cursor-pointer group"
+														onClick={() => setSelectedSite(site)}
+													>
+														<td className="py-3 px-4">
+															<div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs ${site.riskScore > 75 ? "bg-rose-100 text-rose-700 border border-rose-200" :
+																site.riskScore > 40 ? "bg-amber-100 text-amber-700 border border-amber-200" :
+																	"bg-emerald-50 text-emerald-700 border border-emerald-100"
+																}`}>
+																{idx + 1}
+															</div>
+														</td>
+														<td className="py-3 px-4 font-medium text-foreground">{site.site}</td>
+														<td className="py-3 px-4 text-center">
+															<Badge variant="secondary" className="font-mono">{site.count}</Badge>
+														</td>
+														<td className="py-3 px-4 text-center font-semibold text-rose-600">
+															{site.count > 0 ? (((site.count - site.highSeverity) / site.count) * 100).toFixed(1) : "100.0"}%
+														</td>
+														<td className="py-3 px-4 text-center font-semibold text-emerald-600">
+															{site.reliability.toFixed(1)}%
+														</td>
+														<td className="py-3 px-4">
+															<span className="text-[11px] text-muted-foreground truncate w-32 block" title={site.topProb}>
+																{site.topProb}
+															</span>
+														</td>
+														<td className="py-3 px-4 text-center">
+															<div className="flex flex-col items-center">
+																<span className="font-mono text-xs text-foreground uppercase">{formatDurationHMS(site.avgDur)}</span>
+																<span className="text-[10px] text-blue-600 font-bold uppercase">Net: {formatDurationHMS(site.avgNetDur)}</span>
+															</div>
+														</td>
+														<td className="py-3 px-4 text-center">
+															<Badge variant="secondary" className="font-mono text-[10px] bg-amber-50 text-amber-600 border-amber-200">
+																{site.pauseGap.toFixed(1)}%
+															</Badge>
+														</td>
+														<td className="py-3 px-4 text-center">
+															<Badge
+																variant={site.riskScore >= 70 ? "danger" : site.riskScore >= 40 ? "warning" : "success"}
+																className="text-[10px]"
+															>
+																{site.riskScore.toFixed(0)}
+															</Badge>
+														</td>
+													</tr>
+												))}
+											</tbody>
+										</table>
+									</div>
+								</CardContent>
+							</Card>
+							{/* Site Drill-down Detail Modal */}
+							{selectedSite && (
+								<DetailModal
+									isOpen={!!selectedSite}
+									onClose={() => setSelectedSite(null)}
+									title={selectedSite.site}
+									description="Detailed Site Risk Analysis"
+								>
+									<div className="grid grid-cols-2 gap-4">
+										<div className="p-4 rounded-xl bg-blue-100/50 border border-blue-200">
+											<p className="text-[10px] font-bold text-blue-600 uppercase tracking-widest mb-1">Risk Score</p>
+											<p className="text-2xl font-black text-blue-700">{selectedSite.riskScore.toFixed(0)}/100</p>
+											<p className="text-[11px] text-blue-600/70 font-medium">Kritikalitas Site</p>
+										</div>
+										<div className="p-4 rounded-xl bg-slate-100 border border-slate-200">
+											<p className="text-[10px] font-bold text-slate-600 uppercase tracking-widest mb-1">Total Incidents</p>
+											<p className="text-2xl font-black text-slate-700">{selectedSite.count}</p>
+											<p className="text-[11px] text-slate-600/70 font-medium">Beban Gangguan</p>
+										</div>
+									</div>
+
+									<div className="space-y-4">
+										<div className="flex items-center gap-2">
+											<WarningIcon className="text-rose-500 h-5 w-5" />
+											<h4 className="font-bold text-sm">Severity Distribution</h4>
+										</div>
+										<div className="flex gap-2">
+											{Object.entries(selectedSite.ncalBreakdown)
+												.filter(([_, count]) => (count as number) > 0)
+												.map(([level, count]) => (
+													<div key={level} className="flex-1 p-2 rounded-lg border text-center space-y-1">
+														<p className="text-[9px] font-bold text-muted-foreground">{level}</p>
+														<p className="text-sm font-black" style={{ color: (NCAL_COLORS as any)[level] || '#888' }}>{count as number}</p>
+													</div>
+												))
 											}
-										/>
-										<Bar dataKey="avgDur" fill="#f59e0b" radius={[0, 4, 4, 0]} name="Avg Duration" />
-									</BarChart>
-								</ChartContainer>
-							</CardContent>
-						</Card>
-					</div>
-				</div>
-
-				{/* Risk Evolution Matrix */}
-				<Card>
-					<CardHeader>
-						<CardTitle className="flex items-center gap-2">
-							<SignalCellularAltIcon className="text-slate-500" />
-							Detailed Performance Matrix (Top 20 Risk)
-						</CardTitle>
-						<CardHeaderDescription>Comprehensive analysis of highest risk sites</CardHeaderDescription>
-					</CardHeader>
-					<CardContent>
-						<div className="overflow-x-auto">
-							<table className="w-full text-sm">
-								<thead>
-									<tr className="border-b bg-muted/50">
-										<th className="py-3 px-4 text-left font-semibold">Rank</th>
-										<th className="py-3 px-4 text-left font-semibold">Site Name</th>
-										<th className="py-3 px-4 text-center font-semibold text-blue-600">Vol</th>
-										<th className="py-3 px-4 text-center font-semibold text-rose-600">SLA %</th>
-										<th className="py-3 px-4 text-center font-semibold text-emerald-600">Success %</th>
-										<th className="py-3 px-4 text-left font-semibold">Main Problem</th>
-										<th className="py-3 px-4 text-center font-semibold">MTTR (Total vs Net)</th>
-										<th className="py-3 px-4 text-center font-semibold text-amber-600">Pause Gap</th>
-										<th className="py-3 px-4 text-center font-semibold">
-											<TooltipProvider>
-												<div className="flex items-center gap-1 justify-center">
-													Risk Level
-													<Tooltip>
-														<TooltipTrigger asChild>
-															<InfoIcon className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
-														</TooltipTrigger>
-														<TooltipContent className="max-w-[220px] p-3 text-left">
-															<p className="text-xs font-bold mb-1">Rumus Risk Score:</p>
-															<p className="text-[10px] text-muted-foreground leading-relaxed">
-																(30% Vol) + (30% Durasi) + (20% Resolusi) + (20% SLA Breach)
-															</p>
-														</TooltipContent>
-													</Tooltip>
-												</div>
-											</TooltipProvider>
-										</th>
-									</tr>
-								</thead>
-								<tbody>
-									{stats.siteMetrics.slice(0, 20).map((site: any, idx: number) => (
-										<tr
-											key={idx}
-											className="border-b hover:bg-muted/20 transition-colors cursor-pointer group"
-											onClick={() => setSelectedSite(site)}
-										>
-											<td className="py-3 px-4">
-												<div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs ${site.riskScore > 75 ? "bg-rose-100 text-rose-700 border border-rose-200" :
-													site.riskScore > 40 ? "bg-amber-100 text-amber-700 border border-amber-200" :
-														"bg-emerald-50 text-emerald-700 border border-emerald-100"
-													}`}>
-													{idx + 1}
-												</div>
-											</td>
-											<td className="py-3 px-4 font-medium text-foreground">{site.site}</td>
-											<td className="py-3 px-4 text-center">
-												<Badge variant="secondary" className="font-mono">{site.count}</Badge>
-											</td>
-											<td className="py-3 px-4 text-center font-semibold text-rose-600">
-												{site.count > 0 ? (((site.count - site.highSeverity) / site.count) * 100).toFixed(1) : "100.0"}%
-											</td>
-											<td className="py-3 px-4 text-center font-semibold text-emerald-600">
-												{site.reliability.toFixed(1)}%
-											</td>
-											<td className="py-3 px-4">
-												<span className="text-[11px] text-muted-foreground truncate w-32 block" title={site.topProb}>
-													{site.topProb}
-												</span>
-											</td>
-											<td className="py-3 px-4 text-center">
-												<div className="flex flex-col items-center">
-													<span className="font-mono text-xs text-foreground uppercase">{formatDurationHMS(site.avgDur)}</span>
-													<span className="text-[10px] text-blue-600 font-bold uppercase">Net: {formatDurationHMS(site.avgNetDur)}</span>
-												</div>
-											</td>
-											<td className="py-3 px-4 text-center">
-												<Badge variant="secondary" className="font-mono text-[10px] bg-amber-50 text-amber-600 border-amber-200">
-													{site.pauseGap.toFixed(1)}%
-												</Badge>
-											</td>
-											<td className="py-3 px-4 text-center">
-												<Badge
-													variant={site.riskScore >= 70 ? "danger" : site.riskScore >= 40 ? "warning" : "success"}
-													className="text-[10px]"
-												>
-													{site.riskScore.toFixed(0)}
-												</Badge>
-											</td>
-										</tr>
-									))}
-								</tbody>
-							</table>
-						</div>
-					</CardContent>
-				</Card>
-			</div>
-
-			{/* Site Drill-down Detail Modal */}
-			{selectedSite && (
-				<DetailModal
-					isOpen={!!selectedSite}
-					onClose={() => setSelectedSite(null)}
-					title={selectedSite.site}
-					description="Detailed Site Risk Analysis"
-				>
-					<div className="grid grid-cols-2 gap-4">
-						<div className="p-4 rounded-xl bg-blue-100/50 border border-blue-200">
-							<p className="text-[10px] font-bold text-blue-600 uppercase tracking-widest mb-1">Risk Score</p>
-							<p className="text-2xl font-black text-blue-700">{selectedSite.riskScore.toFixed(0)}/100</p>
-							<p className="text-[11px] text-blue-600/70 font-medium">Kritikalitas Site</p>
-						</div>
-						<div className="p-4 rounded-xl bg-slate-100 border border-slate-200">
-							<p className="text-[10px] font-bold text-slate-600 uppercase tracking-widest mb-1">Total Incidents</p>
-							<p className="text-2xl font-black text-slate-700">{selectedSite.count}</p>
-							<p className="text-[11px] text-slate-600/70 font-medium">Beban Gangguan</p>
-						</div>
-					</div>
-
-					<div className="space-y-4">
-						<div className="flex items-center gap-2">
-							<WarningIcon className="text-rose-500 h-5 w-5" />
-							<h4 className="font-bold text-sm">Severity Distribution</h4>
-						</div>
-						<div className="flex gap-2">
-							{Object.entries(selectedSite.ncalBreakdown)
-								.filter(([_, count]) => (count as number) > 0)
-								.map(([level, count]) => (
-									<div key={level} className="flex-1 p-2 rounded-lg border text-center space-y-1">
-										<p className="text-[9px] font-bold text-muted-foreground">{level}</p>
-										<p className="text-sm font-black" style={{ color: (NCAL_COLORS as any)[level] || '#888' }}>{count as number}</p>
-									</div>
-								))
-							}
-						</div>
-					</div>
-
-					<div className="space-y-4">
-						<div className="flex items-center gap-2">
-							<BuildIcon className="text-amber-500 h-5 w-5" />
-							<h4 className="font-bold text-sm">Problem Frequency</h4>
-						</div>
-						<div className="grid grid-cols-1 gap-2">
-							{Object.entries(selectedSite.problems)
-								.sort((a: any, b: any) => b[1] - a[1])
-								.slice(0, 5)
-								.map(([prob, count]: any) => {
-									const percentage = (count / selectedSite.count) * 100;
-									return (
-										<div key={prob} className="space-y-1.5">
-											<div className="flex justify-between text-xs">
-												<span className="font-medium text-muted-foreground truncate w-48">{prob}</span>
-												<span className="font-bold">{count} cases</span>
-											</div>
-											<div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
-												<div className="h-full bg-amber-500 rounded-full" style={{ width: `${percentage}%` }} />
-											</div>
-										</div>
-									);
-								})}
-						</div>
-					</div>
-
-					<Separator />
-
-					<div className="space-y-4">
-						<div className="flex items-center gap-2">
-							<LocationOnIcon className="text-blue-500 h-5 w-5" />
-							<h4 className="font-bold text-sm">SLA Breach List</h4>
-						</div>
-						{selectedSite.breachedTickets.length > 0 ? (
-							<div className="space-y-3">
-								{selectedSite.breachedTickets.slice(0, 5).map((t: any, idx: number) => (
-									<div key={idx} className="p-3 rounded-lg border bg-muted/20 space-y-2">
-										<div className="flex justify-between items-start">
-											<span className="font-mono text-xs font-bold font-mono">#{t.noCase}</span>
-											<Badge
-												variant="secondary"
-												style={{ backgroundColor: (NCAL_COLORS as any)[t.ncal] + '20', color: (NCAL_COLORS as any)[t.ncal] }}
-											>
-												{t.ncal}
-											</Badge>
-										</div>
-										<div className="flex flex-col gap-1 text-[10px]">
-											<div className="flex justify-between items-center bg-muted/30 p-1.5 rounded-sm">
-												<span className="text-muted-foreground">Officer: {t.ts}</span>
-												<span className="text-rose-600 font-bold underline">Total: {formatDurationHMS(t.duration)}</span>
-											</div>
-											<div className="flex justify-between items-center bg-blue-50 p-1.5 rounded-sm">
-												<span className="text-blue-700 font-bold">Net: {formatDurationHMS(t.netDuration)}</span>
-												<span className="text-blue-600/70 font-medium">Pause: {formatDurationHMS(t.duration - t.netDuration)}</span>
-											</div>
 										</div>
 									</div>
-								))}
-							</div>
-						) : (
-							<div className="py-6 text-center border-2 border-dashed rounded-xl">
-								<p className="text-xs text-muted-foreground italic">No SLA breaches recorded for this site.</p>
-							</div>
-						)}
-					</div>
 
-					<div className="p-4 rounded-xl bg-amber-50 border border-amber-100 space-y-3">
-						<div className="flex items-center gap-2">
-							<TrendingUpIcon className="h-4 w-4 text-amber-600" />
-							<span className="text-xs font-bold text-amber-700 uppercase tracking-tight">AI Recommendation</span>
-						</div>
-						<ul className="space-y-1.5 list-disc list-inside">
-							{selectedSite.recommendations.map((rec: string, i: number) => (
-								<li key={i} className="text-xs text-amber-900 leading-relaxed font-medium">
-									{rec}
-								</li>
-							))}
-							{selectedSite.recommendations.length === 0 && (
-								<li className="text-xs text-amber-900 italic list-none">
-									Kondisi site sangat prima. Lanjutkan monitoring rutin.
-								</li>
+									<div className="space-y-4">
+										<div className="flex items-center gap-2">
+											<BuildIcon className="text-amber-500 h-5 w-5" />
+											<h4 className="font-bold text-sm">Problem Frequency</h4>
+										</div>
+										<div className="grid grid-cols-1 gap-2">
+											{Object.entries(selectedSite.problems)
+												.sort((a: any, b: any) => b[1] - a[1])
+												.slice(0, 5)
+												.map(([prob, count]: any) => {
+													const percentage = (count / selectedSite.count) * 100;
+													return (
+														<div key={prob} className="space-y-1.5">
+															<div className="flex justify-between text-xs">
+																<span className="font-medium text-muted-foreground truncate w-48">{prob}</span>
+																<span className="font-bold">{count} cases</span>
+															</div>
+															<div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
+																<div className="h-full bg-amber-500 rounded-full" style={{ width: `${percentage}%` }} />
+															</div>
+														</div>
+													);
+												})}
+										</div>
+									</div>
+
+									<Separator />
+
+									<div className="space-y-4">
+										<div className="flex items-center gap-2">
+											<LocationOnIcon className="text-blue-500 h-5 w-5" />
+											<h4 className="font-bold text-sm">SLA Breach List</h4>
+										</div>
+										{selectedSite.breachedTickets.length > 0 ? (
+											<div className="space-y-3">
+												{selectedSite.breachedTickets.slice(0, 5).map((t: any, idx: number) => (
+													<div key={idx} className="p-3 rounded-lg border bg-muted/20 space-y-2">
+														<div className="flex justify-between items-start">
+															<span className="font-mono text-xs font-bold font-mono">#{t.noCase}</span>
+															<Badge
+																variant="secondary"
+																style={{ backgroundColor: (NCAL_COLORS as any)[t.ncal] + '20', color: (NCAL_COLORS as any)[t.ncal] }}
+															>
+																{t.ncal}
+															</Badge>
+														</div>
+														<div className="flex flex-col gap-1 text-[10px]">
+															<div className="flex justify-between items-center bg-muted/30 p-1.5 rounded-sm">
+																<span className="text-muted-foreground">Officer: {t.ts}</span>
+																<span className="text-rose-600 font-bold underline">Total: {formatDurationHMS(t.duration)}</span>
+															</div>
+															<div className="flex justify-between items-center bg-blue-50 p-1.5 rounded-sm">
+																<span className="text-blue-700 font-bold">Net: {formatDurationHMS(t.netDuration)}</span>
+																<span className="text-blue-600/70 font-medium">Pause: {formatDurationHMS(t.duration - t.netDuration)}</span>
+															</div>
+														</div>
+													</div>
+												))}
+											</div>
+										) : (
+											<div className="py-6 text-center border-2 border-dashed rounded-xl">
+												<p className="text-xs text-muted-foreground italic">No SLA breaches recorded for this site.</p>
+											</div>
+										)}
+									</div>
+
+									<div className="p-4 rounded-xl bg-amber-50 border border-amber-100 space-y-3">
+										<div className="flex items-center gap-2">
+											<TrendingUpIcon className="h-4 w-4 text-amber-600" />
+											<span className="text-xs font-bold text-amber-700 uppercase tracking-tight">AI Recommendation</span>
+										</div>
+										<ul className="space-y-1.5 list-disc list-inside">
+											{selectedSite.recommendations.map((rec: string, i: number) => (
+												<li key={i} className="text-xs text-amber-900 leading-relaxed font-medium">
+													{rec}
+												</li>
+											))}
+											{selectedSite.recommendations.length === 0 && (
+												<li className="text-xs text-amber-900 italic list-none">
+													Kondisi site sangat prima. Lanjutkan monitoring rutin.
+												</li>
+											)}
+										</ul>
+									</div>
+								</DetailModal>
 							)}
-						</ul>
-					</div>
-				</DetailModal>
-			)}
+						</>
+					</Suspense>
+				)}
+			</div>
 		</PageWrapper>
 	);
 };

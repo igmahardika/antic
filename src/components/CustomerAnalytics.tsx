@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
 import { ITicket } from "@/lib/db";
 import { formatDurationDHM, formatDateTimeDDMMYYYY } from "@/lib/utils";
@@ -331,17 +331,34 @@ const CustomerAnalytics = () => {
 	}, [openDialogId, filteredCustomers]);
 
 	// --- Month & year options ---
+	// --- Month & year options ---
 	const monthOptions = MONTH_OPTIONS;
-	const allYearsInData = useMemo(() => {
-		if (!allTickets) return [];
-		const yearSet = new Set<string>();
-		allTickets.forEach((t) => {
-			const openDate = parseDateSafe(t.openTime);
-			if (openDate) {
-				yearSet.add(String(openDate.getFullYear()));
+	const [allYearsInData, setAllYearsInData] = useState<string[]>([]);
+
+	useEffect(() => {
+		const fetchYears = async () => {
+			try {
+				const { ticketAPI } = await import("@/lib/api");
+				const { years } = await ticketAPI.getTicketYears();
+				if (Array.isArray(years)) {
+					setAllYearsInData(years.map(String));
+				}
+			} catch (error) {
+				console.error("Failed to fetch ticket years:", error);
+				// Fallback
+				if (allTickets && allTickets.length > 0) {
+					const yearSet = new Set<string>();
+					allTickets.forEach((t) => {
+						const openDate = parseDateSafe(t.openTime);
+						if (openDate) yearSet.add(String(openDate.getFullYear()));
+					});
+					setAllYearsInData(Array.from(yearSet).sort().reverse());
+				} else {
+					setAllYearsInData(["2026", "2025", "2024"]);
+				}
 			}
-		});
-		return Array.from(yearSet).sort();
+		};
+		fetchYears();
 	}, [allTickets]);
 
 	// --- Early return check after all hooks have been called ---

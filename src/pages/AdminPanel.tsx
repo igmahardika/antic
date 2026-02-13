@@ -37,7 +37,7 @@ const AdminPanel: React.FC = () => {
 	const [error, setError] = React.useState("");
 	const [showPassword, setShowPassword] = React.useState(false);
 	const [pendingAdd, setPendingAdd] = React.useState(false);
-	// const [pendingEdit, setPendingEdit] = React.useState(false); // Removed unused state
+
 	const [editUserIdx, setEditUserIdx] = React.useState<number | null>(null);
 	const [editUsername, setEditUsername] = React.useState("");
 	const [editPassword, setEditPassword] = React.useState("");

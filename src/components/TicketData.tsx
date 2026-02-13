@@ -280,21 +280,22 @@ const TicketData = ({ data: propsData }: { data?: ITicket[] }) => {
 	// Use allTicketsInDb directly to avoid double filtering
 	// Migrated from IndexedDB to API
 	const [isLoadingTickets, setIsLoadingTickets] = useState(false);
+	const [totalTicketsInDb, setTotalTicketsInDb] = useState<ITicket[]>([]);
 
 	useEffect(() => {
 		const fetchTickets = async () => {
 			setIsLoadingTickets(true);
 			try {
 				// Fetch tickets using authenticated API helper
-				// Reduced from 10000 to 1000 for initial load performance
+				// Increased limit to 10000 for better data visibility
 				// Users can still search/filter within this dataset
-				const { tickets } = await ticketAPI.getTickets({ limit: 1000 });
+				const { tickets } = await ticketAPI.getTickets({ limit: 10000 });
 				if (Array.isArray(tickets)) {
 					// Map API response (snake_case) to ITicket (camelCase + nested objects)
 					const mappedTickets = tickets
 						.map(mapApiTicketToITicket)
 						.filter((t): t is ITicket => t !== null);
-					setTickets(mappedTickets);
+					setTotalTicketsInDb(mappedTickets);
 				}
 			} catch (error) {
 				logger.error("Error fetching tickets:", error);
@@ -311,9 +312,9 @@ const TicketData = ({ data: propsData }: { data?: ITicket[] }) => {
 	// Correct prioritized fallback: props -> local state (if not empty) -> context gridData
 	const data = useMemo(() => {
 		if (Array.isArray(propsData) && propsData.length > 0) return propsData;
-		if (Array.isArray(allTicketsInDb) && allTicketsInDb.length > 0) return allTicketsInDb;
+		if (Array.isArray(totalTicketsInDb) && totalTicketsInDb.length > 0) return totalTicketsInDb;
 		return Array.isArray(gridData) ? gridData : [];
-	}, [propsData, allTicketsInDb, gridData]);
+	}, [propsData, totalTicketsInDb, gridData]);
 
 	const [search, setSearch] = useState("");
 	const [validasiFilter, setValidasiFilter] = useState<
@@ -340,7 +341,7 @@ const TicketData = ({ data: propsData }: { data?: ITicket[] }) => {
 	);
 
 	// Total tickets count
-	const totalTicketsInDb = data.length;
+	const totalTicketsCount = data.length;
 
 	// Duration statistics
 	const durationStats = useMemo(() => {
@@ -559,7 +560,7 @@ const TicketData = ({ data: propsData }: { data?: ITicket[] }) => {
 						<SummaryCard
 							icon={<ConfirmationNumberIcon className="w-6 h-6 text-white" />}
 							title="Total Tickets"
-							value={totalTicketsInDb || 0}
+							value={totalTicketsCount || 0}
 							description="Total recorded tickets in database"
 							iconBg="bg-blue-600"
 						/>

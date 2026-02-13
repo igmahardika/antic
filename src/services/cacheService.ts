@@ -7,6 +7,7 @@
 
 import { db } from '../lib/db';
 import { ticketAPI, Ticket } from '../lib/api';
+import { logger } from "@/lib/logger";
 
 export interface ICacheEntry {
     key: string;
@@ -53,7 +54,7 @@ class CacheService {
 
             return cached.data as T;
         } catch (error) {
-            console.error('Cache get error:', error);
+            logger.error('Cache get error:', error);
             return null;
         }
     }
@@ -72,7 +73,7 @@ class CacheService {
 
             await (db as any).cache?.put(entry);
         } catch (error) {
-            console.error('Cache set error:', error);
+            logger.error('Cache set error:', error);
         }
     }
 
@@ -91,7 +92,7 @@ class CacheService {
         try {
             await (db as any).cache?.delete(key);
         } catch (error) {
-            console.error('Cache invalidate error:', error);
+            logger.error('Cache invalidate error:', error);
         }
     }
 
@@ -111,7 +112,7 @@ class CacheService {
                 toDelete.map((entry: ICacheEntry) => this.invalidate(entry.key))
             );
         } catch (error) {
-            console.error('Cache invalidate pattern error:', error);
+            logger.error('Cache invalidate pattern error:', error);
         }
     }
 
@@ -122,7 +123,7 @@ class CacheService {
         try {
             await (db as any).cache?.clear();
         } catch (error) {
-            console.error('Cache clear error:', error);
+            logger.error('Cache clear error:', error);
         }
     }
 
@@ -135,17 +136,17 @@ class CacheService {
         // Try cache first
         const cached = await this.get<Ticket[]>(cacheKey);
         if (cached) {
-            console.log('[Cache] Hit:', cacheKey);
+            logger.info('[Cache] Hit:', cacheKey);
             // Optionally refresh in background
             this.refreshInBackground(cacheKey, filters);
             return cached;
         }
 
-        console.log('[Cache] Miss:', cacheKey);
+        logger.info('[Cache] Miss:', cacheKey);
         // Fetch from API
         const { tickets } = await ticketAPI.getTickets({
             ...filters,
-            limit: 5000, // Reduced from 10k to 5k for better responsiveness
+            limit: 50000, // Increased to 50k for comprehensive dashboard
         });
 
         // Store in cache (as is from API for now, or mapped? Let's map it before caching so checks work)
@@ -174,10 +175,10 @@ class CacheService {
                 });
                 const mappedTickets = tickets.map(t => this.mapApiTicketToITicket(t));
                 await this.set(cacheKey, mappedTickets);
-                console.log('[Cache] Refreshed in background:', cacheKey);
+                logger.info('[Cache] Refreshed in background:', cacheKey);
             }, 100);
         } catch (error) {
-            console.error('[Cache] Background refresh failed:', error);
+            logger.error('[Cache] Background refresh failed:', error);
         }
     }
 
@@ -189,7 +190,7 @@ class CacheService {
 
         const cached = await this.get<number>(cacheKey);
         if (cached !== null) {
-            console.log('[Cache] Count hit:', cached);
+            logger.info('[Cache] Count hit:', cached);
             return cached;
         }
 
@@ -208,7 +209,7 @@ class CacheService {
      */
     async invalidateTickets(): Promise<void> {
         await this.invalidatePattern('tickets');
-        console.log('[Cache] Invalidated all ticket caches');
+        logger.info('[Cache] Invalidated all ticket caches');
     }
 
     /**
@@ -220,11 +221,11 @@ class CacheService {
         // Try cache first
         const cached = await this.get<any[]>(cacheKey);
         if (cached) {
-            console.log('[Cache] Hit:', cacheKey);
+            logger.info('[Cache] Hit:', cacheKey);
             return cached;
         }
 
-        console.log('[Cache] Miss:', cacheKey);
+        logger.info('[Cache] Miss:', cacheKey);
         // Fetch from API
         // @ts-ignore - Importing customerAPI dynamically or using global to avoid circular dep if needed, 
         // but here we can just assume customerAPI is imported. 
@@ -247,11 +248,11 @@ class CacheService {
 
         const cached = await this.get<any[]>(cacheKey);
         if (cached) {
-            console.log('[Cache] Hit:', cacheKey);
+            logger.info('[Cache] Hit:', cacheKey);
             return cached;
         }
 
-        console.log('[Cache] Miss:', cacheKey);
+        logger.info('[Cache] Miss:', cacheKey);
         const { incidentAPI } = await import('../lib/api');
         const { incidents } = await incidentAPI.getIncidents({
             ...filters,
@@ -267,6 +268,34 @@ class CacheService {
      */
     async invalidateCustomers(): Promise<void> {
         await this.invalidatePattern('customers');
+    }
+
+    /**
+     * Get vendors with caching
+     */
+    async getVendors(): Promise<any[]> {
+        const cacheKey = 'vendors';
+
+        const cached = await this.get<any[]>(cacheKey);
+        if (cached) {
+            logger.info('[Cache] Hit:', cacheKey);
+            return cached;
+        }
+
+        logger.info('[Cache] Miss:', cacheKey);
+        // Dynamically import to avoid circular dependency if needed, though vendorAPI should be available
+        const { vendorAPI } = await import('../lib/api');
+        const { vendors } = await vendorAPI.getVendors();
+
+        await this.set(cacheKey, vendors);
+        return vendors;
+    }
+
+    /**
+     * Invalidate vendors cache
+     */
+    async invalidateVendors(): Promise<void> {
+        await this.invalidatePattern('vendors');
     }
 
     /**

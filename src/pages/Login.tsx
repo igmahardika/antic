@@ -31,9 +31,8 @@ const Login: React.FC = () => {
 					const permissions = await menuPermissionAPI.getPermissions();
 					// Transform to match existing storage format if necessary
 					// getPermissions returns MenuPermission[]
-					const userRole = data.user.role;
-					const rolePerms = permissions.find(p => p.role === userRole);
-					localStorage.setItem("menuPermissions", JSON.stringify(rolePerms ? rolePerms.menus : []));
+					// Store all permissions so AppSidebar can find the matching role
+					localStorage.setItem("menuPermissions", JSON.stringify(permissions));
 				} catch (permErr) {
 					logger.error("Failed to load menu permissions:", permErr);
 					// Continue to navigate even if permissions fail

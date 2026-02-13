@@ -55,21 +55,30 @@ export const normalizeAgentName = (agentName: string): string => {
 /**
  * Check if photo exists for agent
  */
+/**
+ * Check if photo exists for agent
+ */
 export const checkPhotoExists = async (agentName: string): Promise<boolean> => {
   try {
-    // Check via API to avoid console 404 errors from image loading
-    const API_BASE_URL = import.meta.env.VITE_API_URL || '';
-    const response = await fetch(`${API_BASE_URL}/api/photo-info?agentName=${encodeURIComponent(agentName)}`);
-    if (response.ok) {
-      const data = await response.json();
-      // Backend now returns { success: false, found: false } for missing photos with 200 OK
-      return !!data.found || !!data.success;
-    }
-    return false;
+    const { apiCall } = await import("@/lib/api");
+    const response = await apiCall<{ success: boolean; found: boolean }>(
+      `/api/photo-info?agentName=${encodeURIComponent(agentName)}`
+    );
+    return !!response.found || !!response.success;
   } catch {
     return false;
   }
 };
+// ... (rest of file unchanged until uploadPhotoFile) ...
+// Note: Skipping repetitive parts, just replacing the fetch blocks
+
+// We need to export this properly in a separate block for the tool consistency
+// But Wait, photoUtils is a util file, importing apiCall might cause circular deps if api imports photoUtils?
+// Checking api.ts imports... It imports Incident... type..
+// photoUtils is standalone. Safe.
+
+// However, replace_file_content is better with chunks.
+
 
 /**
  * Get agent initials for fallback avatar

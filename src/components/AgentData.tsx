@@ -1,6 +1,5 @@
 import React, { useMemo, useState } from "react";
-// import { useLiveQuery } from "dexie-react-hooks";
-// import { db } from "@/lib/db";
+
 import { cacheService } from "@/services/cacheService";
 import PageWrapper from "./PageWrapper";
 import { Badge } from "./ui/badge";

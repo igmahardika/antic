@@ -34,6 +34,7 @@ export default function AppSidebar() {
 	} catch { }
 
 	// Filter menus based on user permissions
+	// Filter menus based on user permissions
 	const getFilteredMenus = (userRole: string, permissions: any[]) => {
 		// Super admin always sees everything
 		if (userRole === 'super admin') return allMenus;
@@ -46,15 +47,22 @@ export default function AppSidebar() {
 			return [];
 		}
 
-		return allMenus.filter(menu => {
+		// Use reduce to filter and clone structure without destroying React elements (which JSON.stringify does)
+		return allMenus.reduce((acc: any[], menu: any) => {
 			if (menu.children) {
-				menu.children = menu.children.filter(child =>
+				const allowedChildren = menu.children.filter((child: any) =>
 					userPermissions.menus.includes(child.name)
 				);
-				return menu.children.length > 0;
+
+				if (allowedChildren.length > 0) {
+					// Clone menu logic, preserving icon reference
+					acc.push({ ...menu, children: allowedChildren });
+				}
+			} else if (userPermissions.menus.includes(menu.name)) {
+				acc.push(menu);
 			}
-			return userPermissions.menus.includes(menu.name);
-		});
+			return acc;
+		}, []);
 	};
 
 	const allowedMenus = getFilteredMenus(user.role, permissions);
@@ -63,8 +71,8 @@ export default function AppSidebar() {
 	const renderMenu = (menu: any) => {
 		if (menu.children && menu.children.length > 0) {
 			return (
-				<Collapsible key={menu.path} defaultOpen className="group/collapsible">
-					<SidebarMenuItem>
+				<SidebarMenuItem key={menu.path}>
+					<Collapsible defaultOpen className="group/collapsible">
 						<CollapsibleTrigger asChild>
 							<SidebarMenuButton>
 								{menu.icon}
@@ -86,8 +94,8 @@ export default function AppSidebar() {
 								))}
 							</SidebarMenuSub>
 						</CollapsibleContent>
-					</SidebarMenuItem>
-				</Collapsible>
+					</Collapsible>
+				</SidebarMenuItem>
 			);
 		}
 
@@ -104,7 +112,6 @@ export default function AppSidebar() {
 	};
 
 	return (
-		// Menambahkan properti collapsible="icon" agar sidebar menyusut menjadi ikon
 		<Sidebar collapsible="icon">
 			<SidebarHeader>
 				<div className="flex flex-col items-center justify-center pt-5 pb-3 gap-2">

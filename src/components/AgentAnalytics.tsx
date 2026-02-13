@@ -90,21 +90,7 @@ export interface AgentAnalyticsData {
 }
 
 
-// Unused function - commented out
-// const getTrendPercentage = (dataArr) => {
-//   if (!dataArr || dataArr.length < 2) return null;
-//   const prev = dataArr[dataArr.length - 2];
-//   const curr = dataArr[dataArr.length - 1];
-//   if (prev === 0) return null;
-//   const percent = ((curr - prev) / Math.abs(prev)) * 100;
-//   return percent;
-// };
-
-// Unused array - commented out
-// const AGENT_COLORS = [
-//   'text-blue-500', 'text-green-500', 'text-orange-500', 'text-purple-500', 'text-red-500',
-//   'text-pink-500', 'text-teal-500', 'text-yellow-500', 'text-indigo-500', 'text-emerald-500'
-// ];
+// Trend colors for charts
 const TREND_COLORS = [
 	"#6366F1",
 	"#22C55E",
@@ -196,46 +182,7 @@ const CustomTooltip = ({ active = false, payload = [], label = "" } = {}) => {
 	);
 };
 
-// Unused component - commented out
-// const CustomMiniTooltip = ({ active, payload, label }: any) => {
-//   if (!active || !payload || !payload.length) return null;
-//   // Selalu render hanya satu value (payload[0]) untuk mini chart single series
-//   let value = payload[0].value;
-//   const lowerLabel = (label || '').toLowerCase();
-//   let displayLabel = label;
-//   if (lowerLabel.includes('frt')) {
-//     value = typeof value === 'number' ? formatDurationDHM(value) : value;
-//     displayLabel = 'FRT';
-//   } else if (lowerLabel.includes('art')) {
-//     value = typeof value === 'number' ? formatDurationDHM(value) : value;
-//     displayLabel = 'ART';
-//   } else if (lowerLabel.includes('fcr')) {
-//     value = typeof value === 'number' ? value.toFixed(1) + '%' : value;
-//     displayLabel = 'FCR';
-//   } else if (lowerLabel.includes('sla')) {
-//     value = typeof value === 'number' ? value.toFixed(1) + '%' : value;
-//     displayLabel = 'SLA';
-//   }
-//   return (
-//     <div className="bg-card text-card-foreground  rounded shadow px-3 py-2 text-xs">
-//       <div className="font-bold mb-1">{label}</div>
-//       <div><span className="font-semibold mr-2">{displayLabel}:</span><span className="font-mono">{value}</span></div>
-//     </div>
-//   );
-// };
 
-// Unused component - commented out
-// function ScoreCircle({ score }: { score: number }) {
-//   const color = score >= 80 ? 'bg-green-500' : score >= 60 ? 'bg-yellow-400' : 'bg-red-500';
-//   const icon = score >= 80 ? <EmojiEventsIcon className="text-white w-7 h-7 mb-1" /> : score >= 60 ? <StarIcon className="text-white w-7 h-7 mb-1" /> : <EmojiEventsIcon className="text-white w-7 h-7 mb-1" />;
-//   return (
-//     <div className={`flex flex-col items-center justify-center w-20 h-20 rounded-full shadow-lg ${color}`}>
-//       {icon}
-//       <span className="text-2xl font-extrabold text-white leading-none">{score}</span>
-//       <span className="text-xs font-semibold text-white/80">Score</span>
-//     </div>
-//   );
-// }
 
 const AgentAnalytics = () => {
 	// Semua hook di bagian paling atas

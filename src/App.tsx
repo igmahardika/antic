@@ -26,6 +26,7 @@ import AgentData from "./components/AgentData";
 import CustomerData from "./pages/CustomerData";
 import { IncidentData } from "./pages/IncidentData";
 import VendorData from "./pages/VendorData";
+import ChunkErrorBoundary from "./components/ChunkErrorBoundary";
 
 // Lazy load heavy components
 const AgentAnalytics = lazyPage(
@@ -52,6 +53,7 @@ const SiteAnalytics = lazyPage(
 	() => import("./pages/SiteAnalytics"),
 	<LoadingView label="Loading Site Analytics…" />
 );
+const Workload = lazyPage(() => import("./pages/Workload"));
 // Escalation pages removed
 
 // New sidebar imports
@@ -244,6 +246,10 @@ function AppLayout() {
 									path="/documentation/admin-rumus"
 									element={<ProtectedRoute menuName="Formulas"><Formulas /></ProtectedRoute>}
 								/>
+								<Route
+									path="/workload/analytics"
+									element={<ProtectedRoute menuName="Workload Analytics"><Workload /></ProtectedRoute>}
+								/>
 								{/* Path lama tetap untuk fallback/compatibility */}
 								<Route
 									path="/agent-analytics"
@@ -301,20 +307,22 @@ function AppLayout() {
 }
 
 const App = () => (
-	<ErrorBoundary>
-		<ThemeProvider>
-			<QueryClientProvider client={queryClient}>
-				<TooltipProvider>
-					<Toaster />
-					<AnalyticsProvider>
-						<BrowserRouter>
-							<AppLayout />
-						</BrowserRouter>
-					</AnalyticsProvider>
-				</TooltipProvider>
-			</QueryClientProvider>
-		</ThemeProvider>
-	</ErrorBoundary>
+	<ChunkErrorBoundary>
+		<ErrorBoundary>
+			<ThemeProvider>
+				<QueryClientProvider client={queryClient}>
+					<TooltipProvider>
+						<Toaster />
+						<AnalyticsProvider>
+							<BrowserRouter>
+								<AppLayout />
+							</BrowserRouter>
+						</AnalyticsProvider>
+					</TooltipProvider>
+				</QueryClientProvider>
+			</ThemeProvider>
+		</ErrorBoundary>
+	</ChunkErrorBoundary>
 );
 
 export default App;
