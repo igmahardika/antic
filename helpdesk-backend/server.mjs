@@ -1567,14 +1567,27 @@ app.get('/api/incidents', authenticateToken, async (req, res) => {
 // Get incidents stats
 app.get('/api/incidents/stats', authenticateToken, async (req, res) => {
   try {
+    const { month } = req.query;
+    let whereClause = '1=1';
+    const params = [];
+
+    if (month) {
+      whereClause += " AND DATE_FORMAT(start_time, '%Y-%m') = ?";
+      params.push(month);
+    }
+
     const [rows] = await db.query(`
       SELECT 
         COUNT(*) as total,
         SUM(CASE WHEN status = 'Done' THEN 1 ELSE 0 END) as done,
         SUM(CASE WHEN status = 'Open' THEN 1 ELSE 0 END) as open,
-        SUM(CASE WHEN status = 'Pending' THEN 1 ELSE 0 END) as pending
+        SUM(CASE WHEN status = 'Pending' THEN 1 ELSE 0 END) as pending,
+        AVG(duration_min) as avgDuration,
+        AVG(duration_vendor_min) as avgNetDuration
       FROM incidents
-    `);
+      WHERE ${whereClause}
+    `, params);
+
     res.json({ success: true, stats: rows[0] });
   } catch (err) {
     console.error('Get incidents stats error:', err);

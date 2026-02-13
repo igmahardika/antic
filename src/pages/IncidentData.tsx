@@ -424,14 +424,14 @@ export const IncidentData: React.FC = () => {
 					/>
 					<SummaryCard
 						title="Avg Duration"
-						value={`${Math.round(stats?.avgDuration || 0)} min`}
+						value={formatDurationHMS(stats?.avgDuration || 0)}
 						icon={<AlertTriangle className="w-5 h-5 text-white" />}
 						iconBg="bg-amber-500"
 						description="Rata-rata durasi kasus"
 					/>
 					<SummaryCard
 						title="Avg Net Duration"
-						value={`${Math.round(stats?.avgNetDuration || 0)} min`}
+						value={formatDurationHMS(stats?.avgNetDuration || 0)}
 						icon={<CheckCircle className="w-5 h-5 text-white" />}
 						iconBg="bg-emerald-600"
 						description="Rata-rata durasi bersih"
